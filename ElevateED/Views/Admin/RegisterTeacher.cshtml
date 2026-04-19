@@ -1,0 +1,630 @@
+﻿@model List<ElevateED.Models.Teacher>
+
+@{
+    ViewBag.Title = "Register Teacher - Admin";
+    var subjects = ViewBag.Subjects as List<ElevateED.Models.Subject>;
+    var grades = ViewBag.Grades as List<ElevateED.Models.Grade>;
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+    }
+
+    .teacher-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .empty-icon {
+        width: 150px;
+        height: 150px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        font-size: 60px;
+        color: var(--primary-blue);
+    }
+
+    .btn-add-teacher {
+        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        color: white;
+        padding: 18px 50px;
+        border-radius: 50px;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+    }
+
+        .btn-add-teacher:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.4);
+            color: white;
+        }
+
+    .teacher-table {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+        .teacher-table thead {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .teacher-table th {
+            font-weight: 600;
+            padding: 20px 15px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .teacher-table td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+    .staff-badge {
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: monospace;
+        display: inline-block;
+    }
+
+    .subject-tag {
+        display: inline-block;
+        background: #e3f2fd;
+        color: var(--primary-blue);
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        margin: 2px;
+    }
+
+    .grade-tag {
+        display: inline-block;
+        background: #e8f5e9;
+        color: var(--success-green);
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        margin: 2px;
+    }
+
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 25px;
+    }
+
+    .modal-body {
+        padding: 30px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .form-section-title {
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin: 25px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--accent-gold);
+    }
+
+    .custom-checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        background: #fafafa;
+    }
+
+    .custom-checkbox-item input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .custom-checkbox-item label {
+        display: block;
+        padding: 8px 16px;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .custom-checkbox-item input[type="checkbox"]:checked + label {
+        background: var(--primary-blue);
+        color: white;
+        border-color: var(--primary-blue);
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        color: white;
+        padding: 12px 40px;
+        border-radius: 25px;
+        border: none;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .btn-floating {
+        transition: all 0.3s ease;
+    }
+
+        .btn-floating:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+        }
+</style>
+
+<div class="teacher-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-2"><i class="fas fa-chalkboard-teacher"></i> Teacher Management</h1>
+                <p class="lead mb-0">Register and manage teaching staff</p>
+            </div>
+            <div class="col-md-4 text-md-right">
+                <a href="@Url.Action("Dashboard")" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h2 class="mb-3">No Teachers Registered Yet</h2>
+            <p class="text-muted mb-4">Get started by adding your first teacher to the system.</p>
+            <button class="btn btn-add-teacher" onclick="openAddModal()">
+                <i class="fas fa-plus mr-2"></i>Add First Teacher
+            </button>
+        </div>
+
+        <div id="tableContainer" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0"><i class="fas fa-users text-primary mr-2"></i>Teaching Staff</h4>
+                <button class="btn btn-add-teacher btn-sm" onclick="openAddModal()">
+                    <i class="fas fa-plus mr-2"></i>Add Teacher
+                </button>
+            </div>
+            <div class="teacher-table">
+                <table class="table table-hover mb-0" id="teacherTable">
+                    <thead>
+                        <tr>
+                            <th>Staff Number</th>
+                            <th>Full Name</th>
+                            <th>Contact</th>
+                            <th>Subjects</th>
+                            <th>Grades</th>
+                            <th>Qualification</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0"><i class="fas fa-users text-primary mr-2"></i>Teaching Staff (@Model.Count)</h4>
+            <button class="btn btn-add-teacher btn-sm" onclick="openAddModal()">
+                <i class="fas fa-plus mr-2"></i>Add Teacher
+            </button>
+        </div>
+
+        <div class="teacher-table">
+            <table class="table table-hover mb-0" id="teacherTable">
+                <thead>
+                    <tr>
+                        <th>Staff Number</th>
+                        <th>Full Name</th>
+                        <th>Contact</th>
+                        <th>Subjects</th>
+                        <th>Grades</th>
+                        <th>Qualification</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="teacherTableBody">
+                    @foreach (var teacher in Model)
+                    {
+                        <tr data-id="@teacher.Id">
+                            <td><span class="staff-badge">@(teacher.User?.StudentNumber ?? "—")</span></td>
+                            <td><strong>@teacher.FullName</strong></td>
+                            <td>
+                                <div><small>@(teacher.User?.Email ?? "—")</small></div>
+                                <div><small>@teacher.PhoneNumber</small></div>
+                            </td>
+                            <td>
+                                @{
+                                    var teacherSubjects = teacher.SubjectQualifications?
+                                        .Where(sq => sq.Subject != null)
+                                        .Select(sq => sq.Subject.Name)
+                                        .ToList() ?? new List<string>();
+
+                                    foreach (var subject in teacherSubjects.Take(3))
+                                    {
+                                        <span class="subject-tag">@subject</span>
+                                    }
+                                    if (teacherSubjects.Count > 3)
+                                    {
+                                        <span class="subject-tag">+@(teacherSubjects.Count - 3)</span>
+                                    }
+                                    else if (teacherSubjects.Count == 0)
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var teacherGrades = teacher.GradeAssignments?
+                                        .Where(ga => ga.Grade != null)
+                                        .Select(ga => ga.Grade.Name)
+                                        .ToList() ?? new List<string>();
+
+                                    foreach (var grade in teacherGrades)
+                                    {
+                                        <span class="grade-tag">@grade</span>
+                                    }
+                                    if (teacherGrades.Count == 0)
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                }
+                            </td>
+                            <td>@teacher.Qualification</td>
+                            <td>@teacher.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary mr-1" onclick="editTeacher(@teacher.Id)" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(@teacher.Id)" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <button class="btn-floating" id="floatingAddBtn" onclick="openAddModal()" title="Add Teacher" style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%); color: white; border: none; font-size: 24px; box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4); display: @(Model.Count > 0 ? "block" : "none");">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+
+<!-- Add Teacher Modal -->
+<div class="modal fade" id="addTeacherModal" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Register New Teacher</h5>
+                <button type="button" class="close text-white" onclick="closeAddModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="teacherForm">
+                    @Html.AntiForgeryToken()
+
+                    <h6 class="form-section-title"><i class="fas fa-user"></i> Personal Information</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="required">First Name</label>
+                                <input type="text" class="form-control" name="FirstName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Middle Name</label>
+                                <input type="text" class="form-control" name="MiddleName">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="required">Last Name</label>
+                                <input type="text" class="form-control" name="LastName" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">ID Number</label>
+                                <input type="text" class="form-control" name="IdentityNumber" required maxlength="13">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Date of Birth</label>
+                                <input type="date" class="form-control" name="DateOfBirth" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="form-section-title"><i class="fas fa-address-card"></i> Contact Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Email Address</label>
+                                <input type="email" class="form-control" name="Email" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Phone Number</label>
+                                <input type="tel" class="form-control" name="PhoneNumber" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Alternative Phone</label>
+                                <input type="tel" class="form-control" name="AlternativePhone">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Physical Address</label>
+                                <textarea class="form-control" name="Address" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="form-section-title"><i class="fas fa-chalkboard"></i> Teaching Assignment</h6>
+                    <div class="form-group">
+                        <label class="required">Subjects to Teach</label>
+                        <div class="custom-checkbox-group">
+                            @if (subjects != null)
+                            {
+                                foreach (var subject in subjects)
+                                {
+                                    <div class="custom-checkbox-item">
+                                        <input type="checkbox" id="subj_@subject.Id" name="SubjectIds" value="@subject.Id">
+                                        <label for="subj_@subject.Id">@subject.Name</label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="required">Grades to Teach</label>
+                        <div class="custom-checkbox-group">
+                            @if (grades != null)
+                            {
+                                foreach (var grade in grades)
+                                {
+                                    <div class="custom-checkbox-item">
+                                        <input type="checkbox" id="grade_@grade.Id" name="GradeIds" value="@grade.Id">
+                                        <label for="grade_@grade.Id">@grade.Name</label>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <h6 class="form-section-title"><i class="fas fa-graduation-cap"></i> Qualifications</h6>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label class="required">Highest Qualification</label>
+                                <input type="text" class="form-control" name="Qualification" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Years of Experience</label>
+                                <input type="number" class="form-control" name="YearsOfExperience" min="0" max="50" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="form-section-title"><i class="fas fa-ambulance"></i> Emergency Contact</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Emergency Contact Name</label>
+                                <input type="text" class="form-control" name="EmergencyContactName">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" name="EmergencyContactPhone">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button type="button" class="btn-save" onclick="saveTeacher()">
+                    <i class="fas fa-save mr-2"></i>Register Teacher
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var hasTeachers = @(Model.Count > 0 ? "true" : "false");
+
+        function openAddModal() {
+            $('#addTeacherModal').modal('show');
+        }
+
+        function closeAddModal() {
+            $('#addTeacherModal').modal('hide');
+            $('#teacherForm')[0].reset();
+        }
+
+        function saveTeacher() {
+            var form = $('#teacherForm');
+            var firstName = form.find('[name="FirstName"]').val();
+            var lastName = form.find('[name="LastName"]').val();
+            var email = form.find('[name="Email"]').val();
+
+            if (!firstName || !lastName) {
+                alert('Please enter first and last name');
+                return;
+            }
+            if (!email) {
+                alert('Please enter email address');
+                return;
+            }
+
+            var subjectIds = [];
+            form.find('input[name="SubjectIds"]:checked').each(function() { subjectIds.push(parseInt($(this).val())); });
+            var gradeIds = [];
+            form.find('input[name="GradeIds"]:checked').each(function() { gradeIds.push(parseInt($(this).val())); });
+
+            if (subjectIds.length === 0) {
+                alert('Please select at least one subject');
+                return;
+            }
+            if (gradeIds.length === 0) {
+                alert('Please select at least one grade');
+                return;
+            }
+
+            var data = {
+                __RequestVerificationToken: form.find('input[name="__RequestVerificationToken"]').val(),
+                FirstName: firstName,
+                MiddleName: form.find('[name="MiddleName"]').val(),
+                LastName: lastName,
+                IdentityNumber: form.find('[name="IdentityNumber"]').val(),
+                DateOfBirth: form.find('[name="DateOfBirth"]').val(),
+                Email: email,
+                PhoneNumber: form.find('[name="PhoneNumber"]').val(),
+                AlternativePhone: form.find('[name="AlternativePhone"]').val(),
+                Address: form.find('[name="Address"]').val(),
+                Qualification: form.find('[name="Qualification"]').val(),
+                YearsOfExperience: parseInt(form.find('[name="YearsOfExperience"]').val()) || 0,
+                SubjectIds: subjectIds,
+                GradeIds: gradeIds,
+                EmergencyContactName: form.find('[name="EmergencyContactName"]').val(),
+                EmergencyContactPhone: form.find('[name="EmergencyContactPhone"]').val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("AddTeacher", "Admin")',
+                type: 'POST',
+                data: data,
+                traditional: true,
+                success: function(response) {
+                    if (response.success) {
+                        closeAddModal();
+                        alert('Teacher registered successfully!');
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Error registering teacher');
+                    }
+                },
+                error: function(xhr) {
+                    var msg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    alert(msg);
+                }
+            });
+        }
+
+        function editTeacher(id) {
+            window.location.href = '@Url.Action("RegisterTeacher", "Admin")?editId=' + id;
+        }
+
+        function deleteTeacher(id) {
+            if (!confirm('Are you sure you want to delete this teacher?')) return;
+
+            $.ajax({
+                url: '@Url.Action("DeleteTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').first().val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('tr[data-id="' + id + '"]').fadeOut(300, function() {
+                            $(this).remove();
+                            if ($('#teacherTableBody tr').length === 0) {
+                                location.reload();
+                            }
+                        });
+                    } else {
+                        alert(response.message || 'Error deleting teacher');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while deleting');
+                }
+            });
+        }
+
+        if (hasTeachers) {
+            $('#floatingAddBtn').show();
+        }
+    </script>
+}

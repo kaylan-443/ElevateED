@@ -1,0 +1,142 @@
+﻿@{
+    ViewBag.Title = "My Timetable - Teacher Dashboard";
+    var timetable = ViewBag.Timetable as ElevateED.Models.TimeTable;
+    var teacherName = ViewBag.TeacherName as string;
+    var noTimetable = ViewBag.NoTimetable as bool?;
+}
+
+<style>
+    .timetable-viewer {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .timetable-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .timetable-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 20px;
+    }
+
+    .timetable-body {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .timetable-iframe {
+        width: 100%;
+        min-height: 600px;
+        border: none;
+        border-radius: 10px;
+    }
+
+    .timetable-img {
+        max-width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 15px;
+        color: #999;
+    }
+
+    .btn-download {
+        background: #17a2b8;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-download:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="display-4">
+                <i class="fas fa-calendar-alt text-warning mr-3"></i>My Teaching Timetable
+            </h1>
+            <p class="lead mb-0">Welcome, @teacherName</p>
+        </div>
+    </div>
+</div>
+
+<div class="container timetable-viewer">
+    @if (noTimetable == true)
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+            <h4>@ViewBag.Message</h4>
+            <p>Please check back later or contact the administration.</p>
+            <a href="@Url.Action("Timetable", "Teacher")" class="btn btn-primary">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Timetable Options
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="timetable-card">
+            <div class="timetable-header">
+                <h3 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>@timetable.Title</h3>
+                @if (!string.IsNullOrEmpty(timetable.Description))
+                {
+                    <p class="mb-0 mt-2">@timetable.Description</p>
+                }
+                <p class="mb-0 mt-2 small">
+                    <i class="fas fa-clock mr-1"></i> Last updated: @timetable.UploadedAt.ToString("dd MMM yyyy")
+                </p>
+            </div>
+            <div class="timetable-body">
+                @if (timetable.FilePath.EndsWith(".pdf"))
+                {
+                    <iframe src="@timetable.FilePath" class="timetable-iframe"></iframe>
+                }
+                else if (timetable.FilePath.EndsWith(".jpg") || timetable.FilePath.EndsWith(".jpeg") || timetable.FilePath.EndsWith(".png"))
+                {
+                    <img src="@timetable.FilePath" alt="Timetable" class="timetable-img" />
+                }
+                else
+                {
+                    <p>Unable to preview this file type.</p>
+                }
+
+                <div class="mt-4">
+                    <a href="@timetable.FilePath" download class="btn-download">
+                        <i class="fas fa-download mr-2"></i>Download Timetable
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <a href="@Url.Action("Timetable", "Teacher")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Options
+            </a>
+        </div>
+    }
+</div>

@@ -1,0 +1,301 @@
+﻿@model ElevateED.ViewModels.PastPaperListViewModel
+
+@{
+    ViewBag.Title = Model.Grade + " - Past Papers";
+}
+
+<style>
+    .papers-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+    .paper-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #17a2b8;
+    }
+
+        .paper-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .paper-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 10px;
+    }
+
+    .paper-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 13px;
+    }
+
+    .meta-badge {
+        background: #f0f0f0;
+        padding: 4px 12px;
+        border-radius: 20px;
+        color: #666;
+    }
+
+        .meta-badge i {
+            margin-right: 5px;
+        }
+
+    .paper-description {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .paper-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-download {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-download:hover {
+            background: #218838;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .btn-view-memo {
+        background: #fd7e14;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-view-memo:hover {
+            background: #e86c00;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+
+    .filter-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-item {
+        flex: 1;
+        min-width: 150px;
+    }
+
+        .filter-item label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .filter-item select, .filter-item input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+    .btn-filter {
+        background: #1e3c72;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+    }
+
+        .btn-filter:hover {
+            background: #2a5298;
+        }
+
+    .result-count {
+        margin-top: 15px;
+        font-size: 14px;
+        color: #666;
+    }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2>
+                    <i class="fas fa-graduation-cap text-warning mr-2"></i>@Model.Grade Past Papers
+                </h2>
+                <p class="mb-0">Browse and download past exam papers for @Model.Grade</p>
+            </div>
+            <div>
+                <a href="@Url.Action("PastPapers", "Student")" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Grades
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container papers-container">
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" action="@Url.Action("ViewPastPapersByGrade", "Student")">
+            <input type="hidden" name="grade" value="@Model.Grade" />
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label><i class="fas fa-book"></i> Subject</label>
+                    <select name="subject" class="form-control">
+                        <option value="">All Subjects</option>
+                        @foreach (var subject in Model.Subjects)
+                        {
+                            <option value="@subject" selected="@(Model.SelectedSubject == subject)">@subject</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-calendar"></i> Year</label>
+                    <select name="year" class="form-control">
+                        <option value="">All Years</option>
+                        @for (int i = DateTime.Now.Year; i >= DateTime.Now.Year - 10; i--)
+                        {
+                            <option value="@i" selected="@(Model.SelectedYear == i.ToString())">@i</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-chalkboard"></i> Term</label>
+                    <select name="term" class="form-control">
+                        <option value="">All Terms</option>
+                        <option value="Term 1" selected="@(Model.SelectedTerm == "Term 1")">Term 1</option>
+                        <option value="Term 2" selected="@(Model.SelectedTerm == "Term 2")">Term 2</option>
+                        <option value="Term 3" selected="@(Model.SelectedTerm == "Term 3")">Term 3</option>
+                        <option value="Term 4" selected="@(Model.SelectedTerm == "Term 4")">Term 4</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-filter mr-1"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div class="result-count">
+            <i class="fas fa-file-alt mr-1"></i> Found @Model.Papers.Count past paper(s)
+        </div>
+    </div>
+
+    <!-- Papers List -->
+    @if (Model.Papers.Any())
+    {
+        foreach (var paper in Model.Papers)
+        {
+            <div class="paper-card">
+                <div class="paper-title">@paper.Title</div>
+                <div class="paper-meta">
+                    <span class="meta-badge"><i class="fas fa-book"></i> @paper.Subject</span>
+                    <span class="meta-badge"><i class="fas fa-calendar"></i> @paper.Year</span>
+                    <span class="meta-badge"><i class="fas fa-chalkboard"></i> @paper.Term</span>
+                    <span class="meta-badge"><i class="fas fa-file-alt"></i> @paper.ExamType</span>
+                </div>
+                @if (!string.IsNullOrEmpty(paper.Description))
+                {
+                    <div class="paper-description">@paper.Description</div>
+                }
+                <div class="paper-actions">
+                    <a href="@paper.FilePath" target="_blank" class="btn-download">
+                        <i class="fas fa-download"></i> Download Paper
+                    </a>
+                    @if (!string.IsNullOrEmpty(paper.MemoPath))
+                    {
+                        <a href="@paper.MemoPath" target="_blank" class="btn-view-memo">
+                            <i class="fas fa-file-pdf"></i> View Memo
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h4>No Past Papers Found</h4>
+            <p>No past papers are available for @Model.Grade with the selected filters.</p>
+            <p>Try changing your filters or check back later.</p>
+            <a href="@Url.Action("ViewPastPapersByGrade", "Student", new { grade = Model.Grade })" class="btn btn-outline-primary mt-3">
+                <i class="fas fa-redo"></i> Clear Filters
+            </a>
+        </div>
+    }
+</div>

@@ -1,0 +1,151 @@
+﻿@model List<string>
+
+@{
+    ViewBag.Title = ViewBag.Grade + " - Select Class";
+}
+
+<style>
+    .class-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+    .grade-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .class-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .class-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #28a745;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 40px;
+        color: white;
+    }
+
+    .class-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    .btn-upload {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+        .btn-upload:hover {
+            background: #218838;
+            text-decoration: none;
+        }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            text-decoration: none;
+        }
+</style>
+
+<div class="container class-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-clipboard-list"></i> Class Register
+            </h2>
+            <p>@ViewBag.Grade - Select a class</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ClassRegister", "Admin")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Grades
+            </a>
+        </div>
+    </div>
+
+    <div class="grade-header">
+        <h2><i class="fas fa-graduation-cap"></i> @ViewBag.Grade</h2>
+        <p>Select a class to upload or view the register</p>
+    </div>
+
+    <div class="row">
+        @foreach (var className in Model)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="class-card">
+                    <div class="class-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="class-title">@className</div>
+                    <div>
+                        <a href="@Url.Action("UploadClassRegister", "Admin", new { grade = ViewBag.Grade, className = className })" class="btn-upload">
+                            <i class="fas fa-upload"></i> Upload Register
+                        </a>
+                        <a href="@Url.Action("ViewClassRegisters", "Admin", new { grade = ViewBag.Grade, className = className })" class="btn-view">
+                            <i class="fas fa-eye"></i> View Registers
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

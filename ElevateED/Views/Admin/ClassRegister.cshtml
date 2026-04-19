@@ -1,0 +1,175 @@
+﻿@model List<ElevateED.ViewModels.GradeCardViewModel>
+
+@{
+    ViewBag.Title = "Class Register - Admin";
+}
+
+<style>
+    .register-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        border-bottom: 4px solid transparent;
+    }
+
+        .grade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .grade-card.primary {
+            border-bottom-color: #1e3c72;
+        }
+
+        .grade-card.info {
+            border-bottom-color: #17a2b8;
+        }
+
+        .grade-card.success {
+            border-bottom-color: #28a745;
+        }
+
+        .grade-card.warning {
+            border-bottom-color: #ffc107;
+        }
+
+        .grade-card.danger {
+            border-bottom-color: #dc3545;
+        }
+
+    .grade-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+        .grade-icon.primary {
+            background: #1e3c72;
+        }
+
+        .grade-icon.info {
+            background: #17a2b8;
+        }
+
+        .grade-icon.success {
+            background: #28a745;
+        }
+
+        .grade-icon.warning {
+            background: #ffc107;
+        }
+
+        .grade-icon.danger {
+            background: #dc3545;
+        }
+
+    .grade-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .register-count {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+        .register-count span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+    .btn-select {
+        background: #f8f9fa;
+        color: #1e3c72;
+        border: 1px solid #dee2e6;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+        .btn-select:hover {
+            background: #1e3c72;
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<div class="container register-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-clipboard-list"></i> Class Register
+            </h2>
+            <p>Select a grade to manage class registers</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var grade in Model)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="grade-card @grade.Color" onclick="location.href='@Url.Action("SelectClass", "Admin", new { grade = grade.Grade })'">
+                    <div class="grade-icon @grade.Color">
+                        <i class="@grade.Icon"></i>
+                    </div>
+                    <div class="grade-title">@grade.Grade</div>
+                    <div class="register-count">
+                        <span>@grade.PaperCount</span> register(s) uploaded
+                    </div>
+                    <div class="btn-select">
+                        <i class="fas fa-arrow-right"></i> Manage Classes
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

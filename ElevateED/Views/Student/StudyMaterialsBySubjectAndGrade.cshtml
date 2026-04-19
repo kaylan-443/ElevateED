@@ -1,0 +1,256 @@
+﻿@model List<ElevateED.ViewModels.StudyMaterialListViewModel>
+
+@{
+    ViewBag.Title = ViewBag.Subject + " - " + ViewBag.Grade + " Study Materials";
+}
+
+<style>
+    .materials-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .header-left p {
+        margin: 5px 0 0 0;
+        color: #666;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .subject-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+        .subject-header h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .subject-header .badge {
+            background: #d4af37;
+            color: #1e3c72;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 5px;
+            display: inline-block;
+        }
+
+    .material-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+
+        .material-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .file-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        background: #28a745;
+    }
+
+    .file-info h5 {
+        margin: 0 0 5px 0;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .file-meta {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+        .file-meta span {
+            margin-right: 15px;
+        }
+
+    .btn-download {
+        background: #1e3c72;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+        .btn-download:hover {
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+</style>
+
+<div class="container materials-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-book"></i> Study Materials
+            </h2>
+            <p>@ViewBag.Subject - @ViewBag.Grade</p>
+        </div>
+        <div>
+            <a href="@Url.Action("SelectGrade", "Student", new { subject = ViewBag.Subject })" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Grades
+            </a>
+        </div>
+    </div>
+
+    <!-- Subject Header -->
+    <div class="subject-header">
+        <h2><i class="fas fa-graduation-cap"></i> @ViewBag.Subject</h2>
+        <p>Study materials for @ViewBag.Grade</p>
+        <div>
+            <span class="badge"><i class="fas fa-user-graduate"></i> Your Grade: @ViewBag.StudentGrade</span>
+            <span class="badge"><i class="fas fa-file-alt"></i> @Model.Count material(s) available</span>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h4>No Study Materials Available</h4>
+            <p>There are no study materials uploaded for @ViewBag.Subject - @ViewBag.Grade yet.</p>
+            <p>Please check back later or ask your teacher to upload materials.</p>
+            <a href="@Url.Action("SelectGrade", "Student", new { subject = ViewBag.Subject })" class="btn btn-outline-primary mt-3">
+                <i class="fas fa-arrow-left"></i> Try Another Grade
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="material-card">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="file-icon">
+                            @if (item.FileType != null && item.FileType.Contains("pdf"))
+                            {
+                                <i class="fas fa-file-pdf"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("word") || item.FileType.Contains("document")))
+                            {
+                                <i class="fas fa-file-word"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("excel") || item.FileType.Contains("sheet")))
+                            {
+                                <i class="fas fa-file-excel"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("powerpoint") || item.FileType.Contains("presentation")))
+                            {
+                                <i class="fas fa-file-powerpoint"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-file-alt"></i>
+                            }
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="file-info">
+                            <h5>@item.Title</h5>
+                            <p class="text-muted mb-2">@(item.Description ?? "No description available")</p>
+                            <div class="file-meta">
+                                <span><i class="fas fa-chalkboard-teacher"></i> @item.UploadedByName</span>
+                                <span><i class="fas fa-calendar"></i> @item.UploadedDate.ToString("dd MMM yyyy")</span>
+                                <span><i class="fas fa-hdd"></i> @item.FileSizeFormatted</span>
+                                <span><i class="fas fa-download"></i> @item.DownloadCount downloads</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <a href="@Url.Action("DownloadMaterial", "Student", new { id = item.Id })" class="btn-download">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

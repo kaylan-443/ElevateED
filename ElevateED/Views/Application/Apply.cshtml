@@ -1,0 +1,615 @@
+﻿@model ElevateED.ViewModels.ApplyViewModel
+
+@{
+    ViewBag.Title = "Apply for Enrolment - ElevateED";
+    var grades = ViewBag.Grades as List<ElevateED.Models.Grade>;
+    var streams = ViewBag.Streams as List<ElevateED.Models.Stream>;
+    var activeCycle = ViewBag.ActiveCycle as ElevateED.Models.ApplicationCycle;
+    var isOpen = ViewBag.IsOpen as bool? ?? false;
+    var errorMessage = ViewBag.ErrorMessage as string;
+    var successMessage = ViewBag.SuccessMessage as string;
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+    }
+
+    .application-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border-left: 5px solid var(--accent-gold);
+    }
+
+    .section-title {
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--accent-gold);
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        padding: 12px 15px;
+    }
+
+        .form-control:focus {
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(42, 82, 152, 0.25);
+        }
+
+    .form-group label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .field-validation-error {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .validation-summary-errors {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        color: white;
+        padding: 15px 50px;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        border-radius: 50px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+
+    .cycle-warning {
+        background: white;
+        border-radius: 15px;
+        padding: 50px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin: 40px 0;
+    }
+
+        .cycle-warning h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+        }
+
+        .cycle-warning p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+    .cycle-info {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 5px;
+        color: #155724;
+    }
+
+        .cycle-info i {
+            margin-right: 10px;
+        }
+
+    .file-input-wrapper input[type="file"] {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+        cursor: pointer;
+    }
+
+    .info-message {
+        background: #e7f3ff;
+        border-left: 4px solid var(--primary-blue);
+        padding: 15px;
+        margin-top: 15px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+</style>
+
+<div class="application-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-2">Apply for Enrolment</h1>
+                <p class="lead mb-0">Mpiyakhe High School - @(activeCycle?.AcademicYear ?? DateTime.Now.Year) Academic Year</p>
+            </div>
+            <div class="col-md-4 text-md-right">
+                <i class="fas fa-graduation-cap" style="font-size: 60px; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+  
+
+  
+    @if (!isOpen || activeCycle == null)
+    {
+        <div class="cycle-warning">
+            <i class="fas fa-calendar-times fa-4x mb-3" style="color: #dc3545;"></i>
+            <h3>Applications are currently closed</h3>
+            <p>@(errorMessage ?? "There is no active application cycle at this time.")</p>
+            <p>Please check back later or contact the school administration for more information.</p>
+            <hr />
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary mt-3">
+                <i class="fas fa-home"></i> Return Home
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="cycle-info">
+            <i class="fas fa-calendar-check"></i>
+            <strong>@(successMessage ?? "Applications are open!")</strong>
+        </div>
+
+        using (Html.BeginForm("Apply", "Application", FormMethod.Post, new { enctype = "multipart/form-data", id = "applicationForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            if (!ViewData.ModelState.IsValid)
+            {
+                <div class="validation-summary-errors">
+                    <strong>Please correct the following errors:</strong>
+                    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                </div>
+            }
+
+            <!-- Personal Information -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="fas fa-user"></i> Personal Information</h3>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.FirstName, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", placeholder = "Enter first name" })
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.LastName, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", placeholder = "Enter last name" })
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.DateOfBirth, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.DateOfBirth, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            @Html.ValidationMessageFor(m => m.DateOfBirth, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Gender, new { @class = "required" })
+                            @Html.DropDownListFor(m => m.Gender,
+                                     new SelectList(new[] { "Male", "Female", "Other" }),
+                                     "-- Select Gender --", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.IdentityNumber, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.IdentityNumber, new { @class = "form-control", placeholder = "ID or Passport number" })
+                            @Html.ValidationMessageFor(m => m.IdentityNumber, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Email, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", placeholder = "your.email@example.com", type = "email" })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.CellPhone, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.CellPhone, new { @class = "form-control", placeholder = "082 123 4567" })
+                            @Html.ValidationMessageFor(m => m.CellPhone, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhysicalAddress, new { @class = "required" })
+                            @Html.TextAreaFor(m => m.PhysicalAddress, new { @class = "form-control", rows = 3, placeholder = "Street address, City, Postal Code" })
+                            @Html.ValidationMessageFor(m => m.PhysicalAddress, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Information -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="fas fa-book"></i> Academic Information</h3>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PreviousSchool, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.PreviousSchool, new { @class = "form-control", placeholder = "Name of previous school" })
+                            @Html.ValidationMessageFor(m => m.PreviousSchool, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.HighestGradePassed, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.HighestGradePassed, new { @class = "form-control", placeholder = "e.g., Grade 9" })
+                            @Html.ValidationMessageFor(m => m.HighestGradePassed, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.YearCompleted, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.YearCompleted, new { @class = "form-control", type = "number", min = "2000", max = "2026", placeholder = "2025" })
+                            @Html.ValidationMessageFor(m => m.YearCompleted, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.AcademicAverage)
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.AcademicAverage, new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "100", placeholder = "0-100" })
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.AcademicAverage, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.GradeApplyingFor, new { @class = "required" })
+                            <select name="GradeApplyingFor" id="GradeApplyingFor" class="form-control" required>
+                                <option value="">-- Select Grade --</option>
+                                @if (grades != null)
+                                {
+                                    foreach (var grade in grades)
+                                    {
+                                        <option value="@grade.Name">@grade.Name</option>
+                                    }
+                                }
+                            </select>
+                            @Html.ValidationMessageFor(m => m.GradeApplyingFor, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="streamChoiceContainer" style="display: none;">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.StreamChoice, new { @class = "required" })
+                            <select name="StreamChoice" id="StreamChoice" class="form-control">
+                                <option value="">-- Select Stream --</option>
+                                @if (streams != null)
+                                {
+                                    foreach (var stream in streams)
+                                    {
+                                        <option value="@stream.Name">@stream.Name</option>
+                                    }
+                                }
+                            </select>
+                            @Html.ValidationMessageFor(m => m.StreamChoice, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-message" id="streamInfo">
+                            <i class="fas fa-info-circle"></i> <strong>Stream Information:</strong> Your subject selection will determine your career path.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-message" id="grade8And9Info" style="display: none;">
+                    <i class="fas fa-graduation-cap"></i> <strong>Grade 8 & 9 Curriculum:</strong> Students study all core subjects.
+                </div>
+            </div>
+
+            
+           
+            <!-- Parent/Guardian Information -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="fas fa-users"></i> Parent/Guardian Information</h3>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentName, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.ParentName, new { @class = "form-control", placeholder = "Full name of parent/guardian" })
+                            @Html.ValidationMessageFor(m => m.ParentName, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentRelationship, new { @class = "required" })
+                            @Html.DropDownListFor(m => m.ParentRelationship,
+                                     new SelectList(new[] { "Mother", "Father", "Guardian", "Grandparent", "Other" }),
+                                     "-- Select Relationship --", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.ParentRelationship, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentIdNumber, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.ParentIdNumber, new { @class = "form-control", placeholder = "Parent ID number" })
+                            @Html.ValidationMessageFor(m => m.ParentIdNumber, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentCellPhone, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.ParentCellPhone, new { @class = "form-control", placeholder = "Parent's cell phone number" })
+                            @Html.ValidationMessageFor(m => m.ParentCellPhone, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentEmail, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.ParentEmail, new { @class = "form-control", placeholder = "parent@example.com", type = "email" })
+                            @Html.ValidationMessageFor(m => m.ParentEmail, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentWorkPhone)
+                            @Html.TextBoxFor(m => m.ParentWorkPhone, new { @class = "form-control", placeholder = "Work phone (optional)" })
+                            @Html.ValidationMessageFor(m => m.ParentWorkPhone, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentOccupation)
+                            @Html.TextBoxFor(m => m.ParentOccupation, new { @class = "form-control", placeholder = "Occupation (optional)" })
+                            @Html.ValidationMessageFor(m => m.ParentOccupation, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentEmployer)
+                            @Html.TextBoxFor(m => m.ParentEmployer, new { @class = "form-control", placeholder = "Employer (optional)" })
+                            @Html.ValidationMessageFor(m => m.ParentEmployer, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ParentWorkAddress)
+                            @Html.TextBoxFor(m => m.ParentWorkAddress, new { @class = "form-control", placeholder = "Work address (optional)" })
+                            @Html.ValidationMessageFor(m => m.ParentWorkAddress, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="fas fa-ambulance"></i> Emergency Contact</h3>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.EmergencyContactName, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.EmergencyContactName, new { @class = "form-control", placeholder = "Full name" })
+                            @Html.ValidationMessageFor(m => m.EmergencyContactName, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.EmergencyContactPhone, new { @class = "required" })
+                            @Html.TextBoxFor(m => m.EmergencyContactPhone, new { @class = "form-control", placeholder = "Phone number" })
+                            @Html.ValidationMessageFor(m => m.EmergencyContactPhone, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.EmergencyContactRelationship)
+                            @Html.TextBoxFor(m => m.EmergencyContactRelationship, new { @class = "form-control", placeholder = "Relationship (optional)" })
+                            @Html.ValidationMessageFor(m => m.EmergencyContactRelationship, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Uploads -->
+            <div class="form-section">
+                <h3 class="section-title"><i class="fas fa-file-upload"></i> Required Documents</h3>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Please upload clear, legible copies (PDF, JPG, or PNG format).<br />
+                    <strong>Max file size per document: 8MB | Total max: 30MB</strong>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="required">ID Document / Birth Certificate</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" name="IdDocument" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            @Html.ValidationMessageFor(m => m.IdDocument, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="required">Previous School Report Card</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" name="ReportCard" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            @Html.ValidationMessageFor(m => m.ReportCard, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="required">Proof of Residence</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" name="ProofOfResidence" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            @Html.ValidationMessageFor(m => m.ProofOfResidence, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="required">Parent/Guardian ID Document</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" name="ParentIdDocument" accept=".pdf,.jpg,.jpeg,.png" required />
+                            </div>
+                            @Html.ValidationMessageFor(m => m.ParentIdDocument, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Declaration -->
+            <div class="form-section">
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="declaration" name="declaration" required />
+                        <label class="custom-control-label" for="declaration">
+                            I hereby declare that all information provided is true and accurate to the best of my knowledge.
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="text-center mb-5">
+                <button type="submit" class="btn btn-submit" id="submitBtn">
+                    <i class="fas fa-paper-plane mr-2"></i>Submit Application
+                </button>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function toggleStreamChoice() {
+                var selectedGrade = $('#GradeApplyingFor').val();
+                var streamContainer = $('#streamChoiceContainer');
+                var grade8And9Info = $('#grade8And9Info');
+                var streamSelect = $('#StreamChoice');
+
+                var gradeNumber = 0;
+                if (selectedGrade && selectedGrade !== '') {
+                    var parts = selectedGrade.split(' ');
+                    if (parts.length >= 2) {
+                        gradeNumber = parseInt(parts[1]);
+                    }
+                }
+
+                if (gradeNumber >= 10) {
+                    streamContainer.slideDown(300);
+                    grade8And9Info.slideUp(300);
+                    streamSelect.prop('required', true);
+                } else if (gradeNumber >= 8 && gradeNumber <= 9) {
+                    streamContainer.slideUp(300);
+                    grade8And9Info.slideDown(300);
+                    streamSelect.prop('required', false);
+                    streamSelect.val('');
+                } else {
+                    streamContainer.slideUp(300);
+                    grade8And9Info.slideUp(300);
+                    streamSelect.prop('required', false);
+                }
+            }
+
+            toggleStreamChoice();
+            $('#GradeApplyingFor').on('change', toggleStreamChoice);
+
+            $('#applicationForm').on('submit', function () {
+                var submitBtn = $('#submitBtn');
+                submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+                submitBtn.prop('disabled', true);
+            });
+        });
+    </script>
+}

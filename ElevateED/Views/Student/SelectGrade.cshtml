@@ -1,0 +1,212 @@
+﻿@{
+    ViewBag.Title = ViewBag.Subject + " - Select Grade";
+    var subject = ViewBag.Subject as string;
+    var studentGrade = ViewBag.StudentGrade as string;
+    var availableGrades = ViewBag.AvailableGrades as List<string>;
+}
+
+<style>
+    .grade-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .header-left p {
+        margin: 5px 0 0 0;
+        color: #666;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .subject-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+        .subject-header h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .subject-header .badge {
+            background: #d4af37;
+            color: #1e3c72;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        border-bottom: 4px solid #28a745;
+    }
+
+        .grade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .grade-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #28a745;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 40px;
+        color: white;
+    }
+
+    .grade-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .material-count {
+        font-size: 14px;
+        color: #666;
+        margin-top: 10px;
+    }
+
+        .material-count span {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+    .btn-select {
+        background: #f8f9fa;
+        color: #28a745;
+        border: 2px solid #28a745;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+        .btn-select:hover {
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+        }
+
+    .student-grade-highlight {
+        background: #e8f5e9;
+        border: 2px solid #28a745;
+    }
+</style>
+
+<div class="container grade-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-book"></i> Study Materials
+            </h2>
+            <p>@subject - Select your grade</p>
+        </div>
+        <div>
+            <a href="@Url.Action("StudyMaterials", "Student")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> All Subjects
+            </a>
+        </div>
+    </div>
+
+    <!-- Subject Header -->
+    <div class="subject-header">
+        <h2><i class="fas fa-graduation-cap"></i> @subject</h2>
+        <p>Select your grade to view relevant study materials</p>
+        <div class="badge">
+            <i class="fas fa-info-circle"></i> Your grade: @studentGrade
+        </div>
+    </div>
+
+    <!-- Grades Grid -->
+    <div class="row">
+        @foreach (var grade in availableGrades)
+        {
+            var isStudentGrade = (grade == studentGrade);
+            <div class="col-md-4 mb-4">
+                <div class="grade-card @(isStudentGrade ? "student-grade-highlight" : "")" onclick="location.href='@Url.Action("StudyMaterialsBySubjectAndGrade", "Student", new { subject = subject, grade = grade })'">
+                    <div class="grade-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="grade-title">@grade</div>
+                    <div class="material-count">
+                        @{
+                            var materialCount = ViewBag.MaterialCounts != null && ViewBag.MaterialCounts.ContainsKey(grade) ? ViewBag.MaterialCounts[grade] : 0;
+                        }
+                        <span>@materialCount</span> material(s) available
+                    </div>
+                    @if (isStudentGrade)
+                    {
+                        <div class="btn-select" style="background: #28a745; color: white; border: none;">
+                            <i class="fas fa-star"></i> Your Grade
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="btn-select">
+                            <i class="fas fa-arrow-right"></i> Browse Materials
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

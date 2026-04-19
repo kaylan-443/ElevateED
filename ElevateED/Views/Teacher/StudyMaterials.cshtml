@@ -1,0 +1,218 @@
+﻿@model IEnumerable<ElevateED.ViewModels.StudyMaterialListViewModel>
+
+@{
+    ViewBag.Title = "My Study Materials - Teacher Dashboard";
+}
+
+<style>
+    .materials-container {
+        padding: 20px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        color: #1e3c72;
+        margin: 0;
+    }
+
+    .btn-upload {
+        background: #28a745;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-upload:hover {
+            background: #218838;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .material-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+
+        .material-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+    .file-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        background: #28a745;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-right: 5px;
+    }
+
+    .badge-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .badge-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-delete:hover {
+            background: #c82333;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container materials-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-book"></i> My Study Materials
+            </h2>
+            <small class="text-muted">Manage learning resources for your students</small>
+        </div>
+        <a href="@Url.Action("UploadStudyMaterial", "Teacher")" class="btn-upload">
+            <i class="fas fa-cloud-upload-alt"></i> Upload New Material
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h4>No study materials uploaded yet</h4>
+            <p>Click the "Upload New Material" button to share resources with your students.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="material-card">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="file-icon">
+                            @if (item.FileType != null && item.FileType.Contains("pdf"))
+                            {
+                                <i class="fas fa-file-pdf"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("word") || item.FileType.Contains("document")))
+                            {
+                                <i class="fas fa-file-word"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("excel") || item.FileType.Contains("sheet")))
+                            {
+                                <i class="fas fa-file-excel"></i>
+                            }
+                            else if (item.FileType != null && (item.FileType.Contains("powerpoint") || item.FileType.Contains("presentation")))
+                            {
+                                <i class="fas fa-file-powerpoint"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-file-alt"></i>
+                            }
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="mb-1">@item.Title</h5>
+                        <p class="text-muted mb-2">@(item.Description ?? "No description")</p>
+                        <div class="mb-2">
+                            <span class="badge badge-info">@item.Subject</span>
+                            <span class="badge badge-secondary">@item.GradeLevel</span>
+                            <span class="badge badge-secondary">@item.FileSizeFormatted</span>
+                            <span class="badge badge-secondary"><i class="fas fa-download"></i> @item.DownloadCount downloads</span>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> Uploaded: @item.UploadedDate.ToString("dd MMM yyyy")
+                        </small>
+                    </div>
+                    <div class="col-auto">
+                        <a href="@Url.Action("DeleteStudyMaterial", "Teacher", new { id = item.Id })" class="btn-delete">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <div class="mt-4">
+        <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>

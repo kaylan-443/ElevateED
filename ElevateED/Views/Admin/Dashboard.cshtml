@@ -1,0 +1,660 @@
+﻿@model ElevateED.ViewModels.AdminDashboardViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Admin Dashboard";
+    var stats = Model.Stats;
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+        --coming-soon-gray: #6c757d;
+    }
+
+    /* Page Container */
+    .admin-dashboard {
+        padding: 20px 0 40px 0;
+    }
+
+    /* Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left {
+        flex: 1;
+    }
+
+    .header-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .dashboard-title {
+        margin: 0;
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+        .dashboard-title i {
+            color: var(--accent-gold);
+            margin-right: 10px;
+        }
+
+    .btn-register-teacher {
+        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+        .btn-register-teacher:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+
+        .btn-register-teacher i {
+            margin-right: 8px;
+        }
+
+    /* Stats Cards */
+    .stats-card {
+        background: white;
+        padding: 20px 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .stats-number {
+        font-size: 32px;
+        font-weight: bold;
+        color: var(--primary-blue);
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    .stats-label {
+        color: #666;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Quick Action Cards */
+    .action-card {
+        background: white;
+        padding: 20px 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        text-align: center;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        border-top: 4px solid transparent;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+
+        .action-card.pending-apps {
+            border-top-color: var(--warning-orange);
+        }
+
+        .action-card.users {
+            border-top-color: var(--primary-blue);
+        }
+
+        .action-card.classes {
+            border-top-color: var(--info-blue);
+        }
+
+        .action-card.timetable {
+            border-top-color: #6c757d;
+        }
+
+        .action-card.announcements {
+            border-top-color: var(--accent-gold);
+        }
+
+        .action-card.reports {
+            border-top-color: var(--danger-red);
+        }
+
+        .action-card.analytics {
+            border-top-color: var(--success-green);
+        }
+
+    .action-icon-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        margin: 0 auto;
+    }
+
+    .action-card.pending-apps .action-icon {
+        background: var(--warning-orange);
+    }
+
+    .action-card.users .action-icon {
+        background: var(--primary-blue);
+    }
+
+    .action-card.classes .action-icon {
+        background: var(--info-blue);
+    }
+
+    .action-card.timetable .action-icon {
+        background: #6c757d;
+    }
+
+    .action-card.announcements .action-icon {
+        background: var(--accent-gold);
+    }
+
+    .action-card.reports .action-icon {
+        background: var(--danger-red);
+    }
+
+    .action-card.analytics .action-icon {
+        background: var(--success-green);
+    }
+
+    .badge-notification {
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        background: var(--danger-red);
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        border: 2px solid white;
+    }
+
+    .action-card h5 {
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .action-card p {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        flex-grow: 1;
+    }
+
+    .btn-action {
+        background: #f8f9fa;
+        color: #666;
+        border: 1px solid #dee2e6;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+
+        .btn-action:hover {
+            background: var(--primary-blue);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-action i {
+            font-size: 10px;
+        }
+
+    .btn-coming-soon {
+        background: #e9ecef;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+        white-space: nowrap;
+        cursor: not-allowed;
+    }
+
+        .btn-coming-soon i {
+            font-size: 10px;
+            margin-right: 4px;
+        }
+
+        .btn-coming-soon:hover {
+            background: #e9ecef;
+            color: #6c757d;
+            text-decoration: none;
+        }
+
+    /* Section Headers */
+    .section-header {
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin: 30px 0 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 3px solid var(--accent-gold);
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+    }
+
+        .section-header i {
+            margin-right: 10px;
+            color: var(--accent-gold);
+        }
+
+    /* Footer */
+    .dashboard-footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        color: #999;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .footer-links {
+        display: flex;
+        gap: 20px;
+    }
+
+        .footer-links a {
+            color: #999;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+            .footer-links a:hover {
+                color: var(--primary-blue);
+            }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-right {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .dashboard-footer {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="container admin-dashboard">
+
+    <!-- Header with Logout and Register Teacher -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h2 class="dashboard-title">
+                <i class="fas fa-user-shield"></i> Admin Dashboard
+            </h2>
+            <small class="text-muted">Welcome back, Administrator</small>
+        </div>
+        <div class="header-right">
+            <a href="@Url.Action("RegisterTeacher", "Admin")" class="btn btn-register-teacher">
+                <i class="fas fa-chalkboard-teacher"></i> Register Teacher
+            </a>
+            <form action="@Url.Action("LogOff", "Account")" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- Application Statistics -->
+    <h5 class="section-header">
+        <i class="fas fa-chart-bar"></i> Application Statistics
+    </h5>
+
+    <div class="row">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number">@stats.Total</div>
+                <div class="stats-label">Total</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number text-warning">@stats.Pending</div>
+                <div class="stats-label">Pending</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number text-info">@stats.UnderReview</div>
+                <div class="stats-label">Under Review</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number text-success">@stats.Approved</div>
+                <div class="stats-label">Approved</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number text-danger">@stats.Rejected</div>
+                <div class="stats-label">Rejected</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="stats-card">
+                <div class="stats-number text-primary">
+                    @{
+                        int rate = 0;
+                        if (stats.Total > 0)
+                        {
+                            rate = (stats.Approved * 100) / stats.Total;
+                        }
+                        @(rate + "%")
+                    }
+                </div>
+                <div class="stats-label">Approval Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Grid -->
+    <h5 class="section-header" style="margin-top: 0;">
+        <i class="fas fa-th-large"></i> Quick Actions
+    </h5>
+
+    <div class="row">
+        <!-- 1. Pending Applications -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("PendingApplications", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card pending-apps">
+                    <div>
+                        <div class="action-icon-wrapper">
+                            <div class="action-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <span class="badge-notification">@stats.Pending</span>
+                        </div>
+                        <h5>Pending Applications</h5>
+                        <p>Review new student applications</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> View All
+                    </span>
+                </div>
+            </a>
+        </div>
+        <!-- Add this new card: Application Cycles -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ApplicationCycles", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card" style="border-top-color: #9b59b6;">
+                    <div>
+                        <div class="action-icon" style="background: #9b59b6;">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h5>Application Cycles</h5>
+                        <p>Manage application periods</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Manage
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 2. Manage Users -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ManageUsers", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card users">
+                    <div>
+                        <div class="action-icon-wrapper">
+                            <div class="action-icon">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                        </div>
+                        <h5>Manage Users</h5>
+                        <p>Students, Teachers & Parents</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Manage
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. Class Structure -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ClassStructure", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card classes">
+                    <div>
+                        <div class="action-icon">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <h5>Class Structure</h5>
+                        <p>Classes & Teacher Assignments</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> View
+                    </span>
+                </div>
+            </a>
+        </div>
+        <!-- 5. Class Register -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ClassRegister", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card" style="border-top-color: #1abc9c;">
+                    <div>
+                        <div class="action-icon" style="background: #1abc9c;">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <h5>Class Register</h5>
+                        <p>Upload class registers for teachers</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Manage
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 4. Time Table -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("TimeTable", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card timetable">
+                    <div>
+                        <div class="action-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h5>Time Table</h5>
+                        <p>Manage school timetable</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Manage
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 5. Send Announcements (Active) -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("SendAnnouncement", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card announcements" style="border-top-color: var(--accent-gold);">
+                    <div>
+                        <div class="action-icon" style="background: var(--accent-gold);">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <h5>Send Announcements</h5>
+                        <p>Broadcast to all users</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Send
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 6. View Issues (Active) -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("Issues", "Admin")" style="text-decoration: none; color: inherit;">
+                <div class="action-card reports">
+                    <div>
+                        <div class="action-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h5>View Issues</h5>
+                        <p>Student reported issues</p>
+                    </div>
+                    <span class="btn-action">
+                        <i class="fas fa-arrow-right"></i> Manage
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 7. Analytics (Coming Soon) -->
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="action-card analytics" onclick="showComingSoonModal('Analytics Dashboard', 'View detailed analytics including student performance trends, enrollment statistics, teacher effectiveness metrics, and school KPIs.')">
+                <div>
+                    <div class="action-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5>Analytics</h5>
+                    <p>Performance Metrics</p>
+                </div>
+                <span class="btn-coming-soon">
+                    <i class="fas fa-clock"></i> Coming Soon
+                </span>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Footer -->
+    <div class="dashboard-footer">
+        <div>
+            <i class="fas fa-info-circle mr-1"></i>
+            ElevateED School Management System v1.0 | Mpiyakhe High School
+        </div>
+        <div class="footer-links">
+            <a href="@Url.Action("RegisterTeacher", "Admin")" class="btn-footer-register">
+                <i class="fas fa-chalkboard-teacher"></i> Register Teacher
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="text-muted">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="#" class="text-muted">
+                <i class="fas fa-question-circle"></i> Help
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Coming Soon Modal -->
+<div class="modal fade modal-coming-soon" id="comingSoonModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-star"></i> Feature Coming Soon
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <i class="fas fa-tools"></i>
+                <h4 id="comingSoonTitle">Feature Name</h4>
+                <p id="comingSoonDescription" style="color: #666;">
+                    This feature is currently under development and will be available soon.
+                </p>
+                <hr />
+                <small class="text-muted">
+                    <i class="fas fa-clock"></i> Estimated release: Next update
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+                    <i class="fas fa-bell"></i> Notify Me
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showComingSoonModal(featureName, description) {
+        document.getElementById('comingSoonTitle').innerText = featureName;
+        document.getElementById('comingSoonDescription').innerText = description || 'This feature is currently under development and will be available soon.';
+        $('#comingSoonModal').modal('show');
+    }
+</script>

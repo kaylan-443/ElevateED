@@ -1,0 +1,448 @@
+﻿@model ElevateED.ViewModels.StudentDashboardViewModel
+
+@{
+    ViewBag.Title = "Student Dashboard - ElevateED";
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+    }
+
+    .student-dashboard {
+        padding: 20px 0 40px 0;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .dashboard-title {
+        margin: 0;
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+        .dashboard-title i {
+            color: var(--accent-gold);
+            margin-right: 10px;
+        }
+
+    .welcome-card {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .welcome-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .class-badge {
+        display: inline-block;
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 18px;
+        margin-top: 10px;
+    }
+
+    .class-info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+    }
+
+    .class-info-title {
+        color: var(--primary-blue);
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--accent-gold);
+    }
+
+    .class-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .class-info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .class-info-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+    }
+
+    .class-info-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .action-card {
+        background: white;
+        padding: 20px 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        text-align: center;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-top: 4px solid transparent;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .action-card.timetable {
+            border-top-color: var(--info-blue);
+        }
+
+        .action-card.papers {
+            border-top-color: var(--warning-orange);
+        }
+
+        .action-card.material {
+            border-top-color: var(--success-green);
+        }
+
+        .action-card.classwork {
+            border-top-color: #d35400;
+        }
+
+        .action-card.homework {
+            border-top-color: #16a085;
+        }
+
+        .action-card.announcements {
+            border-top-color: var(--info-blue);
+        }
+
+        .action-card.report {
+            border-top-color: var(--danger-red);
+        }
+
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        margin: 0 auto 15px;
+    }
+
+    .action-card.timetable .action-icon {
+        background: var(--info-blue);
+    }
+
+    .action-card.papers .action-icon {
+        background: var(--warning-orange);
+    }
+
+    .action-card.material .action-icon {
+        background: var(--success-green);
+    }
+
+    .action-card.classwork .action-icon {
+        background: #d35400;
+    }
+
+    .action-card.homework .action-icon {
+        background: #16a085;
+    }
+
+    .action-card.announcements .action-icon {
+        background: var(--info-blue);
+    }
+
+    .action-card.report .action-icon {
+        background: var(--danger-red);
+    }
+
+    .action-card h5 {
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .action-card p {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        flex-grow: 1;
+    }
+
+    .btn-view {
+        background: var(--info-blue);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .section-header {
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin: 30px 0 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 3px solid var(--accent-gold);
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+    }
+
+        .section-header i {
+            margin-right: 10px;
+            color: var(--accent-gold);
+        }
+
+    .dashboard-footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        color: #999;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+</style>
+
+<div class="container student-dashboard">
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h2 class="dashboard-title">
+                <i class="fas fa-user-graduate"></i> Student Dashboard
+            </h2>
+            <small class="text-muted">Welcome back, @Model.FullName</small>
+        </div>
+        <div class="header-right">
+            <a href="@Url.Action("Settings", "Student")" class="btn btn-outline-secondary">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <form action="@Url.Action("LogOff", "Account")" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="welcome-card">
+        <div class="welcome-title">
+            <i class="fas fa-graduation-cap"></i> @Model.FullName
+        </div>
+        <p>Welcome to your learning dashboard. Stay updated with your classes, assignments, and school activities.</p>
+        <div class="class-badge">
+            <i class="fas fa-chalkboard"></i> @Model.ClassName
+        </div>
+    </div>
+
+    <div class="class-info-card">
+        <div class="class-info-title">
+            <i class="fas fa-info-circle"></i> Your Class Information
+        </div>
+        <div class="class-info-grid">
+            <div class="class-info-item">
+                <div class="class-info-icon"><i class="fas fa-id-card"></i></div>
+                <div class="class-info-text">
+                    <div class="class-info-label">Student Number</div>
+                    <div class="class-info-value">@Model.StudentNumber</div>
+                </div>
+            </div>
+            <div class="class-info-item">
+                <div class="class-info-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="class-info-text">
+                    <div class="class-info-label">Grade</div>
+                    <div class="class-info-value">@Model.Grade</div>
+                </div>
+            </div>
+            <div class="class-info-item">
+                <div class="class-info-icon"><i class="fas fa-users"></i></div>
+                <div class="class-info-text">
+                    <div class="class-info-label">Class</div>
+                    <div class="class-info-value">@Model.ClassName</div>
+                </div>
+            </div>
+            <div class="class-info-item">
+                <div class="class-info-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="class-info-text">
+                    <div class="class-info-label">Class Teacher</div>
+                    <div class="class-info-value">@(string.IsNullOrEmpty(Model.ClassTeacher) ? "To be assigned" : Model.ClassTeacher)</div>
+                </div>
+            </div>
+            <div class="class-info-item">
+                <div class="class-info-icon"><i class="fas fa-flag-checkered"></i></div>
+                <div class="class-info-text">
+                    <div class="class-info-label">Status</div>
+                    <div class="class-info-value">@Model.Status</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="section-header">
+        <i class="fas fa-th-large"></i> Learning Tools
+    </h5>
+
+    <div class="row">
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("Timetable", "Student")" class="action-card timetable">
+                <div>
+                    <div class="action-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <h5>My Time Table</h5>
+                    <p>View your weekly schedule</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> View</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("PastPapers", "Student")" class="action-card papers">
+                <div>
+                    <div class="action-icon"><i class="fas fa-archive"></i></div>
+                    <h5>Past Papers</h5>
+                    <p>Previous exam papers</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> Browse</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("StudyMaterials", "Student")" class="action-card material">
+                <div>
+                    <div class="action-icon"><i class="fas fa-book"></i></div>
+                    <h5>Study Material</h5>
+                    <p>Notes & resources</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> Browse</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("Homework", "Student")" class="action-card homework">
+                <div>
+                    <div class="action-icon"><i class="fas fa-home"></i></div>
+                    <h5>Homework</h5>
+                    <p>View and submit</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> View</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("Classwork", "Student")" class="action-card classwork">
+                <div>
+                    <div class="action-icon"><i class="fas fa-chalkboard"></i></div>
+                    <h5>Classwork</h5>
+                    <p>Class activities</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> View</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ViewAnnouncements", "Student")" class="action-card announcements">
+                <div>
+                    <div class="action-icon"><i class="fas fa-bullhorn"></i></div>
+                    <h5>Announcements</h5>
+                    <p>School updates</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> View</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("ReportIssue", "Student")" class="action-card report">
+                <div>
+                    <div class="action-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h5>Report Problem</h5>
+                    <p>Report bullying, issues</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> Report</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="@Url.Action("MyIssues", "Student")" class="action-card report" style="border-top-color: #8e44ad;">
+                <div>
+                    <div class="action-icon" style="background: #8e44ad;"><i class="fas fa-clipboard-list"></i></div>
+                    <h5>My Issues</h5>
+                    <p>View my reports</p>
+                </div>
+                <span class="btn-view"><i class="fas fa-arrow-right"></i> View</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="dashboard-footer">
+        <div>
+            <i class="fas fa-info-circle mr-1"></i>
+            ElevateED Student Portal v1.0 | Mpiyakhe High School
+        </div>
+        <div class="footer-links">
+            <a href="@Url.Action("Dashboard", "Student")" class="text-muted">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="text-muted">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="#" class="text-muted">
+                <i class="fas fa-question-circle"></i> Help
+            </a>
+        </div>
+    </div>
+</div>

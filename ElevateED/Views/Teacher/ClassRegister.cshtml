@@ -1,0 +1,416 @@
+﻿@model List<ElevateED.ViewModels.ClassRegisterViewModel>
+@{
+    ViewBag.Title = "Class Register - Teacher Dashboard";
+    var teacherName = ViewBag.TeacherName as string ?? "Teacher";
+
+    // Safely get flags with null checks
+    var showGradeSelection = ViewBag.ShowGradeSelection as bool? ?? false;
+    var showClassSelection = ViewBag.ShowClassSelection as bool? ?? false;
+    var showRegisters = ViewBag.ShowRegisters as bool? ?? false;
+
+    // Safely get lists with null checks
+    var grades = ViewBag.Grades as List<string> ?? new List<string>();
+    var classes = ViewBag.Classes as List<string> ?? new List<string>();
+    var selectedGrade = ViewBag.Grade as string ?? "";
+    var selectedClass = ViewBag.ClassName as string ?? "";
+
+    // If no flags are set, default to grade selection
+    if (!showGradeSelection && !showClassSelection && !showRegisters)
+    {
+        showGradeSelection = true;
+    }
+}
+
+<style>
+    .register-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .breadcrumb-path {
+        background: #f8f9fa;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .breadcrumb-link {
+        color: #1e3c72;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .breadcrumb-link:hover {
+            text-decoration: underline;
+        }
+
+    .selection-grid {
+        margin-top: 20px;
+    }
+
+    .grade-card, .class-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        margin-bottom: 20px;
+        border: none;
+    }
+
+        .grade-card:hover, .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .grade-card {
+        border-bottom: 4px solid;
+    }
+
+        .grade-card.grade-8 {
+            border-bottom-color: #1e3c72;
+        }
+
+        .grade-card.grade-9 {
+            border-bottom-color: #17a2b8;
+        }
+
+        .grade-card.grade-10 {
+            border-bottom-color: #28a745;
+        }
+
+        .grade-card.grade-11 {
+            border-bottom-color: #ffc107;
+        }
+
+        .grade-card.grade-12 {
+            border-bottom-color: #dc3545;
+        }
+
+    .card-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+    .grade-8 .card-icon {
+        background: #1e3c72;
+    }
+
+    .grade-9 .card-icon {
+        background: #17a2b8;
+    }
+
+    .grade-10 .card-icon {
+        background: #28a745;
+    }
+
+    .grade-11 .card-icon {
+        background: #ffc107;
+    }
+
+    .grade-12 .card-icon {
+        background: #dc3545;
+    }
+
+    .class-card .card-icon {
+        background: #1abc9c;
+    }
+
+    .card-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .card-subtitle {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .register-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 4px solid #28a745;
+    }
+
+    .register-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 10px;
+    }
+
+    .register-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container register-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-clipboard-list"></i> Class Register
+            </h2>
+            @if (showGradeSelection)
+            {
+                <p>Select a grade to view class registers</p>
+            }
+            else if (showClassSelection)
+            {
+                <p>Select a class in @selectedGrade</p>
+            }
+            else if (showRegisters)
+            {
+                <p>Viewing registers for @selectedClass</p>
+            }
+        </div>
+        <div>
+            @if (showGradeSelection)
+            {
+                <a href="@Url.Action("Dashboard", "Teacher")" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            }
+            else if (showClassSelection)
+            {
+                <a href="@Url.Action("ClassRegister", "Teacher")" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Grades
+                </a>
+            }
+            else if (showRegisters)
+            {
+                <a href="@Url.Action("SelectClassRegisterClass", "Teacher", new { grade = selectedGrade })" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back to Classes
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3><i class="fas fa-chalkboard-teacher"></i> @teacherName</h3>
+        <p class="mb-0">
+            @if (showGradeSelection)
+            {
+                <i class="fas fa-info-circle"></i> <text>Choose a grade to see available classes</text>
+            }
+            else if (showClassSelection)
+            {
+                <i class="fas fa-info-circle"></i> <text>Choose a class to view its register</text>
+            }
+            else if (showRegisters)
+            {
+                <i class="fas fa-info-circle"></i> <text>Viewing uploaded class registers</text>
+            }
+        </p>
+    </div>
+
+    @* STEP 1: Show all grades *@
+    @if (showGradeSelection && grades.Any())
+    {
+        <div class="selection-grid">
+            <div class="row">
+                @foreach (var grade in grades)
+                {
+                    var gradeClass = grade.ToLower().Replace(" ", "-");
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="grade-card @gradeClass" onclick="location.href='@Url.Action("SelectClassRegisterClass", "Teacher", new { grade = grade })'">
+                            <div class="card-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="card-title">@grade</div>
+                            <div class="card-subtitle">Click to view classes</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (showGradeSelection && !grades.Any())
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> No grades available.
+        </div>
+    }
+
+    @* STEP 2: Show classes for selected grade *@
+    @if (showClassSelection)
+    {
+        <div class="breadcrumb-path">
+            <a href="@Url.Action("ClassRegister", "Teacher")" class="breadcrumb-link">All Grades</a>
+            <span class="mx-2">/</span>
+            <span>@selectedGrade</span>
+        </div>
+
+        if (classes.Any())
+        {
+            <div class="selection-grid">
+                <div class="row">
+                    @foreach (var className in classes)
+                    {
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="class-card" onclick="location.href='@Url.Action("ViewClassRegisters", "Teacher", new { grade = selectedGrade, className = className })'">
+                                <div class="card-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="card-title">@className</div>
+                                <div class="card-subtitle">View class register</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> No classes available for @selectedGrade.
+            </div>
+        }
+    }
+
+    @* STEP 3: Show registers for selected class *@
+    @if (showRegisters)
+    {
+        <div class="breadcrumb-path">
+            <a href="@Url.Action("ClassRegister", "Teacher")" class="breadcrumb-link">All Grades</a>
+            <span class="mx-2">/</span>
+            <a href="@Url.Action("SelectClassRegisterClass", "Teacher", new { grade = selectedGrade })" class="breadcrumb-link">@selectedGrade</a>
+            <span class="mx-2">/</span>
+            <span>@selectedClass</span>
+        </div>
+
+        if (Model == null || !Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h4>No Registers Uploaded</h4>
+                <p>No class registers have been uploaded for @selectedClass yet.</p>
+                <p class="text-muted">Please contact the administrator if you need a register uploaded.</p>
+            </div>
+        }
+        else
+        {
+            foreach (var register in Model)
+            {
+                <div class="register-card">
+                    <div class="register-title">
+                        <i class="fas fa-file-alt"></i> @register.Term @register.Year
+                    </div>
+                    <div class="register-meta">
+                        <span><i class="fas fa-calendar"></i> Uploaded: @register.UploadedAt.ToString("dd MMM yyyy")</span>
+                        <span><i class="fas fa-user"></i> Uploaded by: @register.UploadedByName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(register.Description))
+                    {
+                        <p class="text-muted">@register.Description</p>
+                    }
+                    <div>
+                        <a href="@register.FilePath" target="_blank" class="btn-view">
+                            <i class="fas fa-eye"></i> View Register
+                        </a>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>

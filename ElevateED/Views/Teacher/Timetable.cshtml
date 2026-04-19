@@ -1,0 +1,120 @@
+﻿@{
+    ViewBag.Title = "Time Table - Teacher Dashboard";
+    var teacherName = ViewBag.TeacherName as string;
+}
+
+<style>
+    .timetable-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .option-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+
+        .option-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+    .option-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+
+        .option-icon i {
+            font-size: 50px;
+            color: white;
+        }
+
+        .option-icon.teacher {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .option-icon.learners {
+            background: linear-gradient(135deg, #17a2b8, #1abc9c);
+        }
+
+    .option-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 15px;
+    }
+
+    .option-description {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="display-4">
+                <i class="fas fa-calendar-alt text-warning mr-3"></i>Time Table
+            </h1>
+            <p class="lead mb-0">Welcome back, @teacherName</p>
+            <p class="mt-2">Select which timetable you want to view</p>
+        </div>
+    </div>
+</div>
+
+<div class="container timetable-container">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="option-card" onclick="location.href='@Url.Action("ViewTeacherTimetable", "Teacher")'">
+                <div class="option-icon teacher">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h2 class="option-title">My Timetable</h2>
+                <p class="option-description">
+                    <i class="fas fa-calendar-check text-success mr-1"></i> View your personal teaching schedule<br>
+                    <i class="fas fa-clock text-info mr-1"></i> See your daily and weekly classes<br>
+                    <i class="fas fa-map-marker-alt text-primary mr-1"></i> Check venues and times
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="option-card" onclick="location.href='@Url.Action("ViewLearnersTimetable", "Teacher")'">
+                <div class="option-icon learners">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h2 class="option-title">Class Timetables</h2>
+                <p class="option-description">
+                    <i class="fas fa-users text-success mr-1"></i> View timetables for your classes<br>
+                    <i class="fas fa-graduation-cap text-info mr-1"></i> See what your learners are studying<br>
+                    <i class="fas fa-chalkboard text-primary mr-1"></i> Plan your lessons accordingly
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>

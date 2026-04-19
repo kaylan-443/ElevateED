@@ -1,0 +1,743 @@
+﻿@model List<ElevateED.Models.ApplicationCycle>
+
+@{
+    ViewBag.Title = "Application Cycles - Admin";
+}
+
+<style>
+    .cycles-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .cycle-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 5px solid #ddd;
+    }
+
+        .cycle-card.active {
+            border-left-color: #28a745;
+            background: linear-gradient(to right, white 0%, #f0fff4 100%);
+        }
+
+        .cycle-card.inactive {
+            border-left-color: #6c757d;
+            opacity: 0.8;
+        }
+
+    .cycle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .cycle-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 5px;
+    }
+
+    .cycle-year {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .status-badge {
+        padding: 6px 16px;
+        border-radius: 25px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .cycle-dates {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .date-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #555;
+    }
+
+        .date-item i {
+            color: #1e3c72;
+            width: 20px;
+        }
+
+    .cycle-limits {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .limit-item {
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .limit-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .limit-label {
+        font-size: 11px;
+        color: #888;
+        text-transform: uppercase;
+    }
+
+    .cycle-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #333;
+    }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+    /* Modal Styles */
+    .modal-content {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 20px 25px;
+    }
+
+    .modal-title {
+        font-weight: 700;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px;
+        width: 100%;
+    }
+
+        .form-control:focus {
+            border-color: #1e3c72;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+
+<div class="container cycles-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-calendar-alt"></i> Application Cycles
+            </h2>
+            <p class="text-muted mb-0">Manage application periods and intake limits</p>
+        </div>
+        <div>
+            <button type="button" class="btn-primary-custom" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Create New Cycle
+            </button>
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-plus"></i>
+            <h4>No Application Cycles</h4>
+            <p>Create your first application cycle to start accepting student applications.</p>
+            <button type="button" class="btn-primary-custom mt-3" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Create First Cycle
+            </button>
+        </div>
+    }
+    else
+    {
+        foreach (var cycle in Model)
+        {
+            <div class="cycle-card @(cycle.IsActive ? "active" : "inactive")" id="cycle-@cycle.Id">
+                <div class="cycle-header">
+                    <div>
+                        <div class="cycle-title">@cycle.Name</div>
+                        <div class="cycle-year">
+                            <i class="fas fa-graduation-cap"></i> Academic Year @cycle.AcademicYear
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-badge @(cycle.IsActive ? "status-active" : "status-inactive")">
+                            <i class="fas fa-@(cycle.IsActive ? "check-circle" : "times-circle")"></i>
+                            @(cycle.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="cycle-dates">
+                    <div class="date-item">
+                        <i class="fas fa-play"></i>
+                        <span><strong>Start:</strong> @cycle.StartDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                    <div class="date-item">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span><strong>Deadline:</strong> @cycle.DeadlineDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                    <div class="date-item">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>
+                            <strong>Status:</strong>
+                            @if (DateTime.Now < cycle.StartDate)
+                            {
+                                <span class="text-info">Upcoming</span>
+                            }
+                            else if (DateTime.Now > cycle.DeadlineDate)
+                            {
+                                <span class="text-danger">Closed</span>
+                            }
+                            else
+                            {
+                                <span class="text-success">Open for Applications</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <div class="cycle-limits">
+                    @if (cycle.Grade8Limit.HasValue)
+                    {
+                        <div class="limit-item">
+                            <div class="limit-number">@cycle.Grade8Limit</div>
+                            <div class="limit-label">Grade 8</div>
+                        </div>
+                    }
+                    @if (cycle.Grade9Limit.HasValue)
+                    {
+                        <div class="limit-item">
+                            <div class="limit-number">@cycle.Grade9Limit</div>
+                            <div class="limit-label">Grade 9</div>
+                        </div>
+                    }
+                    @if (cycle.Grade10Limit.HasValue)
+                    {
+                        <div class="limit-item">
+                            <div class="limit-number">@cycle.Grade10Limit</div>
+                            <div class="limit-label">Grade 10</div>
+                        </div>
+                    }
+                    @if (cycle.Grade11Limit.HasValue)
+                    {
+                        <div class="limit-item">
+                            <div class="limit-number">@cycle.Grade11Limit</div>
+                            <div class="limit-label">Grade 11</div>
+                        </div>
+                    }
+                    @if (cycle.Grade12Limit.HasValue)
+                    {
+                        <div class="limit-item">
+                            <div class="limit-number">@cycle.Grade12Limit</div>
+                            <div class="limit-label">Grade 12</div>
+                        </div>
+                    }
+                    @if (!cycle.Grade8Limit.HasValue && !cycle.Grade9Limit.HasValue && !cycle.Grade10Limit.HasValue && !cycle.Grade11Limit.HasValue && !cycle.Grade12Limit.HasValue)
+                    {
+                        <span class="text-muted"><i class="fas fa-infinity"></i> No intake limits set</span>
+                    }
+                </div>
+
+                <div class="cycle-actions">
+                    <a href="@Url.Action("EvaluateApplications", new { cycleId = cycle.Id })" class="btn-action btn-success">
+                        <i class="fas fa-users"></i> View Applications
+                    </a>
+                    @if (!cycle.IsActive)
+                    {
+                        <button type="button" class="btn-action btn-success" onclick="activateCycle(@cycle.Id)">
+                            <i class="fas fa-check"></i> Activate
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn-action btn-warning" onclick="deactivateCycle(@cycle.Id)">
+                            <i class="fas fa-pause"></i> Deactivate
+                        </button>
+                    }
+                    <button type="button" class="btn-action btn-danger" onclick="deleteCycle(@cycle.Id, '@cycle.Name')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Create Cycle Modal -->
+<div id="createCycleModal" class="modal" tabindex="-1" role="dialog" style="display: none;">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-plus"></i> Create Application Cycle
+                </h5>
+                <button type="button" class="close text-white" onclick="closeCreateModal()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="createCycleForm">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label required">Cycle Name</label>
+                                <input type="text" name="Name" id="cycleName" class="form-control" required placeholder="e.g., 2026 Intake" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label required">Academic Year</label>
+                                <input type="number" name="AcademicYear" id="academicYear" class="form-control" required value="@DateTime.Now.Year" min="2020" max="2030" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label required">Start Date</label>
+                                <input type="date" name="StartDate" id="startDate" class="form-control" required value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label required">Deadline Date</label>
+                                <input type="date" name="DeadlineDate" id="deadlineDate" class="form-control" required value="@DateTime.Now.AddMonths(3).ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6 class="mb-3"><i class="fas fa-users"></i> Intake Limits (Optional)</h6>
+                    <p class="text-muted small">Leave blank for unlimited</p>
+
+                    <div class="row">
+                        <div class="col-md-2 col-sm-4">
+                            <div class="form-group">
+                                <label class="form-label">Grade 8</label>
+                                <input type="number" name="Grade8Limit" class="form-control" min="0" placeholder="Unlimited" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4">
+                            <div class="form-group">
+                                <label class="form-label">Grade 9</label>
+                                <input type="number" name="Grade9Limit" class="form-control" min="0" placeholder="Unlimited" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4">
+                            <div class="form-group">
+                                <label class="form-label">Grade 10</label>
+                                <input type="number" name="Grade10Limit" class="form-control" min="0" placeholder="Unlimited" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4">
+                            <div class="form-group">
+                                <label class="form-label">Grade 11</label>
+                                <input type="number" name="Grade11Limit" class="form-control" min="0" placeholder="Unlimited" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4">
+                            <div class="form-group">
+                                <label class="form-label">Grade 12</label>
+                                <input type="number" name="Grade12Limit" class="form-control" min="0" placeholder="Unlimited" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="IsActive" name="IsActive" value="true" checked />
+                            <label class="custom-control-label" for="IsActive">
+                                <strong>Set as Active</strong> (Deactivates other cycles)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="modalMessage" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateCycle()">Create Cycle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div id="modalBackdrop" class="modal-backdrop fade" style="display: none;"></div>
+
+@section Scripts {
+    <script>
+        function openCreateModal() {
+            document.getElementById('createCycleModal').style.display = 'block';
+            document.getElementById('modalBackdrop').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('createCycleModal').classList.add('show');
+                document.getElementById('modalBackdrop').classList.add('show');
+            }, 10);
+            document.getElementById('createCycleForm').reset();
+            document.getElementById('modalMessage').style.display = 'none';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createCycleModal').classList.remove('show');
+            document.getElementById('modalBackdrop').classList.remove('show');
+            setTimeout(function() {
+                document.getElementById('createCycleModal').style.display = 'none';
+                document.getElementById('modalBackdrop').style.display = 'none';
+            }, 150);
+        }
+
+        // Close when clicking backdrop
+        document.getElementById('modalBackdrop').addEventListener('click', closeCreateModal);
+
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('createCycleModal').style.display === 'block') {
+                closeCreateModal();
+            }
+        });
+
+        function submitCreateCycle() {
+            var form = document.getElementById('createCycleForm');
+            var formData = new FormData(form);
+
+            var name = document.getElementById('cycleName').value;
+            var startDate = document.getElementById('startDate').value;
+            var deadlineDate = document.getElementById('deadlineDate').value;
+            var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            if (!name) {
+                showModalMessage('Please enter a cycle name');
+                return;
+            }
+            if (!startDate) {
+                showModalMessage('Please select a start date');
+                return;
+            }
+            if (!deadlineDate) {
+                showModalMessage('Please select a deadline date');
+                return;
+            }
+            if (new Date(deadlineDate) <= new Date(startDate)) {
+                showModalMessage('Deadline date must be after start date');
+                return;
+            }
+
+            // Build form data
+            var data = {
+                __RequestVerificationToken: token,
+                Name: name,
+                AcademicYear: document.getElementById('academicYear').value,
+                StartDate: startDate,
+                DeadlineDate: deadlineDate,
+                Grade8Limit: form.querySelector('[name="Grade8Limit"]').value || null,
+                Grade9Limit: form.querySelector('[name="Grade9Limit"]').value || null,
+                Grade10Limit: form.querySelector('[name="Grade10Limit"]').value || null,
+                Grade11Limit: form.querySelector('[name="Grade11Limit"]').value || null,
+                Grade12Limit: form.querySelector('[name="Grade12Limit"]').value || null,
+                IsActive: document.getElementById('IsActive').checked
+            };
+
+            $.ajax({
+                url: '@Url.Action("CreateApplicationCycle", "Admin")',
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        showModalMessage(response.message || 'Error creating cycle');
+                    }
+                },
+                error: function(xhr) {
+                    var msg = 'An error occurred. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    showModalMessage(msg);
+                }
+            });
+        }
+
+        function showModalMessage(msg) {
+            var msgDiv = document.getElementById('modalMessage');
+            msgDiv.textContent = msg;
+            msgDiv.style.display = 'block';
+        }
+
+        function activateCycle(id) {
+            if (confirm('Activate this application cycle? This will deactivate all other cycles.')) {
+                $.ajax({
+                    url: '@Url.Action("ToggleCycleStatus", "Admin")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        function deactivateCycle(id) {
+            if (confirm('Deactivate this application cycle? Applications will no longer be accepted.')) {
+                $.ajax({
+                    url: '@Url.Action("ToggleCycleStatus", "Admin")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        function deleteCycle(id, name) {
+            if (confirm('Are you sure you want to delete "' + name + '"? This cannot be undone.')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteApplicationCycle", "Admin")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#cycle-' + id).fadeOut(300, function() {
+                                $(this).remove();
+                                if ($('.cycle-card').length === 0) {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred');
+                    }
+                });
+            }
+        }
+    </script>
+}
+
+<!-- Add this CSS for custom modal backdrop -->
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1050;
+        overflow-x: hidden;
+        overflow-y: auto;
+        outline: 0;
+    }
+
+        .modal.show {
+            display: block;
+        }
+
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: 1.75rem auto;
+        pointer-events: none;
+        max-width: 800px;
+    }
+
+    .modal-content {
+        pointer-events: auto;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1040;
+        background-color: #000;
+        opacity: 0.5;
+    }
+
+        .modal-backdrop.show {
+            opacity: 0.5;
+        }
+</style>

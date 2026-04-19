@@ -1,0 +1,276 @@
+﻿@{
+    ViewBag.Title = "Upload Homework";
+    var subject = ViewBag.Subject as ElevateED.Models.Subject;
+    var classEntity = ViewBag.Class as ElevateED.Models.Class;
+    var teacherName = ViewBag.TeacherName as string;
+}
+
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .upload-header h2 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+    .class-badge {
+        background: #16a085;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        display: inline-block;
+        margin: 5px;
+        font-size: 13px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            border-color: #16a085;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(22, 160, 133, 0.1);
+        }
+
+    .file-drop-zone {
+        border: 3px dashed #ddd;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+
+        .file-drop-zone:hover {
+            border-color: #16a085;
+            background: #f0faf8;
+        }
+
+        .file-drop-zone.has-file {
+            border-color: #16a085;
+            background: #f0faf8;
+        }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-name {
+        margin-top: 15px;
+        font-weight: 500;
+        color: #16a085;
+    }
+
+    .btn-submit {
+        background: #16a085;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+        .btn-submit:hover {
+            background: #1abc9c;
+            transform: translateY(-2px);
+        }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+
+<div class="container upload-container">
+    <div class="upload-card">
+        <div class="upload-header">
+            <h2><i class="fas fa-home"></i> Upload Homework</h2>
+            <div>
+                <span class="class-badge"><i class="fas fa-book"></i> @(subject?.Name ?? "Subject")</span>
+                <span class="class-badge"><i class="fas fa-graduation-cap"></i> @(classEntity?.Grade?.Name ?? "Grade")</span>
+                <span class="class-badge"><i class="fas fa-users"></i> @(classEntity?.FullName ?? "Class")</span>
+            </div>
+            <p class="text-muted mt-3">Assign homework to your students</p>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SubjectId" value="@(subject?.Id)" />
+            <input type="hidden" name="ClassId" value="@(classEntity?.Id)" />
+
+            <div class="form-group">
+                <label class="form-label required">Title</label>
+                <input type="text" name="Title" class="form-control" required placeholder="e.g., Algebra Worksheet, Chapter 5 Questions" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Instructions</label>
+                <textarea name="Instructions" class="form-control" rows="5" required placeholder="Provide detailed instructions for students..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Due Date</label>
+                <input type="datetime-local" name="DueDate" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Homework File</label>
+                <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <h5>Click to browse or drag & drop file here</h5>
+                    <p class="text-muted small">Supported: PDF, Word, Excel, PowerPoint (Max 10MB)</p>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <input type="file" id="fileInput" name="File" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+            </div>
+
+            <div id="message" class="alert" style="display: none;"></div>
+
+            <div class="row mt-4">
+                <div class="col-md-6 mb-2">
+                    <a href="@Url.Action("SelectClassForHomework", "Teacher", new { subjectId = subject?.Id, gradeId = classEntity?.GradeId })" class="btn-cancel">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="btn-submit" onclick="submitUpload()">
+                        <i class="fas fa-upload"></i> Upload Homework
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function handleFileSelect(input) {
+            const dropZone = document.getElementById('dropZone');
+            const fileName = document.getElementById('fileName');
+            if (input.files && input.files[0]) {
+                dropZone.classList.add('has-file');
+                fileName.textContent = 'Selected: ' + input.files[0].name;
+            } else {
+                dropZone.classList.remove('has-file');
+                fileName.textContent = '';
+            }
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#16a085';
+            dropZone.style.background = '#f0faf8';
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ddd';
+            dropZone.style.background = '#fafafa';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            document.getElementById('fileInput').files = files;
+            handleFileSelect(document.getElementById('fileInput'));
+        });
+        document.getElementById('fileInput').addEventListener('change', function() { handleFileSelect(this); });
+
+        function submitUpload() {
+            var formData = new FormData(document.getElementById('uploadForm'));
+            var title = document.querySelector('input[name="Title"]').value;
+            var instructions = document.querySelector('textarea[name="Instructions"]').value;
+            var dueDate = document.querySelector('input[name="DueDate"]').value;
+            var file = document.getElementById('fileInput').files[0];
+
+            if (!title) { alert('Please enter a title'); return; }
+            if (!instructions) { alert('Please enter instructions'); return; }
+            if (!dueDate) { alert('Please select a due date'); return; }
+            if (!file) { alert('Please select a file to upload'); return; }
+            if (file.size > 10 * 1024 * 1024) { alert('File size exceeds 10MB limit'); return; }
+
+            $('#message').hide();
+
+            $.ajax({
+                url: '@Url.Action("UploadHomework", "Teacher")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        $('#message').removeClass('alert-danger').addClass('alert-success')
+                            .html('<i class="fas fa-check-circle"></i> ' + response.message).show();
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Homework", "Teacher")';
+                        }, 2000);
+                    } else {
+                        $('#message').removeClass('alert-success').addClass('alert-danger')
+                            .html('<i class="fas fa-exclamation-circle"></i> ' + response.message).show();
+                    }
+                },
+                error: function() {
+                    $('#message').removeClass('alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle"></i> An error occurred').show();
+                }
+            });
+        }
+    </script>
+}

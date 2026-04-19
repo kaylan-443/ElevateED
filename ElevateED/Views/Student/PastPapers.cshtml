@@ -1,0 +1,223 @@
+﻿@model List<ElevateED.ViewModels.GradeCardViewModel>
+
+@{
+    ViewBag.Title = "Past Paper Repository - ElevateED";
+}
+
+<style>
+    .past-papers-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .header-buttons {
+        margin-top: 20px;
+    }
+
+    .btn-view-all {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 10px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-view-all:hover {
+            background: white;
+            color: #1e3c72;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+        .grade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .grade-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+
+        .grade-card.primary:before {
+            background: #1e3c72;
+        }
+
+        .grade-card.info:before {
+            background: #17a2b8;
+        }
+
+        .grade-card.success:before {
+            background: #28a745;
+        }
+
+        .grade-card.warning:before {
+            background: #ffc107;
+        }
+
+        .grade-card.danger:before {
+            background: #dc3545;
+        }
+
+    .grade-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 35px;
+        color: white;
+    }
+
+        .grade-icon.primary {
+            background: #1e3c72;
+        }
+
+        .grade-icon.info {
+            background: #17a2b8;
+        }
+
+        .grade-icon.success {
+            background: #28a745;
+        }
+
+        .grade-icon.warning {
+            background: #ffc107;
+        }
+
+        .grade-icon.danger {
+            background: #dc3545;
+        }
+
+    .grade-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .paper-count {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+        .paper-count span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 100%;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+    .back-btn {
+        margin-top: 30px;
+        text-align: center;
+    }
+
+        .back-btn .btn {
+            padding: 10px 30px;
+            border-radius: 50px;
+        }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="display-4">
+                    <i class="fas fa-archive text-warning mr-3"></i>Past Paper Repository
+                </h1>
+                <p class="lead mb-0">Select a grade to view past exam papers</p>
+                <small class="text-light">Study smarter with previous exam papers</small>
+            </div>
+            <div class="header-buttons">
+                <a href="@Url.Action("ViewAllPastPapers", "Student")" class="btn-view-all">
+                    <i class="fas fa-search mr-2"></i>Browse All Papers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container past-papers-container">
+    <div class="row">
+        @foreach (var grade in Model)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="grade-card @grade.Color" onclick="viewPapers('@grade.Grade')">
+                    <div class="grade-icon @grade.Color">
+                        <i class="@grade.Icon"></i>
+                    </div>
+                    <h2 class="grade-title">@grade.Grade</h2>
+                    <div class="paper-count">
+                        <span>@grade.PaperCount</span> papers available
+                    </div>
+                    <button class="btn-view">
+                        <i class="fas fa-eye mr-1"></i> Browse Papers
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="back-btn">
+        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function viewPapers(grade) {
+            window.location.href = '@Url.Action("ViewPastPapersByGrade", "Student")?grade=' + encodeURIComponent(grade);
+        }
+    </script>
+}

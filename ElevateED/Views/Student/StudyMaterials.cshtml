@@ -1,0 +1,232 @@
+﻿@model List<ElevateED.ViewModels.SubjectMaterialViewModel>
+
+@{
+    ViewBag.Title = "Study Materials - ElevateED";
+}
+
+<style>
+    .materials-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .header-left p {
+        margin: 5px 0 0 0;
+        color: #666;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+        .info-card h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .info-card p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+    .subject-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        border-bottom: 4px solid transparent;
+    }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .subject-card.primary:hover {
+            border-bottom-color: #1e3c72;
+        }
+
+        .subject-card.info:hover {
+            border-bottom-color: #17a2b8;
+        }
+
+        .subject-card.success:hover {
+            border-bottom-color: #28a745;
+        }
+
+        .subject-card.warning:hover {
+            border-bottom-color: #ffc107;
+        }
+
+        .subject-card.danger:hover {
+            border-bottom-color: #dc3545;
+        }
+
+        .subject-card.secondary:hover {
+            border-bottom-color: #6c757d;
+        }
+
+    .subject-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+        .subject-icon.primary {
+            background: #1e3c72;
+        }
+
+        .subject-icon.info {
+            background: #17a2b8;
+        }
+
+        .subject-icon.success {
+            background: #28a745;
+        }
+
+        .subject-icon.warning {
+            background: #ffc107;
+        }
+
+        .subject-icon.danger {
+            background: #dc3545;
+        }
+
+        .subject-icon.secondary {
+            background: #6c757d;
+        }
+
+    .subject-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .material-count {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+        .material-count span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+    .btn-browse {
+        background: #f8f9fa;
+        color: #1e3c72;
+        border: 1px solid #dee2e6;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+        .btn-browse:hover {
+            background: #1e3c72;
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<div class="container materials-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-book"></i> Study Materials
+            </h2>
+            <p>Browse learning resources by subject</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Student Info Card -->
+    <div class="info-card">
+        <h3><i class="fas fa-graduation-cap"></i> @ViewBag.StudentName</h3>
+        <p><strong>Class:</strong> @ViewBag.ClassName | <strong>Grade:</strong> @ViewBag.StudentGrade</p>
+        <p class="mb-0"><i class="fas fa-info-circle"></i> Select a subject, then choose your grade to view relevant study materials</p>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="row">
+        @foreach (var subject in Model)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="subject-card @subject.Color" onclick="location.href='@Url.Action("SelectGrade", "Student", new { subject = subject.SubjectName })'">
+                    <div class="subject-icon @subject.Color">
+                        <i class="@subject.Icon"></i>
+                    </div>
+                    <div class="subject-name">@subject.SubjectName</div>
+                    <div class="material-count">
+                        <span>@subject.MaterialCount</span> material(s) available
+                    </div>
+                    <div class="btn-browse">
+                        <i class="fas fa-arrow-right"></i> Select Grade
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

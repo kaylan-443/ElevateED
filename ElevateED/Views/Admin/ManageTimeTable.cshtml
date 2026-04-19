@@ -1,0 +1,513 @@
+﻿@model List<ElevateED.ViewModels.TimeTableViewModel>
+
+@{
+    ViewBag.Title = ViewBag.TypeName + " - Admin Dashboard";
+    var type = ViewBag.Type as string;
+    var showGradeSelection = ViewBag.ShowGradeSelection as bool?;
+    var showClassSelection = ViewBag.ShowClassSelection as bool?;
+    var showTimetables = ViewBag.ShowTimetables as bool?;
+    var showTeacherTimetable = ViewBag.ShowTeacherTimetable as bool?;
+    var grades = ViewBag.Grades as List<string>;
+    var classes = ViewBag.Classes as List<string>;
+    var selectedGrade = ViewBag.Grade as string;
+    var selectedClass = ViewBag.ClassName as string;
+}
+
+<style>
+    .manage-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .selection-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .selection-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+
+    .selection-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 30px;
+        color: white;
+    }
+
+        .selection-icon.grade {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        }
+
+        .selection-icon.class {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+    .selection-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .btn-upload {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        border: none;
+    }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+        }
+
+    .current-path {
+        margin-bottom: 20px;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .breadcrumb-link {
+        color: #1e3c72;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+        .breadcrumb-link:hover {
+            text-decoration: underline;
+        }
+
+    .timetable-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .timetable-preview {
+        background: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+        .timetable-preview img {
+            max-width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+    .timetable-info {
+        padding: 20px;
+    }
+
+    .timetable-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 8px;
+    }
+
+    .timetable-meta {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 10px;
+    }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: none;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: none;
+        margin-left: 5px;
+    }
+
+        .btn-view:hover, .btn-delete:hover {
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 15px;
+        color: #999;
+    }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="display-4"><i class="fas fa-calendar-alt text-warning mr-3"></i>@ViewBag.TypeName</h1>
+                <p class="lead mb-0">Upload and manage timetables</p>
+            </div>
+            <div>
+                <a href="@Url.Action("TimeTable", "Admin")" class="btn btn-outline-light"><i class="fas fa-arrow-left mr-2"></i>Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container manage-container">
+
+    @if (showTeacherTimetable == true)
+    {
+        <div class="text-right mb-3">
+            <button class="btn-upload" onclick="openUploadModalForTeacher()">
+                <i class="fas fa-upload mr-2"></i>Upload Teachers Timetable
+            </button>
+        </div>
+
+        if (Model.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                <h4>No teachers timetable uploaded yet</h4>
+                <p>Click the "Upload Teachers Timetable" button to add a timetable.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var timetable in Model)
+                {
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="timetable-card">
+                            <div class="timetable-preview">
+                                @if (timetable.FilePath.EndsWith(".pdf"))
+                                {
+                                    <i class="fas fa-file-pdf fa-4x text-danger"></i>
+                                    <p class="mt-2">PDF Document</p>
+                                }
+                                else if (timetable.FilePath.EndsWith(".jpg") || timetable.FilePath.EndsWith(".jpeg") || timetable.FilePath.EndsWith(".png"))
+                                {
+                                    <img src="@timetable.FilePath" alt="Timetable Preview" />
+                                }
+                                else
+                                {
+                                    <i class="fas fa-file-alt fa-4x text-info"></i>
+                                    <p class="mt-2">Document</p>
+                                }
+                            </div>
+                            <div class="timetable-info">
+                                <div class="timetable-title">@timetable.Title</div>
+                                <div class="timetable-meta">
+                                    <i class="fas fa-calendar mr-1"></i> Uploaded: @timetable.UploadedAt.ToString("dd MMM yyyy")
+                                </div>
+                                @if (!string.IsNullOrEmpty(timetable.Description))
+                                {
+                                    <p class="text-muted small">@timetable.Description</p>
+                                }
+                                <div class="mt-2">
+                                    <a href="@timetable.FilePath" target="_blank" class="btn-view"><i class="fas fa-eye mr-1"></i>View</a>
+                                    <a href="@timetable.FilePath" download class="btn-view" style="background: #28a745;"><i class="fas fa-download mr-1"></i>Download</a>
+                                    <button class="btn-delete" onclick="deleteTimetable(@timetable.Id)"><i class="fas fa-trash mr-1"></i>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (showGradeSelection == true)
+    {
+        <div class="row">
+            @foreach (var grade in grades)
+            {
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="selection-card" onclick="location.href='@Url.Action("ManageTimeTable", "Admin", new { type = type, grade = grade })'">
+                        <div class="selection-icon grade"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="selection-title">@grade</div>
+                        <p class="text-muted">View and manage timetables</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (showClassSelection == true)
+    {
+        <div class="current-path">
+            <a href="@Url.Action("ManageTimeTable", "Admin", new { type = type })" class="breadcrumb-link">Grades</a>
+            <span class="mx-2">></span>
+            <span>@selectedGrade</span>
+        </div>
+        <div class="row">
+            @foreach (var className in classes)
+            {
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="selection-card" onclick="location.href='@Url.Action("ManageTimeTable", "Admin", new { type = type, grade = selectedGrade, className = className })'">
+                        <div class="selection-icon class"><i class="fas fa-chalkboard"></i></div>
+                        <div class="selection-title">@className</div>
+                        <p class="text-muted">View and manage timetables</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (showTimetables == true)
+    {
+        <div class="current-path">
+            <a href="@Url.Action("ManageTimeTable", "Admin", new { type = type })" class="breadcrumb-link">Grades</a>
+            <span class="mx-2">></span>
+            <a href="@Url.Action("ManageTimeTable", "Admin", new { type = type, grade = selectedGrade })" class="breadcrumb-link">@selectedGrade</a>
+            <span class="mx-2">></span>
+            <span>@selectedClass</span>
+        </div>
+
+        <div class="text-right mb-3">
+            <button class="btn-upload" onclick="openUploadModal('@selectedGrade', '@selectedClass')">
+                <i class="fas fa-upload mr-2"></i>Upload Timetable for @selectedClass
+            </button>
+        </div>
+
+        if (Model.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                <h4>No timetables uploaded for @selectedClass</h4>
+                <p>Click the "Upload Timetable" button to add a timetable for this class.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var timetable in Model)
+                {
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="timetable-card">
+                            <div class="timetable-preview">
+                                @if (timetable.FilePath.EndsWith(".pdf"))
+                                {
+                                    <i class="fas fa-file-pdf fa-4x text-danger"></i>
+                                    <p class="mt-2">PDF Document</p>
+                                }
+                                else if (timetable.FilePath.EndsWith(".jpg") || timetable.FilePath.EndsWith(".jpeg") || timetable.FilePath.EndsWith(".png"))
+                                {
+                                    <img src="@timetable.FilePath" alt="Timetable Preview" />
+                                }
+                                else
+                                {
+                                    <i class="fas fa-file-alt fa-4x text-info"></i>
+                                    <p class="mt-2">Document</p>
+                                }
+                            </div>
+                            <div class="timetable-info">
+                                <div class="timetable-title">@timetable.Title</div>
+                                <div class="timetable-meta">
+                                    <i class="fas fa-calendar mr-1"></i> Uploaded: @timetable.UploadedAt.ToString("dd MMM yyyy")
+                                </div>
+                                @if (!string.IsNullOrEmpty(timetable.Description))
+                                {
+                                    <p class="text-muted small">@timetable.Description</p>
+                                }
+                                <div class="mt-2">
+                                    <a href="@timetable.FilePath" target="_blank" class="btn-view"><i class="fas fa-eye mr-1"></i>View</a>
+                                    <a href="@timetable.FilePath" download class="btn-view" style="background: #28a745;"><i class="fas fa-download mr-1"></i>Download</a>
+                                    <button class="btn-delete" onclick="deleteTimetable(@timetable.Id)"><i class="fas fa-trash mr-1"></i>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div style="position: relative; width: 90%; max-width: 500px; margin: 50px auto;">
+        <div style="background: white; border-radius: 15px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0;"><i class="fas fa-upload mr-2"></i>Upload Timetable</h5>
+                <button type="button" onclick="closeUploadModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Type" value="@type" />
+                    <input type="hidden" name="Grade" id="modalGrade" />
+                    <input type="hidden" name="ClassName" id="modalClassName" />
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-weight: 600;">Title <span style="color: red;">*</span></label>
+                        <input type="text" name="Title" class="form-control" required placeholder="e.g., 2026 Term 1 Timetable" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;" />
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label>Description (Optional)</label>
+                        <textarea name="Description" class="form-control" rows="2" placeholder="Additional information" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label>Timetable File <span style="color: red;">*</span></label>
+                        <input type="file" name="TimetableFile" class="form-control-file" accept=".pdf,.jpg,.jpeg,.png" required style="display: block; margin-top: 5px;" />
+                        <small style="color: #666;">PDF, JPG, or PNG format, max 10MB</small>
+                    </div>
+
+                    <div id="uploadMessage" style="display: none; padding: 10px; border-radius: 5px; margin-top: 10px;"></div>
+                </form>
+            </div>
+            <div style="padding: 15px 20px; border-top: 1px solid #e0e0e0; text-align: right;">
+                <button type="button" onclick="closeUploadModal()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">Cancel</button>
+                <button type="button" onclick="submitUpload()" style="padding: 8px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    <i class="fas fa-upload mr-2"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openUploadModalForTeacher() {
+            document.getElementById('modalGrade').value = '';
+            document.getElementById('modalClassName').value = '';
+            document.getElementById('uploadModal').style.display = 'block';
+            document.getElementById('uploadForm').reset();
+            var msgDiv = document.getElementById('uploadMessage');
+            if (msgDiv) msgDiv.style.display = 'none';
+        }
+
+        function openUploadModal(grade, className) {
+            document.getElementById('modalGrade').value = grade;
+            document.getElementById('modalClassName').value = className;
+            document.getElementById('uploadModal').style.display = 'block';
+            document.getElementById('uploadForm').reset();
+            var msgDiv = document.getElementById('uploadMessage');
+            if (msgDiv) msgDiv.style.display = 'none';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            var msgDiv = document.getElementById('uploadMessage');
+            if (msgDiv) msgDiv.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('uploadModal');
+            if (event.target == modal) {
+                closeUploadModal();
+            }
+        }
+
+        function submitUpload() {
+            var form = document.getElementById('uploadForm');
+            var formData = new FormData(form);
+            var title = document.querySelector('input[name="Title"]').value;
+            var file = document.querySelector('input[name="TimetableFile"]').files[0];
+
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+
+            var msgDiv = document.getElementById('uploadMessage');
+
+            $.ajax({
+                url: '@Url.Action("UploadTimeTable", "Admin")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    msgDiv.style.display = 'block';
+                    msgDiv.style.backgroundColor = '#cce5ff';
+                    msgDiv.style.color = '#004085';
+                    msgDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+                },
+                success: function(response) {
+                    if (response.success) {
+                        msgDiv.style.backgroundColor = '#d4edda';
+                        msgDiv.style.color = '#155724';
+                        msgDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + response.message;
+                        setTimeout(function() {
+                            closeUploadModal();
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        msgDiv.style.backgroundColor = '#f8d7da';
+                        msgDiv.style.color = '#721c24';
+                        msgDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>' + response.message;
+                    }
+                },
+                error: function() {
+                    msgDiv.style.backgroundColor = '#f8d7da';
+                    msgDiv.style.color = '#721c24';
+                    msgDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>An error occurred during upload';
+                }
+            });
+        }
+
+        function deleteTimetable(id) {
+            if (confirm('Are you sure you want to delete this timetable?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteTimeTable", "Admin")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        id: id
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting the timetable');
+                    }
+                });
+            }
+        }
+    </script>
+}

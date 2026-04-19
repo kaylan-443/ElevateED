@@ -1,0 +1,465 @@
+﻿@model ElevateED.ViewModels.ApplicationEvaluationViewModel
+
+@{
+    ViewBag.Title = "Evaluate Applications - Admin";
+    var gradeGroups = Model.GradeGroups ?? new List<IGrouping<string, ElevateED.Models.Applicant>>();
+}
+
+<style>
+    .evaluate-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+    .cycle-info {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stats-row {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
+    .filter-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .bulk-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .btn-approve {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+    }
+
+        .btn-approve:hover {
+            background: #218838;
+        }
+
+    .btn-reject {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+    }
+
+    .grade-section {
+        margin-bottom: 30px;
+    }
+
+    .grade-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 10px 10px 0 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        border-left: 4px solid #d4af37;
+        margin-bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .applicants-table {
+        background: white;
+        border-radius: 0 0 10px 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .table {
+        margin: 0;
+    }
+
+        .table thead th {
+            background: #1e3c72;
+            color: white;
+            font-weight: 600;
+            padding: 12px 15px;
+            border: none;
+            font-size: 13px;
+        }
+
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+    .performance-high {
+        background: #d4edda !important;
+    }
+
+    .performance-medium {
+        background: #fff3cd !important;
+    }
+
+    .performance-low {
+        background: #f8d7da !important;
+    }
+
+    .average-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .select-all-checkbox {
+        margin-right: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+</style>
+
+<div class="container evaluate-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-clipboard-check"></i> Evaluate Applications
+            </h2>
+            <p class="text-muted">@Model.Cycle.Name - Academic Year @Model.Cycle.AcademicYear</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ApplicationCycles", "Admin")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Cycles
+            </a>
+        </div>
+    </div>
+
+    <div class="cycle-info">
+        <div class="stats-row">
+            <div class="stat-item">
+                <div>
+                    <div class="stat-value">@Model.Applicants.Count</div>
+                    <div class="stat-label">Total Pending</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div>
+                    <div class="stat-value">@Model.Applicants.Count(a => a.AcademicAverage >= 70)</div>
+                    <div class="stat-label">Above 70%</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div>
+                    <div class="stat-value">@Model.Applicants.Count(a => a.AcademicAverage >= 80)</div>
+                    <div class="stat-label">Above 80%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Applicants.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>No Pending Applications</h4>
+            <p>All applications have been processed for this cycle.</p>
+        </div>
+    }
+    else
+    {
+        <div class="filter-bar">
+            <div>
+                <button class="btn btn-outline-primary btn-sm" onclick="selectTopPerformers(80)">
+                    <i class="fas fa-star"></i> Select Top (80%+)
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="selectAll()">
+                    <i class="fas fa-check-square"></i> Select All
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearAll()">
+                    <i class="fas fa-square"></i> Clear All
+                </button>
+            </div>
+            <div class="bulk-actions">
+                <span id="selectedCount">0</span> selected
+                <button class="btn-approve" onclick="bulkApprove()">
+                    <i class="fas fa-check-circle"></i> Approve Selected
+                </button>
+                <button class="btn-reject" onclick="bulkReject()">
+                    <i class="fas fa-times-circle"></i> Reject Selected
+                </button>
+            </div>
+        </div>
+
+        <form id="bulkForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SelectedApplicantIds" id="SelectedApplicantIds" />
+            <input type="hidden" name="RejectionReason" id="RejectionReason" />
+        </form>
+
+        foreach (var gradeGroup in gradeGroups.OrderBy(g => g.Key))
+        {
+            <div class="grade-section">
+                <div class="grade-header">
+                    <span>
+                        <i class="fas fa-graduation-cap"></i> @gradeGroup.Key
+                    </span>
+                    <span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectGradeGroup('@gradeGroup.Key')">
+                            Select All in @gradeGroup.Key
+                        </button>
+                    </span>
+                </div>
+                <div class="applicants-table">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th width="40"><input type="checkbox" class="select-all-checkbox" onchange="toggleGradeGroup(this, '@gradeGroup.Key')" /></th>
+                                <th>Rank</th>
+                                <th>Applicant</th>
+                                <th>Student #</th>
+                                <th>Average</th>
+                                <th>Stream</th>
+                                <th>Applied On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int rank = 1;
+                                foreach (var applicant in gradeGroup.OrderByDescending(a => a.AcademicAverage))
+                                {
+                                    string performanceClass = "";
+                                    if (applicant.AcademicAverage >= 80)
+                                    {
+                                        performanceClass = "performance-high";
+                                    }
+                                    else if (applicant.AcademicAverage >= 60)
+                                    {
+                                        performanceClass = "performance-medium";
+                                    }
+                                    else
+                                    {
+                                        performanceClass = "performance-low";
+                                    }
+
+                                    <tr class="@performanceClass" data-grade="@gradeGroup.Key">
+                                        <td>
+                                            <input type="checkbox" class="applicant-checkbox" value="@applicant.Id" data-average="@applicant.AcademicAverage" data-grade="@gradeGroup.Key" />
+                                        </td>
+                                        <td><strong>#@rank</strong></td>
+                                        <td>
+                                            <strong>@applicant.FullName</strong><br />
+                                            <small class="text-muted">@applicant.PreviousSchool</small>
+                                        </td>
+                                        <td>@(applicant.User?.StudentNumber ?? "—")</td>
+                                        <td>
+                                            <span class="average-badge" style="background: @(applicant.AcademicAverage >= 80 ? "#d4edda" : applicant.AcademicAverage >= 60 ? "#fff3cd" : "#f8d7da"); color: @(applicant.AcademicAverage >= 80 ? "#155724" : applicant.AcademicAverage >= 60 ? "#856404" : "#721c24");">
+                                                @(applicant.AcademicAverage?.ToString("0.0") ?? "—")%
+                                            </span>
+                                        </td>
+                                        <td>@(applicant.StreamChoiceDisplay ?? "—")</td>
+                                        <td>@applicant.ApplicationDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <a href="@Url.Action("ViewApplication", new { id = applicant.Id })" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    rank++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle"></i> Reject Applications</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Rejection Reason (Optional)</label>
+                    <textarea class="form-control" id="rejectionReasonText" rows="3" placeholder="Reason for rejection..."></textarea>
+                    <small class="text-muted">This will be shared with the applicants</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmBulkReject()">Confirm Reject</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateSelectedCount() {
+            var count = $('.applicant-checkbox:checked').length;
+            $('#selectedCount').text(count);
+        }
+
+        $('.applicant-checkbox').on('change', updateSelectedCount);
+
+        function toggleGradeGroup(checkbox, grade) {
+            $('tr[data-grade="' + grade + '"] .applicant-checkbox').prop('checked', checkbox.checked);
+            updateSelectedCount();
+        }
+
+        function selectGradeGroup(grade) {
+            $('tr[data-grade="' + grade + '"] .applicant-checkbox').prop('checked', true);
+            updateSelectedCount();
+        }
+
+        function selectTopPerformers(threshold) {
+            $('.applicant-checkbox').each(function() {
+                var avg = parseFloat($(this).data('average')) || 0;
+                $(this).prop('checked', avg >= threshold);
+            });
+            updateSelectedCount();
+        }
+
+        function selectAll() {
+            $('.applicant-checkbox').prop('checked', true);
+            updateSelectedCount();
+        }
+
+        function clearAll() {
+            $('.applicant-checkbox').prop('checked', false);
+            $('.select-all-checkbox').prop('checked', false);
+            updateSelectedCount();
+        }
+
+        function getSelectedIds() {
+            var ids = [];
+            $('.applicant-checkbox:checked').each(function() {
+                ids.push($(this).val());
+            });
+            return ids.join(',');
+        }
+
+        function bulkApprove() {
+            var ids = getSelectedIds();
+            if (!ids) {
+                alert('Please select at least one applicant');
+                return;
+            }
+
+            if (confirm('Approve ' + $('.applicant-checkbox:checked').length + ' selected applicants?')) {
+                $('#SelectedApplicantIds').val(ids);
+
+                $.ajax({
+                    url: '@Url.Action("BulkApprove", "Admin")',
+                    type: 'POST',
+                    data: $('#bulkForm').serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        function bulkReject() {
+            var ids = getSelectedIds();
+            if (!ids) {
+                alert('Please select at least one applicant');
+                return;
+            }
+            $('#rejectModal').modal('show');
+        }
+
+        function confirmBulkReject() {
+            var ids = getSelectedIds();
+            var reason = $('#rejectionReasonText').val();
+
+            $('#SelectedApplicantIds').val(ids);
+            $('#RejectionReason').val(reason);
+
+            $.ajax({
+                url: '@Url.Action("BulkReject", "Admin")',
+                type: 'POST',
+                data: $('#bulkForm').serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#rejectModal').modal('hide');
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,364 @@
+﻿@model ElevateED.ViewModels.ClassStructureViewModel
+
+@{
+    ViewBag.Title = "Class Structure - Admin";
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+    }
+
+    .class-structure-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: var(--accent-gold);
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+
+    .grade-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 15px 20px;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+        .grade-header i {
+            margin-right: 10px;
+        }
+
+    .grade-body {
+        padding: 20px;
+    }
+
+    .class-row {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--accent-gold);
+        transition: all 0.3s ease;
+    }
+
+        .class-row:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+
+    .class-name {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--primary-blue);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .class-badge {
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .teacher-badge {
+        background: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .teacher-badge i {
+            color: var(--success-green);
+        }
+
+    .assign-teacher-select {
+        padding: 5px 10px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        font-size: 13px;
+        min-width: 200px;
+    }
+
+    .btn-assign {
+        background: var(--success-green);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .btn-assign:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+    .btn-remove {
+        background: var(--danger-red);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .btn-remove:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+    .btn-manage {
+        background: var(--info-blue);
+        color: white;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .btn-manage:hover {
+            background: #138496;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container class-structure-container">
+    @Html.AntiForgeryToken()
+
+    <div class="page-header">
+        <div class="header-left">
+            <h2 class="page-title">
+                <i class="fas fa-school"></i> Class Structure
+            </h2>
+            <small class="text-muted">Assign class teachers and manage subject teachers</small>
+        </div>
+        <div class="header-right">
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Grades == null || !Model.Grades.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-school"></i>
+            <h4>No Grades Found</h4>
+            <p>Please seed the database first.</p>
+            <a href="@Url.Action("SeedData", "Admin")" class="btn btn-primary mt-3">
+                <i class="fas fa-database"></i> Seed Data
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var grade in Model.Grades.OrderBy(g => g.Level))
+        {
+            var gradeClasses = Model.Classes.Where(c => c.GradeId == grade.Id).OrderBy(c => c.Name).ToList();
+
+            <div class="grade-card">
+                <div class="grade-header">
+                    <i class="fas fa-graduation-cap"></i> @grade.Name
+                </div>
+                <div class="grade-body">
+                    @foreach (var cls in gradeClasses)
+                    {
+                        <div class="class-row">
+                            <div class="class-name">
+                                <span>
+                                    <i class="fas fa-chalkboard"></i> @cls.FullName
+                                </span>
+                                <span class="class-badge">
+                                    <i class="fas fa-users"></i> Capacity: @cls.Capacity
+                                </span>
+                            </div>
+                            <div class="teacher-info" id="teacher-info-@cls.Id">
+                                @if (cls.ClassTeacherId.HasValue)
+                                {
+                                    <div class="teacher-badge">
+                                        <i class="fas fa-user-tie"></i> Class Teacher:
+                                        <strong>@(cls.ClassTeacher?.FullName ?? "Unknown")</strong>
+                                    </div>
+                                    <button class="btn-remove" onclick="removeClassTeacher(@cls.Id)">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                }
+                                else
+                                {
+                                    <select id="teacherSelect_@cls.Id" class="assign-teacher-select">
+                                        <option value="">-- Select Class Teacher --</option>
+                                        @foreach (var teacher in Model.Teachers.OrderBy(t => t.LastName))
+                                        {
+                                            <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                                        }
+                                    </select>
+                                    <button class="btn-assign" onclick="assignClassTeacher(@cls.Id)">
+                                        <i class="fas fa-user-plus"></i> Assign Class Teacher
+                                    </button>
+                                }
+                            </div>
+                            <div class="mt-2">
+                                <a href="@Url.Action("ClassDetails", "Admin", new { classId = cls.Id })" class="btn-manage">
+                                    <i class="fas fa-cog"></i> Manage Subjects
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function assignClassTeacher(classId) {
+            var select = $('#teacherSelect_' + classId);
+            var teacherId = select.val();
+
+            if (!teacherId) {
+                alert('Please select a teacher');
+                return;
+            }
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("AssignClassTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId,
+                    teacherId: teacherId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+
+        function removeClassTeacher(classId) {
+            if (!confirm('Remove class teacher?')) return;
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("RemoveClassTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+    </script>
+}

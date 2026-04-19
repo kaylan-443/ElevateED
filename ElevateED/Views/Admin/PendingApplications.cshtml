@@ -1,0 +1,530 @@
+﻿@model IEnumerable<ElevateED.Models.Applicant>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Pending Applications";
+    var pendingCount = Model.Count(a => a.Status == ApplicationStatus.Pending);
+    var underReviewCount = Model.Count(a => a.Status == ApplicationStatus.UnderReview);
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+    }
+
+    .page-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: var(--accent-gold);
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .stats-row {
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+    .stat-number {
+        font-size: 36px;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 5px;
+    }
+
+    .filters-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-item {
+        flex: 1;
+        min-width: 150px;
+    }
+
+        .filter-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .filter-item select,
+        .filter-item input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+    .btn-filter {
+        background: var(--primary-blue);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-filter:hover {
+            background: var(--secondary-blue);
+        }
+
+    .btn-reset {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-reset:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+    .applications-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+        .applications-table th {
+            background: var(--primary-blue);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .applications-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .applications-table tr:hover {
+            background: #f8f9fa;
+        }
+
+    .applicant-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .grade-badge {
+        display: inline-block;
+        background: #e8f4fd;
+        color: var(--info-blue);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-underreview {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .average-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .average-high {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .average-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .average-low {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-review {
+        background: #fd7e14;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+    }
+
+        .btn-review:hover {
+            background: #e86c00;
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-view {
+        background: var(--info-blue);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+    .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn-evaluate {
+        background: var(--success-green);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+    }
+
+        .btn-evaluate:hover {
+            background: #218838;
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<div class="container page-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-clipboard-list"></i> Pending Applications
+            </h2>
+            <p>Review and manage student applications</p>
+        </div>
+        <div>
+            <a href="@Url.Action("EvaluateApplications", "Admin")" class="btn-evaluate">
+                <i class="fas fa-star"></i> Bulk Evaluate
+            </a>
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row stats-row">
+        <div class="col-md-4 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--warning-orange);">@pendingCount</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--info-blue);">@underReviewCount</div>
+                <div class="stat-label">Under Review</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--primary-blue);">@(pendingCount + underReviewCount)</div>
+                <div class="stat-label">Total to Review</div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success">
+            <i class="fas fa-check-circle mr-2"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="filters-card">
+        <form method="get" action="@Url.Action("PendingApplications")" id="filterForm">
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label><i class="fas fa-filter"></i> Status</label>
+                    <select name="status" id="statusFilter" class="form-control">
+                        <option value="">All Applications</option>
+                        <option value="Pending">Pending</option>
+                        <option value="UnderReview">Under Review</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-search"></i> Search</label>
+                    <input type="text" name="search" id="searchInput" class="form-control" placeholder="Student or parent name..." />
+                </div>
+                <div class="filter-item">
+                    <label><i class="fas fa-graduation-cap"></i> Grade</label>
+                    <select name="grade" id="gradeFilter" class="form-control">
+                        <option value="">All Grades</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="@Url.Action("PendingApplications")" class="btn-reset">
+                        <i class="fas fa-redo"></i> Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h4>No Applications Found</h4>
+                <p>There are no pending applications to review at this time.</p>
+            </div>
+        }
+        else
+        {
+            <table class="applications-table">
+                <thead>
+                    <tr>
+                        <th>Applicant</th>
+                        <th>Student #</th>
+                        <th>Grade</th>
+                        <th>Average</th>
+                        <th>Applied On</th>
+                        <th>Status</th>
+                        <th>Parent Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        string studentNumber = (item.User != null && item.User.StudentNumber != null) ? item.User.StudentNumber : "—";
+                        string statusClass = item.Status == ApplicationStatus.Pending ? "status-pending" : "status-underreview";
+
+                        string averageClass = "average-medium";
+                        if (item.AcademicAverage >= 80) { averageClass = "average-high"; }
+                        else if (item.AcademicAverage < 60) { averageClass = "average-low"; }
+
+                        <tr>
+                            <td>
+                                <span class="applicant-name">@item.FullName</span>
+                                <br />
+                                <small class="text-muted">@item.PreviousSchool</small>
+                            </td>
+                            <td>@studentNumber</td>
+                            <td>
+                                <span class="grade-badge">
+                                    <i class="fas fa-graduation-cap"></i> @(item.GradeApplyingForDisplay ?? "—")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="average-badge @averageClass">
+                                    @(item.AcademicAverage?.ToString("0.0") ?? "—")%
+                                </span>
+                            </td>
+                            <td>@item.ApplicationDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <span class="status-badge @statusClass">@item.Status</span>
+                            </td>
+                            <td>
+                                <div>
+                                    <i class="fas fa-phone-alt"></i> @item.ParentCellPhone
+                                    <br />
+                                    <small><i class="far fa-envelope"></i> @item.ParentEmail</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    @if (item.Status == ApplicationStatus.Pending)
+                                    {
+                                        using (Html.BeginForm("SetUnderReview", "Admin", new { id = item.Id }, FormMethod.Post, new { style = "display: inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-review" title="Mark as Under Review">
+                                                <i class="fas fa-eye"></i> Review
+                                            </button>
+                                        }
+                                    }
+                                    <a href="@Url.Action("ViewApplication", new { id = item.Id })" class="btn-view">
+                                        <i class="fas fa-info-circle"></i> Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const search = urlParams.get('search');
+        const grade = urlParams.get('grade');
+
+        if (status) document.getElementById('statusFilter').value = status;
+        if (search) document.getElementById('searchInput').value = search;
+        if (grade) document.getElementById('gradeFilter').value = grade;
+    });
+</script>

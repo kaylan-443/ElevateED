@@ -1,0 +1,353 @@
+﻿@model ElevateED.Models.Applicant
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "View Application";
+    var availableClasses = ViewBag.AvailableClasses as List<ElevateED.Models.Class>;
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+    }
+
+    .section-box {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+        .section-box h4 {
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+
+    .document-link {
+        display: block;
+        padding: 10px;
+        background: #f8f9fa;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+        .document-link:hover {
+            background: #e9ecef;
+            text-decoration: none;
+        }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-underreview {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-approved {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-rejected {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .class-select {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+        .class-select:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+
+    .approve-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .btn-approve {
+        background: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        width: 100%;
+    }
+
+    .btn-reject {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        width: 100%;
+    }
+</style>
+
+<div class="container py-4">
+    <h2 class="mb-4">
+        <i class="fas fa-user-check"></i> Application Details
+    </h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Personal Info -->
+            <div class="section-box">
+                <h4><i class="fas fa-user"></i> Personal Information</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Full Name:</strong> @Model.FullName</p>
+                        <p><strong>Date of Birth:</strong> @Model.DateOfBirth.ToString("dd MMM yyyy")</p>
+                        <p><strong>Gender:</strong> @Model.Gender</p>
+                        <p><strong>ID Number:</strong> @Model.IdentityNumber</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Nationality:</strong> @Model.Nationality</p>
+                        <p><strong>Home Language:</strong> @Model.HomeLanguage</p>
+                        <p><strong>Email:</strong> @(Model.User?.Email ?? "—")</p>
+                        <p><strong>Cell Phone:</strong> @Model.CellPhone</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Info -->
+            <div class="section-box">
+                <h4><i class="fas fa-graduation-cap"></i> Academic Information</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Previous School:</strong> @Model.PreviousSchool</p>
+                        <p><strong>Highest Grade Passed:</strong> @Model.HighestGradePassed (@Model.YearCompleted)</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>
+                            <strong>Academic Average:</strong>
+                            <span class="badge" style="background: @(Model.AcademicAverage >= 80 ? "#d4edda" : Model.AcademicAverage >= 60 ? "#fff3cd" : "#f8d7da"); color: @(Model.AcademicAverage >= 80 ? "#155724" : Model.AcademicAverage >= 60 ? "#856404" : "#721c24");">
+                                @(Model.AcademicAverage?.ToString("0.0") ?? "—")%
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <p><strong>Applying For:</strong> <span class="badge badge-primary">@(Model.GradeApplyingForDisplay ?? "—")</span></p>
+                @if (!string.IsNullOrEmpty(Model.StreamChoiceDisplay))
+                {
+                    <p><strong>Stream:</strong> @Model.StreamChoiceDisplay</p>
+                }
+            </div>
+
+            <!-- Parent Info -->
+            <div class="section-box">
+                <h4><i class="fas fa-users"></i> Parent/Guardian Information</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> @Model.ParentName</p>
+                        <p><strong>Relationship:</strong> @Model.ParentRelationship</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Cell Phone:</strong> @Model.ParentCellPhone</p>
+                        <p><strong>Email:</strong> @Model.ParentEmail</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="section-box">
+                <h4><i class="fas fa-file-alt"></i> Uploaded Documents</h4>
+                <div class="row">
+                    @if (!string.IsNullOrEmpty(Model.IdDocumentPath))
+                    {
+                        <div class="col-md-6">
+                            <a href="@Model.IdDocumentPath" target="_blank" class="document-link">
+                                <i class="fas fa-id-card"></i> ID / Birth Certificate
+                            </a>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ReportCardPath))
+                    {
+                        <div class="col-md-6">
+                            <a href="@Model.ReportCardPath" target="_blank" class="document-link">
+                                <i class="fas fa-file-pdf"></i> Report Card
+                            </a>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ProofOfResidencePath))
+                    {
+                        <div class="col-md-6">
+                            <a href="@Model.ProofOfResidencePath" target="_blank" class="document-link">
+                                <i class="fas fa-home"></i> Proof of Residence
+                            </a>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ParentIdDocumentPath))
+                    {
+                        <div class="col-md-6">
+                            <a href="@Model.ParentIdDocumentPath" target="_blank" class="document-link">
+                                <i class="fas fa-id-card"></i> Parent ID Document
+                            </a>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.TransferCertificatePath))
+                    {
+                        <div class="col-md-6">
+                            <a href="@Model.TransferCertificatePath" target="_blank" class="document-link">
+                                <i class="fas fa-exchange-alt"></i> Transfer Certificate
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="col-md-4">
+            <div class="section-box bg-light">
+                <h4><i class="fas fa-info-circle"></i> Application Status</h4>
+                <p>
+                    <strong>Current Status:</strong>
+                    <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+                </p>
+                <p><strong>Applied On:</strong> @Model.ApplicationDate.ToString("dd MMM yyyy, hh:mm tt")</p>
+
+                @if (Model.ReviewDate.HasValue)
+                {
+                    <p><strong>Reviewed On:</strong> @Model.ReviewDate.Value.ToString("dd MMM yyyy")</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.ReviewedBy))
+                {
+                    <p><strong>Reviewed By:</strong> @Model.ReviewedBy</p>
+                }
+
+                <hr />
+
+                @{
+                    bool showReviewButton = (Model.Status == ApplicationStatus.Pending);
+                    bool showApproveReject = (Model.Status == ApplicationStatus.Pending || Model.Status == ApplicationStatus.UnderReview);
+                }
+
+                @if (showReviewButton)
+                {
+                    using (Html.BeginForm("SetUnderReview", "Admin", new { id = Model.Id }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-eye"></i> Mark as Under Review
+                        </button>
+                    }
+                }
+
+                @if (showApproveReject)
+                {
+                    <div class="approve-section">
+                        <h5><i class="fas fa-check-circle text-success"></i> Approve Application</h5>
+                        @using (Html.BeginForm("Approve", "Admin", new { id = Model.Id }, FormMethod.Post, new { id = "approveForm" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+                            <div class="form-group">
+                                <label><i class="fas fa-graduation-cap"></i> Select Class:</label>
+                                <select name="classId" id="selectedClass" class="class-select" required>
+                                    <option value="">-- Select Class --</option>
+                                    @if (availableClasses != null)
+                                    {
+                                        foreach (var cls in availableClasses)
+                                        {
+                                            <option value="@cls.Id">@cls.FullName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-approve mb-2">
+                                <i class="fas fa-check"></i> Approve Application
+                            </button>
+                        }
+                    </div>
+
+                    <div>
+                        <h5><i class="fas fa-times-circle text-danger"></i> Reject Application</h5>
+                        @using (Html.BeginForm("Reject", "Admin", new { id = Model.Id }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label><i class="fas fa-comment"></i> Rejection Reason:</label>
+                                <textarea name="rejectionReason" class="form-control" rows="3" placeholder="Please provide a reason for rejection..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-reject">
+                                <i class="fas fa-times"></i> Reject Application
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                {
+                    <hr />
+                    <p><strong>Rejection Reason:</strong> @Model.RejectionReason</p>
+                }
+
+                <hr />
+
+                <div class="mt-3">
+                    <a href="@Url.Action("PendingApplications", "Admin")" class="btn btn-outline-primary btn-block mb-2">
+                        <i class="fas fa-arrow-left"></i> Back to Pending List
+                    </a>
+                    <a href="@Url.Action("EvaluateApplications", "Admin")" class="btn btn-outline-success btn-block mb-2">
+                        <i class="fas fa-star"></i> Bulk Evaluate
+                    </a>
+                    <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-secondary btn-block">
+                        <i class="fas fa-tachometer-alt"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var approveForm = document.getElementById('approveForm');
+        if (approveForm) {
+            approveForm.addEventListener('submit', function (e) {
+                var selectedClass = document.getElementById('selectedClass').value;
+                if (!selectedClass) {
+                    e.preventDefault();
+                    alert('Please select a class before approving.');
+                    return false;
+                }
+                if (!confirm('Are you sure you want to approve this application?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+    });
+</script>

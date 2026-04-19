@@ -1,0 +1,327 @@
+﻿@model ElevateED.ViewModels.IssueDetailViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Issue Details";
+}
+
+<style>
+    .issue-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .issue-header {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 5px solid #ddd;
+    }
+
+        .issue-header.status-pending {
+            border-left-color: #ffc107;
+        }
+
+        .issue-header.status-underreview {
+            border-left-color: #17a2b8;
+        }
+
+        .issue-header.status-resolved {
+            border-left-color: #28a745;
+        }
+
+        .issue-header.status-closed {
+            border-left-color: #6c757d;
+        }
+
+    .issue-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .meta-item label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .meta-item value {
+            font-weight: 600;
+            color: #333;
+        }
+
+    .description-box {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .student-info {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .resolution-box {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .btn-resolve {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+    }
+
+    .btn-under-review {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+    }
+
+    .badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+    }
+
+        .form-control:focus {
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+</style>
+
+<div class="container issue-detail-container">
+    <!-- Header -->
+    <div class="issue-header status-@(Model.Status.ToString().ToLower())">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h2><i class="fas fa-exclamation-circle"></i> @Model.Title</h2>
+                <div class="mt-2">
+                    <span class="badge @(Model.Status == IssueStatus.Pending ? "badge-warning" : Model.Status == IssueStatus.UnderReview ? "badge-info" : Model.Status == IssueStatus.Resolved ? "badge-success" : "badge-secondary")">
+                        @Model.Status
+                    </span>
+                    <span class="badge @(Model.Priority == IssuePriority.Critical ? "badge-danger" : Model.Priority == IssuePriority.High ? "badge-warning" : Model.Priority == IssuePriority.Medium ? "badge-info" : "badge-secondary")">
+                        @Model.Priority Priority
+                    </span>
+                    <span class="badge badge-secondary">@Model.Category</span>
+                    @if (Model.IsAnonymous)
+                    {
+                        <span class="badge badge-dark"><i class="fas fa-user-secret"></i> Anonymous Report</span>
+                    }
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-muted">Issue #@Model.Id</div>
+                <div class="text-muted"><i class="fas fa-calendar"></i> @Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div>
+            </div>
+        </div>
+
+        <div class="issue-meta">
+            <div class="meta-item">
+                <label>Reported By</label>
+                <value>@(Model.IsAnonymous ? "Anonymous" : Model.StudentName)</value>
+            </div>
+            @if (!Model.IsAnonymous)
+            {
+                <div class="meta-item">
+                    <label>Student Number</label>
+                    <value>@Model.StudentNumber</value>
+                </div>
+                <div class="meta-item">
+                    <label>Grade & Class</label>
+                    <value>@Model.Grade @Model.ClassName</value>
+                </div>
+                <div class="meta-item">
+                    <label>Email</label>
+                    <value>@Model.StudentEmail</value>
+                </div>
+            }
+            <div class="meta-item">
+                <label>Category</label>
+                <value>@Model.Category</value>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="description-box">
+        <h5><i class="fas fa-align-left text-primary"></i> Description</h5>
+        <hr />
+        <p style="white-space: pre-wrap; line-height: 1.8;">@Model.Description</p>
+
+        @if (Model.HasAttachment)
+        {
+            <div class="mt-3">
+                <h6><i class="fas fa-paperclip"></i> Attachment</h6>
+                <a href="@Model.AttachmentsPath" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-download"></i> View Attachment
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Resolution Section -->
+    @if (Model.Status == IssueStatus.Resolved || Model.Status == IssueStatus.Closed)
+    {
+        <div class="resolution-box bg-light">
+            <h5><i class="fas fa-check-circle text-success"></i> Resolution</h5>
+            <hr />
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Resolved By:</strong> @Model.ResolvedByName</p>
+                    <p><strong>Resolved At:</strong> @(Model.ResolvedAt != null ? Model.ResolvedAt.Value.ToString("dd MMM yyyy, HH:mm") : "-")</p>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ResolutionNotes))
+            {
+                <div class="mt-3">
+                    <strong>Resolution Notes:</strong>
+                    <p class="mt-2 p-3 bg-white rounded">@Model.ResolutionNotes</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.AdminResponse))
+            {
+                <div class="mt-3">
+                    <strong>Response to Student:</strong>
+                    <p class="mt-2 p-3 bg-white rounded">@Model.AdminResponse</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Admin Actions -->
+        <div class="resolution-box">
+            <h5><i class="fas fa-cogs text-primary"></i> Admin Actions</h5>
+            <hr />
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    @if (Model.Status == IssueStatus.Pending)
+                    {
+                        <button type="button" class="btn-under-review" onclick="setUnderReview(@Model.Id)">
+                            <i class="fas fa-clock"></i> Mark as Under Review
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <form id="resolveForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <div class="form-group">
+                    <label><strong>Resolution Notes</strong> (Internal - admin only)</label>
+                    <textarea name="ResolutionNotes" class="form-control" rows="3" required
+                              placeholder="Describe what action was taken to resolve this issue..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><strong>Response to Student</strong> (Optional - visible to student)</label>
+                    <textarea name="AdminResponse" class="form-control" rows="3"
+                              placeholder="This message will be shown to the student when they view their issue..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><strong>Mark as</strong></label>
+                    <select name="NewStatus" class="form-control" style="max-width: 200px;">
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed (No Action)</option>
+                    </select>
+                </div>
+
+                <div id="message" class="alert" style="display: none;"></div>
+
+                <button type="button" class="btn-resolve" onclick="resolveIssue()">
+                    <i class="fas fa-check"></i> Submit Resolution
+                </button>
+
+                <a href="@Url.Action("Issues", "Admin")" class="btn btn-secondary ml-2">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </form>
+        </div>
+    }
+</div>
+
+<script>
+    function setUnderReview(id) {
+        if (!confirm('Mark this issue as under review?')) return;
+
+        $.ajax({
+            url: '@Url.Action("SetIssueUnderReview", "Admin")',
+            type: 'POST',
+            data: { id: id },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    location.reload();
+                } else {
+                    toastr.error(response.message);
+                }
+            }
+        });
+    }
+
+    function resolveIssue() {
+        var formData = $('#resolveForm').serialize();
+        var notes = $('textarea[name="ResolutionNotes"]').val();
+
+        if (!notes) {
+            alert('Please enter resolution notes');
+            return;
+        }
+
+        $('#message').hide();
+
+        $.ajax({
+            url: '@Url.Action("ResolveIssue", "Admin")',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    $('#message').removeClass('alert-danger').addClass('alert-success')
+                        .html('<i class="fas fa-check-circle"></i> ' + response.message).show();
+                    setTimeout(function() {
+                        window.location.href = '@Url.Action("Issues", "Admin")';
+                    }, 2000);
+                } else {
+                    $('#message').removeClass('alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle"></i> ' + response.message).show();
+                }
+            }
+        });
+    }
+</script>

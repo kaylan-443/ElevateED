@@ -1,0 +1,175 @@
+﻿@model List<ElevateED.Models.Subject>
+
+@{
+    ViewBag.Title = "Homework - Teacher Dashboard";
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .subject-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 4px solid #16a085;
+        height: 100%;
+    }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .subject-icon {
+        width: 70px;
+        height: 70px;
+        background: #16a085;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+    .subject-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .action-buttons {
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-view-mine {
+        background: #1e3c72;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-view-mine:hover {
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div class="header-left">
+            <h2><i class="fas fa-home"></i> Homework</h2>
+            <p>Select a subject to assign homework</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Teacher")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <a href="@Url.Action("ViewMyHomework", "Teacher")" class="btn-view-mine">
+            <i class="fas fa-eye"></i> View My Uploaded Homework
+        </a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-book"></i>
+            <h4>No Subjects Assigned</h4>
+            <p>You are not assigned to any subjects yet.</p>
+            <p>Please contact the school administrator.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            @foreach (var subject in Model)
+            {
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="subject-card" onclick="location.href='@Url.Action("SelectGradeForHomework", "Teacher", new { subjectId = subject.Id })'">
+                        <div class="subject-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="subject-name">@subject.Name</div>
+                        <div class="subject-info">Click to select grade</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

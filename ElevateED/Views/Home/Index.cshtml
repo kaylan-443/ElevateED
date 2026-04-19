@@ -1,0 +1,269 @@
+﻿@{
+    ViewBag.Title = "Home - ElevateED";
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --light-bg: #f8f9fa;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        color: white;
+        padding: 100px 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></svg>');
+            background-size: 100px 100px;
+            opacity: 0.3;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .school-badge {
+        width: 100px;
+        height: 100px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border: 4px solid var(--accent-gold);
+    }
+
+        .school-badge i {
+            font-size: 50px;
+            color: var(--primary-blue);
+        }
+
+    .btn-main {
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        padding: 18px 50px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 18px;
+        border: 3px solid var(--accent-gold);
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+        .btn-main:hover {
+            background: transparent;
+            color: var(--accent-gold);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+
+    .btn-outline {
+        background: transparent;
+        color: white;
+        border: 3px solid white;
+        padding: 18px 50px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 18px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+        .btn-outline:hover {
+            background: white;
+            color: var(--primary-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+
+    .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px 30px;
+        margin: 20px 0;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-top: 4px solid var(--accent-gold);
+        text-align: center;
+    }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+    }
+
+        .feature-icon i {
+            font-size: 35px;
+            color: white;
+        }
+
+    .stats-section {
+        background: var(--light-bg);
+        padding: 80px 0;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .stat-number {
+        font-size: 48px;
+        font-weight: 800;
+        color: var(--primary-blue);
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 600;
+    }
+
+    .cta-section {
+        background: var(--primary-blue);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+    }
+</style>
+
+<div class="hero-section">
+    <div class="container hero-content">
+        <div class="school-badge">
+            <i class="fas fa-school"></i>
+        </div>
+        <h1 class="display-3 font-weight-bold mb-3">Mpiyakhe High School</h1>
+        <p class="lead mb-2">Empowering Future Leaders Through Quality Education</p>
+        <p class="h5 mb-5" style="opacity: 0.9;">Excellence in Education Since 1998</p>
+
+        <div class="mt-5">
+            <a href="@Url.Action("Apply", "Application")" class="btn-main">
+                <i class="fas fa-edit mr-2"></i>Apply Now
+            </a>
+            <a href="@Url.Action("Login", "Account")" class="btn-outline">
+                <i class="fas fa-sign-in-alt mr-2"></i>Login
+            </a>
+        </div>
+
+        <div class="mt-4">
+            <p class="small" style="opacity: 0.8;">
+                <i class="fas fa-user-check mr-1"></i>
+                For Students, Parents & Staff
+            </p>
+        </div>
+    </div>
+</div>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h4>Online Application</h4>
+                    <p class="text-muted">Apply for enrolment easily through our digital platform. Upload documents and track your application status in real-time.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h4>Instant Notifications</h4>
+                    <p class="text-muted">Receive email updates about your application status, approvals, and important school announcements.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h4>Academic Tracking</h4>
+                    <p class="text-muted">Once enrolled, students and parents can track academic performance, assignments, and exam schedules.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number">25+</span>
+                    <span class="stat-label">Years of Excellence</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number">1500+</span>
+                    <span class="stat-label">Students</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Matric Pass Rate</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number">50+</span>
+                    <span class="stat-label">Expert Educators</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2 class="mb-4">Ready to Start Your Journey?</h2>
+        <p class="lead mb-4">Join Mpiyakhe High School and unlock your potential</p>
+        <a href="@Url.Action("Apply", "Application")" class="btn btn-lg" style="background: var(--accent-gold); color: var(--primary-blue); font-weight: 700; padding: 15px 40px; border-radius: 50px;">
+            <i class="fas fa-rocket mr-2"></i>Begin Application
+        </a>
+    </div>
+</section>

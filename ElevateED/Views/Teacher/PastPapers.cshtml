@@ -1,0 +1,497 @@
+﻿@model List<ElevateED.ViewModels.GradeCardViewModel>
+
+@{
+    ViewBag.Title = "Past Paper Repository - ElevateED";
+}
+
+<style>
+    .past-papers-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .header-buttons {
+        margin-top: 20px;
+    }
+
+    .btn-view-papers {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 10px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-view-papers:hover {
+            background: white;
+            color: #1e3c72;
+            transform: translateY(-2px);
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .grade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .grade-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+
+        .grade-card.primary:before {
+            background: #1e3c72;
+        }
+
+        .grade-card.info:before {
+            background: #17a2b8;
+        }
+
+        .grade-card.success:before {
+            background: #28a745;
+        }
+
+        .grade-card.warning:before {
+            background: #ffc107;
+        }
+
+        .grade-card.danger:before {
+            background: #dc3545;
+        }
+
+    .grade-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 35px;
+        color: white;
+    }
+
+        .grade-icon.primary {
+            background: #1e3c72;
+        }
+
+        .grade-icon.info {
+            background: #17a2b8;
+        }
+
+        .grade-icon.success {
+            background: #28a745;
+        }
+
+        .grade-icon.warning {
+            background: #ffc107;
+        }
+
+        .grade-icon.danger {
+            background: #dc3545;
+        }
+
+    .grade-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .paper-count {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+        .paper-count span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+    .card-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        flex: 1;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+    .btn-upload {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        flex: 1;
+    }
+
+        .btn-upload:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+    .modal-header .close {
+        color: white;
+        opacity: 0.8;
+    }
+
+        .modal-header .close:hover {
+            opacity: 1;
+        }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="display-4">
+                    <i class="fas fa-archive text-warning mr-3"></i>Past Paper Repository
+                </h1>
+                <p class="lead mb-0">Select a grade to view or upload past papers</p>
+            </div>
+            <div class="header-buttons">
+                <a href="@Url.Action("ViewPastPapers", "Teacher")" class="btn btn-view-papers">
+                    <i class="fas fa-search mr-2"></i>Browse All Papers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container past-papers-container">
+    <div class="row">
+        @foreach (var grade in Model)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="grade-card @grade.Color">
+                    <div class="grade-icon @grade.Color">
+                        <i class="@grade.Icon"></i>
+                    </div>
+                    <h2 class="grade-title">@grade.Grade</h2>
+                    <div class="paper-count">
+                        <span>@grade.PaperCount</span> papers available
+                    </div>
+                    <div class="card-buttons">
+                        <button class="btn-view" onclick="viewPapers('@grade.Grade')">
+                            <i class="fas fa-eye mr-1"></i> View
+                        </button>
+                        <button class="btn-upload" onclick="openGradeModal('@grade.Grade')">
+                            <i class="fas fa-upload mr-1"></i> Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: white;">
+                <h5 class="modal-title" id="uploadModalLabel">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Past Paper - <span id="modalGradeTitle"></span>
+                </h5>
+                <button type="button" class="close" onclick="closeUploadModal()" aria-label="Close" style="color: white; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="selectedGrade" name="Grade" />
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="required">Title</label>
+                                <input type="text" name="Title" class="form-control" required placeholder="e.g., Mathematics Final Exam 2024" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Subject</label>
+                                <select name="Subject" id="subjectSelect" class="form-control" required>
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Year</label>
+                                <select name="Year" class="form-control" required>
+                                    <option value="">-- Select Year --</option>
+                                    @for (int i = DateTime.Now.Year; i >= DateTime.Now.Year - 10; i--)
+                                    {
+                                        <option value="@i">@i</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Term</label>
+                                <select name="Term" class="form-control" required>
+                                    <option value="">-- Select Term --</option>
+                                    <option value="Term 1">Term 1</option>
+                                    <option value="Term 2">Term 2</option>
+                                    <option value="Term 3">Term 3</option>
+                                    <option value="Term 4">Term 4</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Exam Type</label>
+                                <select name="ExamType" class="form-control" required>
+                                    <option value="">-- Select Exam Type --</option>
+                                    <option value="Test">Test</option>
+                                    <option value="Mid-Year">Mid-Year Exam</option>
+                                    <option value="Trial">Trial Exam</option>
+                                    <option value="Final">Final Exam</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea name="Description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="required">Past Paper (PDF)</label>
+                                <input type="file" name="PaperFile" class="form-control-file" accept=".pdf" required />
+                                <small class="form-text text-muted">PDF format only, max 10MB</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Memo (Optional PDF)</label>
+                                <input type="file" name="MemoFile" class="form-control-file" accept=".pdf" />
+                                <small class="form-text text-muted">Optional memo file</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="uploadMessage" class="alert" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitUpload()">
+                    <i class="fas fa-upload mr-2"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Subjects for different grade levels
+        var subjectsForGrade8And9 = [
+            "Mathematics",
+            "Natural Science",
+            "Social Science",
+            "Life Orientation",
+            "Creative Arts",
+            "Economic Management Science",
+            "English",
+            "isiZulu",
+            "Technology"
+        ];
+
+        var subjectsForGrade10To12 = [
+            "Mathematics",
+            "Mathematical Literacy",
+            "English",
+            "isiZulu",
+            "Life Orientation",
+            "Physical Sciences",
+            "Life Sciences",
+            "History",
+            "Geography",
+            "Accounting",
+            "Business Studies",
+            "Economics",
+            "Agricultural Sciences",
+            "Computer Applications Technology",
+            "Information Technology"
+        ];
+
+        function getSubjectsForGrade(grade) {
+            if (grade === "Grade 8" || grade === "Grade 9") {
+                return subjectsForGrade8And9;
+            } else {
+                return subjectsForGrade10To12;
+            }
+        }
+
+        function populateSubjects(grade) {
+            var subjects = getSubjectsForGrade(grade);
+            var select = $('#subjectSelect');
+            select.empty();
+            select.append('<option value="">-- Select Subject --</option>');
+
+            for (var i = 0; i < subjects.length; i++) {
+                select.append('<option value="' + subjects[i] + '">' + subjects[i] + '</option>');
+            }
+        }
+
+        function viewPapers(grade) {
+            window.location.href = '@Url.Action("ViewPastPapers", "Teacher")?grade=' + encodeURIComponent(grade);
+        }
+
+        function openGradeModal(grade) {
+            $('#modalGradeTitle').text(grade);
+            $('#selectedGrade').val(grade);
+            populateSubjects(grade);
+            $('#uploadModal').modal('show');
+            $('#uploadForm')[0].reset();
+            $('#uploadMessage').hide();
+            $('.is-invalid').removeClass('is-invalid');
+        }
+
+        function closeUploadModal() {
+            $('#uploadModal').modal('hide');
+            $('#uploadForm')[0].reset();
+            $('#uploadMessage').hide();
+        }
+
+        function submitUpload() {
+            var formData = new FormData($('#uploadForm')[0]);
+
+            var title = $('input[name="Title"]').val();
+            var subject = $('select[name="Subject"]').val();
+            var year = $('select[name="Year"]').val();
+            var term = $('select[name="Term"]').val();
+            var examType = $('select[name="ExamType"]').val();
+            var paperFile = $('input[name="PaperFile"]')[0].files[0];
+
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            if (!subject) {
+                alert('Please select a subject');
+                return;
+            }
+            if (!year) {
+                alert('Please select a year');
+                return;
+            }
+            if (!term) {
+                alert('Please select a term');
+                return;
+            }
+            if (!examType) {
+                alert('Please select an exam type');
+                return;
+            }
+            if (!paperFile) {
+                alert('Please select a PDF file to upload');
+                return;
+            }
+            if (paperFile.type !== 'application/pdf') {
+                alert('Only PDF files are allowed');
+                return;
+            }
+            if (paperFile.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("UploadPastPaper", "Teacher")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $('#uploadMessage').removeClass('alert-success alert-danger').hide();
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#uploadMessage').addClass('alert-success').html('<i class="fas fa-check-circle mr-2"></i>' + response.message).show();
+                        setTimeout(function() {
+                            closeUploadModal();
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        $('#uploadMessage').addClass('alert-danger').html('<i class="fas fa-exclamation-circle mr-2"></i>' + response.message).show();
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'An error occurred during upload';
+                    $('#uploadMessage').addClass('alert-danger').html('<i class="fas fa-exclamation-circle mr-2"></i>' + errorMsg).show();
+                }
+            });
+        }
+    </script>
+}

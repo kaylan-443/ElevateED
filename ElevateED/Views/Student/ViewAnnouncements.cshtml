@@ -1,0 +1,217 @@
+﻿@model List<ElevateED.ViewModels.AnnouncementListViewModel>
+
+@{
+    ViewBag.Title = "Announcements - Student Dashboard";
+}
+
+<style>
+    .announcements-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .header-left p {
+        margin: 5px 0 0 0;
+        color: #666;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .announcement-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #1e3c72;
+    }
+
+        .announcement-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .announcement-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 10px;
+    }
+
+    .announcement-content {
+        color: #555;
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    .announcement-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .badge-info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .badge-secondary {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .badge-primary {
+        background: #cce5ff;
+        color: #004085;
+    }
+
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+</style>
+
+<div class="container announcements-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-bullhorn"></i> Announcements
+            </h2>
+            <p>View important announcements from the school administration</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3><i class="fas fa-user-graduate"></i> @ViewBag.StudentName</h3>
+        <p><strong>Class:</strong> @ViewBag.ClassName | <strong>Grade:</strong> @ViewBag.StudentGrade</p>
+        <p class="mb-0"><i class="fas fa-info-circle"></i> Stay updated with the latest school announcements</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-bullhorn"></i>
+            <h4>No Announcements</h4>
+            <p>There are no announcements available at this time.</p>
+            <p>Check back later for updates from the administration.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="announcement-card">
+                <div class="announcement-title">
+                    @item.Title
+                    <span class="badge @item.TypeBadgeClass" style="margin-left: 10px;">@item.AnnouncementType</span>
+                    <span class="badge @item.AudienceBadgeClass">@item.TargetAudience</span>
+                </div>
+                <div class="announcement-content">@item.Content</div>
+                <div class="announcement-meta">
+                    <span><i class="fas fa-calendar"></i> Posted: @item.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                    <span><i class="fas fa-user-shield"></i> Posted by: @item.CreatedByName</span>
+                    @if (item.ExpiryDate.HasValue)
+                    {
+                        <span><i class="fas fa-hourglass-end"></i> Expires: @item.ExpiryDate.Value.ToString("dd MMM yyyy")</span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

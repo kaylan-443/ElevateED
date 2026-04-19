@@ -1,0 +1,568 @@
+﻿@model ElevateED.ViewModels.ManageUsersViewModel
+
+@{
+    ViewBag.Title = "Manage Users - Admin Dashboard";
+}
+
+<style>
+    .manage-users-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: var(--primary-blue);
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: var(--accent-gold);
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .user-table-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 15px 20px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+        .table-header i {
+            margin-right: 10px;
+        }
+
+    .search-bar {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .user-table th {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .user-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .user-table tbody tr:hover {
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .btn-action {
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin: 0 2px;
+        border: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+        }
+
+    .btn-reset {
+        background: #ffc107;
+        color: #333;
+    }
+
+        .btn-reset:hover {
+            background: #e0a800;
+        }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+    .filter-section {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 25px;
+    }
+
+    .empty-row {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .student-name, .teacher-name {
+        font-weight: 600;
+        color: #1e3c72;
+    }
+
+    .student-number, .teacher-number {
+        font-family: monospace;
+        font-size: 12px;
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    /* Subject and Grade Tags - FIXED VISIBILITY */
+    .subject-tag {
+        display: inline-block;
+        background: #e3f2fd;
+        color: #1e3c72;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        margin: 2px;
+    }
+
+    .grade-tag {
+        display: inline-block;
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        margin: 2px;
+    }
+
+    .badge-more {
+        background: #6c757d;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        margin: 2px;
+        display: inline-block;
+    }
+
+    .info-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .teacher-email {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .teacher-phone {
+        font-size: 11px;
+        color: #999;
+    }
+
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+    }
+</style>
+
+<div class="container manage-users-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h2 class="page-title">
+                <i class="fas fa-users-cog"></i> Manage Users
+            </h2>
+            <small class="text-muted">View and manage all users in the system</small>
+        </div>
+        <div class="header-right">
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Teachers Table -->
+    <div class="user-table-card">
+        <div class="table-header">
+            <i class="fas fa-chalkboard-teacher"></i> Teachers (@Model.Teachers.Count)
+        </div>
+        <div class="search-bar">
+            <div class="filter-section">
+                <input type="text" id="teacherSearch" class="filter-input" placeholder="Search by name, email or staff number...">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearTeacherSearch()">Clear</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="user-table" id="teachersTable">
+                <thead>
+                    <tr>
+                        <th>Staff #</th>
+                        <th>Teacher</th>
+                        <th>Subjects</th>
+                        <th>Grades</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var teacher in Model.Teachers)
+                    {
+                        <tr>
+                            <td><span class="teacher-number">@teacher.StaffNumber</span></td>
+                            <td>
+                                <div class="info-text">
+                                    <span class="teacher-name">@teacher.FullName</span>
+                                    <span class="teacher-email">@teacher.Email</span>
+                                    <span class="teacher-phone">@teacher.PhoneNumber</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(teacher.Subjects))
+                                {
+                                    var subjectsList = teacher.Subjects.Split(',');
+                                    foreach (var subj in subjectsList.Take(3))
+                                    {
+                                        <span class="subject-tag">@subj.Trim()</span>
+                                    }
+                                    if (subjectsList.Length > 3)
+                                    {
+                                        <span class="badge-more">+@(subjectsList.Length - 3)</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(teacher.Grades))
+                                {
+                                    var gradesList = teacher.Grades.Split(',');
+                                    foreach (var grd in gradesList)
+                                    {
+                                        <span class="grade-tag">@grd.Trim()</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="editTeacher(@teacher.Id)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action btn-reset" onclick="resetPassword(@teacher.Id, '@teacher.FullName')" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" onclick="deleteUser(@teacher.Id, 'teacher')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Teachers.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-row">No teachers found</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="user-table-card">
+        <div class="table-header">
+            <i class="fas fa-user-graduate"></i> Students (@Model.Students.Count)
+        </div>
+        <div class="search-bar">
+            <div class="filter-section">
+                <input type="text" id="studentSearch" class="filter-input" placeholder="Search by name, email or student number...">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearStudentSearch()">Clear</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="user-table" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>Student #</th>
+                        <th>Student</th>
+                        <th>Contact</th>
+                        <th>Grade & Stream</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model.Students)
+                    {
+                        <tr onclick="viewStudent(@student.UserId)" style="cursor: pointer;">
+                            <td><span class="student-number">@student.StudentNumber</span></td>
+                            <td>
+                                <div class="info-text">
+                                    <span class="student-name">@student.FullName</span>
+                                    <small class="text-muted">Applied: @student.ApplicationDate.ToString("dd MMM yyyy")</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div><i class="fas fa-envelope text-muted mr-1"></i> @student.Email</div>
+                                <div><i class="fas fa-phone text-muted mr-1"></i> @student.CellPhone</div>
+                            </td>
+                            <td>
+                                <strong>@student.GradeApplyingFor</strong>
+                                @if (!string.IsNullOrEmpty(student.StreamChoice))
+                                {
+                                    <br />
+                                    <small class="text-muted">@(!string.IsNullOrEmpty(student.StreamChoice) && student.StreamChoice.Length > 30 ? student.StreamChoice.Substring(0, 27) + "..." : student.StreamChoice)</small>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var statusClass = student.Status == "Approved" ? "status-active" : (student.Status == "Pending" ? "status-pending" : "status-inactive");
+                                }
+                                <span class="status-badge @statusClass">@student.Status</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons" onclick="event.stopPropagation()">
+                                    <button class="btn-action btn-view" onclick="viewStudent(@student.UserId)" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-action btn-reset" onclick="resetStudentPassword(@student.UserId, '@student.FullName')" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" onclick="deleteUser(@student.UserId, 'student')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Students.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-row">No students found</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Teacher search filter
+        $('#teacherSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $('#teachersTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+
+        // Student search filter
+        $('#studentSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $('#studentsTable tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+
+        function clearTeacherSearch() {
+            $('#teacherSearch').val('');
+            $('#teachersTable tbody tr').show();
+        }
+
+        function clearStudentSearch() {
+            $('#studentSearch').val('');
+            $('#studentsTable tbody tr').show();
+        }
+
+        function editTeacher(id) {
+            window.location.href = '@Url.Action("RegisterTeacher", "Admin")?editId=' + id;
+        }
+
+        function viewStudent(userId) {
+            window.location.href = '@Url.Action("ViewStudentDetails", "Admin")?userId=' + userId;
+        }
+
+        function resetPassword(id, name) {
+            if (confirm('Reset password for ' + name + '? A new temporary password will be sent to their email.')) {
+                $.ajax({
+                    url: '@Url.Action("ResetUserPassword", "Admin")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        userId: id,
+                        userType: 'teacher'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Password reset successfully. New password sent to ' + response.email);
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while resetting the password');
+                    }
+                });
+            }
+        }
+
+        function resetStudentPassword(userId, name) {
+            if (confirm('Reset password for student ' + name + '? A new temporary password will be sent to their email.')) {
+                $.ajax({
+                    url: '@Url.Action("ResetUserPassword", "Admin")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        userId: userId,
+                        userType: 'student'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Password reset successfully. New password sent to ' + response.email);
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while resetting the password');
+                    }
+                });
+            }
+        }
+
+        function deleteUser(id, type) {
+            if (confirm('Are you sure you want to delete this ' + type + '? This action cannot be undone.')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteUser", "Admin")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        userId: id,
+                        userType: type
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting the user');
+                    }
+                });
+            }
+        }
+    </script>
+}

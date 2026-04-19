@@ -1,0 +1,210 @@
+﻿@model List<ElevateED.ViewModels.ClassworkListViewModel>
+
+@{
+    ViewBag.Title = "My Classwork - ElevateED";
+}
+
+<style>
+    .classwork-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .header-left p {
+        margin: 5px 0 0 0;
+        color: #666;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .classwork-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #d35400;
+    }
+
+        .classwork-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .classwork-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 10px;
+    }
+
+    .classwork-subject {
+        display: inline-block;
+        background: #fff3e0;
+        color: #d35400;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .classwork-instructions {
+        color: #555;
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    .classwork-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .btn-download {
+        background: #d35400;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-download:hover {
+            background: #e67e22;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+</style>
+
+<div class="container classwork-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2>
+                <i class="fas fa-chalkboard"></i> My Classwork
+            </h2>
+            <p>View and download classwork activities</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3><i class="fas fa-user-graduate"></i> @ViewBag.StudentName</h3>
+        <p><strong>Class:</strong> @ViewBag.ClassName | <strong>Grade:</strong> @ViewBag.StudentGrade</p>
+        <p class="mb-0"><i class="fas fa-info-circle"></i> Complete and submit your classwork as instructed by your teacher</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>No Classwork Assigned</h4>
+            <p>You have no classwork assignments at this time.</p>
+            <p>Check back later for new activities from your teachers.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="classwork-card">
+                <div class="classwork-title">@item.Title</div>
+                <div>
+                    <span class="classwork-subject">@item.Subject</span>
+                </div>
+                <div class="classwork-instructions">@item.Instructions</div>
+                <div class="classwork-meta">
+                    <span><i class="fas fa-calendar"></i> Posted: @item.UploadedAt.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-chalkboard-teacher"></i> @item.UploadedByName</span>
+                    <span><i class="fas fa-hdd"></i> @item.FileSizeFormatted</span>
+                </div>
+                <div>
+                    <a href="@Url.Action("DownloadClasswork", "Student", new { id = item.Id })" class="btn-download">
+                        <i class="fas fa-download"></i> Download Classwork
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>
