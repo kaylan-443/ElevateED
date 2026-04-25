@@ -304,13 +304,14 @@ namespace ElevateED.Controllers
                 DateOfBirth = applicant.DateOfBirth,
                 Gender = applicant.Gender,
                 IdentityNumber = applicant.IdentityNumber,
-                Nationality = applicant.Nationality,
+                Nationality = applicant.Nationality ?? "South African",
                 HomeLanguage = applicant.HomeLanguage,
                 CellPhone = applicant.CellPhone,
                 AlternativePhone = applicant.AlternativePhone,
                 PhysicalAddress = applicant.PhysicalAddress,
                 PostalAddress = applicant.PostalAddress,
                 StreamId = applicant.StreamId,
+                GradeApplyingForId = applicant.GradeApplyingForId,  // ← ADD THIS LINE!
                 ParentName = applicant.ParentName,
                 ParentIdNumber = applicant.ParentIdNumber,
                 ParentRelationship = applicant.ParentRelationship,
@@ -320,8 +321,8 @@ namespace ElevateED.Controllers
                 ParentOccupation = applicant.ParentOccupation,
                 ParentEmployer = applicant.ParentEmployer,
                 ParentWorkAddress = applicant.ParentWorkAddress,
-                EmergencyContactName = applicant.EmergencyContactName,
-                EmergencyContactPhone = applicant.EmergencyContactPhone,
+                EmergencyContactName = applicant.EmergencyContactName ?? "N/A",
+                EmergencyContactPhone = applicant.EmergencyContactPhone ?? "N/A",
                 EmergencyContactRelationship = applicant.EmergencyContactRelationship,
                 MedicalConditions = applicant.MedicalConditions,
                 Allergies = applicant.Allergies,
@@ -1770,13 +1771,27 @@ namespace ElevateED.Controllers
         }
 
         [HttpPost]
-        public ActionResult ResetUserPassword(int userId, string userType)
+        public ActionResult ResetUserPassword(int? userId, int? teacherId, string userType)
         {
             if (!IsAdmin()) return Json(new { success = false, message = "Unauthorized" });
 
             try
             {
-                var user = _context.Users.Find(userId);
+                ApplicationUser user = null;
+
+                if (userId.HasValue)
+                {
+                    user = _context.Users.Find(userId.Value);
+                }
+                else if (teacherId.HasValue && userType == "teacher")
+                {
+                    var teacher = _context.Teachers.Find(teacherId.Value);
+                    if (teacher != null)
+                    {
+                        user = _context.Users.Find(teacher.UserId);
+                    }
+                }
+
                 if (user == null) return Json(new { success = false, message = "User not found" });
 
                 var tempPassword = GenerateTempPassword();

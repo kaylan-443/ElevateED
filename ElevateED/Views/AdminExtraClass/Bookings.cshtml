@@ -1,0 +1,228 @@
+﻿@model List<ElevateED.Models.ExtraClassBooking>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Class Bookings";
+    var extraClass = ViewBag.ExtraClass as ExtraClass;
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .class-info {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+
+        .class-info h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .class-info p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+    .stats-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+        min-width: 100px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+    }
+
+    .booking-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-paid {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-confirmed {
+        background: #cce5ff;
+        color: #004085;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-list"></i> Class Bookings</h2>
+            <p class="text-muted">@(extraClass?.Title ?? "Class")</p>
+        </div>
+        <a href="@Url.Action("Index", "AdminExtraClass")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Classes
+        </a>
+    </div>
+
+    @if (extraClass != null)
+    {
+        <div class="class-info">
+            <h3><i class="fas fa-book"></i> @extraClass.Title</h3>
+            <p>
+                @extraClass.Grade?.Name | @extraClass.Subject?.Name |
+                @extraClass.ClassDate.ToString("dd MMM yyyy") |
+                R @extraClass.Fee.ToString("0.00")
+            </p>
+        </div>
+    }
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-number">@Model.Count</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #28a745;">@Model.Count(b => b.Status == BookingStatus.Paid)</div>
+            <div class="stat-label">Paid</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #ffc107;">@Model.Count(b => b.Status == BookingStatus.Pending)</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #dc3545;">@Model.Count(b => b.Status == BookingStatus.Cancelled)</div>
+            <div class="stat-label">Cancelled</div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h4>No Bookings Yet</h4>
+            <p>No students have booked this class yet.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var booking in Model)
+        {
+            var statusClass = booking.Status == BookingStatus.Paid ? "status-paid"
+                : booking.Status == BookingStatus.Pending ? "status-pending"
+                : booking.Status == BookingStatus.Confirmed ? "status-confirmed"
+                : "status-cancelled";
+
+            <div class="booking-card">
+                <div>
+                    <strong>@(booking.Student?.FullName ?? "Unknown")</strong>
+                    <br />
+                    <small class="text-muted">
+                        @(booking.Student?.User?.StudentNumber ?? "N/A") |
+                        @(booking.Student?.Class?.FullName ?? "No class") |
+                        Booked: @booking.BookedAt.ToString("dd MMM yyyy, HH:mm")
+                    </small>
+                    @if (booking.PaidAt.HasValue)
+                    {
+                        <br /><small class="text-muted">Paid: @booking.PaidAt.Value.ToString("dd MMM yyyy, HH:mm")</small>
+                    }
+                    @if (!string.IsNullOrEmpty(booking.PaymentReference))
+                    {
+                        <br /><small class="text-muted">Ref: @booking.PaymentReference</small>
+                    }
+                </div>
+                <div class="text-right">
+                    <span class="status-badge @statusClass">@booking.Status</span>
+                    <br />
+                    @if (booking.Status == BookingStatus.Paid)
+                    {
+                        <span class="text-success">R @booking.AmountPaid.ToString("0.00")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Unpaid</span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

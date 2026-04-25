@@ -359,7 +359,7 @@
                                     <button class="btn-action btn-reset" onclick="resetPassword(@teacher.Id, '@teacher.FullName')" title="Reset Password">
                                         <i class="fas fa-key"></i>
                                     </button>
-                                    <button class="btn-action btn-delete" onclick="deleteUser(@teacher.Id, 'teacher')" title="Delete">
+                                    <button class="btn-action btn-delete" onclick="deleteTeacher(@teacher.Id)" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -492,29 +492,29 @@
             window.location.href = '@Url.Action("ViewStudentDetails", "Admin")?userId=' + userId;
         }
 
-        function resetPassword(id, name) {
-            if (confirm('Reset password for ' + name + '? A new temporary password will be sent to their email.')) {
-                $.ajax({
-                    url: '@Url.Action("ResetUserPassword", "Admin")',
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-                        userId: id,
-                        userType: 'teacher'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert('Password reset successfully. New password sent to ' + response.email);
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function() {
-                        alert('An error occurred while resetting the password');
-                    }
-                });
+       function resetPassword(userId, name) {
+    if (confirm('Reset password for ' + name + '? A new temporary password will be sent to their email.')) {
+        $.ajax({
+            url: '@Url.Action("ResetUserPassword", "Admin")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                userId: userId,  // This is the UserId from ApplicationUsers table
+                userType: 'teacher'
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Password reset successfully. New password sent to ' + response.email);
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred while resetting the password');
             }
-        }
+        });
+    }
+}
 
         function resetStudentPassword(userId, name) {
             if (confirm('Reset password for student ' + name + '? A new temporary password will be sent to their email.')) {
@@ -540,29 +540,53 @@
             }
         }
 
-        function deleteUser(id, type) {
-            if (confirm('Are you sure you want to delete this ' + type + '? This action cannot be undone.')) {
-                $.ajax({
-                    url: '@Url.Action("DeleteUser", "Admin")',
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-                        userId: id,
-                        userType: type
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function() {
-                        alert('An error occurred while deleting the user');
+        // Delete Teacher - uses Teacher.Id (same as RegisterTeacher page)
+        function deleteTeacher(id) {
+            if (!confirm('Are you sure you want to delete this teacher? This action cannot be undone.')) return;
+
+            $.ajax({
+                url: '@Url.Action("DeleteTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Error deleting teacher');
                     }
-                });
-            }
+                },
+                error: function() {
+                    alert('An error occurred while deleting');
+                }
+            });
+        }
+
+        // Delete Student - uses UserId
+        function deleteStudent(userId) {
+            if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
+
+            $.ajax({
+                url: '@Url.Action("DeleteUser", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    userId: userId,
+                    userType: 'student'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while deleting the user');
+                }
+            });
         }
     </script>
 }

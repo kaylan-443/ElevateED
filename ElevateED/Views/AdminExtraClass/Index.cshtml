@@ -1,0 +1,238 @@
+﻿
+@model List<ElevateED.Models.ExtraClass>
+@using ElevateED.Models
+@{
+    ViewBag.Title = "Extra Classes Management";
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-add {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+
+        .btn-add:hover {
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .class-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 4px solid #1e3c72;
+    }
+
+        .class-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .class-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 8px;
+    }
+
+    .class-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+
+        .class-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .class-meta i {
+            color: #1e3c72;
+            width: 16px;
+        }
+
+    .badge-count {
+        background: #1e3c72;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+    }
+
+    .badge-fee {
+        background: #d4af37;
+        color: #1e3c72;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .class-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .btn-action {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-bookings {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-transport {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-chalkboard-teacher"></i> Extra Classes</h2>
+            <p class="text-muted mb-0">Manage extra classes and view bookings</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Create", "AdminExtraClass")" class="btn-add">
+                <i class="fas fa-plus"></i> Create Extra Class
+            </a>
+            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-plus"></i>
+            <h4>No Extra Classes</h4>
+            <p>Create your first extra class to get started.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var cls in Model)
+        {
+            var bookingCount = cls.Bookings?.Count(b => b.Status != BookingStatus.Cancelled) ?? 0;
+            var paidCount = cls.Bookings?.Count(b => b.Status == BookingStatus.Paid) ?? 0;
+
+            <div class="class-card" id="class-@cls.Id">
+                <div class="class-title">@cls.Title</div>
+                <div class="class-meta">
+                    <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-calendar"></i> @cls.ClassDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-clock"></i> @cls.StartTime.ToString(@"hh\:mm") - @cls.EndTime.ToString(@"hh\:mm")</span>
+                    <span><i class="fas fa-map-marker-alt"></i> @(cls.Location ?? "TBA")</span>
+                    <span class="badge-fee">R @cls.Fee.ToString("0.00")</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <span class="badge-count">@bookingCount / @cls.MaxStudents Booked</span>
+                        <span class="badge-count ml-2" style="background: #28a745;">@paidCount Paid</span>
+                    </div>
+                    <div class="class-actions">
+                        <a href="@Url.Action("Bookings", new { classId = cls.Id })" class="btn-action btn-bookings">
+                            <i class="fas fa-list"></i> Bookings
+                        </a>
+                        <a href="@Url.Action("TransportList", new { classId = cls.Id })" class="btn-action btn-transport">
+                            <i class="fas fa-bus"></i> Transport List
+                        </a>
+                        <button class="btn-action btn-delete" onclick="deleteClass(@cls.Id)">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function deleteClass(id) {
+        if (!confirm('Delete this extra class?')) return;
+        $.ajax({
+            url: '@Url.Action("Delete", "AdminExtraClass")',
+            type: 'POST',
+            data: { id: id },
+            success: function(response) {
+                if (response.success) {
+                    $('#class-' + id).fadeOut(300, function() { $(this).remove(); });
+                } else { alert(response.message); }
+            }
+        });
+    }
+</script>

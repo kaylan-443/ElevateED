@@ -1,0 +1,274 @@
+﻿@model List<ElevateED.Models.ExtraClass>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Available Extra Classes";
+    var myBookings = ViewBag.MyBookings as List<int> ?? new List<int>();
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .class-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 5px solid #1e3c72;
+    }
+
+        .class-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .class-card.booked {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .class-card.full {
+            border-left-color: #dc3545;
+            opacity: 0.8;
+        }
+
+    .class-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .class-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .fee-badge {
+        background: #d4af37;
+        color: #1e3c72;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .free-badge {
+        background: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 700;
+    }
+
+    .class-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 15px;
+    }
+
+        .class-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .class-meta i {
+            color: #1e3c72;
+            width: 18px;
+        }
+
+    .btn-join {
+        background: #28a745;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-join:hover {
+            background: #218838;
+        }
+
+        .btn-join:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+    .btn-booked {
+        background: #17a2b8;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-booked:hover {
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-chalkboard-teacher"></i> Extra Classes</h2>
+            <p class="text-muted">Available extra classes for your grade</p>
+        </div>
+        <div>
+            <a href="@Url.Action("MyBookings", "StudentExtraClass")" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> My Bookings
+            </a>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-warning">@TempData["ErrorMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Extra Classes Available</h4>
+            <p>There are no extra classes scheduled for your grade right now.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var cls in Model)
+        {
+            bool isBooked = myBookings.Contains(cls.Id);
+            int bookingCount = cls.Bookings?.Count(b => b.Status != BookingStatus.Cancelled) ?? 0;
+            bool isFull = bookingCount >= cls.MaxStudents;
+
+            string cardClass = isBooked ? "booked" : (isFull ? "full" : "");
+            string feeText = cls.Fee > 0 ? $"R {cls.Fee:0.00}" : "FREE";
+            string feeClass = cls.Fee > 0 ? "fee-badge" : "free-badge";
+
+            <div class="class-card @cardClass">
+                <div class="class-header">
+                    <div class="class-title">@cls.Title</div>
+                    <span class="@feeClass">@feeText</span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(cls.Description))
+                {
+                    <p class="text-muted">@cls.Description</p>
+                }
+
+                <div class="class-meta">
+                    <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-calendar"></i> @cls.ClassDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-clock"></i> @cls.StartTime.ToString(@"hh\:mm") - @cls.EndTime.ToString(@"hh\:mm")</span>
+                    <span><i class="fas fa-map-marker-alt"></i> @(cls.Location ?? "TBA")</span>
+                    <span><i class="fas fa-users"></i> @bookingCount / @cls.MaxStudents spots</span>
+                </div>
+
+                <div class="text-right">
+                    @if (isBooked)
+                    {
+                        <span class="btn-booked">
+                            <i class="fas fa-check-circle"></i> Already Booked
+                        </span>
+                    }
+                    else if (isFull)
+                    {
+                        <button class="btn btn-join" disabled>
+                            <i class="fas fa-ban"></i> Class Full
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-join" onclick="joinClass(@cls.Id, '@cls.Title', @cls.Fee)">
+                            <i class="fas fa-plus-circle"></i> Join Class
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function joinClass(classId, title, fee) {
+        var message = 'Join "' + title + '"?';
+        if (fee > 0) {
+            message += '\n\nFee: R ' + fee.toFixed(2) + '\nYou will need to pay to confirm your spot.';
+        }
+
+        if (!confirm(message)) return;
+
+        $.ajax({
+            url: '@Url.Action("Join", "StudentExtraClass")',
+            type: 'POST',
+            data: { classId: classId },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
+</script>

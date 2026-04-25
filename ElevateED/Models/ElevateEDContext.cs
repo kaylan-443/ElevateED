@@ -24,7 +24,7 @@ namespace ElevateED.Models
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<Issue> Issues { get; set; }
 
-        // NEW DbSets - ADD THESE
+        // NEW DbSets
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Grade> Grades { get; set; }
         public DbSet<Stream> Streams { get; set; }
@@ -32,6 +32,12 @@ namespace ElevateED.Models
         public DbSet<ApplicationCycle> ApplicationCycles { get; set; }
         public DbSet<TeacherSubjectQualification> TeacherSubjectQualifications { get; set; }
         public DbSet<TeacherGradeAssignment> TeacherGradeAssignments { get; set; }
+        public DbSet<QuizQuestion> QuizQuestions { get; set; }
+        public DbSet<QuizAttempt> QuizAttempts { get; set; }
+        public DbSet<QuizAnswer> QuizAnswers { get; set; }
+        public DbSet<ExtraClass> ExtraClasses { get; set; }
+        public DbSet<ExtraClassBooking> ExtraClassBookings { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -77,6 +83,11 @@ namespace ElevateED.Models
 
             // Apply Student configuration
             modelBuilder.Configurations.Add(new StudentConfiguration());
+
+            // Quiz configurations - MUST be before base.OnModelCreating
+            modelBuilder.Configurations.Add(new QuizQuestionConfiguration());
+            modelBuilder.Configurations.Add(new QuizAttemptConfiguration());
+            modelBuilder.Configurations.Add(new QuizAnswerConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

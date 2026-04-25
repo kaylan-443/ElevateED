@@ -1,0 +1,168 @@
+﻿@model ElevateED.Models.ExtraClass
+@{
+    ViewBag.Title = "Create Extra Class";
+    var grades = ViewBag.Grades as List<ElevateED.Models.Grade>;
+    var subjects = ViewBag.Subjects as List<ElevateED.Models.Subject>;
+}
+
+<style>
+    .create-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .form-header h2 {
+            color: #1e3c72;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px;
+        width: 100%;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .btn-submit {
+        background: #28a745;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+    }
+</style>
+
+<div class="container create-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h2><i class="fas fa-plus-circle"></i> Create Extra Class</h2>
+            <p class="text-muted">Set up a new extra class session</p>
+        </div>
+
+        @using (Html.BeginForm("Create", "AdminExtraClass", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label class="form-label required">Title</label>
+                @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "e.g., Mathematics Revision Session" })
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 3, placeholder = "What will be covered?" })
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label required">Grade</label>
+                        <select name="GradeId" class="form-control" required>
+                            <option value="">-- Select Grade --</option>
+                            @if (grades != null)
+                            {
+                                foreach (var grade in grades)
+                                {
+                                    <option value="@grade.Id">@grade.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label required">Subject</label>
+                        <select name="SubjectId" class="form-control" required>
+                            <option value="">-- Select Subject --</option>
+                            @if (subjects != null)
+                            {
+                                foreach (var subject in subjects)
+                                {
+                                    <option value="@subject.Id">@subject.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label required">Date</label>
+                        <input type="date" name="ClassDate" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label required">Start Time</label>
+                        <input type="time" name="StartTime" class="form-control" required value="14:00" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label required">End Time</label>
+                        <input type="time" name="EndTime" class="form-control" required value="16:00" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="Location" class="form-control" placeholder="e.g., Room 101" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label required">Fee (R)</label>
+                        <input type="number" name="Fee" class="form-control" required min="0" step="0.01" value="0" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Max Students</label>
+                        <input type="number" name="MaxStudents" class="form-control" min="1" value="30" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit mt-3">
+                <i class="fas fa-save"></i> Create Extra Class
+            </button>
+        }
+    </div>
+</div>

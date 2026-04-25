@@ -1,0 +1,204 @@
+﻿@model List<ElevateED.Models.ExtraClassBooking>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Transport List";
+    var extraClass = ViewBag.ExtraClass as ExtraClass;
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .class-info {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+
+        .class-info h3 {
+            margin: 0 0 10px 0;
+        }
+
+    .transport-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .transport-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .student-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .student-table th {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .student-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+    .btn-print {
+        background: #1e3c72;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+    }
+
+        .btn-print:hover {
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    @@media print {
+        .page-header, .btn-print, .btn-back, footer, nav {
+            display: none !important;
+        }
+
+        .transport-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+    }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-bus"></i> Transport List</h2>
+            <p class="text-muted">@(extraClass?.Title ?? "Class") - Only paid students</p>
+        </div>
+        <div>
+            <button class="btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print List
+            </button>
+            <a href="@Url.Action("Index", "AdminExtraClass")" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (extraClass != null)
+    {
+        <div class="class-info">
+            <h3><i class="fas fa-book"></i> @extraClass.Title</h3>
+            <p>
+                <strong>Date:</strong> @extraClass.ClassDate.ToString("dd MMM yyyy") |
+                <strong>Time:</strong> @extraClass.StartTime.ToString(@"hh\:mm") - @extraClass.EndTime.ToString(@"hh\:mm") |
+                <strong>Location:</strong> @(extraClass.Location ?? "TBA")
+            </p>
+        </div>
+    }
+
+    <div class="transport-card">
+        <div class="transport-header">
+            <h4><i class="fas fa-users"></i> Student Transport List</h4>
+            <span class="badge badge-primary">@Model.Count Students</span>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-bus"></i>
+                <h4>No Students for Transport</h4>
+                <p>No students have paid for this class yet.</p>
+            </div>
+        }
+        else
+        {
+            <table class="student-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Student Number</th>
+                        <th>Class</th>
+                        <th>Parent Contact</th>
+                        <th>Payment Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int index = 1;
+                        foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td><strong>@(booking.Student?.FullName ?? "N/A")</strong></td>
+                                <td>@(booking.Student?.User?.StudentNumber ?? "N/A")</td>
+                                <td>@(booking.Student?.Class?.FullName ?? "N/A")</td>
+                                <td>
+                                    @(booking.Student?.ParentCellPhone ?? "N/A")
+                                    <br /><small>@(booking.Student?.ParentEmail ?? "")</small>
+                                </td>
+                                <td><span class="badge badge-success">Paid - R @booking.AmountPaid.ToString("0.00")</span></td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
