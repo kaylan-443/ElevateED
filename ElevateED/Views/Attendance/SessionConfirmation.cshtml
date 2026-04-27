@@ -1,0 +1,75 @@
+@model ElevateED.Models.ViewModels.StartSessionViewModel
+
+@{
+    ViewBag.Title = "OTP Confirmation";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle"></i> Attendance Session Started!
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["Success"]</div>
+                    }
+
+                    <p class="text-muted mb-3">Share this OTP code with your learners to mark attendance.</p>
+
+                    <div class="p-4 bg-light border rounded mb-4">
+                        <h6 class="text-muted mb-2">ONE-TIME PASSWORD (OTP)</h6>
+                        <div style="font-size: 72px; font-family: 'Courier New', monospace; letter-spacing: 12px; font-weight: bold; color: #0056b3;">
+                            @Model.OTPCode
+                        </div>
+                        <small class="text-muted d-block mt-2">Valid for 5 minutes</small>
+                        <small class="text-muted d-block">Expires at: <span id="expiryTime">5:00</span></small>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Announce this OTP to your learners now!</strong>
+                        They must submit it within 5 minutes.
+                    </div>
+
+                    <div class="btn-group mb-3" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="copyOTP()">
+                            <i class="fas fa-copy"></i> Copy OTP
+                        </button>
+                        <a href="@Url.Action("EditAttendance", "Attendance", new { sessionId = Model.SessionId })" class="btn btn-outline-info">
+                            <i class="fas fa-edit"></i> Edit Attendance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyOTP() {
+        var otp = '@Model.OTPCode';
+        navigator.clipboard.writeText(otp).then(function () {
+            alert('OTP copied to clipboard: ' + otp);
+        }, function (err) {
+            alert('Failed to copy OTP');
+        });
+    }
+
+    // Countdown timer
+    var timeLeft = 300; // 5 minutes in seconds
+    setInterval(function () {
+        timeLeft--;
+        var minutes = Math.floor(timeLeft / 60);
+        var seconds = timeLeft % 60;
+        document.getElementById('expiryTime').innerText = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+        
+        if (timeLeft <= 0) {
+            document.querySelector('.btn-group').style.display = 'none';
+            document.querySelector('.alert-warning').innerHTML = '<strong>Session Expired!</strong> The OTP is no longer valid.';
+        }
+    }, 1000);
+</script>
