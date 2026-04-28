@@ -1,0 +1,39 @@
+@model ElevateED.Models.ViewModels.StartSessionViewModel
+
+@{
+    ViewBag.Title = "Start Attendance Session";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-check"></i> Start Attendance Session
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("StartSession", "Attendance", FormMethod.Post, new { @class = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ClassId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.ClassId, Model.AvailableClasses ?? new List<SelectListItem>(), "-- Select a Class --", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.ClassId, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-play"></i> Start Session
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
