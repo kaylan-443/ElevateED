@@ -1,13 +1,8 @@
-﻿@{
-    ViewBag.Title = "Class Details - Admin Dashboard";
-    string grade = ViewBag.Grade as string;
-    string className = ViewBag.ClassName as string;
-    var subjects = ViewBag.Subjects as List<ElevateED.ViewModels.SubjectAssignmentViewModel>;
-    var allTeachers = ViewBag.Teachers as List<ElevateED.ViewModels.TeacherViewModel>;
+﻿@model ElevateED.ViewModels.ClassDetailsViewModel
+@using ElevateED.Models
 
-    // Initialize empty lists if null
-    if (subjects == null) { subjects = new List<ElevateED.ViewModels.SubjectAssignmentViewModel>(); }
-    if (allTeachers == null) { allTeachers = new List<ElevateED.ViewModels.TeacherViewModel>(); }
+@{
+    ViewBag.Title = "Class Details - " + (Model.Class?.FullName ?? "Unknown");
 }
 
 <style>
@@ -71,7 +66,6 @@
         padding: 8px 20px;
         border-radius: 50px;
         font-weight: 600;
-        transition: all 0.3s ease;
         border: none;
         text-decoration: none;
         display: inline-flex;
@@ -156,7 +150,7 @@
     }
 
     .btn-assign {
-        background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+        background: var(--success-green);
         color: white;
         border: none;
         padding: 6px 18px;
@@ -164,12 +158,10 @@
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
     }
 
         .btn-assign:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+            background: #218838;
         }
 
         .btn-assign:disabled {
@@ -187,12 +179,10 @@
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
     }
 
         .btn-remove:hover {
             background: #c82333;
-            transform: translateY(-2px);
         }
 
     select {
@@ -201,12 +191,6 @@
         border: 1px solid #ddd;
         font-size: 13px;
         min-width: 280px;
-    }
-
-    .no-teachers-notice {
-        color: var(--warning-orange);
-        font-size: 13px;
-        font-style: italic;
     }
 
     .qualified-count {
@@ -218,68 +202,20 @@
         margin-left: 10px;
     }
 
-    .dashboard-footer {
-        text-align: center;
-        margin-top: 40px;
-        padding-top: 20px;
-        border-top: 1px solid #e0e0e0;
-        color: #999;
-        font-size: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    .footer-links {
-        display: flex;
-        gap: 20px;
-    }
-
-        .footer-links a {
-            color: #999;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-            .footer-links a:hover {
-                color: var(--primary-blue);
-            }
-
-    @@media (max-width: 768px) {
-        .subject-row {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-        }
-
-        .teacher-assigned {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        select {
-            min-width: 100%;
-        }
-
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
+    .no-teachers-notice {
+        color: var(--warning-orange);
+        font-size: 13px;
+        font-style: italic;
     }
 </style>
 
 <div class="container class-details-container">
     @Html.AntiForgeryToken()
 
-    <!-- Header -->
     <div class="page-header">
         <div class="header-left">
-            <h2 class="page-title">
-                <i class="fas fa-chalkboard"></i> Class Details
-            </h2>
-            <small class="text-muted">Assign qualified teachers to subjects for @className</small>
+            <h2 class="page-title"><i class="fas fa-chalkboard"></i> Class Details</h2>
+            <small class="text-muted">Assign qualified teachers to subjects for @(Model.Class?.FullName ?? "Unknown")</small>
         </div>
         <div class="header-right">
             <a href="@Url.Action("ClassStructure", "Admin")" class="btn-back">
@@ -288,249 +224,265 @@
         </div>
     </div>
 
-    <!-- Class Info -->
-    <div class="class-info">
-        <h3><i class="fas fa-users"></i> @className</h3>
-        <p><i class="fas fa-filter"></i> Only teachers qualified for <strong>@grade</strong> and each specific subject are shown</p>
-    </div>
-
-    <!-- Debug Info -->
-    <div class="alert alert-info mb-3">
-        <strong>Total Teachers in Database:</strong> @allTeachers.Count<br>
-        <strong>Subjects for @grade:</strong> @subjects.Count<br>
-        <small>Teachers are filtered by their registered subjects and grades</small>
-    </div>
-
-    <!-- Subjects List -->
-    @if (grade != null && (grade.Contains("8") || grade.Contains("9")))
+    @if (Model.Class == null)
     {
-        <!-- Core Subjects for Grade 8 & 9 -->
-        <div class="subjects-card">
-            <div class="subjects-header">
-                <i class="fas fa-star"></i> CORE SUBJECTS
-            </div>
-
-            @RenderSubjectRow(1, "English (First Additional Language)", subjects, grade, className)
-            @RenderSubjectRow(2, "isiZulu (Home Language)", subjects, grade, className)
-            @RenderSubjectRow(3, "Life Orientation", subjects, grade, className)
-        </div>
-
-        <!-- Other Subjects for Grade 8 & 9 -->
-        <div class="subjects-card">
-            <div class="subjects-header">
-                <i class="fas fa-book-open"></i> OTHER SUBJECTS
-            </div>
-
-            @RenderSubjectRow(4, "Mathematics", subjects, grade, className)
-            @RenderSubjectRow(5, "Natural Science", subjects, grade, className)
-            @RenderSubjectRow(6, "Social Science", subjects, grade, className)
-            @RenderSubjectRow(7, "Creative Arts", subjects, grade, className)
-            @RenderSubjectRow(8, "Economic Management Science", subjects, grade, className)
-            @RenderSubjectRow(9, "Technology", subjects, grade, className)
-        </div>
+        <div class="alert alert-danger">Class not found.</div>
     }
     else
     {
-        <!-- Core Subjects for Grade 10-12 -->
-        <div class="subjects-card">
-            <div class="subjects-header">
-                <i class="fas fa-star"></i> CORE SUBJECTS
-            </div>
-
-            @RenderSubjectRow(1, "English (First Additional Language)", subjects, grade, className)
-            @RenderSubjectRow(2, "isiZulu (Home Language)", subjects, grade, className)
-            @RenderSubjectRow(3, "Life Orientation", subjects, grade, className)
+        <div class="class-info">
+            <h3><i class="fas fa-users"></i> @Model.Class.FullName</h3>
+            <p>
+                Grade: @(Model.Class.Grade != null ? Model.Class.Grade.Name : "N/A") | Only qualified teachers shown
+            </p>
         </div>
 
-        <!-- Elective Subjects for Grade 10-12 -->
-        <div class="subjects-card">
-            <div class="subjects-header">
-                <i class="fas fa-chart-line"></i> ELECTIVE SUBJECTS
-            </div>
-
-            @RenderSubjectRow(4, "Mathematics", subjects, grade, className)
-            @RenderSubjectRow(5, "Mathematical Literacy", subjects, grade, className)
-            @RenderSubjectRow(6, "Physical Sciences", subjects, grade, className)
-            @RenderSubjectRow(7, "Life Sciences", subjects, grade, className)
-            @RenderSubjectRow(8, "History", subjects, grade, className)
-            @RenderSubjectRow(9, "Geography", subjects, grade, className)
-            @RenderSubjectRow(10, "Accounting", subjects, grade, className)
-            @RenderSubjectRow(11, "Business Studies", subjects, grade, className)
-            @RenderSubjectRow(12, "Economics", subjects, grade, className)
-            @RenderSubjectRow(13, "Agricultural Sciences", subjects, grade, className)
-            @RenderSubjectRow(14, "Computer Applications Technology", subjects, grade, className)
-            @RenderSubjectRow(15, "Information Technology", subjects, grade, className)
+        <div class="alert alert-info mb-3">
+            <strong>Teachers Available:</strong> @(Model.QualifiedTeachers?.Count ?? 0)<br>
+            <strong>Subjects:</strong> @(Model.Subjects?.Count ?? 0)
         </div>
-    }
 
-    <!-- Footer -->
-    <div class="dashboard-footer">
-        <div>
-            <i class="fas fa-info-circle mr-1"></i>
-            ElevateED School Management System v1.0 | Mpiyakhe High School
-        </div>
-        <div class="footer-links">
-            <a href="@Url.Action("Dashboard", "Admin")" class="text-muted">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            <a href="@Url.Action("ClassStructure", "Admin")" class="text-muted">
-                <i class="fas fa-school"></i> Class Structure
-            </a>
-            <a href="#" class="text-muted">
-                <i class="fas fa-question-circle"></i> Help
-            </a>
-        </div>
-    </div>
-</div>
+        if (Model.Subjects != null && Model.Subjects.Any())
+        {
+            var coreSubjects = Model.Subjects.Where(s => s.Category == SubjectCategory.Core).ToList();
+            var electiveSubjects = Model.Subjects.Where(s => s.Category == SubjectCategory.Elective).ToList();
+            var techSubjects = Model.Subjects.Where(s => s.Category == SubjectCategory.Technology).ToList();
 
-@helper RenderSubjectRow(int subjectId, string subjectName, List<ElevateED.ViewModels.SubjectAssignmentViewModel> subjects, string grade, string className)
-{
-    var subject = subjects.FirstOrDefault(s => s.Id == subjectId);
-    var qualifiedTeachers = subject != null && subject.QualifiedTeachers != null ? subject.QualifiedTeachers : new List<ElevateED.ViewModels.TeacherViewModel>();
-    var qualifiedCount = qualifiedTeachers.Count;
-
-    <div class="subject-row" data-subject-id="@subjectId">
-        <div class="subject-name">
-            <i class="fas fa-book"></i> @subjectName
-            @if (qualifiedCount > 0)
+            if (coreSubjects.Any())
             {
-                <span class="qualified-count">@qualifiedCount qualified</span>
-            }
-        </div>
-        <div class="teacher-assigned" id="teacher-assign-@subjectId">
-            @if (subject != null && subject.AssignedTeacherId.HasValue)
-            {
-                <div class="teacher-badge">
-                    <i class="fas fa-user-tie"></i> @subject.AssignedTeacherName
+                <div class="subjects-card">
+                    <div class="subjects-header"><i class="fas fa-star"></i> CORE SUBJECTS</div>
+                    @foreach (var subject in coreSubjects)
+                    {
+                        var assignment = Model.CurrentAssignments?.FirstOrDefault(a => a.SubjectId == subject.Id);
+                        var qualifiedTeachers = Model.QualifiedTeachers?
+                            .Where(t => t.SubjectQualifications != null && t.SubjectQualifications.Any(sq => sq.SubjectId == subject.Id))
+                            .Where(t => t.GradeAssignments != null && t.GradeAssignments.Any(ga => ga.GradeId == Model.Class.GradeId))
+                            .ToList() ?? new List<Teacher>();
+
+                        <div class="subject-row">
+                            <div class="subject-name">
+                                <i class="fas fa-book"></i> @subject.Name
+                                @if (qualifiedTeachers.Any())
+                                {
+                                    <span class="qualified-count">@qualifiedTeachers.Count qualified</span>
+                                }
+                            </div>
+                            <div class="teacher-assigned">
+                                @if (assignment != null)
+                                {
+                                    <div class="teacher-badge">
+                                        <i class="fas fa-user-tie"></i> @(assignment.Teacher?.FullName ?? "Unknown")
+                                    </div>
+                                    <button class="btn-remove" onclick="removeTeacher(@Model.Class.Id, @subject.Id)">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                }
+                                else
+                                {
+                                    if (qualifiedTeachers.Any())
+                                    {
+                                        <select id="teacherSelect_@subject.Id" class="teacher-select">
+                                            <option value="">-- Select Teacher --</option>
+                                            @foreach (var teacher in qualifiedTeachers.OrderBy(t => t.LastName))
+                                            {
+                                                <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                                            }
+                                        </select>
+                                        <button class="btn-assign" onclick="assignTeacher(@Model.Class.Id, @subject.Id)">
+                                            <i class="fas fa-user-plus"></i> Assign
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-teachers-notice">No qualified teachers</span>
+                                        <button class="btn-assign" disabled>No Teachers</button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
-                <button class="btn-remove" onclick="removeTeacher(@subjectId, '@subjectName', '@grade', '@className')">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
             }
-            else
+
+            if (electiveSubjects.Any())
             {
-                if (qualifiedCount > 0)
-                {
-                    <select id="teacherSelect_@subjectId" class="teacher-select">
-                        <option value="">-- Select Qualified Teacher --</option>
-                        @foreach (var teacher in qualifiedTeachers)
-                        {
-                            <option value="@teacher.Id">
-                                @teacher.FullName (@teacher.StaffNumber) - @teacher.YearsOfExperience yrs
-                            </option>
-                        }
-                    </select>
-                    <button class="btn-assign" onclick="assignTeacher(@subjectId, '@subjectName', '@grade', '@className')">
-                        <i class="fas fa-user-plus"></i> Assign
-                    </button>
-                }
-                else
-                {
-                    <span class="no-teachers-notice">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        No teachers qualified for @subjectName in @grade
-                    </span>
-                    <button class="btn-assign" disabled>
-                        <i class="fas fa-user-plus"></i> No Teachers
-                    </button>
-                }
+                <div class="subjects-card">
+                    <div class="subjects-header"><i class="fas fa-chart-line"></i> ELECTIVE SUBJECTS</div>
+                    @foreach (var subject in electiveSubjects)
+                    {
+                        var assignment = Model.CurrentAssignments?.FirstOrDefault(a => a.SubjectId == subject.Id);
+                        var qualifiedTeachers = Model.QualifiedTeachers?
+                            .Where(t => t.SubjectQualifications != null && t.SubjectQualifications.Any(sq => sq.SubjectId == subject.Id))
+                            .Where(t => t.GradeAssignments != null && t.GradeAssignments.Any(ga => ga.GradeId == Model.Class.GradeId))
+                            .ToList() ?? new List<Teacher>();
+
+                        <div class="subject-row">
+                            <div class="subject-name">
+                                <i class="fas fa-book"></i> @subject.Name
+                                @if (qualifiedTeachers.Any())
+                                {
+                                    <span class="qualified-count">@qualifiedTeachers.Count qualified</span>
+                                }
+                            </div>
+                            <div class="teacher-assigned">
+                                @if (assignment != null)
+                                {
+                                    <div class="teacher-badge">
+                                        <i class="fas fa-user-tie"></i> @(assignment.Teacher?.FullName ?? "Unknown")
+                                    </div>
+                                    <button class="btn-remove" onclick="removeTeacher(@Model.Class.Id, @subject.Id)">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                }
+                                else
+                                {
+                                    if (qualifiedTeachers.Any())
+                                    {
+                                        <select id="teacherSelect_@subject.Id" class="teacher-select">
+                                            <option value="">-- Select Teacher --</option>
+                                            @foreach (var teacher in qualifiedTeachers.OrderBy(t => t.LastName))
+                                            {
+                                                <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                                            }
+                                        </select>
+                                        <button class="btn-assign" onclick="assignTeacher(@Model.Class.Id, @subject.Id)">
+                                            <i class="fas fa-user-plus"></i> Assign
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-teachers-notice">No qualified teachers</span>
+                                        <button class="btn-assign" disabled>No Teachers</button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             }
-        </div>
-    </div>
-}
+
+            if (techSubjects.Any())
+            {
+                <div class="subjects-card">
+                    <div class="subjects-header"><i class="fas fa-laptop-code"></i> TECHNOLOGY SUBJECTS</div>
+                    @foreach (var subject in techSubjects)
+                    {
+                        var assignment = Model.CurrentAssignments?.FirstOrDefault(a => a.SubjectId == subject.Id);
+                        var qualifiedTeachers = Model.QualifiedTeachers?
+                            .Where(t => t.SubjectQualifications != null && t.SubjectQualifications.Any(sq => sq.SubjectId == subject.Id))
+                            .Where(t => t.GradeAssignments != null && t.GradeAssignments.Any(ga => ga.GradeId == Model.Class.GradeId))
+                            .ToList() ?? new List<Teacher>();
+
+                        <div class="subject-row">
+                            <div class="subject-name">
+                                <i class="fas fa-book"></i> @subject.Name
+                                @if (qualifiedTeachers.Any())
+                                {
+                                    <span class="qualified-count">@qualifiedTeachers.Count qualified</span>
+                                }
+                            </div>
+                            <div class="teacher-assigned">
+                                @if (assignment != null)
+                                {
+                                    <div class="teacher-badge">
+                                        <i class="fas fa-user-tie"></i> @(assignment.Teacher?.FullName ?? "Unknown")
+                                    </div>
+                                    <button class="btn-remove" onclick="removeTeacher(@Model.Class.Id, @subject.Id)">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                }
+                                else
+                                {
+                                    if (qualifiedTeachers.Any())
+                                    {
+                                        <select id="teacherSelect_@subject.Id" class="teacher-select">
+                                            <option value="">-- Select Teacher --</option>
+                                            @foreach (var teacher in qualifiedTeachers.OrderBy(t => t.LastName))
+                                            {
+                                                <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                                            }
+                                        </select>
+                                        <button class="btn-assign" onclick="assignTeacher(@Model.Class.Id, @subject.Id)">
+                                            <i class="fas fa-user-plus"></i> Assign
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-teachers-notice">No qualified teachers</span>
+                                        <button class="btn-assign" disabled>No Teachers</button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-warning">No subjects found for this grade level.</div>
+        }
+    }
+</div>
 
 @section Scripts {
     <script>
-        function assignTeacher(subjectId, subjectName, grade, className) {
+        function assignTeacher(classId, subjectId) {
             var select = document.getElementById('teacherSelect_' + subjectId);
-
-            if (!select) {
-                alert('Error: Could not find teacher select element for subject ' + subjectId);
-                return;
-            }
+            if (!select) { alert('Error: Select element not found'); return; }
 
             var teacherId = select.value;
-
-            if (!teacherId) {
-                alert('Please select a teacher first');
-                return;
-            }
+            if (!teacherId) { alert('Please select a teacher first'); return; }
 
             var token = $('input[name="__RequestVerificationToken"]').val();
-            if (!token) {
-                alert('Error: Anti-forgery token not found. Please refresh the page.');
-                return;
-            }
+            if (!token) { alert('Security token not found. Refresh the page.'); return; }
 
-            var confirmMessage = 'Assign this teacher to teach ' + subjectName + ' in ' + className + '?';
-
-            if (confirm(confirmMessage)) {
-                $.ajax({
-                    url: '@Url.Action("AssignSubjectTeacher", "Admin")',
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: token,
-                        grade: grade,
-                        className: className,
-                        subjectId: subjectId,
-                        teacherId: teacherId
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        var errorMessage = 'An error occurred while assigning the teacher.\n\n';
-                        errorMessage += 'Status: ' + status + '\n';
-                        errorMessage += 'Error: ' + error + '\n';
-
-                        if (xhr.responseText) {
-                            errorMessage += 'Response: ' + xhr.responseText.substring(0, 500);
-                        }
-
-                        alert(errorMessage);
+            $.ajax({
+                url: '@Url.Action("AssignSubjectTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId,
+                    subjectId: subjectId,
+                    teacherId: teacherId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
                     }
-                });
-            }
+                },
+                error: function() { alert('An error occurred'); }
+            });
         }
 
-        function removeTeacher(subjectId, subjectName, grade, className) {
-            var confirmMessage = 'Remove teacher from ' + subjectName + ' in ' + className + '?';
+        function removeTeacher(classId, subjectId) {
+            if (!confirm('Remove teacher from this subject?')) return;
 
-            if (confirm(confirmMessage)) {
-                var token = $('input[name="__RequestVerificationToken"]').val();
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) { alert('Security token not found. Refresh the page.'); return; }
 
-                if (!token) {
-                    alert('Error: Anti-forgery token not found. Please refresh the page.');
-                    return;
-                }
-
-                $.ajax({
-                    url: '@Url.Action("RemoveSubjectTeacher", "Admin")',
-                    type: 'POST',
-                    data: {
-                        __RequestVerificationToken: token,
-                        grade: grade,
-                        className: className,
-                        subjectId: subjectId
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        alert('An error occurred while removing the teacher. Status: ' + status);
+            $.ajax({
+                url: '@Url.Action("RemoveSubjectTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId,
+                    subjectId: subjectId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
                     }
-                });
-            }
+                },
+                error: function() { alert('An error occurred'); }
+            });
         }
     </script>
 }

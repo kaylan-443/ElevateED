@@ -7,8 +7,9 @@ namespace ElevateED.Models
         public ElevateEDContext() : base("ElevateEDConnection")
         {
             Database.SetInitializer<ElevateEDContext>(null);
+            this.Configuration.ProxyCreationEnabled = false;
+            this.Configuration.LazyLoadingEnabled = false;
         }
-
         // Existing DbSets
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
@@ -38,9 +39,20 @@ namespace ElevateED.Models
         public DbSet<ExtraClass> ExtraClasses { get; set; }
         public DbSet<ExtraClassBooking> ExtraClassBookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<Driver> Drivers { get; set; }
+        public DbSet<TransportRoute> TransportRoutes { get; set; }
+        public DbSet<RouteTracking> RouteTrackings { get; set; }
+        public DbSet<EmergencyAlert> EmergencyAlerts { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            // Extra Classes configurations
+            modelBuilder.Configurations.Add(new ExtraClassConfiguration());
+            modelBuilder.Configurations.Add(new ExtraClassBookingConfiguration());
+            modelBuilder.Configurations.Add(new PaymentConfiguration());
+            modelBuilder.Configurations.Add(new TransportRouteConfiguration());
+            modelBuilder.Configurations.Add(new RouteTrackingConfiguration());
+            modelBuilder.Configurations.Add(new EmergencyAlertConfiguration());
             // Configure Many-to-Many: Grade <-> Subject (Core Subjects)
             modelBuilder.Entity<Grade>()
                 .HasMany(g => g.CoreSubjects)
@@ -62,6 +74,7 @@ namespace ElevateED.Models
                     m.MapRightKey("SubjectId");
                     m.ToTable("StreamElectiveSubjects");
                 });
+
 
             // Configure Many-to-Many: Stream <-> Subject (Technology Subjects)
             modelBuilder.Entity<Stream>()

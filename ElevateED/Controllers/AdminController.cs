@@ -1407,6 +1407,7 @@ namespace ElevateED.Controllers
             if (classEntity == null)
                 return HttpNotFound();
 
+            // Get subjects appropriate for this grade level
             var subjects = GetSubjectsForGradeLevel(classEntity.Grade.Level);
 
             var assignments = _context.TeacherSubjectAssignments
@@ -1415,10 +1416,13 @@ namespace ElevateED.Controllers
                 .Where(a => a.ClassId == classId && a.IsActive)
                 .ToList();
 
-            var qualifiedTeachers = _context.Teachers
-                .Include(t => t.SubjectQualifications)
-                .Include(t => t.GradeAssignments)
+            // Get qualified teachers (those who have this subject AND this grade)
+            var allTeachers = _context.Teachers
+                .Include(t => t.User)
+                .Include(t => t.SubjectQualifications.Select(sq => sq.Subject))
+                .Include(t => t.GradeAssignments.Select(ga => ga.Grade))
                 .Where(t => t.IsActive)
+                .OrderBy(t => t.LastName)
                 .ToList();
 
             var viewModel = new ClassDetailsViewModel
@@ -1426,7 +1430,7 @@ namespace ElevateED.Controllers
                 Class = classEntity,
                 Subjects = subjects,
                 CurrentAssignments = assignments,
-                QualifiedTeachers = qualifiedTeachers
+                QualifiedTeachers = allTeachers
             };
 
             return View(viewModel);
@@ -2100,19 +2104,32 @@ namespace ElevateED.Controllers
 
         private List<Subject> GetSubjectsForGradeLevel(int gradeLevel)
         {
-            var subjects = _context.Subjects
-                .Where(s => s.Category == SubjectCategory.Core)
-                .ToList();
-
-            if (gradeLevel >= 10)
+            if (gradeLevel <= 9)
             {
-                subjects.AddRange(_context.Subjects.Where(s => s.Category == SubjectCategory.Elective));
-                subjects.AddRange(_context.Subjects.Where(s => s.Category == SubjectCategory.Technology));
+                // Grade 8-9: All core subjects (including grade 8-9 specific ones)
+                return _context.Subjects
+                    .Where(s => s.Category == SubjectCategory.Core)
+                    .OrderBy(s => s.Name)
+                    .ToList();
             }
+            else
+            {
+                // Grade 10-12: Only the 3 true core subjects + electives + technology
+                // Exclude grade 8-9 specific subjects
+                var grade8And9Only = new[] {
+            "Natural Science", "Social Science", "Creative Arts",
+            "Economic Management Science", "Technology"
+        };
 
-            return subjects.Distinct().OrderBy(s => s.Name).ToList();
+                return _context.Subjects
+                    .Where(s => !grade8And9Only.Contains(s.Name))
+                    .Where(s => s.Category == SubjectCategory.Core
+                        || s.Category == SubjectCategory.Elective
+                        || s.Category == SubjectCategory.Technology)
+                    .OrderBy(s => s.Name)
+                    .ToList();
+            }
         }
-
         private string GetStudentName(int studentId)
         {
             var student = _context.Students.Find(studentId);

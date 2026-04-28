@@ -1,0 +1,99 @@
+﻿@{
+    ViewBag.Title = "Driver Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Driver Login - ElevateED</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+            .login-header i {
+                font-size: 50px;
+                color: #1e3c72;
+                margin-bottom: 15px;
+            }
+
+            .login-header h3 {
+                color: #1e3c72;
+                font-weight: 700;
+            }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 12px;
+            border-radius: 25px;
+            font-weight: 600;
+            width: 100%;
+            border: none;
+        }
+
+        .alert {
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-bus"></i>
+            <h3>Driver Portal</h3>
+            <p class="text-muted">Enter your credentials</p>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary()
+            </div>
+        }
+
+        @using (Html.BeginForm("Login", "Driver", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> Username</label>
+                <input type="text" name="username" class="form-control" required placeholder="Enter username" />
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Password</label>
+                <input type="password" name="password" class="form-control" required placeholder="Enter password" />
+            </div>
+            <button type="submit" class="btn-login mt-3">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        }
+    </div>
+</body>
+</html>

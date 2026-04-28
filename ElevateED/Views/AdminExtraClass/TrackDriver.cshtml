@@ -1,0 +1,272 @@
+﻿@model List<ElevateED.Models.RouteTracking>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Track Driver";
+    var route = ViewBag.Route as TransportRoute;
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .tracking-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .tracking-header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 20px;
+    }
+
+        .tracking-header h4 {
+            margin: 0;
+        }
+
+    .map-container {
+        height: 400px;
+        background: #e9ecef;
+        position: relative;
+    }
+
+    .map-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+        font-size: 18px;
+    }
+
+    .location-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .location-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .location-item:hover {
+            background: #f8f9fa;
+        }
+
+    .location-time {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .location-coords {
+        font-family: monospace;
+        font-size: 13px;
+        color: #1e3c72;
+    }
+
+    .live-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: blink 1s infinite;
+        margin-right: 8px;
+    }
+
+    @@keyframes blink {
+        0%, 100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: 0
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    .driver-info-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+
+        .driver-info-row span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2><i class="fas fa-map-marker-alt"></i> Track Driver</h2>
+            <p class="text-muted">Real-time GPS tracking</p>
+        </div>
+        <a href="@Url.Action("Index", "AdminExtraClass")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @if (route != null)
+    {
+        <div class="tracking-card mb-4">
+            <div class="tracking-header">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h4>
+                        @if (route.Status == "Active")
+                        {
+                            <span class="live-indicator"></span>
+                        }
+                        @route.ExtraClass?.Title
+                    </h4>
+                    <span class="badge badge-@(route.Status == "Active" ? "success" : route.Status == "Emergency" ? "danger" : "warning")">
+                        @route.Status
+                    </span>
+                </div>
+                <div class="driver-info-row">
+                    <span><i class="fas fa-user"></i> @(route.Driver?.FullName ?? "N/A")</span>
+                    <span><i class="fas fa-phone"></i> @(route.Driver?.PhoneNumber ?? "N/A")</span>
+                    <span><i class="fas fa-car"></i> @(route.Driver?.VehicleRegistration ?? "N/A")</span>
+                    @if (route.StartedAt.HasValue)
+                    {
+                        <span><i class="fas fa-play"></i> Started: @route.StartedAt.Value.ToString("HH:mm")</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div class="map-container" id="map">
+                <div class="map-placeholder">
+                    <div>
+                        <i class="fas fa-map-marked-alt fa-3x mb-3 d-block"></i>
+                        <span id="mapMessage">Loading location data...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location History -->
+        <div class="tracking-card">
+            <div class="tracking-header">
+                <h4><i class="fas fa-history"></i> Location History</h4>
+            </div>
+            <div class="location-list">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var location in Model)
+                    {
+                        <div class="location-item">
+                            <span class="location-time">
+                                <i class="fas fa-clock"></i> @location.TrackedAt.ToString("dd MMM yyyy, HH:mm:ss")
+                            </span>
+                            <span class="location-coords">
+                                <i class="fas fa-map-pin"></i>
+                                Lat: @location.Latitude.ToString("0.000000"),
+                                Lng: @location.Longitude.ToString("0.000000")
+                            </span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-route"></i>
+                        <p>No location data yet</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <h4>Route Not Found</h4>
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <button class="btn btn-primary" onclick="location.reload()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    // Get the latest location for map display
+    var latest = Model.First();
+
+    <script>
+        // Display latest location on map
+        function initMap() {
+            var lat = @latest.Latitude;
+            var lng = @latest.Longitude;
+
+            if (lat === 0 && lng === 0) {
+                document.getElementById('mapMessage').textContent = 'Waiting for GPS signal...';
+                return;
+            }
+
+            // Show coordinates
+            document.getElementById('map').innerHTML =
+                '<div style="padding: 30px; text-align: center;">' +
+                '<i class="fas fa-map-marker-alt fa-4x text-danger mb-3 d-block"></i>' +
+                '<h4>Current Location</h4>' +
+                '<p style="font-size: 18px; font-family: monospace;">Latitude: ' + lat.toFixed(6) + '</p>' +
+                '<p style="font-size: 18px; font-family: monospace;">Longitude: ' + lng.toFixed(6) + '</p>' +
+                '<p class="text-muted">Last updated: ' + '@latest.TrackedAt.ToString("HH:mm:ss")' + '</p>' +
+                '<a href="https://www.google.com/maps?q=' + lat + ',' + lng + '" target="_blank" class="btn btn-primary mt-2">' +
+                '<i class="fas fa-external-link-alt"></i> Open in Google Maps</a>' +
+                '</div>';
+        }
+
+        initMap();
+    </script>
+}
+else
+{
+    <script>
+        document.getElementById('mapMessage').textContent = 'No GPS data recorded yet';
+    </script>
+}
+
+@if (route != null && route.Status == "Active")
+{
+    <script>
+        // Auto-refresh every 30 seconds for active routes
+        setTimeout(function() { location.reload(); }, 30000);
+    </script>
+}

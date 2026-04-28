@@ -1,0 +1,341 @@
+﻿@model List<ElevateED.Models.EmergencyAlert>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Emergency Alerts";
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .alert-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-left: 5px solid #dc3545;
+    }
+
+        .alert-card.active {
+            animation: pulse 2s infinite;
+        }
+
+        .alert-card.acknowledged {
+            border-left-color: #ffc107;
+            animation: none;
+            opacity: 0.9;
+        }
+
+        .alert-card.resolved {
+            border-left-color: #28a745;
+            animation: none;
+            opacity: 0.6;
+        }
+
+    @@keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 2px 10px rgba(220,53,69,0.2);
+        }
+
+        50% {
+            box-shadow: 0 2px 30px rgba(220,53,69,0.5);
+        }
+    }
+
+    .alert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .alert-header h4 {
+            color: #dc3545;
+            margin: 0;
+        }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-acknowledged {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-resolved {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .alert-info-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+    .btn-acknowledge {
+        background: #ffc107;
+        color: #333;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-acknowledge:hover {
+            background: #e0a800;
+        }
+
+    .btn-resolve {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-resolve:hover {
+            background: #218838;
+        }
+
+    .btn-archive {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-archive:hover {
+            background: #5a6268;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state .green {
+            color: #28a745;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-exclamation-triangle"></i> Emergency Alerts</h2>
+            <p class="text-muted">Monitor and respond to driver emergencies</p>
+        </div>
+        <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-shield-alt green"></i>
+            <h4>No Emergency Alerts</h4>
+            <p>There are no emergency alerts at this time.</p>
+        </div>
+    }
+    else
+    {
+        // Show active alerts first
+        var activeAlerts = Model.Where(a => a.Status == AlertStatus.Active).ToList();
+        if (activeAlerts.Any())
+        {
+            <h5 class="text-danger mb-3">
+                <i class="fas fa-exclamation-circle"></i> Active Alerts (@activeAlerts.Count)
+            </h5>
+        }
+
+        foreach (var alert in Model)
+        {
+            string statusClass = alert.Status == AlertStatus.Active ? "active"
+                : alert.Status == AlertStatus.Acknowledged ? "acknowledged" : "resolved";
+            string statusBadge = alert.Status == AlertStatus.Active ? "status-active"
+                : alert.Status == AlertStatus.Acknowledged ? "status-acknowledged" : "status-resolved";
+
+            <div class="alert-card @statusClass" id="alert-@alert.Id">
+                <div class="alert-header">
+                    <h4>
+                        @if (alert.Status == AlertStatus.Active)
+                        {
+                            <i class="fas fa-exclamation-circle" style="animation: blink 1s infinite;"></i>
+                        }
+                        else if (alert.Status == AlertStatus.Acknowledged)
+                        {
+                            <i class="fas fa-clock"></i>
+                        }
+                        else
+                        {
+                            <i class="fas fa-check-circle text-success"></i>
+                        }
+                        Emergency Alert #@alert.Id
+                    </h4>
+                    <span class="status-badge @statusBadge">@alert.Status</span>
+                </div>
+
+                <p><strong>🚨 Message:</strong> @alert.Message</p>
+
+                <div class="alert-info-row">
+                    <span><i class="fas fa-user"></i> Driver: @(alert.Driver?.FullName ?? "N/A")</span>
+                    <span><i class="fas fa-phone"></i> @(alert.Driver?.PhoneNumber ?? "N/A")</span>
+                    <span><i class="fas fa-car"></i> @(alert.Driver?.VehicleRegistration ?? "N/A")</span>
+                    <span><i class="fas fa-book"></i> @(alert.TransportRoute?.ExtraClass?.Title ?? "N/A")</span>
+                    <span><i class="fas fa-clock"></i> @alert.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                </div>
+
+                @if (alert.Latitude != 0 && alert.Longitude != 0)
+                {
+                    <div class="alert-info-row">
+                        <span>
+                            <i class="fas fa-map-marker-alt"></i>
+                            Last known location: Lat @alert.Latitude.ToString("0.0000"), Lng @alert.Longitude.ToString("0.0000")
+                        </span>
+                        <a href="https://www.google.com/maps?q=@alert.Latitude,@alert.Longitude" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-map-marked-alt"></i> View on Map
+                        </a>
+                    </div>
+                }
+
+                @if (alert.AcknowledgedAt.HasValue)
+                {
+                    <p class="text-muted small">
+                        <i class="fas fa-check"></i> Acknowledged: @alert.AcknowledgedAt.Value.ToString("dd MMM yyyy, HH:mm")
+                    </p>
+                }
+
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (alert.Status == AlertStatus.Active)
+                    {
+                        <button class="btn-acknowledge" onclick="acknowledgeAlert(@alert.Id)">
+                            <i class="fas fa-check"></i> Acknowledge Alert
+                        </button>
+                    }
+
+                    @if (alert.Status == AlertStatus.Acknowledged)
+                    {
+                        <button class="btn-resolve" onclick="resolveAlert(@alert.Id)">
+                            <i class="fas fa-check-circle"></i> Resolve Emergency
+                        </button>
+                    }
+
+                    @if (alert.Status == AlertStatus.Resolved)
+                    {
+                        <span class="text-success ms-2">
+                            <i class="fas fa-check-circle"></i> Resolved - No further action needed
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    @@keyframes blink {
+        0%, 100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: 0
+        }
+    }
+</style>
+
+<script>
+    function acknowledgeAlert(id) {
+        if (!confirm('Acknowledge this emergency alert? This confirms you are aware of the situation.')) return;
+
+        $.ajax({
+            url: '@Url.Action("AcknowledgeAlert", "AdminExtraClass")',
+            type: 'POST',
+            data: { alertId: id },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                }
+            }
+        });
+    }
+
+    function resolveAlert(id) {
+        if (!confirm('Resolve this emergency? This will reactivate the driver route and mark the alert as resolved.')) return;
+
+        $.ajax({
+            url: '@Url.Action("ResolveAlert", "AdminExtraClass")',
+            type: 'POST',
+            data: { alertId: id },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                }
+            }
+        });
+    }
+
+    // Auto-refresh for active alerts
+    @if (Model.Any(a => a.Status == AlertStatus.Active))
+    {
+        <text>
+        setTimeout(function() { location.reload(); }, 30000);
+        </text>
+    }
+</script>

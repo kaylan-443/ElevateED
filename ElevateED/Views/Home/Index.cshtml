@@ -100,6 +100,29 @@
             text-decoration: none;
         }
 
+    .btn-driver {
+        background: transparent;
+        color: var(--accent-gold);
+        border: 2px solid var(--accent-gold);
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+        .btn-driver:hover {
+            background: var(--accent-gold);
+            color: var(--primary-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+            text-decoration: none;
+        }
+
     .feature-card {
         background: white;
         border-radius: 15px;
@@ -181,6 +204,12 @@
             </a>
             <a href="@Url.Action("Login", "Account")" class="btn-outline">
                 <i class="fas fa-sign-in-alt mr-2"></i>Login
+            </a>
+        </div>
+
+        <div class="mt-3">
+            <a href="@Url.Action("Login", "Driver")" class="btn-driver">
+                <i class="fas fa-bus mr-2"></i>Driver Portal
             </a>
         </div>
 

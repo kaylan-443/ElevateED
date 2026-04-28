@@ -1,6 +1,6 @@
-﻿
-@model List<ElevateED.Models.ExtraClass>
+﻿@model List<ElevateED.Models.ExtraClass>
 @using ElevateED.Models
+
 @{
     ViewBag.Title = "Extra Classes Management";
 }
@@ -45,6 +45,25 @@
     }
 
         .btn-add:hover {
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .btn-drivers {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        margin-right: 10px;
+    }
+
+        .btn-drivers:hover {
             color: white;
             text-decoration: none;
             transform: translateY(-2px);
@@ -144,6 +163,13 @@
         cursor: pointer;
     }
 
+    .btn-assign-driver {
+        background: #6f42c1;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -156,15 +182,35 @@
             color: #ddd;
             margin-bottom: 20px;
         }
+
+    .modal-content {
+        border-radius: 15px;
+    }
+
+    .modal-header {
+        background: #1e3c72;
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        padding: 10px;
+        width: 100%;
+    }
 </style>
 
 <div class="container container-custom">
     <div class="page-header">
         <div>
             <h2 class="page-title"><i class="fas fa-chalkboard-teacher"></i> Extra Classes</h2>
-            <p class="text-muted mb-0">Manage extra classes and view bookings</p>
+            <p class="text-muted mb-0">Manage extra classes, bookings, drivers and transport</p>
         </div>
         <div>
+            <a href="@Url.Action("Drivers", "AdminExtraClass")" class="btn-drivers">
+                <i class="fas fa-id-card"></i> Manage Drivers
+            </a>
             <a href="@Url.Action("Create", "AdminExtraClass")" class="btn-add">
                 <i class="fas fa-plus"></i> Create Extra Class
             </a>
@@ -211,6 +257,9 @@
                         <a href="@Url.Action("TransportList", new { classId = cls.Id })" class="btn-action btn-transport">
                             <i class="fas fa-bus"></i> Transport List
                         </a>
+                        <button class="btn-action btn-assign-driver" onclick="openAssignDriverModal(@cls.Id, '@cls.Title')">
+                            <i class="fas fa-user-plus"></i> Assign Driver
+                        </button>
                         <button class="btn-action btn-delete" onclick="deleteClass(@cls.Id)">
                             <i class="fas fa-trash"></i> Delete
                         </button>
@@ -219,6 +268,35 @@
             </div>
         }
     }
+</div>
+
+<!-- Assign Driver Modal -->
+<div class="modal fade" id="assignDriverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Assign Driver</h5>
+                <button type="button" class="close text-white" onclick="$('#assignDriverModal').modal('hide')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignClassId" />
+                <p>Assigning driver for: <strong id="assignClassName"></strong></p>
+                <div class="form-group">
+                    <label>Select Driver</label>
+                    <select id="driverSelect" class="form-control">
+                        <option value="">-- Select Driver --</option>
+                    </select>
+                </div>
+                <div id="assignMessage" class="alert" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="$('#assignDriverModal').modal('hide')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignDriver()">
+                    <i class="fas fa-check"></i> Assign Driver
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -232,6 +310,59 @@
                 if (response.success) {
                     $('#class-' + id).fadeOut(300, function() { $(this).remove(); });
                 } else { alert(response.message); }
+            }
+        });
+    }
+
+    function openAssignDriverModal(classId, className) {
+        $('#assignClassId').val(classId);
+        $('#assignClassName').text(className);
+        $('#assignMessage').hide();
+        $('#driverSelect').html('<option value="">Loading...</option>');
+
+        // Load active drivers
+        $.ajax({
+            url: '@Url.Action("GetActiveDrivers", "AdminExtraClass")',
+            type: 'GET',
+            success: function(response) {
+                var options = '<option value="">-- Select Driver --</option>';
+                if (response.success && response.drivers.length > 0) {
+                    response.drivers.forEach(function(d) {
+                        options += '<option value="' + d.id + '">' + d.fullName + ' (' + d.username + ')</option>';
+                    });
+                } else {
+                    options += '<option value="" disabled>No active drivers available</option>';
+                }
+                $('#driverSelect').html(options);
+            }
+        });
+
+        $('#assignDriverModal').modal('show');
+    }
+
+    function assignDriver() {
+        var classId = $('#assignClassId').val();
+        var driverId = $('#driverSelect').val();
+
+        if (!driverId) {
+            $('#assignMessage').removeClass('alert-success').addClass('alert-danger')
+                .text('Please select a driver').show();
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("AssignDriver", "AdminExtraClass")',
+            type: 'POST',
+            data: { classId: classId, driverId: driverId },
+            success: function(response) {
+                if (response.success) {
+                    $('#assignMessage').removeClass('alert-danger').addClass('alert-success')
+                        .html('<i class="fas fa-check-circle"></i> ' + response.message).show();
+                    setTimeout(function() { location.reload(); }, 2000);
+                } else {
+                    $('#assignMessage').removeClass('alert-success').addClass('alert-danger')
+                        .text(response.message).show();
+                }
             }
         });
     }

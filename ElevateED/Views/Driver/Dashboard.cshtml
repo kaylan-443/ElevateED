@@ -1,0 +1,358 @@
+﻿@model List<ElevateED.Models.TransportRoute>
+@{
+    ViewBag.Title = "Driver Dashboard";
+    Layout = "~/Views/Shared/_DriverLayout.cshtml";
+}
+
+<style>
+    .route-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+        .route-card.active {
+            border-left: 5px solid #28a745;
+        }
+
+        .route-card.pending {
+            border-left: 5px solid #ffc107;
+        }
+
+        .route-card.emergency {
+            border-left: 5px solid #dc3545;
+            animation: pulse-border 1s infinite;
+        }
+
+        .route-card.completed {
+            border-left: 5px solid #6c757d;
+            opacity: 0.7;
+        }
+
+    @@keyframes pulse-border {
+        0%, 100% {
+            border-left-color: #dc3545;
+        }
+
+        50% {
+            border-left-color: #ff6b6b;
+        }
+    }
+
+    .route-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .route-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .btn-start {
+        background: #28a745;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-start:hover {
+            background: #218838;
+        }
+
+    .btn-location {
+        background: #17a2b8;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-location:hover {
+            background: #138496;
+        }
+
+    .btn-end {
+        background: #6c757d;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-end:hover {
+            background: #5a6268;
+        }
+
+    .btn-emergency {
+        background: #dc3545;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 16px;
+        animation: pulse-btn 2s infinite;
+    }
+
+        .btn-emergency:hover {
+            background: #c82333;
+        }
+
+    @@keyframes pulse-btn {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(220,53,69,0.4);
+        }
+
+        50% {
+            transform: scale(1.03);
+            box-shadow: 0 0 0 15px rgba(220,53,69,0);
+        }
+    }
+
+    .location-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        margin: 10px 0;
+        font-family: monospace;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container" style="padding: 30px 0;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-bus"></i> Driver Dashboard</h2>
+            <p>Welcome, <strong>@ViewBag.DriverName</strong></p>
+            <small class="text-muted">
+                <i class="fas fa-phone"></i> @ViewBag.DriverPhone
+                | <i class="fas fa-car"></i> @ViewBag.DriverVehicle
+            </small>
+        </div>
+        <a href="@Url.Action("Logout", "Driver")" class="btn btn-outline-danger">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-route"></i>
+            <h4>No Routes Assigned</h4>
+            <p>You have no transport routes assigned yet.</p>
+            <p class="text-muted">Please contact the administrator.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var route in Model)
+        {
+            string statusClass = route.Status == "Active" ? "active"
+                : route.Status == "Emergency" ? "emergency"
+                : route.Status == "Completed" ? "completed"
+                : "pending";
+            var extraClass = route.ExtraClass;
+
+            <div class="route-card @statusClass" id="route-@route.Id">
+                <div class="route-header">
+                    <div class="route-title">@(extraClass?.Title ?? "Route #" + route.Id)</div>
+                    <span class="badge badge-@(route.Status == "Active" ? "success" : route.Status == "Emergency" ? "danger" : route.Status == "Completed" ? "secondary" : "warning")" style="font-size:14px; padding:8px 16px;">
+                        @route.Status
+                    </span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-book"></i> Class:</strong> @(extraClass?.Grade?.Name) - @(extraClass?.Subject?.Name)</p>
+                        <p><strong><i class="fas fa-calendar"></i> Date:</strong> @(extraClass?.ClassDate.ToString("dd MMM yyyy"))</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-clock"></i> Time:</strong> @(extraClass?.StartTime.ToString(@"hh\:mm")) - @(extraClass?.EndTime.ToString(@"hh\:mm"))</p>
+                        <p><strong><i class="fas fa-map-marker-alt"></i> Location:</strong> @(extraClass?.Location ?? "TBA")</p>
+                    </div>
+                </div>
+
+                <div id="locationInfo-@route.Id" class="location-info" style="display:none;"></div>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a href="@Url.Action("TransportList", new { routeId = route.Id })" class="btn btn-info">
+                        <i class="fas fa-list"></i> View Students
+                    </a>
+
+                    @if (route.Status == "Pending")
+                    {
+                        <button class="btn-start" onclick="startRoute(@route.Id)">
+                            <i class="fas fa-play"></i> Start Route
+                        </button>
+                    }
+
+                    @if (route.Status == "Active")
+                    {
+                        <button class="btn-location" onclick="simulateLocation(@route.Id)" id="locationBtn-@route.Id">
+                            <i class="fas fa-map-marker-alt"></i> Update My Location
+                        </button>
+                        <button class="btn-end" onclick="endRoute(@route.Id)">
+                            <i class="fas fa-stop"></i> End Route
+                        </button>
+                    }
+
+                    @if (route.Status == "Active" || route.Status == "Pending")
+                    {
+                        <button class="btn-emergency" onclick="triggerEmergency(@route.Id)">
+                            <i class="fas fa-exclamation-triangle"></i> EMERGENCY
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function startRoute(routeId) {
+        if (!confirm('Start this route? This will begin tracking your location.')) return;
+
+        var btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+
+        $.ajax({
+            url: '@Url.Action("StartRoute", "Driver")',
+            type: 'POST',
+            data: { routeId: routeId },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message + '\n\nNow use "Update My Location" to send your position.');
+                    location.reload();
+                } else {
+                    alert(response.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Start Route';
+                }
+            },
+            error: function() {
+                alert('An error occurred');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Start Route';
+            }
+        });
+    }
+
+    function simulateLocation(routeId) {
+        var btn = document.getElementById('locationBtn-' + routeId);
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+        $.ajax({
+            url: '@Url.Action("SimulateLocation", "Driver")',
+            type: 'POST',
+            data: { routeId: routeId },
+            success: function(response) {
+                if (response.success) {
+                    var infoDiv = document.getElementById('locationInfo-' + routeId);
+                    infoDiv.innerHTML =
+                        '<strong><i class="fas fa-check-circle text-success"></i> Location Updated!</strong><br>' +
+                        'Time: ' + response.time + '<br>' +
+                        'Lat: ' + response.latitude + ' | Lng: ' + response.longitude + '<br>' +
+                        '<a href="' + response.googleMapsUrl + '" target="_blank" class="btn btn-sm btn-outline-primary mt-1">' +
+                        '<i class="fas fa-map-marked-alt"></i> View on Map</a>';
+                    infoDiv.style.display = 'block';
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Update My Location';
+                } else {
+                    alert(response.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Update My Location';
+                }
+            },
+            error: function() {
+                alert('An error occurred');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Update My Location';
+            }
+        });
+    }
+
+    function endRoute(routeId) {
+        if (!confirm('End this route? This cannot be undone.')) return;
+
+        $.ajax({
+            url: '@Url.Action("EndRoute", "Driver")',
+            type: 'POST',
+            data: { routeId: routeId },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    }
+
+    function triggerEmergency(routeId) {
+        var message = prompt('Describe the emergency (optional):', 'EMERGENCY! Driver needs immediate assistance!');
+        if (message === null) return; // Cancelled
+
+        var btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        $.ajax({
+            url: '@Url.Action("EmergencyAlert", "Driver")',
+            type: 'POST',
+            data: { routeId: routeId, message: message },
+            success: function(response) {
+                if (response.success) {
+                    alert('🚨 ' + response.message + '\n\n' + response.location);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> EMERGENCY';
+                }
+            },
+            error: function() {
+                alert('An error occurred');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> EMERGENCY';
+            }
+        });
+    }
+</script>

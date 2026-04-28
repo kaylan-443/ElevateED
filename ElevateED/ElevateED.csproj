@@ -346,6 +346,7 @@
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminExtraClassController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
+    <Compile Include="Controllers\DriverController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
     <Compile Include="Controllers\StudentExtraClassController.cs" />
@@ -387,6 +388,10 @@
     <Compile Include="Migrations\202604251225406_AddExtraClasses.Designer.cs">
       <DependentUpon>202604251225406_AddExtraClasses.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202604251830333_AddDriverTransportSystemV2.cs" />
+    <Compile Include="Migrations\202604251830333_AddDriverTransportSystemV2.Designer.cs">
+      <DependentUpon>202604251830333_AddDriverTransportSystemV2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Announcement.cs" />
     <Compile Include="Models\Applicant.cs" />
@@ -394,15 +399,19 @@
     <Compile Include="Models\ApplicationUser.cs" />
     <Compile Include="Models\Class.cs" />
     <Compile Include="Models\ClassRegister.cs" />
+    <Compile Include="Models\Driver.cs" />
     <Compile Include="Models\ElevateEDContext.cs" />
+    <Compile Include="Models\EmergencyAlert.cs" />
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\ExtraClass.cs" />
+    <Compile Include="Models\ExtraClassConfiguration.cs" />
     <Compile Include="Models\Grade.cs" />
     <Compile Include="Models\Homework.cs" />
     <Compile Include="Models\Issue.cs" />
     <Compile Include="Models\PastPaper.cs" />
     <Compile Include="Models\QuizConfiguration.cs" />
     <Compile Include="Models\QuizQuestion.cs" />
+    <Compile Include="Models\RouteTracking.cs" />
     <Compile Include="Models\SchoolSubjects.cs" />
     <Compile Include="Models\Stream.cs" />
     <Compile Include="Models\Student.cs" />
@@ -414,6 +423,7 @@
     <Compile Include="Models\TeacherSubjectAssignment.cs" />
     <Compile Include="Models\TeacherSubjectQualification.cs" />
     <Compile Include="Models\TimeTable.cs" />
+    <Compile Include="Models\TransportRoute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\EmailService.cs" />
     <Compile Include="ViewModels\AdminDashboardViewModel.cs" />
@@ -561,6 +571,13 @@
     <Content Include="Views\AdminExtraClass\TransportList.cshtml" />
     <Content Include="Views\StudentExtraClass\Index.cshtml" />
     <Content Include="Views\StudentExtraClass\MyBookings.cshtml" />
+    <Content Include="Views\Driver\Login.cshtml" />
+    <Content Include="Views\Driver\Dashboard.cshtml" />
+    <Content Include="Views\Shared\_DriverLayout.cshtml" />
+    <Content Include="Views\AdminExtraClass\Drivers.cshtml" />
+    <Content Include="Views\AdminExtraClass\EmergencyAlerts.cshtml" />
+    <Content Include="Views\Driver\TransportList.cshtml" />
+    <Content Include="Views\AdminExtraClass\TrackDriver.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -616,6 +633,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202604251225406_AddExtraClasses.resx">
       <DependentUpon>202604251225406_AddExtraClasses.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202604251830333_AddDriverTransportSystemV2.resx">
+      <DependentUpon>202604251830333_AddDriverTransportSystemV2.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -200,11 +200,15 @@
                         <strong class="text-success">FREE</strong>
                     }
 
-                    @if (booking.Status == BookingStatus.Pending)
+                    @if (booking.Status == BookingStatus.Pending && extraClass != null && extraClass.Fee > 0)
                     {
-                        <button class="btn-pay" onclick="alert('Payment gateway coming soon!')">
+                        <a href="@Url.Action("PayNow", "StudentExtraClass", new { bookingId = booking.Id })" class="btn-pay">
                             <i class="fas fa-credit-card"></i> Pay Now
-                        </button>
+                        </a>
+                    }
+                    else if (extraClass != null && extraClass.Fee == 0)
+                    {
+                        <span class="text-success"><i class="fas fa-check-circle"></i> Free Class</span>
                     }
                 </div>
             </div>

@@ -112,7 +112,164 @@ namespace ElevateED.Controllers
 
             return View(bookings);
         }
+        // ============================================
+        // PAYMENT - PAYFAST INTEGRATION
+        // ============================================
 
+        public ActionResult PayNow(int bookingId)
+        {
+            var student = GetCurrentStudent();
+            if (student == null) return RedirectToAction("Login", "Account");
+
+            var booking = _context.ExtraClassBookings
+                .Include(b => b.ExtraClass)
+                .Include(b => b.ExtraClass.Subject)
+                .FirstOrDefault(b => b.Id == bookingId && b.StudentId == student.Id);
+
+            if (booking == null) return HttpNotFound();
+
+            if (booking.Status != BookingStatus.Pending)
+            {
+                TempData["ErrorMessage"] = "This booking is already " + booking.Status.ToString().ToLower() + ".";
+                return RedirectToAction("MyBookings");
+            }
+
+            var extraClass = booking.ExtraClass;
+
+            // Generate unique payment reference
+            var paymentRef = "MHS-" + DateTime.Now.ToString("yyyyMMdd") + "-" + bookingId;
+
+            // Create payment record
+            var payment = _context.Payments.FirstOrDefault(p => p.BookingId == bookingId);
+            if (payment == null)
+            {
+                payment = new Payment
+                {
+                    BookingId = bookingId,
+                    PaymentReference = paymentRef,
+                    Amount = extraClass.Fee,
+                    PaymentDate = DateTime.Now,
+                    PaymentMethod = "PayFast",
+                    Status = "Pending"
+                };
+                _context.Payments.Add(payment);
+                _context.SaveChanges();
+            }
+            else
+            {
+                paymentRef = payment.PaymentReference;
+            }
+
+            // Build PayFast URL
+            var merchantId = System.Configuration.ConfigurationManager.AppSettings["PayFastMerchantId"] ?? "10000100";
+            var merchantKey = System.Configuration.ConfigurationManager.AppSettings["PayFastMerchantKey"] ?? "46f0cd694581a";
+            var site = System.Configuration.ConfigurationManager.AppSettings["PayFastSite"] ?? "https://sandbox.payfast.co.za/eng/process";
+            var returnUrl = Url.Action("PaymentReturn", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
+            var cancelUrl = Url.Action("PaymentCancel", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
+            var notifyUrl = Url.Action("PaymentNotify", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
+
+            // Build query string
+            var payFastUrl = site + "?" +
+                "merchant_id=" + merchantId +
+                "&merchant_key=" + merchantKey +
+                "&return_url=" + System.Web.HttpUtility.UrlEncode(returnUrl) +
+                "&cancel_url=" + System.Web.HttpUtility.UrlEncode(cancelUrl) +
+                "&notify_url=" + System.Web.HttpUtility.UrlEncode(notifyUrl) +
+                "&m_payment_id=" + System.Web.HttpUtility.UrlEncode(paymentRef) +
+                "&amount=" + extraClass.Fee.ToString("0.00") +
+                "&item_name=" + System.Web.HttpUtility.UrlEncode(extraClass.Title) +
+                "&item_description=" + System.Web.HttpUtility.UrlEncode("Extra Class Payment") +
+                "&name_first=" + System.Web.HttpUtility.UrlEncode(student.FirstName) +
+                "&name_last=" + System.Web.HttpUtility.UrlEncode(student.LastName) +
+                "&email_address=" + System.Web.HttpUtility.UrlEncode(student.User?.Email ?? "");
+
+            // Store booking ID in session for return
+            Session["PaymentBookingId"] = bookingId;
+
+            return Redirect(payFastUrl);
+        }
+
+        // ============================================
+        // PAYMENT RETURN (SUCCESS)
+        // ============================================
+
+        public ActionResult PaymentReturn()
+        {
+            var bookingId = Session["PaymentBookingId"] as int?;
+            if (!bookingId.HasValue)
+            {
+                TempData["ErrorMessage"] = "Payment session expired. Please try again.";
+                return RedirectToAction("MyBookings");
+            }
+
+            var booking = _context.ExtraClassBookings.Include(b => b.ExtraClass).FirstOrDefault(b => b.Id == bookingId.Value);
+            if (booking != null && booking.Status == BookingStatus.Pending)
+            {
+                booking.Status = BookingStatus.Paid;
+                booking.PaidAt = DateTime.Now;
+                booking.AmountPaid = booking.ExtraClass?.Fee ?? 0;
+
+                var payment = _context.Payments.FirstOrDefault(p => p.BookingId == bookingId);
+                if (payment != null)
+                {
+                    payment.Status = "Success";
+                    payment.PaymentDate = DateTime.Now;
+                }
+
+                _context.SaveChanges();
+            }
+
+            Session.Remove("PaymentBookingId");
+            TempData["SuccessMessage"] = "Payment successful! You are now confirmed for this class.";
+            return RedirectToAction("MyBookings");
+        }
+
+        // ============================================
+        // PAYMENT CANCEL
+        // ============================================
+
+        public ActionResult PaymentCancel()
+        {
+            Session.Remove("PaymentBookingId");
+            TempData["ErrorMessage"] = "Payment was cancelled. Your booking is still pending.";
+            return RedirectToAction("MyBookings");
+        }
+
+        // ============================================
+        // PAYMENT NOTIFY (PAYFAST IPN)
+        // ============================================
+
+        [HttpPost]
+        public ActionResult PaymentNotify()
+        {
+            var paymentStatus = Request.Form["payment_status"];
+            var paymentId = Request.Form["m_payment_id"];
+
+            System.Diagnostics.Debug.WriteLine($"PayFast IPN: {paymentId} - {paymentStatus}");
+
+            if (paymentStatus == "COMPLETE")
+            {
+                var payment = _context.Payments.FirstOrDefault(p => p.PaymentReference == paymentId);
+                if (payment != null)
+                {
+                    payment.Status = "Success";
+                    payment.PaymentDate = DateTime.Now;
+
+                    var booking = _context.ExtraClassBookings.Find(payment.BookingId);
+                    if (booking != null && booking.Status == BookingStatus.Pending)
+                    {
+                        booking.Status = BookingStatus.Paid;
+                        booking.PaidAt = DateTime.Now;
+                        booking.AmountPaid = payment.Amount;
+                        booking.PaymentReference = paymentId;
+                    }
+
+                    _context.SaveChanges();
+                }
+            }
+
+            return new EmptyResult();
+        }
         // ============================================
         // HELPER
         // ============================================
@@ -128,5 +285,6 @@ namespace ElevateED.Controllers
                 .Include(s => s.Class.Grade)
                 .FirstOrDefault(s => s.UserId == user.Id);
         }
+
     }
 }

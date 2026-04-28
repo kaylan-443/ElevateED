@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Driver Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+        body {
+            padding-top: 60px;
+            background: #f8f9fa;
+        }
+
+        .navbar-driver {
+            background: #1e3c72;
+            color: white;
+        }
+
+            .navbar-driver .nav-link {
+                color: rgba(255,255,255,0.8);
+            }
+
+                .navbar-driver .nav-link:hover {
+                    color: white;
+                }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-driver fixed-top">
+        <div class="container">
+            <span class="navbar-brand text-white"><i class="fas fa-bus"></i> Driver Portal</span>
+            <div>
+                <a href="@Url.Action("Dashboard", "Driver")" class="nav-link d-inline">Dashboard</a>
+                <a href="@Url.Action("Logout", "Driver")" class="nav-link d-inline ml-3">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        @RenderBody()
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("scripts", false)
+</body>
+</html>
