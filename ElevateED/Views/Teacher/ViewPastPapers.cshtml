@@ -1,0 +1,315 @@
+﻿@model List<ElevateED.ViewModels.PastPaperViewModel>
+
+@{
+    ViewBag.Title = "View Past Papers - ElevateED";
+    var selectedGrade = ViewBag.SelectedGrade as string;
+    var subjects = ViewBag.Subjects as List<string>;
+    var years = ViewBag.Years as List<string>;
+    var terms = ViewBag.Terms as List<string>;
+}
+
+<style>
+    .view-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+    .filter-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #d4af37;
+    }
+
+    .paper-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+
+        .paper-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+
+    .paper-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 8px;
+    }
+
+    .paper-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+
+        .paper-meta span {
+            background: #f8f9fa;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+    .paper-description {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .paper-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-download {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-download:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+    .btn-memo {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-memo:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+    .no-papers {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 15px;
+        color: #999;
+    }
+
+    .grade-badge {
+        background: #d4af37;
+        color: #1e3c72;
+        padding: 5px 15px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="header-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1 class="display-4">
+                    <i class="fas fa-search text-warning mr-3"></i>Past Paper Repository
+                </h1>
+                <p class="lead mb-0">Browse and download past exam papers</p>
+            </div>
+            <div>
+                <a href="@Url.Action("PastPapers", "Teacher")" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Grades
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container view-container">
+    <!-- Grade Badge -->
+    <div class="text-center mb-4">
+        <span class="grade-badge">
+            <i class="fas fa-graduation-cap mr-2"></i>@selectedGrade
+        </span>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <h5 class="filter-title"><i class="fas fa-filter mr-2"></i>Filter Papers</h5>
+        <form method="get" action="@Url.Action("ViewPastPapers", "Teacher")" class="row">
+            <input type="hidden" name="grade" value="@selectedGrade" />
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Subject</label>
+                <select name="subject" class="form-control">
+                    <option value="">-- All Subjects --</option>
+                    @if (subjects != null)
+                    {
+                        foreach (var subject in subjects)
+                        {
+                            <option value="@subject" @(ViewBag.SelectedSubject == subject ? "selected" : "")>@subject</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-control">
+                    <option value="">-- All Years --</option>
+                    @if (years != null)
+                    {
+                        foreach (var year in years)
+                        {
+                            <option value="@year" @(ViewBag.SelectedYear == year ? "selected" : "")>@year</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Term</label>
+                <select name="term" class="form-control">
+                    <option value="">-- All Terms --</option>
+                    <option value="Term 1">Term 1</option>
+                    <option value="Term 2">Term 2</option>
+                    <option value="Term 3">Term 3</option>
+                    <option value="Term 4">Term 4</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search mr-1"></i>Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Papers List -->
+    @if (Model.Count == 0)
+    {
+        <div class="no-papers">
+            <i class="fas fa-folder-open fa-3x mb-3"></i>
+            <h4>No past papers found</h4>
+            <p>There are no past papers available for this grade yet.</p>
+            <a href="@Url.Action("PastPapers", "Teacher")" class="btn btn-primary">
+                <i class="fas fa-upload mr-2"></i>Upload a Paper
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <h5 class="mb-3">Found @Model.Count paper(s)</h5>
+            </div>
+        </div>
+
+        foreach (var paper in Model)
+        {
+            <div class="paper-card">
+                <div class="paper-title">
+                    <i class="fas fa-file-pdf text-danger mr-2"></i>@paper.Title
+                </div>
+                <div class="paper-meta">
+                    <span><i class="fas fa-book mr-1"></i>@paper.Subject</span>
+                    <span><i class="fas fa-calendar mr-1"></i>@paper.Year</span>
+                    <span><i class="fas fa-chart-line mr-1"></i>@paper.Term</span>
+                    <span><i class="fas fa-tag mr-1"></i>@paper.ExamType</span>
+                    <span><i class="fas fa-user mr-1"></i>@paper.UploadedByName</span>
+                    <span><i class="fas fa-download mr-1"></i>@paper.DownloadCount downloads</span>
+                </div>
+                @if (!string.IsNullOrEmpty(paper.Description))
+                {
+                    <div class="paper-description">@paper.Description</div>
+                }
+                <div class="paper-actions">
+                    <a href="@Url.Action("DownloadPastPaper", "Teacher", new { id = paper.Id })" class="btn-download">
+                        <i class="fas fa-download mr-1"></i>Download Paper
+                    </a>
+                    @if (!string.IsNullOrEmpty(paper.MemoPath))
+                    {
+                        <a href="@Url.Action("DownloadPastPaperMemo", "Teacher", new { id = paper.Id })" class="btn-memo">
+                            <i class="fas fa-file-alt mr-1"></i>Download Memo
+                        </a>
+                    }
+                    <button class="btn-delete" onclick="deletePaper(@paper.Id, '@paper.Title')">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function deletePaper(id, title) {
+            if (confirm('Are you sure you want to delete "' + title + '"?')) {
+                $.ajax({
+                    url: '@Url.Action("DeletePastPaper", "Teacher")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        id: id
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while deleting the paper');
+                    }
+                });
+            }
+        }
+    </script>
+}

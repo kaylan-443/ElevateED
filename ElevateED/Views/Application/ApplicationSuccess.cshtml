@@ -1,0 +1,121 @@
+﻿@{
+    ViewBag.Title = "Application Submitted";
+    var studentNumber = ViewBag.StudentNumber as string;
+    var tempPassword = ViewBag.TempPassword as string;
+}
+
+<style>
+    .success-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        padding: 40px;
+    }
+
+    .success-card {
+        background: white;
+        padding: 50px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        text-align: center;
+        max-width: 600px;
+    }
+
+    .credentials-box {
+        background: #1e3c72;
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin: 30px 0;
+    }
+
+        .credentials-box h4 {
+            color: #d4af37;
+            margin-bottom: 20px;
+        }
+
+        .credentials-box p {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .credentials-box strong {
+            color: #d4af37;
+        }
+
+    .btn-login {
+        background: #28a745;
+        color: white;
+        padding: 15px 40px;
+        font-size: 18px;
+        border-radius: 50px;
+        border: none;
+        margin-right: 10px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+
+    .btn-home {
+        background: transparent;
+        color: #1e3c72;
+        padding: 15px 40px;
+        font-size: 18px;
+        border-radius: 50px;
+        border: 2px solid #1e3c72;
+        transition: all 0.3s ease;
+    }
+
+        .btn-home:hover {
+            background: #1e3c72;
+            color: white;
+        }
+
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        color: #856404;
+    }
+</style>
+
+<div class="success-container">
+    <div class="success-card">
+        <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+        <h1 class="text-success mb-3">Application Submitted!</h1>
+        <p class="lead">Thank you for applying to Mpiyakhe High School.</p>
+
+        <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Important:</strong> Please save your login credentials below. You will need them to check your application status.
+        </div>
+
+        <div class="credentials-box">
+            <h4 class="mb-4"><i class="fas fa-key"></i> Your Login Credentials</h4>
+            <p><strong>Student Number:</strong> @studentNumber</p>
+            <p><strong>Password:</strong> @tempPassword</p>
+            <p class="small mt-3"><i class="fas fa-envelope"></i> These details have also been emailed to you.</p>
+        </div>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Login", "Account")" class="btn btn-login">
+                <i class="fas fa-sign-in-alt"></i> Login Now
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-home">
+                <i class="fas fa-home"></i> Return Home
+            </a>
+        </div>
+
+        <div class="mt-4 text-muted">
+            <small>After logging in, you can check your application status on the Pending Approval page.</small>
+        </div>
+    </div>
+</div>

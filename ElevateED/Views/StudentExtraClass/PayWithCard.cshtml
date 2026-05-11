@@ -1,0 +1,506 @@
+﻿@{
+    ViewBag.Title = "Card Payment";
+    var booking = ViewBag.Booking as ElevateED.Models.ExtraClassBooking;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Card Payment - ElevateED</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            background: #f5f6fa;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .card-info {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+            .card-info h4 {
+                color: #1e3c72;
+                margin-bottom: 20px;
+                font-weight: 700;
+            }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+            .info-row .label {
+                color: #888;
+            }
+
+            .info-row .value {
+                font-weight: 600;
+                color: #333;
+            }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .card-form {
+            flex: 1.5;
+            min-width: 350px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+            .card-form h4 {
+                color: #1e3c72;
+                margin-bottom: 5px;
+                font-weight: 700;
+            }
+
+        .secure-badge {
+            font-size: 12px;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+
+        .card-preview {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+            .card-preview .card-chip {
+                width: 40px;
+                height: 30px;
+                background: linear-gradient(135deg, #ffd700, #ffb300);
+                border-radius: 6px;
+                margin-bottom: 20px;
+            }
+
+            .card-preview .card-number {
+                font-size: 20px;
+                letter-spacing: 3px;
+                font-family: monospace;
+                margin-bottom: 15px;
+            }
+
+            .card-preview .card-details {
+                display: flex;
+                justify-content: space-between;
+                font-size: 12px;
+            }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+            .form-group label {
+                font-size: 13px;
+                font-weight: 600;
+                color: #555;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+            .form-control:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+                outline: none;
+            }
+
+        .expiry-row {
+            display: flex;
+            gap: 10px;
+        }
+
+            .expiry-row select {
+                flex: 1;
+            }
+
+        .btn-pay {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .btn-pay:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(16,185,129,0.3);
+            }
+
+            .btn-pay:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .btn-cancel {
+            background: white;
+            color: #666;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            width: 100%;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+            text-decoration: none;
+        }
+
+        .card-icons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+            .card-icons i {
+                font-size: 24px;
+                color: #aaa;
+            }
+
+                .card-icons i.active {
+                    color: #1e3c72;
+                }
+
+        /* Receipt Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+        .receipt {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+        }
+
+            .receipt .check-icon {
+                width: 60px;
+                height: 60px;
+                background: #d1fae5;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 15px;
+            }
+
+                .receipt .check-icon i {
+                    font-size: 30px;
+                    color: #065f46;
+                }
+
+            .receipt h4 {
+                color: #065f46;
+                margin-bottom: 10px;
+            }
+
+        .receipt-details {
+            text-align: left;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+            .receipt-details div {
+                display: flex;
+                justify-content: space-between;
+                padding: 4px 0;
+            }
+
+        .btn-receipt {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn-close {
+            background: #e0e0e0;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <!-- Order Summary -->
+        <div class="card-info">
+            <h4><i class="fas fa-shopping-cart"></i> Order Summary</h4>
+            <div class="info-row"><span class="label">Class</span><span class="value">@(booking?.ExtraClass?.Title ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Subject</span><span class="value">@(booking?.ExtraClass?.Subject?.Name ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Date</span><span class="value">@(booking?.ExtraClass?.ClassDate.ToString("dd MMM yyyy"))</span></div>
+            <div class="info-row"><span class="label">Time</span><span class="value">@(booking?.ExtraClass?.StartTime.ToString(@"hh\:mm") ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Student</span><span class="value">@ViewBag.StudentName</span></div>
+            <div class="total-row"><span>Total</span><span>R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")</span></div>
+        </div>
+
+        <!-- Card Form -->
+        <div class="card-form">
+            <h4><i class="fas fa-credit-card"></i> Card Payment</h4>
+            <div class="secure-badge"><i class="fas fa-lock"></i> Secured by ElevateED Payments (Demo)</div>
+
+            <div class="card-icons">
+                <i class="fab fa-cc-visa active"></i>
+                <i class="fab fa-cc-mastercard"></i>
+            </div>
+
+            <!-- Card Preview -->
+            <div class="card-preview">
+                <div class="card-chip"></div>
+                <div class="card-number" id="cardPreview">**** **** **** ****</div>
+                <div class="card-details">
+                    <span id="holderPreview">CARD HOLDER</span>
+                    <span id="expiryPreview">MM/YY</span>
+                </div>
+            </div>
+
+            <form id="paymentForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bookingId" value="@(booking?.Id)" />
+
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" name="cardNumber" id="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this); updatePreview();" />
+                </div>
+
+                <div class="form-group">
+                    <label>Card Holder Name</label>
+                    <input type="text" name="cardHolder" id="cardHolder" class="form-control" placeholder="JOHN DOE" oninput="updatePreview()" />
+                </div>
+
+                <div class="expiry-row">
+                    <div class="form-group">
+                        <label>Expiry Month</label>
+                        <select name="expiryMonth" id="expiryMonth" class="form-control" onchange="updatePreview()">
+                            <option value="">Month</option>
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                <option value="@i.ToString("D2")">@i.ToString("D2")</option>
+}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Year</label>
+                        <select name="expiryYear" id="expiryYear" class="form-control" onchange="updatePreview()">
+                            <option value="">Year</option>
+                            @for (int i = DateTime.Now.Year; i <= DateTime.Now.Year + 10; i++)
+                            {
+                                <option value="@i">@i</option>
+}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>CVV</label>
+                    <input type="text" name="cvv" id="cvv" class="form-control" placeholder="123" maxlength="3" style="width: 100px;" />
+                </div>
+
+                <div id="errorMessage" class="alert alert-danger" style="display:none;"></div>
+
+                <button type="button" class="btn-pay" onclick="processPayment()" id="payBtn">
+                    <i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")
+                </button>
+                <a href="@Url.Action("MyBookings", "StudentExtraClass")" class="btn-cancel">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="receipt">
+            <div class="check-icon"><i class="fas fa-check"></i></div>
+            <h4>Payment Successful!</h4>
+            <p style="color:#666;">Your booking is confirmed</p>
+            <div class="receipt-details" id="receiptDetails"></div>
+            <button class="btn-receipt" onclick="printReceipt()"><i class="fas fa-print"></i> Print Receipt</button>
+            <button class="btn-receipt" onclick="goToBookings()"><i class="fas fa-list"></i> My Bookings</button>
+            <button class="btn-close" onclick="goToBookings()">Close</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        function formatCard(input) {
+            var val = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            var parts = val.match(/.{1,4}/g);
+            if (parts) input.value = parts.join(' ');
+        }
+
+        function updatePreview() {
+            var cardNum = document.getElementById('cardNumber').value || '**** **** **** ****';
+            document.getElementById('cardPreview').textContent = cardNum || '**** **** **** ****';
+
+            var holder = document.getElementById('cardHolder').value || 'CARD HOLDER';
+            document.getElementById('holderPreview').textContent = holder.toUpperCase();
+
+            var month = document.getElementById('expiryMonth').value || 'MM';
+            var year = (document.getElementById('expiryYear').value || 'YY').toString().substring(2);
+            document.getElementById('expiryPreview').textContent = month + '/' + year;
+        }
+
+        function processPayment() {
+            var cardNum = document.getElementById('cardNumber').value.replace(/\s/g, '');
+            var holder = document.getElementById('cardHolder').value;
+            var month = document.getElementById('expiryMonth').value;
+            var year = document.getElementById('expiryYear').value;
+            var cvv = document.getElementById('cvv').value;
+
+            if (!cardNum || cardNum.length < 16) { showError('Please enter a valid card number'); return; }
+            if (!holder) { showError('Please enter card holder name'); return; }
+            if (!month || !year) { showError('Please select expiry date'); return; }
+            if (!cvv || cvv.length < 3) { showError('Please enter a valid CVV'); return; }
+
+            var btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            $.ajax({
+                url: '@Url.Action("ProcessCardPayment", "StudentExtraClass")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    bookingId: @(booking?.Id ?? 0),
+                    cardNumber: cardNum,
+                    cardHolder: holder,
+                    expiryMonth: month,
+                    expiryYear: year,
+                    cvv: cvv
+                },
+                success: function(res) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")';
+
+                    if (res.success) {
+                        showReceipt(res.receipt);
+                    } else {
+                        showError(res.message);
+                    }
+                },
+                error: function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")';
+                    showError('Payment failed. Please try again.');
+                }
+            });
+        }
+
+        function showReceipt(data) {
+            var html = '<div><strong>Receipt #:</strong> ' + data.receiptNumber + '</div>' +
+                '<div><strong>Date:</strong> ' + new Date(data.date).toLocaleString() + '</div>' +
+                '<div><strong>Transaction ID:</strong> ' + data.transactionId + '</div>' +
+                '<div><strong>Student:</strong> ' + data.studentName + '</div>' +
+                '<div><strong>Student #:</strong> ' + data.studentNumber + '</div>' +
+                '<div><strong>Class:</strong> ' + data.className + '</div>' +
+                '<div><strong>Subject:</strong> ' + data.subject + '</div>' +
+                '<hr>' +
+                '<div style="font-weight:700;"><strong>Amount Paid:</strong> R ' + data.amount.toFixed(2) + '</div>' +
+                '<div><strong>Method:</strong> ' + data.paymentMethod + '</div>' +
+                '<div><strong>Card Holder:</strong> ' + data.cardHolder + '</div>';
+
+            document.getElementById('receiptDetails').innerHTML = html;
+            document.getElementById('receiptModal').classList.add('show');
+        }
+
+        function showError(msg) {
+            var err = document.getElementById('errorMessage');
+            err.textContent = msg;
+            err.style.display = 'block';
+            setTimeout(function() { err.style.display = 'none'; }, 5000);
+        }
+
+        function printReceipt() {
+            var content = document.getElementById('receiptDetails').innerHTML;
+            var win = window.open('', '', 'width=400,height=600');
+            win.document.write('<html><head><title>Payment Receipt - ElevateED</title><style>body{font-family:sans-serif;padding:20px;}div{padding:4px 0;}</style></head><body><h3>ElevateED Payment Receipt</h3>' + content + '</body></html>');
+            win.document.close();
+            win.print();
+        }
+
+        function goToBookings() {
+            window.location.href = '@Url.Action("MyBookings", "StudentExtraClass")';
+        }
+    </script>
+</body>
+</html>

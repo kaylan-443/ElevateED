@@ -1,0 +1,552 @@
+﻿@model ElevateED.ViewModels.SubmissionAnalyticsViewModel
+
+@{
+    ViewBag.Title = "Submission Analytics - " + Model.AssignmentTitle;
+}
+
+<style>
+    .analytics-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h2 {
+            margin: 0;
+            color: #1e3c72;
+            font-weight: 700;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 25px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* Stats Cards */
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .stats-number {
+        font-size: 36px;
+        font-weight: 800;
+        color: #1e3c72;
+        line-height: 1;
+    }
+
+    .stats-label {
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 5px;
+    }
+
+    .stats-card.pass .stats-number {
+        color: #28a745;
+    }
+
+    .stats-card.fail .stats-number {
+        color: #dc3545;
+    }
+
+    .stats-card.submit .stats-number {
+        color: #17a2b8;
+    }
+
+    .stats-card.rate .stats-number {
+        color: #fd7e14;
+    }
+
+    /* Chart Containers */
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+    }
+
+    .chart-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #d4af37;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .chart-title i {
+            color: #d4af37;
+            font-size: 22px;
+        }
+
+    .chart-canvas {
+        height: 300px;
+        position: relative;
+    }
+
+    canvas {
+        max-height: 300px;
+        width: 100%;
+    }
+
+    /* Student Table */
+    .student-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+        .student-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .student-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .student-table tr:hover {
+            background: #f8f9fa;
+        }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pass {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-fail {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-notsubmitted {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .grade-value {
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .grade-pass {
+        color: #28a745;
+    }
+
+    .grade-fail {
+        color: #dc3545;
+    }
+
+    .feedback-preview {
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
+        .feedback-preview:hover {
+            white-space: normal;
+            overflow: visible;
+            background: #fff;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    @@media print {
+        .page-header, .btn-back, .no-print {
+            display: none !important;
+        }
+
+        .chart-card, .stats-card {
+            break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="container analytics-container">
+    <div class="page-header">
+        <div>
+            <h2><i class="fas fa-chart-line text-primary"></i> Submission Analytics</h2>
+            <p class="text-muted">@Model.AssignmentTitle - @Model.Subject | @Model.ClassName</p>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary mr-2 no-print">
+                <i class="fas fa-print"></i> Print Report
+            </button>
+            <a href="@(Model.AssignmentType == "homework" ? Url.Action("GradeHomework", "Teacher", new { id = Model.AssignmentId }) : Url.Action("GradeClasswork", "Teacher", new { id = Model.AssignmentId }))" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Grading
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stats-card submit">
+                <div class="stats-number">@Model.SubmissionRate%</div>
+                <div class="stats-label">Submission Rate</div>
+                <small class="text-muted">@Model.SubmissionsReceived / @Model.TotalStudents students</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card pass">
+                <div class="stats-number">@Model.PassCount</div>
+                <div class="stats-label">Passed</div>
+                <small class="text-muted">@Model.PassRate% of submitted</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card fail">
+                <div class="stats-number">@Model.FailCount</div>
+                <div class="stats-label">Failed</div>
+                <small class="text-muted">@Math.Round(100 - Model.PassRate, 1)% of submitted</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.AverageGrade%</div>
+                <div class="stats-label">Average Grade</div>
+                <small class="text-muted">Highest: @Model.HighestGrade% | Lowest: @Model.LowestGrade%</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pass/Fail Pie Chart -->
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-pie"></i> Pass / Fail Distribution
+                </div>
+                <div class="chart-canvas">
+                    <canvas id="passFailChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="badge" style="background: #28a745; color: white; padding: 5px 10px;">Passed: @Model.PassCount</span>
+                    <span class="badge" style="background: #dc3545; color: white; padding: 5px 10px; margin-left: 10px;">Failed: @Model.FailCount</span>
+                    @if (Model.UngradedCount > 0)
+                    {
+                        <span class="badge" style="background: #ffc107; color: #333; padding: 5px 10px; margin-left: 10px;">Ungraded: @Model.UngradedCount</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Distribution Bar Chart -->
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-bar"></i> Grade Distribution
+                </div>
+                <div class="chart-canvas">
+                    <canvas id="gradeDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Submission Rate Donut Chart -->
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-users"></i> Submission Statistics
+                </div>
+                <div class="chart-canvas">
+                    <canvas id="submissionChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="badge" style="background: #28a745; color: white; padding: 5px 10px;">Submitted: @Model.SubmissionsReceived</span>
+                    <span class="badge" style="background: #dc3545; color: white; padding: 5px 10px; margin-left: 10px;">Not Submitted: @Model.NotSubmitted</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics Card -->
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-simple"></i> Key Statistics
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h3 class="text-success mb-0">@Model.PassRate%</h3>
+                            <small class="text-muted">Pass Rate</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h3 class="text-info mb-0">@Model.AverageGrade%</h3>
+                            <small class="text-muted">Class Average</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 border-top">
+                            <h3 class="text-warning mb-0">@Model.HighestGrade%</h3>
+                            <small class="text-muted">Highest Score</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 border-top">
+                            <h3 class="text-danger mb-0">@Model.LowestGrade%</h3>
+                            <small class="text-muted">Lowest Score</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Grades Table -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <i class="fas fa-table-list"></i> Student Performance Details
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="student-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Student Number</th>
+                        <th>Status</th>
+                        <th>Grade</th>
+                        <th>Feedback</th>
+                        <th>Submitted On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int index = 1;
+                        foreach (var student in Model.StudentGrades.OrderByDescending(s => s.Grade))
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td><strong>@student.StudentName</strong></td>
+                                <td>@student.StudentNumber</td>
+                                <td>
+                                    @{
+                                        var statusClass = student.Status == "Passed" ? "status-pass" :
+                                                          student.Status == "Failed" ? "status-fail" :
+                                                          student.Status == "Pending Grade" ? "status-pending" : "status-notsubmitted";
+                                    }
+                                    <span class="status-badge @statusClass">@student.Status</span>
+                                </td>
+                                <td>
+                                    @if (student.Grade.HasValue)
+                                    {
+                                        <span class="grade-value @(student.Grade.Value >= 50 ? "grade-pass" : "grade-fail")">
+                                            @student.Grade.Value%
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(student.Feedback))
+                                    {
+                                        <div class="feedback-preview" title="@student.Feedback">
+                                            <i class="fas fa-comment-dots text-muted"></i> @(student.Feedback.Length > 50 ? student.Feedback.Substring(0, 50) + "..." : student.Feedback)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (student.SubmittedAt.HasValue)
+                                    {
+                                        <small>@student.SubmittedAt.Value.ToString("dd MMM yyyy, HH:mm")</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not submitted</span>
+                                    }
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pass/Fail Chart
+        var passCount = @Model.PassCount;
+        var failCount = @Model.FailCount;
+        var ungradedCount = @Model.UngradedCount;
+
+        if (passCount > 0 || failCount > 0) {
+            var ctx1 = document.getElementById('passFailChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'pie',
+                data: {
+                    labels: ['Passed (50%+)', 'Failed (0-49%)'],
+                    datasets: [{
+                        data: [passCount, failCount],
+                        backgroundColor: ['#28a745', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Grade Distribution Chart
+        var distribution = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GradeDistribution));
+        var chartData = [];
+        var chartLabels = [];
+        var chartColors = [];
+
+        distribution.forEach(function(item) {
+            if (item.Count > 0 || item.Range === "0-49% (Fail)") {
+                chartData.push(item.Count);
+                chartLabels.push(item.Range);
+                chartColors.push(item.Color);
+            }
+        });
+
+        if (chartData.length > 0) {
+            var ctx2 = document.getElementById('gradeDistributionChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: chartData,
+                        backgroundColor: chartColors,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Students' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Grade Ranges' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Submission Chart
+        var ctx3 = document.getElementById('submissionChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'doughnut',
+            data: {
+                labels: ['Submitted', 'Not Submitted'],
+                datasets: [{
+                    data: [@Model.SubmissionsReceived, @Model.NotSubmitted],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>

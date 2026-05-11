@@ -1,0 +1,183 @@
+﻿@model List<ElevateED.Models.Subject>
+@{
+    ViewBag.Title = "Quizzes";
+    var recentAttempts = ViewBag.RecentAttempts as List<ElevateED.Models.QuizAttempt>;
+}
+
+<style>
+    .quiz-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .subject-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 4px solid #1e3c72;
+        height: 100%;
+    }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .subject-icon {
+        width: 70px;
+        height: 70px;
+        background: #1e3c72;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+    .subject-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .recent-section {
+        margin-top: 40px;
+    }
+
+    .section-title {
+        color: #1e3c72;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .attempt-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .score-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .score-high {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .score-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .score-low {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container quiz-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-question-circle"></i> Quizzes</h2>
+            <p class="text-muted">Select a subject to start a quiz</p>
+        </div>
+        <a href="@Url.Action("History", "StudentQuiz")" class="btn btn-outline-primary">
+            <i class="fas fa-history"></i> My History
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-book"></i>
+            <h4>No Quizzes Available</h4>
+            <p>Quiz questions haven't been added yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var subject in Model)
+            {
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="subject-card" onclick="location.href='@Url.Action("Generate", "StudentQuiz", new { subjectId = subject.Id })'">
+                        <div class="subject-icon"><i class="fas fa-book"></i></div>
+                        <div class="subject-name">@subject.Name</div>
+                        <p class="text-muted small">Click to start quiz</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (recentAttempts != null && recentAttempts.Any())
+    {
+        <div class="recent-section">
+            <h4 class="section-title"><i class="fas fa-history"></i> Recent Attempts</h4>
+            @foreach (var attempt in recentAttempts)
+            {
+                var scoreClass = attempt.Score >= 70 ? "score-high" : attempt.Score >= 50 ? "score-medium" : "score-low";
+                <div class="attempt-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>@(attempt.Subject != null ? attempt.Subject.Name : "N/A")</strong>
+                            <br /><small class="text-muted">@attempt.AttemptedAt.ToString("dd MMM yyyy, HH:mm")</small>
+                        </div>
+                        <div>
+                            <span class="score-badge @scoreClass">@attempt.Score%</span>
+                            <a href="@Url.Action("Results", "StudentQuiz", new { attemptId = attempt.Id })" class="btn btn-sm btn-outline-primary ml-2">View</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

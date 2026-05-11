@@ -1,0 +1,510 @@
+﻿@model ElevateED.ViewModels.PastPaperListViewModel
+
+@{
+    ViewBag.Title = Model.Grade + " - Past Papers";
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--gray-50);
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #4338ca);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        width: 200px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+    .content-area {
+        padding: 32px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+    .btn-back {
+        background: white;
+        color: var(--gray-700);
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid var(--gray-200);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-100);
+            text-decoration: none;
+        }
+
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid var(--gray-200);
+        margin-bottom: 24px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-item {
+        flex: 1;
+        min-width: 140px;
+    }
+
+        .filter-item label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .filter-item select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+    .btn-filter {
+        background: var(--primary);
+        color: white;
+        padding: 9px 18px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+        .btn-filter:hover {
+            background: #4338ca;
+        }
+
+    .result-count {
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+
+    .paper-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 14px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        border-left: 4px solid var(--info);
+    }
+
+        .paper-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+    .paper-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+    }
+
+    .paper-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .meta-badge {
+        background: var(--gray-100);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: var(--gray-600);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .paper-description {
+        color: var(--gray-500);
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .btn-download {
+        background: var(--success);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+        .btn-download:hover {
+            background: #059669;
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-memo {
+        background: #f97316;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+        .btn-memo:hover {
+            background: #ea580c;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--gray-400);
+            margin-bottom: 15px;
+        }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("Timetable", "Student")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <div class="nav-section">Learning</div>
+            <a href="@Url.Action("PastPapers", "Student")" class="nav-item active"><i class="fas fa-archive"></i><span>Past Papers</span></a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">S</div></button>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header"><div style="font-weight:600;">Student</div></div>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="page-header">
+                <div><h1><i class="fas fa-archive" style="color:var(--accent);"></i> @Model.Grade Past Papers</h1></div>
+                <a href="@Url.Action("PastPapers", "Student")" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Grades</a>
+            </div>
+            <div class="filter-card">
+                <form method="get" action="@Url.Action("ViewPastPapersByGrade", "Student")">
+                    <input type="hidden" name="grade" value="@Model.Grade" />
+                    <div class="filter-row">
+                        <div class="filter-item">
+                            <label>Subject</label>
+                            <select name="subject">
+                                <option value="">All Subjects</option>
+                                @foreach (var subject in Model.Subjects)
+                                {
+                                    <option value="@subject" selected="@(Model.SelectedSubject == subject)">@subject</option>
+}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Year</label>
+                            <select name="year">
+                                <option value="">All Years</option>
+                                @for (int i = DateTime.Now.Year; i >= DateTime.Now.Year - 10; i--)
+                                {
+                                    <option value="@i" selected="@(Model.SelectedYear == i.ToString())">@i</option>
+}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Term</label>
+                            <select name="term">
+                                <option value="">All Terms</option>
+                                <option value="Term 1" selected="@(Model.SelectedTerm == "Term 1")">Term 1</option>
+                                <option value="Term 2" selected="@(Model.SelectedTerm == "Term 2")">Term 2</option>
+                                <option value="Term 3" selected="@(Model.SelectedTerm == "Term 3")">Term 3</option>
+                                <option value="Term 4" selected="@(Model.SelectedTerm == "Term 4")">Term 4</option>
+                            </select>
+                        </div>
+                        <div><button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Apply</button></div>
+                    </div>
+                </form>
+                <div class="result-count"><i class="fas fa-file-alt"></i> @Model.Papers.Count paper(s) found</div>
+            </div>
+            @if (Model.Papers.Any())
+            {
+                foreach (var paper in Model.Papers)
+                {
+                    <div class="paper-card">
+                        <div class="paper-title">@paper.Title</div>
+                        <div class="paper-meta">
+                            <span class="meta-badge"><i class="fas fa-book"></i> @paper.Subject</span>
+                            <span class="meta-badge"><i class="fas fa-calendar"></i> @paper.Year</span>
+                            <span class="meta-badge"><i class="fas fa-chalkboard"></i> @paper.Term</span>
+                            <span class="meta-badge"><i class="fas fa-file-alt"></i> @paper.ExamType</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(paper.Description))
+                        {<div class="paper-description">@paper.Description</div>}
+                        <div style="display:flex;gap:8px;">
+                            <a href="@paper.FilePath" target="_blank" class="btn-download"><i class="fas fa-download"></i> Paper</a>
+                            @if (!string.IsNullOrEmpty(paper.MemoPath))
+                            {<a href="@paper.MemoPath" target="_blank" class="btn-memo"><i class="fas fa-file-pdf"></i> Memo</a>}
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state"><i class="fas fa-folder-open"></i><h4>No Past Papers Found</h4><p>Try changing filters or check back later.</p><a href="@Url.Action("ViewPastPapersByGrade", "Student", new { grade = Model.Grade })" style="color:var(--primary);display:inline-block;margin-top:15px;"><i class="fas fa-redo"></i> Clear Filters</a></div>
+            }
+        </div>
+    </main>
+</div>
+<script>
+    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
+    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
+</script>

@@ -1,0 +1,734 @@
+﻿@model List<ElevateED.Models.Teacher>
+
+@{
+    ViewBag.Title = "Register Teacher - Admin";
+    var subjects = ViewBag.Subjects as List<ElevateED.Models.Subject>;
+    var grades = ViewBag.Grades as List<ElevateED.Models.Grade>;
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #6366f1;
+        --primary-dark: #4338ca;
+        --primary-bg: #f5f3ff;
+        --primary-soft: #ede9fe;
+        --primary-hover: #e0e7ff;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--gray-50);
+        overflow-x: hidden;
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .notification-btn {
+        position: relative;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+        .notification-btn:hover {
+            background: var(--gray-100);
+        }
+
+    .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 8px;
+        height: 8px;
+        background: var(--danger);
+        border-radius: 50%;
+    }
+
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        transition: all 0.2s;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+
+    .profile-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .dropdown-icon {
+        font-size: 12px;
+        color: var(--gray-400);
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        width: 240px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeInDown 0.2s ease;
+        }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--gray-200);
+        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
+    }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+        cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+
+        .dropdown-item:hover {
+            background: var(--primary-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            font-size: 16px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
+    }
+
+    .dashboard-content {
+        padding: 32px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+    .btn-primary {
+        background: var(--success);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-back {
+        background: white;
+        color: var(--gray-700);
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid var(--gray-200);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-100);
+            text-decoration: none;
+        }
+
+    .table-wrap {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    th {
+        background: var(--gray-800);
+        color: white;
+        padding: 11px 14px;
+        text-align: left;
+        font-weight: 500;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    tr:hover td {
+        background: var(--gray-50);
+    }
+
+    .staff-badge {
+        font-family: monospace;
+        background: var(--accent);
+        color: #1e1b4b;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .tag {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 500;
+        margin: 2px;
+    }
+
+    .tag-subject {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .tag-grade {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .tag-more {
+        background: var(--gray-200);
+        color: var(--gray-600);
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 2px;
+    }
+
+    .btn-edit {
+        background: var(--info);
+        color: white;
+    }
+
+    .btn-del {
+        background: var(--danger);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--gray-100);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 36px;
+        color: var(--primary);
+    }
+
+    .btn-floating {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--success);
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(16,185,129,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+    }
+
+        .btn-floating:hover {
+            transform: scale(1.1);
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--primary);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-section {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--primary);
+        margin: 20px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--accent);
+    }
+
+    .form-group {
+        margin-bottom: 14px;
+    }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--gray-700);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+            .form-group input:focus, .form-group textarea:focus {
+                border-color: var(--primary);
+                outline: none;
+            }
+
+    .required::after {
+        content: " *";
+        color: var(--danger);
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        background: var(--gray-50);
+    }
+
+    .checkbox-item input {
+        display: none;
+    }
+
+    .checkbox-item label {
+        display: block;
+        padding: 7px 14px;
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .checkbox-item input:checked + label {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .btn-save {
+        background: var(--success);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-content {
+            padding: 20px;
+        }
+
+        .modal-box {
+            max-width: 95%;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard","Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("PendingApplications","Admin")" class="nav-item"><i class="fas fa-file-alt"></i><span>Applications</span></a>
+            <a href="@Url.Action("ManageUsers","Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="@Url.Action("ClassStructure","Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
+            <a href="@Url.Action("RegisterTeacher","Admin")" class="nav-item active"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
+            <div class="nav-section">Management</div>
+            <a href="@Url.Action("TimeTable","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <a href="@Url.Action("ExamTimetables","Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
+            <a href="@Url.Action("ClassRegister","Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+            <a href="@Url.Action("SendAnnouncement","Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+            <a href="@Url.Action("Issues","Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
+            <div class="nav-section">Extra</div>
+            <a href="@Url.Action("Index","AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
+            <a href="@Url.Action("EmergencyAlerts","AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
+            <a href="@Url.Action("ApplicationCycles","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
+            <a href="@Url.Action("Index","Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <button class="notification-btn"><i class="far fa-bell"></i><span class="notification-badge"></span></button>
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">A</div><span class="profile-name">Admin</span><i class="fas fa-chevron-down dropdown-icon"></i></button>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header"><div class="user-name">Administrator</div><div class="user-email">admin@mpiyakhehs.co.za</div></div>
+                        <a href="@Url.Action("ManageUsers","Admin")" class="dropdown-item"><i class="fas fa-users"></i><span>Manage Users</span></a>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff","Account")" method="post" id="logoutForm">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="dashboard-content">
+            <div class="page-header"><div><h1><i class="fas fa-chalkboard-teacher" style="color:var(--success);"></i> Teacher Management</h1><p style="color:var(--gray-500);">Register and manage teaching staff</p></div><div style="display:flex;gap:10px;"><button class="btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Teacher</button><a href="@Url.Action("Dashboard","Admin")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a></div></div>
+            @if (!Model.Any())
+            {<div class="empty-state"><div class="empty-icon"><i class="fas fa-user-plus"></i></div><h3>No Teachers Registered Yet</h3><p style="color:var(--gray-500);">Get started by adding your first teacher.</p><button class="btn-primary mt-3" onclick="openAddModal()"><i class="fas fa-plus"></i> Add First Teacher</button></div>}
+            else
+            {<div class="table-wrap"><table><thead><tr><th>Staff Number</th><th>Full Name</th><th>Contact</th><th>Subjects</th><th>Grades</th><th>Qualification</th><th>Joined</th><th></th></tr></thead><tbody id="teacherTableBody">@foreach (var t in Model)
+                {
+                    var ts = t.SubjectQualifications?.Where(sq => sq.Subject != null).Select(sq => sq.Subject.Name).ToList() ?? new List<string>(); var tg = t.GradeAssignments?.Where(ga => ga.Grade != null).Select(ga => ga.Grade.Name).ToList() ?? new List<string>();<tr data-id="@t.Id"><td><span class="staff-badge">@(t.User?.StudentNumber??"—")</span></td><td><strong style="color:var(--gray-800);">@t.FullName</strong></td><td><div style="font-size:12px;">@(t.User?.Email??"—")</div><div style="font-size:12px;color:var(--gray-500);">@t.PhoneNumber</div></td><td>@if (ts.Any())
+                    {
+                        foreach (var s in ts.Take(3))
+                        {<span class="tag tag-subject">@s</span>}
+                    if (ts.Count > 3)
+                    {<span class="tag tag-more">+@(ts.Count-3)</span>}
+                }
+                else
+                {<span style="color:var(--gray-400);">-</span>}</td><td>@if (tg.Any())
+                    {
+                        foreach (var g in tg)
+                        {<span class="tag tag-grade">@g</span>}
+                }
+                else
+                {<span style="color:var(--gray-400);">-</span>}</td><td>@t.Qualification</td><td>@t.CreatedAt.ToString("dd MMM yyyy")</td><td><button class="btn-sm btn-edit" onclick="location.href='@Url.Action("RegisterTeacher","Admin")?editId=@t.Id'"><i class="fas fa-edit"></i></button><button class="btn-sm btn-del" onclick="delTeacher(@t.Id)"><i class="fas fa-trash"></i></button></td></tr>}</tbody></table></div>}@if (Model.Any())
+            {<button class="btn-floating" onclick="openAddModal()"><i class="fas fa-plus"></i></button>}
+            </div>
+        </main>
+    </div>
+    <div class="modal-overlay" id="addTeacherModal"><div class="modal-box"><div class="modal-header"><h4><i class="fas fa-user-plus"></i> Register New Teacher</h4><button onclick="closeAddModal()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">&times;</button></div><div class="modal-body"><form id="teacherForm">@Html.AntiForgeryToken()<div class="form-section"><i class="fas fa-user"></i> Personal Information</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;"><div class="form-group"><label class="required">First Name</label><input type="text" name="FirstName" required /></div><div class="form-group"><label>Middle Name</label><input type="text" name="MiddleName" /></div><div class="form-group"><label class="required">Last Name</label><input type="text" name="LastName" required /></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div class="form-group"><label class="required">ID Number</label><input type="text" name="IdentityNumber" required maxlength="13" /></div><div class="form-group"><label class="required">Date of Birth</label><input type="date" name="DateOfBirth" required /></div></div><div class="form-section"><i class="fas fa-address-card"></i> Contact</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div class="form-group"><label class="required">Email</label><input type="email" name="Email" required /></div><div class="form-group"><label class="required">Phone</label><input type="tel" name="PhoneNumber" required /></div><div class="form-group"><label>Alt Phone</label><input type="tel" name="AlternativePhone" /></div><div class="form-group"><label>Address</label><textarea name="Address" rows="2"></textarea></div></div><div class="form-section"><i class="fas fa-chalkboard"></i> Teaching Assignment</div><div class="form-group"><label class="required">Subjects</label><div class="checkbox-group">@if (subjects != null)
+    {
+        foreach (var s in subjects)
+        {<div class="checkbox-item"><input type="checkbox" id="s_@s.Id" name="SubjectIds" value="@s.Id" /><label for="s_@s.Id">@s.Name</label></div>}
+}</div></div><div class="form-group"><label class="required">Grades</label><div class="checkbox-group">@if (grades != null)
+    {
+        foreach (var g in grades)
+        {<div class="checkbox-item"><input type="checkbox" id="g_@g.Id" name="GradeIds" value="@g.Id" /><label for="g_@g.Id">@g.Name</label></div>}
+}</div></div><div class="form-section"><i class="fas fa-graduation-cap"></i> Qualifications</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div class="form-group"><label class="required">Highest Qualification</label><input type="text" name="Qualification" required /></div><div class="form-group"><label>Years Experience</label><input type="number" name="YearsOfExperience" min="0" max="50" value="0" /></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div class="form-group"><label>Emergency Contact</label><input type="text" name="EmergencyContactName" /></div><div class="form-group"><label>Emergency Phone</label><input type="tel" name="EmergencyContactPhone" /></div></div><div id="modalMsg" style="display:none;padding:10px;border-radius:8px;margin-top:10px;"></div></form></div><div style="padding:16px 24px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:10px;"><button onclick="closeAddModal()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--gray-200);background:white;cursor:pointer;">Cancel</button><button class="btn-save" onclick="saveTeacher()"><i class="fas fa-save"></i> Register Teacher</button></div></div></div>
+<script>
+    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
+    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
+    function confirmLogout(e){e.preventDefault();if(confirm('Are you sure you want to logout?')){document.getElementById('logoutForm').submit();}}
+    function openAddModal(){document.getElementById('addTeacherModal').classList.add('show');document.getElementById('teacherForm').reset();}
+    function closeAddModal(){document.getElementById('addTeacherModal').classList.remove('show');}
+    document.getElementById('addTeacherModal').addEventListener('click',function(e){if(e.target===this)closeAddModal();});
+    function saveTeacher(){var f=document.getElementById('teacherForm');var fn=f.querySelector('[name="FirstName"]').value,ln=f.querySelector('[name="LastName"]').value,em=f.querySelector('[name="Email"]').value;if(!fn||!ln||!em){alert('Please fill required fields');return;}var si=[];f.querySelectorAll('[name="SubjectIds"]:checked').forEach(c=>si.push(parseInt(c.value)));var gi=[];f.querySelectorAll('[name="GradeIds"]:checked').forEach(c=>gi.push(parseInt(c.value)));if(!si.length||!gi.length){alert('Select at least one subject and grade');return;}var d=new URLSearchParams();d.append('__RequestVerificationToken',f.querySelector('[name="__RequestVerificationToken"]').value);['FirstName','MiddleName','LastName','IdentityNumber','DateOfBirth','Email','PhoneNumber','AlternativePhone','Address','Qualification','EmergencyContactName','EmergencyContactPhone'].forEach(n=>d.append(n,f.querySelector('[name="'+n+'"]')?.value||''));d.append('YearsOfExperience',parseInt(f.querySelector('[name="YearsOfExperience"]').value)||0);si.forEach(v=>d.append('SubjectIds',v));gi.forEach(v=>d.append('GradeIds',v));fetch('@Url.Action("AddTeacher","Admin")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:d}).then(r=>r.json()).then(r=>{if(r.success){closeAddModal();alert('Teacher registered!');location.reload();}else alert(r.message);});}
+    function delTeacher(id){if(!confirm('Delete this teacher?'))return;var t=document.querySelector('input[name="__RequestVerificationToken"]').value;fetch('@Url.Action("DeleteTeacher","Admin")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'__RequestVerificationToken='+t+'&id='+id}).then(r=>r.json()).then(r=>{if(r.success){var tr=document.querySelector('tr[data-id="'+id+'"]');if(tr)tr.remove();if(!document.querySelectorAll('#teacherTableBody tr').length)location.reload();}else alert(r.message);});}
+</script>

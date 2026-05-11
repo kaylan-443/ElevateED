@@ -1,0 +1,147 @@
+﻿@model ElevateED.ViewModels.ApplicationStatusViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Application Status - Pending Approval";
+}
+
+<style>
+    .status-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        padding: 40px;
+    }
+
+    .status-card {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        text-align: center;
+        max-width: 600px;
+        width: 100%;
+    }
+
+    .status-icon {
+        width: 100px;
+        height: 100px;
+        background: #ffc107;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffc107;
+    }
+
+    .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #1e3c72;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        text-align: left;
+    }
+
+    .btn-logout {
+        background: transparent;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+        padding: 10px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-logout:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+    .btn-refresh {
+        background: #1e3c72;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-refresh:hover {
+            background: #2a5298;
+            transform: translateY(-2px);
+        }
+</style>
+
+<div class="status-container">
+    <div class="status-card">
+        <div class="status-icon">
+            <i class="fas fa-clock fa-3x text-white"></i>
+        </div>
+
+        <h2 class="mb-3">Application Under Review</h2>
+
+        <div class="status-badge status-pending mb-4">
+            <i class="fas fa-hourglass-half"></i> @Model.Status
+        </div>
+
+        <p class="lead">Hello <strong>@Model.ApplicantName</strong>,</p>
+
+        <p>Your application for <strong>@Model.GradeApplyingFor</strong> is currently being reviewed.</p>
+
+        <div class="info-box">
+            <h5><i class="fas fa-info-circle"></i> Application Details</h5>
+            <p><strong>Student Number:</strong> @Model.StudentNumber</p>
+            <p><strong>Status:</strong> <span style="color: #ffc107; font-weight: 600;">@Model.Status</span></p>
+            <p><strong>Applied On:</strong> @Model.ApplicationDate.ToString("dd MMMM yyyy")</p>
+            <p><strong>Grade Applied For:</strong> @Model.GradeApplyingFor</p>
+        </div>
+
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-envelope"></i>
+            <strong>Next Steps:</strong> You will receive an email once a decision is made.
+        </div>
+
+        <div class="mt-4">
+            <a href="@Url.Action("PendingApproval", "Application")" class="btn btn-refresh mr-2">
+                <i class="fas fa-sync-alt"></i> Check Status
+            </a>
+            <form action="@Url.Action("LogOff", "Account")" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

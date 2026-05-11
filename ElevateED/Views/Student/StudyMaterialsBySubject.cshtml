@@ -1,0 +1,484 @@
+﻿@model List<ElevateED.ViewModels.StudyMaterialListViewModel>
+
+@{
+    ViewBag.Title = ViewBag.Subject + " - Study Materials";
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--gray-50);
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #4338ca);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        width: 200px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
+        font-size: 14px;
+    }
+
+        .dropdown-item:hover {
+            background: var(--gray-100);
+        }
+
+    .content-area {
+        padding: 32px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+    .btn-back {
+        background: white;
+        color: var(--gray-700);
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 1px solid var(--gray-200);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-100);
+            text-decoration: none;
+        }
+
+    .info-banner {
+        background: linear-gradient(135deg, var(--success), #34d399);
+        color: white;
+        padding: 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .material-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+    .file-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: white;
+        background: var(--success);
+        flex-shrink: 0;
+    }
+
+    .file-info {
+        flex: 1;
+    }
+
+        .file-info h5 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .file-info p {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-bottom: 8px;
+        }
+
+    .file-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+        .file-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+    .btn-download {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+        .btn-download:hover {
+            background: #4338ca;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--gray-400);
+            margin-bottom: 15px;
+        }
+
+        .empty-state h4 {
+            color: var(--gray-700);
+        }
+
+        .empty-state p {
+            color: var(--gray-500);
+        }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .material-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .content-area {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("Timetable", "Student")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <div class="nav-section">Learning</div>
+            <a href="@Url.Action("Homework", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Homework</span></a>
+            <a href="@Url.Action("Classwork", "Student")" class="nav-item"><i class="fas fa-chalkboard"></i><span>Classwork</span></a>
+            <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item active"><i class="fas fa-book"></i><span>Study Materials</span></a>
+            <a href="@Url.Action("PastPapers", "Student")" class="nav-item"><i class="fas fa-archive"></i><span>Past Papers</span></a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">@(ViewBag.StudentName != null ? ViewBag.StudentName.ToString().Substring(0,1) : "S")</div></button>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header"><div style="font-weight:600;">@ViewBag.StudentName</div></div>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="page-header">
+                <div><h1><i class="fas fa-book" style="color:var(--success);"></i> @ViewBag.Subject</h1><p style="color:var(--gray-500);">Study materials for @ViewBag.StudentGrade</p></div>
+                <a href="@Url.Action("StudyMaterials", "Student")" class="btn-back"><i class="fas fa-arrow-left"></i> All Subjects</a>
+            </div>
+            <div class="info-banner">
+                <h2>@ViewBag.Subject</h2>
+                <p>@Model.Count material(s) available for @ViewBag.StudentName</p>
+            </div>
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert-danger"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+            }
+            @if (!Model.Any())
+            {
+                <div class="empty-state"><i class="fas fa-folder-open"></i><h4>No Study Materials</h4><p>No materials uploaded for @ViewBag.Subject yet.</p></div>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    <div class="material-card">
+                        <div class="file-icon">
+                            @if (item.FileType != null && item.FileType.Contains("pdf"))
+                            {<i class="fas fa-file-pdf"></i> }
+                            else if (item.FileType != null && item.FileType.Contains("word"))
+                            { <i class="fas fa-file-word"></i> }
+                            else if (item.FileType != null && item.FileType.Contains("excel"))
+                            { <i class="fas fa-file-excel"></i> }
+                            else if (item.FileType != null && item.FileType.Contains("powerpoint"))
+                            { <i class="fas fa-file-powerpoint"></i> }
+                            else if (item.FileType != null && item.FileType.Contains("image"))
+                            { <i class="fas fa-file-image"></i> }
+                            else
+                            { <i class="fas fa-file-alt"></i>}
+                        </div>
+                        <div class="file-info">
+                            <h5>@item.Title</h5>
+                            <p>@(item.Description ?? "No description available")</p>
+                            <div class="file-meta">
+                                <span><i class="fas fa-chalkboard-teacher"></i> @item.UploadedByName</span>
+                                <span><i class="fas fa-calendar"></i> @item.UploadedDate.ToString("dd MMM yyyy")</span>
+                                <span><i class="fas fa-hdd"></i> @item.FileSizeFormatted</span>
+                                <span><i class="fas fa-download"></i> @item.DownloadCount</span>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("DownloadMaterial", "Student", new { id = item.Id })" class="btn-download"><i class="fas fa-download"></i> Download</a>
+                    </div>
+                }
+            }
+        </div>
+    </main>
+</div>
+<script>
+    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
+    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
+</script>

@@ -1,0 +1,271 @@
+﻿@model ElevateED.ViewModels.StudyMaterialUploadViewModel
+
+@{
+    ViewBag.Title = "Upload Study Material - Teacher Dashboard";
+}
+
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .upload-header h2 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+    .upload-icon {
+        width: 80px;
+        height: 80px;
+        background: #28a745;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 36px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+    .file-drop-zone {
+        border: 3px dashed #ddd;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+
+        .file-drop-zone:hover {
+            border-color: #28a745;
+            background: #e8f5e9;
+        }
+
+        .file-drop-zone.has-file {
+            border-color: #28a745;
+            background: #e8f5e9;
+        }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-name {
+        margin-top: 15px;
+        font-weight: 500;
+        color: #28a745;
+    }
+
+    .btn-upload {
+        background: #28a745;
+        color: white;
+        padding: 12px 40px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+        .btn-upload:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        padding: 12px 40px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .file-types {
+        color: #888;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="container upload-container">
+    <div class="upload-card">
+        <div class="upload-header">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h2>Upload Study Material</h2>
+            <p class="text-muted">Share learning resources with your students</p>
+        </div>
+
+        @using (Html.BeginForm("UploadStudyMaterial", "Teacher", FormMethod.Post, new { enctype = "multipart/form-data", id = "uploadForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label class="form-label">Title *</label>
+                @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "Enter material title" })
+                @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "Brief description of the material" })
+                @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Subject *</label>
+                        @Html.DropDownListFor(m => m.Subject, (SelectList)ViewBag.Subjects, "-- Select Subject --", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Grade Level *</label>
+                        @Html.DropDownListFor(m => m.GradeLevel, (SelectList)ViewBag.GradeLevels, "-- Select Grade --", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.GradeLevel, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">File *</label>
+                <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <h5>Click to browse or drag & drop file here</h5>
+                    <p class="file-types">Supported: PDF, Word, Excel, PowerPoint, Images (Max 50MB)</p>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <input type="file" id="fileInput" name="File" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" />
+                @Html.ValidationMessageFor(m => m.File, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6 mb-2">
+                    <a href="@Url.Action("StudyMaterials", "Teacher")" class="btn-cancel w-100">Cancel</a>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" class="btn-upload" id="submitBtn">
+                        <i class="fas fa-upload"></i> Upload Material
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function handleFileSelect(input) {
+            const dropZone = document.getElementById('dropZone');
+            const fileName = document.getElementById('fileName');
+
+            if (input.files && input.files[0]) {
+                dropZone.classList.add('has-file');
+                fileName.textContent = 'Selected: ' + input.files[0].name;
+            } else {
+                dropZone.classList.remove('has-file');
+                fileName.textContent = '';
+            }
+        }
+
+        // Drag and drop functionality
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#28a745';
+            dropZone.style.background = '#e8f5e9';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ddd';
+            dropZone.style.background = '#fafafa';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            document.getElementById('fileInput').files = files;
+            handleFileSelect(document.getElementById('fileInput'));
+        });
+
+        // Form validation
+        $('#uploadForm').on('submit', function(e) {
+            var fileInput = document.getElementById('fileInput');
+            if (!fileInput.files || !fileInput.files[0]) {
+                e.preventDefault();
+                alert('Please select a file to upload.');
+                return false;
+            }
+
+            var fileSize = fileInput.files[0].size / 1024 / 1024;
+            if (fileSize > 50) {
+                e.preventDefault();
+                alert('File size exceeds 50MB limit. Please choose a smaller file.');
+                return false;
+            }
+        });
+    </script>
+}

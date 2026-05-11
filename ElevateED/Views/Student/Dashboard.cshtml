@@ -1,0 +1,1040 @@
+﻿@model ElevateED.ViewModels.StudentDashboardViewModel
+
+@{
+    ViewBag.Title = "Student Dashboard - ElevateED";
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #6366f1;
+        --primary-dark: #4338ca;
+        --primary-bg: #f5f3ff;
+        --primary-soft: #ede9fe;
+        --primary-hover: #e0e7ff;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+        overflow-x: hidden;
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Main Content */
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .notification-btn {
+        position: relative;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+        .notification-btn:hover {
+            background: var(--gray-100);
+        }
+
+    .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 8px;
+        height: 8px;
+        background: var(--danger);
+        border-radius: 50%;
+    }
+
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        transition: all 0.2s;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+
+    .profile-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .dropdown-icon {
+        font-size: 12px;
+        color: var(--gray-400);
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        width: 240px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeInDown 0.2s ease;
+        }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+        cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+
+        .dropdown-item:hover {
+            background: var(--gray-100);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            font-size: 16px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
+    }
+
+    .dashboard-content {
+        padding: 32px;
+    }
+
+    /* Welcome Section */
+    @@keyframes moveGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .welcome-section {
+        margin-bottom: 32px;
+        background: linear-gradient(270deg, #667eea, #764ba2, #f093fb, #4f46e5);
+        background-size: 300% 300%;
+        padding: 30px;
+        border-radius: 24px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        animation: moveGradient 6s ease infinite;
+    }
+
+        .welcome-section h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-section p {
+            opacity: 0.9;
+        }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card:nth-child(1)::before {
+            background: #667eea;
+        }
+
+        .stat-card:nth-child(2)::before {
+            background: var(--warning);
+        }
+
+        .stat-card:nth-child(3)::before {
+            background: var(--success);
+        }
+
+        .stat-card:nth-child(4)::before {
+            background: #764ba2;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+        .stat-header span {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-500);
+        }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+    }
+
+        .stat-icon.attendance {
+            background: #667eea;
+        }
+
+        .stat-icon.homework {
+            background: var(--warning);
+        }
+
+        .stat-icon.quiz {
+            background: var(--success);
+        }
+
+        .stat-icon.grade {
+            background: #764ba2;
+        }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: var(--gray-500);
+    }
+
+    /* Two Column Layout */
+    .two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+        .card-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .card-header a {
+            font-size: 13px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .card-header a:hover {
+                color: #764ba2;
+            }
+
+    .timeline-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--gray-100);
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+        .timeline-item:hover {
+            background: var(--primary-hover);
+            padding-left: 10px;
+        }
+
+    .item-info h4 {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .item-info p {
+        font-size: 13px;
+        color: var(--gray-500);
+    }
+
+    .item-date {
+        font-size: 13px;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+        .item-date.urgent {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+    .progress-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #667eea;
+        border-radius: 10px;
+        transition: width 0.3s;
+    }
+
+    .participation-stats {
+        margin-top: 16px;
+    }
+
+    .participation-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--gray-100);
+    }
+
+        .participation-item:last-child {
+            border-bottom: none;
+        }
+
+    .participation-label {
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .participation-count {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid var(--gray-200);
+        text-align: center;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: block;
+    }
+
+        .info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+            background: var(--primary-hover);
+        }
+
+    .info-card-icon {
+        width: 48px;
+        height: 48px;
+        background: #667eea;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 24px;
+        color: white;
+    }
+
+    .info-card h4 {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .info-card p {
+        font-size: 12px;
+        color: var(--gray-500);
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 40px;
+        color: var(--gray-400);
+    }
+
+    .score-badge {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .score-high {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .score-medium {
+        background: #fed7aa;
+        color: #9a3412;
+    }
+
+    .score-low {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .two-columns {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-content {
+            padding: 20px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .profile-name {
+            display: none;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="logo-text">Elevate<span>ED</span></div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-item active">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+            <a href="@Url.Action("Timetable", "Student")" class="nav-item">
+                <i class="fas fa-calendar-alt"></i><span>Timetable</span>
+            </a>
+            <a href="@Url.Action("MarkAttendance", "Attendance")" class="nav-item">
+                <i class="fas fa-user-check"></i><span>Mark Attendance</span>
+            </a>
+
+            <div class="nav-section">Learning</div>
+            <div class="nav-section">Exams</div>
+            <a href="@Url.Action("ExamTimetable", "Student")" class="nav-item">
+                <i class="fas fa-calendar-check"></i><span>Exam Timetable</span>
+            </a>
+            <a href="@Url.Action("Homework", "Student")" class="nav-item">
+                <i class="fas fa-home"></i><span>Homework</span>
+            </a>
+            <a href="@Url.Action("Classwork", "Student")" class="nav-item">
+                <i class="fas fa-chalkboard"></i><span>Classwork</span>
+            </a>
+            <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item">
+                <i class="fas fa-book"></i><span>Study Materials</span>
+            </a>
+            <a href="@Url.Action("PastPapers", "Student")" class="nav-item">
+                <i class="fas fa-archive"></i><span>Past Papers</span>
+            </a>
+            <a href="@Url.Action("Index", "StudentQuiz")" class="nav-item">
+                <i class="fas fa-question-circle"></i><span>Quizzes</span>
+            </a>
+            <a href="@Url.Action("Index", "StudentExtraClass")" class="nav-item">
+                <i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span>
+            </a>
+
+            <div class="nav-section">Other</div>
+            <a href="@Url.Action("ViewAnnouncements", "Student")" class="nav-item">
+                <i class="fas fa-bullhorn"></i><span>Announcements</span>
+            </a>
+            <a href="@Url.Action("ReportIssue", "Student")" class="nav-item">
+                <i class="fas fa-exclamation-triangle"></i><span>Report Issue</span>
+            </a>
+            <a href="@Url.Action("MyIssues", "Student")" class="nav-item">
+                <i class="fas fa-clipboard-list"></i><span>My Issues</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <button class="notification-btn">
+                    <i class="far fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()">
+                        <div class="avatar">@(Model.FullName?.Substring(0, 1) ?? "S")</div>
+                        <span class="profile-name">@(Model.FirstName)</span>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header">
+                            <div class="user-name">@Model.FullName</div>
+                            <div class="user-email">@Model.StudentNumber</div>
+                        </div>
+                        <a href="@Url.Action("Settings", "Student")" class="dropdown-item">
+                            <i class="fas fa-cog"></i><span>Settings</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post" id="logoutForm">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)">
+                                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <h1>Welcome, @Model.FirstName! 👋</h1>
+                <p>@Model.ClassName • Student #@Model.StudentNumber</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Attendance</span>
+                        <div class="stat-icon attendance"><i class="fas fa-calendar-check"></i></div>
+                    </div>
+                    <div class="stat-value">@Model.AttendancePercentage%</div>
+                    <div class="stat-label">Overall Attendance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Homework</span>
+                        <div class="stat-icon homework"><i class="fas fa-tasks"></i></div>
+                    </div>
+                    <div class="stat-value">@Model.PendingHomeworkCount</div>
+                    <div class="stat-label">Due • @Model.OverdueHomeworkCount Overdue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Quiz Avg</span>
+                        <div class="stat-icon quiz"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                    <div class="stat-value">@Model.QuizAverageScore%</div>
+                    <div class="stat-label">@Model.TotalQuizAttempts attempts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Grade</span>
+                        <div class="stat-icon grade"><i class="fas fa-graduation-cap"></i></div>
+                    </div>
+                    <div class="stat-value">@Model.Grade</div>
+                    <div class="stat-label">@Model.ClassName</div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-columns">
+                <!-- Left Column -->
+                <div>
+                    <!-- Today's Schedule -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-day" style="color: #667eea;"></i> Today's Schedule</h3>
+                            <a href="@Url.Action("Timetable", "Student")">View full schedule →</a>
+                        </div>
+                        @if (Model.TodayClasses != null && Model.TodayClasses.Any())
+                        {
+                            foreach (var item in Model.TodayClasses)
+                            {
+                                <div class="timeline-item">
+                                    <div class="item-info">
+                                        <h4>@item.SubjectName</h4>
+                                        <p>@item.TeacherName • @item.RoomNumber</p>
+                                    </div>
+                                    <div class="item-date">@item.StartTime.ToString("hh:mm tt")</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-message">
+                                <i class="fas fa-smile-wink" style="font-size: 30px; margin-bottom: 10px; color: var(--gray-400);"></i>
+                                <p>No classes scheduled for today</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="grid-cards">
+                        <a href="@Url.Action("Homework", "Student")" class="info-card">
+                            <div class="info-card-icon"><i class="fas fa-home"></i></div>
+                            <h4>Homework</h4>
+                            <p>@Model.PendingHomeworkCount pending</p>
+                        </a>
+                        <a href="@Url.Action("StudyMaterials", "Student")" class="info-card">
+                            <div class="info-card-icon"><i class="fas fa-book"></i></div>
+                            <h4>Study Materials</h4>
+                            <p>Access resources</p>
+                        </a>
+                        <a href="@Url.Action("PastPapers", "Student")" class="info-card">
+                            <div class="info-card-icon"><i class="fas fa-archive"></i></div>
+                            <h4>Past Papers</h4>
+                            <p>Practice exams</p>
+                        </a>
+                        <a href="@Url.Action("Index", "StudentQuiz")" class="info-card">
+                            <div class="info-card-icon"><i class="fas fa-question-circle"></i></div>
+                            <h4>Take Quiz</h4>
+                            <p>Test your knowledge</p>
+                        </a>
+                        <a href="@Url.Action("ExamTimetable", "Student")" class="info-card">
+                            <div class="info-card-icon" style="background: #17a2b8;"><i class="fas fa-calendar-alt"></i></div>
+                            <h4>Exam Timetable</h4>
+                            <p>View exam schedule</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <!-- Upcoming Homework -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock" style="color: var(--warning);"></i> Upcoming Homework</h3>
+                            <a href="@Url.Action("Homework", "Student")">View all →</a>
+                        </div>
+                        @if (Model.UpcomingHomework != null && Model.UpcomingHomework.Any())
+                        {
+                            foreach (var item in Model.UpcomingHomework.Take(3))
+                            {
+                                <div class="timeline-item">
+                                    <div class="item-info">
+                                        <h4>@item.Title</h4>
+                                        <p>@item.SubjectName</p>
+                                    </div>
+                                    <div class="item-date @(item.DaysUntil <= 1 ? "urgent" : "")">
+                                        @if (item.DaysUntil == 0)
+                                        {
+                                            <text>🔥 Due Today</text>
+                                        }
+                                        else if (item.DaysUntil == 1)
+                                        {
+                                            <text>⚠️ Tomorrow</text>
+                                        }
+                                        else
+                                        {
+                                            @($"{item.DaysUntil} days left")
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-message">
+                                <i class="fas fa-check-circle" style="font-size: 30px; margin-bottom: 10px; color: var(--success);"></i>
+                                <p>All caught up! No pending homework</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Recent Quizzes -->
+                    <div class="card" style="margin-bottom: 24px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-star" style="color: var(--success);"></i> Recent Quiz Results</h3>
+                            <a href="@Url.Action("History", "StudentQuiz")">View history →</a>
+                        </div>
+                        @if (Model.RecentQuizzes != null && Model.RecentQuizzes.Any())
+                        {
+                            foreach (var item in Model.RecentQuizzes.Take(3))
+                            {
+                                <div class="timeline-item">
+                                    <div class="item-info">
+                                        <h4>@item.SubjectName</h4>
+                                        <p>@item.AttemptedAt.ToString("dd MMM yyyy")</p>
+                                    </div>
+                                    <span class="score-badge @(item.Score >= 70 ? "score-high" : (item.Score >= 50 ? "score-medium" : "score-low"))">
+                                        @item.Score%
+                                    </span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-message">
+                                <i class="fas fa-gamepad" style="font-size: 30px; margin-bottom: 10px; color: var(--gray-400);"></i>
+                                <p>No quiz attempts yet</p>
+                                <a href="@Url.Action("Index", "StudentQuiz")" style="color: #667eea;">Take your first quiz →</a>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Attendance Overview -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-line" style="color: #667eea;"></i> Attendance Overview</h3>
+                            <a href="@Url.Action("MarkAttendance", "Attendance")">Mark Attendance →</a>
+                        </div>
+                        <div class="participation-stats">
+                            <div class="participation-item">
+                                <span class="participation-label"><i class="fas fa-check-circle" style="color: var(--success);"></i> Present</span>
+                                <span class="participation-count">@Model.PresentDays days</span>
+                            </div>
+                            <div class="participation-item">
+                                <span class="participation-label"><i class="fas fa-clock" style="color: var(--warning);"></i> Late</span>
+                                <span class="participation-count">@Model.LateDays days</span>
+                            </div>
+                            <div class="participation-item">
+                                <span class="participation-label"><i class="fas fa-times-circle" style="color: var(--danger);"></i> Absent</span>
+                                <span class="participation-count">@Model.AbsentDays days</span>
+                            </div>
+                        </div>
+                        <div class="progress-stats" style="margin-top: 15px;">
+                            <span>Overall Attendance</span>
+                            <span>@Model.AttendancePercentage%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: @Model.AttendancePercentage%"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <span>Total School Days</span>
+                            <span>@Model.TotalSchoolDays</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleDropdown() {
+        document.getElementById('profileDropdown').classList.toggle('show');
+    }
+
+    document.addEventListener('click', function (event) {
+        var container = document.querySelector('.profile-container');
+        var dropdown = document.getElementById('profileDropdown');
+        if (container && !container.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    function confirmLogout(event) {
+        event.preventDefault();
+        if (confirm('Are you sure you want to logout?')) {
+            document.getElementById('logoutForm').submit();
+        }
+        return false;
+    }
+</script>

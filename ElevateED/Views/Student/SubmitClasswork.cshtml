@@ -1,0 +1,404 @@
+﻿@model ElevateED.ViewModels.SubmitClassworkViewModel
+
+@{
+    ViewBag.Title = "Submit Classwork - ElevateED";
+}
+
+<style>
+    .submit-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px 0 40px 0;
+    }
+
+    .classwork-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .classwork-header {
+        background: linear-gradient(135deg, #d35400, #e67e22);
+        color: white;
+        padding: 25px;
+    }
+
+        .classwork-header h2 {
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+
+        .classwork-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+    .classwork-body {
+        padding: 30px;
+    }
+
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-left: 4px solid #d35400;
+    }
+
+        .info-section h4 {
+            color: #d35400;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .info-section p {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .info-section strong {
+            color: #333;
+        }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .file-drop-zone {
+        border: 3px dashed #ddd;
+        border-radius: 10px;
+        padding: 60px 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+
+        .file-drop-zone:hover {
+            border-color: #d35400;
+            background: #fff5f0;
+        }
+
+        .file-drop-zone.has-file {
+            border-color: #d35400;
+            background: #fff5f0;
+        }
+
+        .file-drop-zone.has-error {
+            border-color: #dc3545;
+            background: #fff0f0;
+        }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-name {
+        margin-top: 15px;
+        font-weight: 500;
+        color: #d35400;
+        font-size: 14px;
+    }
+
+    .file-hint {
+        color: #999;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 14px 30px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-submit:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        padding: 14px 30px;
+        border-radius: 25px;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .alert-warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: none;
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="container submit-container">
+    <div class="classwork-card">
+        <div class="classwork-header">
+            <h2><i class="fas fa-chalkboard"></i> Submit Classwork</h2>
+            <p>Complete and submit your classwork assignment</p>
+        </div>
+
+        <div class="classwork-body">
+            <!-- Classwork Information -->
+            <div class="info-section">
+                <h4><i class="fas fa-info-circle"></i> Assignment Details</h4>
+                <p><strong>Title:</strong> @Model.Title</p>
+                <p><strong>Subject:</strong> @Model.Subject</p>
+                <hr />
+                <p><strong>Instructions:</strong></p>
+                <p style="white-space: pre-wrap;">@Model.Instructions</p>
+            </div>
+
+            @if (Model.IsResubmission)
+            {
+                <div class="alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> You have already submitted this classwork. Submitting again will replace your previous submission.
+                </div>
+            }
+
+            <!-- Upload Form -->
+            <form id="submitForm" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ClassworkId" value="@Model.ClassworkId" />
+
+                <div class="form-group">
+                    <label class="form-label required">Upload Your Classwork</label>
+                    <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt fa-4x text-muted mb-3"></i>
+                        <h5>Click to browse or drag & drop your file here</h5>
+                        <p class="file-hint">Supported formats: PDF, Word, Excel, PowerPoint, Images (Max 10MB)</p>
+                        <div id="fileName" class="file-name"></div>
+                    </div>
+                    <input type="file" id="fileInput" name="SubmissionFile" class="file-input"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" required />
+                    <div id="fileError" class="error-message"></div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ExistingSubmission?.FilePath))
+                {
+                    <div class="alert alert-info" style="background: #e3f2fd; border-left: 4px solid #17a2b8; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                        <i class="fas fa-paperclip"></i>
+                        <strong>Previously uploaded:</strong> @Model.ExistingSubmission.FileName
+                        <br /><small class="text-muted">Upload a new file to replace your previous submission.</small>
+                    </div>
+                }
+
+                <div id="message" class="alert" style="display: none;"></div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-2">
+                        <a href="@Url.Action("Classwork", "Student")" class="btn-cancel">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn-submit" id="submitBtn" onclick="submitClasswork()">
+                            <i class="fas fa-paper-plane"></i> Submit Classwork
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    function handleFileSelect() {
+        var input = document.getElementById('fileInput');
+        var fileName = document.getElementById('fileName');
+        var dropZone = document.getElementById('dropZone');
+        var fileError = document.getElementById('fileError');
+
+        if (input.files && input.files[0]) {
+            var file = input.files[0];
+            var maxSize = 10 * 1024 * 1024;
+            var allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png'];
+            var fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            if (file.size > maxSize) {
+                dropZone.classList.add('has-error');
+                fileError.textContent = 'File size exceeds 10MB limit. Please choose a smaller file.';
+                fileError.style.display = 'block';
+                fileName.textContent = '';
+                return false;
+            }
+
+            if (allowedExtensions.indexOf(fileExt) === -1) {
+                dropZone.classList.add('has-error');
+                fileError.textContent = 'Invalid file type. Please upload PDF, Word, Excel, PowerPoint, or image files.';
+                fileError.style.display = 'block';
+                fileName.textContent = '';
+                return false;
+            }
+
+            dropZone.classList.add('has-file');
+            dropZone.classList.remove('has-error');
+            fileError.style.display = 'none';
+            fileName.textContent = '✓ Selected: ' + file.name;
+        } else {
+            dropZone.classList.remove('has-file');
+            dropZone.classList.remove('has-error');
+            fileName.textContent = '';
+        }
+        return true;
+    }
+
+    // File input change handler
+    document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+    // Drag and drop handlers
+    var dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#d35400';
+        dropZone.style.background = '#fff5f0';
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#ddd';
+        dropZone.style.background = '#fafafa';
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var files = e.dataTransfer.files;
+        document.getElementById('fileInput').files = files;
+        handleFileSelect();
+    });
+
+    function submitClasswork() {
+        var fileInput = document.getElementById('fileInput');
+        var file = fileInput.files[0];
+        var fileError = document.getElementById('fileError');
+
+        // Clear previous errors
+        fileError.style.display = 'none';
+        document.getElementById('dropZone').classList.remove('has-error');
+
+        // Validate file is selected
+        if (!file) {
+            fileError.textContent = 'Please select a file to upload';
+            fileError.style.display = 'block';
+            document.getElementById('dropZone').classList.add('has-error');
+            document.getElementById('dropZone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        var formData = new FormData(document.getElementById('submitForm'));
+        var submitBtn = document.getElementById('submitBtn');
+        var messageDiv = document.getElementById('message');
+
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
+        messageDiv.style.display = 'none';
+
+        $.ajax({
+            url: '@Url.Action("SubmitClasswork", "Student")',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + response.message;
+                    messageDiv.style.display = 'block';
+
+                    // Redirect after 2 seconds
+                    setTimeout(function() {
+                        window.location.href = '@Url.Action("Classwork", "Student")';
+                    }, 2000);
+                } else {
+                    messageDiv.className = 'alert alert-danger';
+                    messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + response.message;
+                    messageDiv.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Classwork';
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'An error occurred. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + errorMsg;
+                messageDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Classwork';
+            }
+        });
+    }
+</script>

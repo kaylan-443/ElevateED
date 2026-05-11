@@ -1,0 +1,270 @@
+﻿@model List<ElevateED.ViewModels.ClassRegisterViewModel>
+@{
+    ViewBag.Title = ViewBag.ClassName + " - Class Registers";
+}
+
+<style>
+    .registers-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .class-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+        .class-header h2 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .class-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+    .access-badge {
+        background: #d4edda;
+        color: #155724;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 30px;
+        border: 1px solid #c3e6cb;
+    }
+
+        .access-badge i {
+            color: #28a745;
+        }
+
+    .register-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #28a745;
+    }
+
+        .register-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+
+    .register-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .register-title i {
+            color: #d4af37;
+        }
+
+    .register-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: #666;
+    }
+
+        .register-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .register-meta span i {
+                color: #1e3c72;
+                width: 16px;
+            }
+
+    .register-description {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        color: #555;
+        font-style: italic;
+    }
+
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+
+    .info-note {
+        background: #e7f3ff;
+        border-left: 4px solid #17a2b8;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        color: #0c5460;
+    }
+
+        .info-note i {
+            margin-right: 8px;
+        }
+</style>
+
+<div class="container registers-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h2><i class="fas fa-clipboard-list"></i> Class Registers</h2>
+            <p>@ViewBag.ClassName - @ViewBag.Grade</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ClassRegister", "Teacher")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Classes
+            </a>
+        </div>
+    </div>
+
+    <div class="class-header">
+        <h2><i class="fas fa-users"></i> @ViewBag.ClassName</h2>
+        <p>Class Teacher: @ViewBag.TeacherName</p>
+    </div>
+
+    <div class="access-badge">
+        <i class="fas fa-shield-alt"></i> You are the assigned Class Teacher for this class
+    </div>
+
+    <div class="info-note">
+        <i class="fas fa-info-circle"></i> As the Class Teacher, you have exclusive access to view the class registers. These documents contain sensitive student attendance and performance information.
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h4>No Registers Available</h4>
+            <p>No class registers have been uploaded for @ViewBag.ClassName yet.</p>
+            <p class="text-muted">Please contact the school administrator if you believe this is an error.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var register in Model)
+        {
+            <div class="register-card">
+                <div class="register-title">
+                    <i class="fas fa-file-alt"></i> @register.Term @register.Year
+                </div>
+                <div class="register-meta">
+                    <span><i class="fas fa-calendar-alt"></i> Uploaded: @register.UploadedAt.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-user-shield"></i> Uploaded by: @register.UploadedByName</span>
+                    @if (!string.IsNullOrEmpty(register.FilePath))
+                    {
+                        <span><i class="fas fa-file-pdf"></i> @System.IO.Path.GetExtension(register.FilePath).ToUpper().TrimStart('.') File</span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(register.Description))
+                {
+                    <div class="register-description">
+                        <i class="fas fa-quote-left"></i> @register.Description
+                    </div>
+                }
+                <div>
+                    <a href="@register.FilePath" target="_blank" class="btn-view">
+                        <i class="fas fa-eye"></i> View Register
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>

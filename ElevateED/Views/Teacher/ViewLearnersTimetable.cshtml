@@ -1,0 +1,220 @@
+﻿@{
+    ViewBag.Title = "Class Timetables";
+    var teacherName = ViewBag.TeacherName as string;
+}
+
+<style>
+    .timetable-container {
+        padding: 30px 0;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+    }
+
+    .selection-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+    .class-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-left: 4px solid #17a2b8;
+    }
+
+        .class-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+    .class-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 5px;
+    }
+
+    .class-info {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .timetable-viewer {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .pdf-viewer {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="timetable-container">
+    <div class="header-section">
+        <div class="container">
+            <h2><i class="fas fa-calendar-alt text-warning mr-2"></i> Class Timetables</h2>
+            <p class="mb-0">Welcome, @teacherName</p>
+            <p>View timetables for the classes you teach</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="@Url.Action("Timetable", "Teacher")" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Timetable Options
+        </a>
+
+        @if (ViewBag.NoClasses == true)
+        {
+            <div class="empty-state">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h4>No Classes Assigned</h4>
+                <p>@ViewBag.Message</p>
+                <p>Please contact the school administrator to assign you to classes.</p>
+                <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-primary mt-3">Go to Dashboard</a>
+            </div>
+        }
+        else if (ViewBag.ShowGradeSelection == true)
+        {
+            <div class="selection-card">
+                <h4><i class="fas fa-graduation-cap"></i> Select a Grade</h4>
+                <p>Choose a grade to view available classes</p>
+                <div class="row">
+                    @foreach (var grade in ViewBag.Grades)
+                    {
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="class-card" onclick="location.href='@Url.Action("ViewLearnersTimetable", "Teacher", new { grade = grade })'">
+                                <div class="class-title">@grade</div>
+                                <div class="class-info"><i class="fas fa-users"></i> Click to view classes</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (ViewBag.ShowClassSelection == true)
+        {
+            <div class="selection-card">
+                <h4><i class="fas fa-school"></i> Select a Class - @ViewBag.Grade</h4>
+                <p>Choose a class to view its timetable</p>
+                <div class="row">
+                    @foreach (var className in ViewBag.Classes)
+                    {
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="class-card" onclick="location.href='@Url.Action("ViewLearnersTimetable", "Teacher", new { grade = ViewBag.Grade, className = className })'">
+                                <div class="class-title">@className</div>
+                                <div class="class-info"><i class="fas fa-calendar-alt"></i> View timetable</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="mt-3">
+                    <a href="@Url.Action("ViewLearnersTimetable", "Teacher")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Grades
+                    </a>
+                </div>
+            </div>
+        }
+        else if (ViewBag.NoTimetable == true)
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h4>No Timetable Available</h4>
+                <p>@ViewBag.Message</p>
+                <p>Class: <strong>@ViewBag.ClassName</strong> | Grade: <strong>@ViewBag.Grade</strong></p>
+                <a href="@Url.Action("ViewLearnersTimetable", "Teacher", new { grade = ViewBag.Grade })" class="btn btn-outline-primary mt-3">
+                    <i class="fas fa-arrow-left"></i> Back to Classes
+                </a>
+            </div>
+        }
+        else if (ViewBag.ShowTimetable == true)
+        {
+            var timetable = ViewBag.Timetable as ElevateED.Models.TimeTable;
+            <div>
+                <h3><i class="fas fa-calendar-alt"></i> @ViewBag.ClassName Timetable</h3>
+                <p><strong>Grade:</strong> @ViewBag.Grade | <strong>Class:</strong> @ViewBag.ClassName</p>
+
+                <div class="timetable-viewer">
+                    <h5>@timetable.Title</h5>
+                    @if (!string.IsNullOrEmpty(timetable.Description))
+                    {
+                        <p>@timetable.Description</p>
+                    }
+                    <small class="text-muted">Last updated: @timetable.UploadedAt.ToString("dd MMM yyyy")</small>
+
+                    <div class="mt-3">
+                        @if (timetable.FilePath.ToLower().EndsWith(".pdf"))
+                        {
+                            <embed src="@timetable.FilePath" type="application/pdf" class="pdf-viewer" />
+                        }
+                        else if (timetable.FilePath.ToLower().EndsWith(".jpg") || timetable.FilePath.ToLower().EndsWith(".jpeg") || timetable.FilePath.ToLower().EndsWith(".png"))
+                        {
+                            <img src="@timetable.FilePath" alt="Timetable" style="width: 100%; border-radius: 8px;" />
+                        }
+                        else
+                        {
+                            <a href="@timetable.FilePath" target="_blank" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Download Timetable
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="@Url.Action("ViewLearnersTimetable", "Teacher", new { grade = ViewBag.Grade })" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Classes
+                    </a>
+                    <a href="@Url.Action("ViewLearnersTimetable", "Teacher")" class="btn btn-outline-primary">
+                        <i class="fas fa-graduation-cap"></i> Back to Grades
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>

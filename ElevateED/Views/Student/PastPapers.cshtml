@@ -1,0 +1,480 @@
+﻿@model List<ElevateED.ViewModels.GradeCardViewModel>
+
+@{
+    ViewBag.Title = "Past Papers - ElevateED";
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        transition: all 0.2s;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #4338ca);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        width: 200px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeInDown 0.2s ease;
+        }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        font-size: 14px;
+    }
+
+        .dropdown-item:hover {
+            background: var(--gray-100);
+        }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
+    }
+
+    .content-area {
+        padding: 32px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+    .btn-outline {
+        background: white;
+        color: var(--primary);
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        border: 2px solid var(--primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+        }
+
+    .info-banner {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px 24px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+        .info-banner h2 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+    .grade-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        text-align: center;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .grade-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px rgba(0,0,0,0.1);
+        }
+
+        .grade-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .grade-card:nth-child(1)::before, .grade-card:nth-child(5)::before {
+            background: #667eea;
+        }
+
+        .grade-card:nth-child(2)::before, .grade-card:nth-child(6)::before {
+            background: var(--info);
+        }
+
+        .grade-card:nth-child(3)::before, .grade-card:nth-child(7)::before {
+            background: var(--success);
+        }
+
+        .grade-card:nth-child(4)::before, .grade-card:nth-child(8)::before {
+            background: var(--accent);
+        }
+
+    .grade-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 28px;
+        color: white;
+    }
+
+    .grade-card:nth-child(1) .grade-icon, .grade-card:nth-child(5) .grade-icon {
+        background: #667eea;
+    }
+
+    .grade-card:nth-child(2) .grade-icon, .grade-card:nth-child(6) .grade-icon {
+        background: var(--info);
+    }
+
+    .grade-card:nth-child(3) .grade-icon, .grade-card:nth-child(7) .grade-icon {
+        background: var(--success);
+    }
+
+    .grade-card:nth-child(4) .grade-icon, .grade-card:nth-child(8) .grade-icon {
+        background: var(--accent);
+    }
+
+    .grade-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+    }
+
+    .paper-count {
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-bottom: 15px;
+    }
+
+        .paper-count span {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+        .btn-view:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .content-area {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("Timetable", "Student")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <div class="nav-section">Learning</div>
+            <a href="@Url.Action("Homework", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Homework</span></a>
+            <a href="@Url.Action("Classwork", "Student")" class="nav-item"><i class="fas fa-chalkboard"></i><span>Classwork</span></a>
+            <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item"><i class="fas fa-book"></i><span>Study Materials</span></a>
+            <a href="@Url.Action("PastPapers", "Student")" class="nav-item active"><i class="fas fa-archive"></i><span>Past Papers</span></a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">S</div></button>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header"><div style="font-weight:600;">Student</div></div>
+                        <a href="@Url.Action("Settings", "Student")" class="dropdown-item"><i class="fas fa-cog"></i> Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="page-header">
+                <div><h1><i class="fas fa-archive" style="color:var(--accent);"></i> Past Paper Repository</h1><p style="color:var(--gray-500);">Select a grade to view past exam papers</p></div>
+                <a href="@Url.Action("ViewAllPastPapers", "Student")" class="btn-outline"><i class="fas fa-search"></i> Browse All Papers</a>
+            </div>
+            <div class="info-banner"><h2>📚 Study smarter with previous exam papers</h2></div>
+            <div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+                @foreach (var grade in Model)
+                {
+                    <div class="grade-card" onclick="viewPapers('@grade.Grade')">
+                        <div class="grade-icon"><i class="@grade.Icon"></i></div>
+                        <div class="grade-title">@grade.Grade</div>
+                        <div class="paper-count"><span>@grade.PaperCount</span> papers available</div>
+                        <button class="btn-view"><i class="fas fa-eye"></i> Browse Papers</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
+    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
+    function viewPapers(grade){window.location.href='@Url.Action("ViewPastPapersByGrade", "Student")?grade='+encodeURIComponent(grade);}
+</script>

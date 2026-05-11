@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - ElevateED | Mpiyakhe High School</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --secondary-blue: #2a5298;
+            --accent-gold: #d4af37;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+        }
+
+        /* Only show navbar/footer when NOT logged in */
+        .public-navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            height: 60px;
+        }
+
+        .public-navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            padding: 0 15px;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary-blue) !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .navbar-brand i { color: var(--accent-gold); }
+        .navbar-brand span { color: var(--accent-gold); }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: #555;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-blue);
+        }
+
+        .nav-links .btn-login {
+            background: var(--primary-blue);
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+
+        .nav-links .btn-login:hover {
+            background: var(--secondary-blue);
+        }
+
+        .public-content {
+            padding-top: 80px;
+            min-height: 80vh;
+        }
+
+        .public-footer {
+            background: var(--primary-blue);
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 50px;
+        }
+
+        @@media (max-width: 768px) {
+            .nav-links { gap: 10px; }
+            .nav-links a { font-size: 12px; }
+        }
+    </style>
+    @RenderSection("styles", required: false)
+</head>
+<body>
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <!-- PUBLIC NAVBAR - Only shown when NOT logged in -->
+        <nav class="public-navbar">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                    <i class="fas fa-graduation-cap"></i> Elevate<span>ED</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="@Url.Action("Index", "Home")">Home</a></li>
+                    <li><a href="@Url.Action("Apply", "Application")">Apply Now</a></li>
+                    <li><a href="@Url.Action("Login", "Account")" class="btn-login"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="public-content">
+            @RenderBody()
+        </div>
+
+        <footer class="public-footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-graduation-cap"></i> ElevateED</h4>
+                        <p>Mpiyakhe High School - Empowering Future Leaders</p>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <p>&copy; @DateTime.Now.Year - All rights reserved</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    }
+    else
+    {
+        <!-- LOGGED IN - No public navbar, just render the body (dashboard handles its own layout) -->
+        @RenderBody()
+    }
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

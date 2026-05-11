@@ -1,0 +1,177 @@
+﻿@model List<ElevateED.Models.Class>
+
+@{
+    ViewBag.Title = "Select Class - Homework";
+    var subject = ViewBag.Subject as ElevateED.Models.Subject;
+    var grade = ViewBag.Grade as ElevateED.Models.Grade;
+    var teacherName = ViewBag.TeacherName as string;
+}
+
+<style>
+    .container-custom {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left h2 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .header-left h2 i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .info-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+        .info-header h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .info-header .badge {
+            background: #d4af37;
+            color: #1e3c72;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 5px;
+            display: inline-block;
+        }
+
+    .class-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 4px solid #16a085;
+        height: 100%;
+    }
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .class-icon {
+        width: 70px;
+        height: 70px;
+        background: #16a085;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 32px;
+        color: white;
+    }
+
+    .class-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container container-custom">
+    <div class="page-header">
+        <div class="header-left">
+            <h2><i class="fas fa-home"></i> Homework - @(subject?.Name) - @(grade?.Name)</h2>
+            <p>Select a class to assign homework</p>
+        </div>
+        <div>
+            <a href="@Url.Action("SelectGradeForHomework", "Teacher", new { subjectId = subject?.Id })" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Grades
+            </a>
+        </div>
+    </div>
+
+    <div class="info-header">
+        <h2><i class="fas fa-book"></i> @(subject?.Name)</h2>
+        <p>Teacher: @teacherName</p>
+        <div>
+            <span class="badge"><i class="fas fa-graduation-cap"></i> @(grade?.Name)</span>
+        </div>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h4>No Classes Assigned</h4>
+            <p>You are not assigned to teach this subject in any class for @(grade?.Name).</p>
+            <p>Please contact the school administrator.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var cls in Model.OrderBy(c => c.Name))
+            {
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="class-card" onclick="location.href='@Url.Action("UploadHomework", "Teacher", new { subjectId = subject?.Id, classId = cls.Id })'">
+                        <div class="class-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="class-name">@cls.FullName</div>
+                        <div class="class-info">Click to upload homework</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

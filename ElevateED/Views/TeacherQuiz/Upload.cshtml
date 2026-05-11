@@ -1,0 +1,212 @@
+﻿@{
+    ViewBag.Title = "Upload Quiz Questions";
+}
+
+<style>
+    .upload-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .upload-header h2 {
+            color: #1e3c72;
+        }
+
+    .file-drop-zone {
+        border: 3px dashed #ddd;
+        border-radius: 10px;
+        padding: 50px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+        margin-bottom: 20px;
+    }
+
+        .file-drop-zone:hover {
+            border-color: #28a745;
+            background: #f0faf4;
+        }
+
+        .file-drop-zone.has-file {
+            border-color: #28a745;
+            background: #f0faf4;
+        }
+
+    .btn-upload {
+        background: #28a745;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+    }
+
+        .btn-upload:hover {
+            background: #218838;
+        }
+
+    .instructions {
+        background: #e7f3ff;
+        border-left: 4px solid #1e3c72;
+        padding: 15px 20px;
+        border-radius: 5px;
+        margin-bottom: 25px;
+    }
+
+        .instructions ol {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+    .result-box {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .result-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .result-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+<div class="container upload-container">
+    <div class="upload-card">
+        <div class="upload-header">
+            <h2><i class="fas fa-upload"></i> Upload Quiz Questions</h2>
+            <p class="text-muted">Upload your completed Excel template</p>
+        </div>
+
+        <div class="instructions">
+            <strong><i class="fas fa-info-circle"></i> Instructions:</strong>
+            <ol>
+                <li><a href="@Url.Action("DownloadTemplate", "TeacherQuiz")">Download the template</a></li>
+                <li>Fill in your quiz questions following the example row</li>
+                <li>Correct answer must be A, B, C, or D</li>
+                <li>Subject and Grade must match existing values in the system</li>
+                <li>Upload the completed file below</li>
+            </ol>
+        </div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                <h5>Click to browse or drag & drop Excel file here</h5>
+                <p class="text-muted">Only .xlsx files are accepted</p>
+                <div id="fileName" class="text-success mt-2" style="font-weight: 500;"></div>
+            </div>
+            <input type="file" id="fileInput" name="file" accept=".xlsx" style="display: none;" />
+
+            <div id="message" class="alert" style="display: none;"></div>
+            <div id="resultBox" class="result-box" style="display: none;"></div>
+
+            <button type="button" class="btn-upload" onclick="uploadFile()" id="uploadBtn">
+                <i class="fas fa-upload"></i> Upload Questions
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    var dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.style.borderColor = '#28a745'; dropZone.style.background = '#f0faf4'; });
+    dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); dropZone.style.borderColor = '#ddd'; dropZone.style.background = '#fafafa'; });
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        handleFileSelect(document.getElementById('fileInput'));
+    });
+    document.getElementById('fileInput').addEventListener('change', function() { handleFileSelect(this); });
+
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            dropZone.classList.add('has-file');
+            document.getElementById('fileName').textContent = 'Selected: ' + input.files[0].name;
+        }
+    }
+
+    function uploadFile() {
+        var file = document.getElementById('fileInput').files[0];
+        if (!file) { alert('Please select a file'); return; }
+        if (!file.name.endsWith('.xlsx')) { alert('Please select an Excel (.xlsx) file'); return; }
+
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        var uploadBtn = document.getElementById('uploadBtn');
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+        var msgDiv = document.getElementById('message');
+        var resultDiv = document.getElementById('resultBox');
+        msgDiv.style.display = 'none';
+        resultDiv.style.display = 'none';
+
+        $.ajax({
+            url: '@Url.Action("UploadQuestions", "TeacherQuiz")',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Questions';
+
+                if (response.success) {
+                    msgDiv.className = 'alert alert-success';
+                    msgDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + response.message;
+                    msgDiv.style.display = 'block';
+
+                    if (response.details && response.details.errors && response.details.errors.length > 0) {
+                        resultDiv.className = 'result-box result-error';
+                        resultDiv.innerHTML = '<strong>Errors:</strong><br>' + response.details.errors.join('<br>');
+                        resultDiv.style.display = 'block';
+                    }
+
+                    setTimeout(function() { window.location.href = '@Url.Action("Index", "TeacherQuiz")'; }, 3000);
+                } else {
+                    msgDiv.className = 'alert alert-danger';
+                    msgDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + response.message;
+                    msgDiv.style.display = 'block';
+                }
+            },
+            error: function() {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Questions';
+                msgDiv.className = 'alert alert-danger';
+                msgDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> An error occurred';
+                msgDiv.style.display = 'block';
+            }
+        });
+    }
+</script>

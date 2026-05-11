@@ -1,0 +1,855 @@
+﻿@model ElevateED.Models.Applicant
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "View Application - ElevateED";
+    var availableClasses = ViewBag.AvailableClasses as List<ElevateED.Models.Class>;
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #6366f1;
+        --primary-dark: #4338ca;
+        --primary-bg: #f5f3ff;
+        --primary-soft: #ede9fe;
+        --primary-hover: #e0e7ff;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #8b5cf6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+        overflow-x: hidden;
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .notification-btn {
+        position: relative;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+        .notification-btn:hover {
+            background: var(--gray-100);
+        }
+
+    .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 8px;
+        height: 8px;
+        background: var(--danger);
+        border-radius: 50%;
+    }
+
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        transition: all 0.2s;
+        background: none;
+        border: none;
+    }
+
+        .profile-trigger:hover {
+            background: var(--gray-100);
+        }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+
+    .profile-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .dropdown-icon {
+        font-size: 12px;
+        color: var(--gray-400);
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        width: 240px;
+        overflow: hidden;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeInDown 0.2s ease;
+        }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--gray-200);
+        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
+    }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
+        transition: all 0.2s;
+        cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+
+        .dropdown-item:hover {
+            background: var(--primary-hover);
+            color: var(--primary);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            font-size: 16px;
+            color: var(--gray-500);
+        }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
+    }
+
+    .content-area {
+        padding: 32px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 24px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--gray-200);
+            color: var(--gray-800);
+        }
+
+            .card h4 i {
+                width: 30px;
+                height: 30px;
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 14px;
+            }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 24px;
+    }
+
+        .info-grid p {
+            margin-bottom: 0;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .info-grid strong {
+            color: var(--gray-800);
+            font-weight: 600;
+        }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 14px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-underreview {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-approved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .avg-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .doc-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        background: var(--gray-50);
+        margin-bottom: 8px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--gray-700);
+        font-size: 14px;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .doc-link:hover {
+            background: var(--primary-hover);
+            color: var(--primary);
+            text-decoration: none;
+            border-color: var(--primary-light);
+            transform: translateX(4px);
+        }
+
+    .sidebar-box {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--gray-200);
+        position: sticky;
+        top: 100px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+        .sidebar-box h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--gray-200);
+            color: var(--gray-800);
+        }
+
+            .sidebar-box h4 i {
+                width: 30px;
+                height: 30px;
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 14px;
+            }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-review {
+        background: linear-gradient(135deg, var(--info), #2563eb);
+        color: white;
+    }
+
+        .btn-review:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+    .btn-approve {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+    }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+    .btn-reject {
+        background: linear-gradient(135deg, var(--danger), #dc2626);
+        color: white;
+    }
+
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+    .btn-back {
+        background: white;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-200);
+        text-decoration: none;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-300);
+        }
+
+    select, textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 13px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+    }
+
+        select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+    hr {
+        border: none;
+        border-top: 1px solid var(--gray-200);
+        margin: 16px 0;
+    }
+
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+    }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .content-area {
+            padding: 20px;
+        }
+
+        .profile-name {
+            display: none;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="logo-text">Elevate<span>ED</span></div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("PendingApplications", "Admin")" class="nav-item active"><i class="fas fa-file-alt"></i><span>Applications</span></a>
+            <a href="@Url.Action("ManageUsers", "Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="@Url.Action("ClassStructure", "Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
+            <a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
+
+            <div class="nav-section">Management</div>
+            <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
+            <a href="@Url.Action("ClassRegister", "Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+            <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+            <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
+
+            <div class="nav-section">Extra</div>
+            <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
+            <a href="@Url.Action("EmergencyAlerts", "AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
+            <a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
+            <a href="@Url.Action("Index", "Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <button class="notification-btn"><i class="far fa-bell"></i><span class="notification-badge"></span></button>
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()">
+                        <div class="avatar">A</div>
+                        <span class="profile-name">Admin</span>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-header">
+                            <div class="user-name">Administrator</div>
+                            <div class="user-email">admin@mpiyakhehs.co.za</div>
+                        </div>
+                        <a href="@Url.Action("ManageUsers", "Admin")" class="dropdown-item"><i class="fas fa-users"></i><span>Manage Users</span></a>
+                        <div class="dropdown-divider"></div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post" id="logoutForm">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="two-column-layout">
+                <!-- Main Info Column -->
+                <div>
+                    <div class="card">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                        <div class="info-grid">
+                            <p><strong>Full Name:</strong> @Model.FullName</p>
+                            <p><strong>DOB:</strong> @Model.DateOfBirth.ToString("dd MMM yyyy")</p>
+                            <p><strong>Gender:</strong> @Model.Gender</p>
+                            <p><strong>ID Number:</strong> @Model.IdentityNumber</p>
+                            <p><strong>Nationality:</strong> @Model.Nationality</p>
+                            <p><strong>Home Language:</strong> @Model.HomeLanguage</p>
+                            <p><strong>Email:</strong> @(Model.User?.Email ?? "—")</p>
+                            <p><strong>Cell:</strong> @Model.CellPhone</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-graduation-cap"></i> Academic Information</h4>
+                        <div class="info-grid">
+                            <p><strong>Previous School:</strong> @Model.PreviousSchool</p>
+                            <p><strong>Highest Grade:</strong> @Model.HighestGradePassed (@Model.YearCompleted)</p>
+                            <p>
+                                <strong>Average:</strong>
+                                <span class="avg-badge" style="background:@(Model.AcademicAverage >= 80 ? "#d1fae5" : Model.AcademicAverage >= 60 ? "#fef3c7" : "#fee2e2");color:@(Model.AcademicAverage >= 80 ? "#065f46" : Model.AcademicAverage >= 60 ? "#92400e" : "#991b1b");">
+                                    @(Model.AcademicAverage?.ToString("0.0") ?? "—")%
+                                </span>
+                            </p>
+                            <p><strong>Applying For:</strong> @(Model.GradeApplyingForDisplay ?? "—")</p>
+                            @if (!string.IsNullOrEmpty(Model.StreamChoiceDisplay))
+                            {
+                                <p><strong>Stream:</strong> @Model.StreamChoiceDisplay</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-users"></i> Parent/Guardian Information</h4>
+                        <div class="info-grid">
+                            <p><strong>Name:</strong> @Model.ParentName</p>
+                            <p><strong>Relationship:</strong> @Model.ParentRelationship</p>
+                            <p><strong>Cell:</strong> @Model.ParentCellPhone</p>
+                            <p><strong>Email:</strong> @Model.ParentEmail</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4><i class="fas fa-file-alt"></i> Supporting Documents</h4>
+                        @if (!string.IsNullOrEmpty(Model.IdDocumentPath))
+                        {
+                            <a href="@Model.IdDocumentPath" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> ID / Birth Certificate</a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ReportCardPath))
+                        {
+                            <a href="@Model.ReportCardPath" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> Report Card</a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ProofOfResidencePath))
+                        {
+                            <a href="@Model.ProofOfResidencePath" target="_blank" class="doc-link"><i class="fas fa-home"></i> Proof of Residence</a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ParentIdDocumentPath))
+                        {
+                            <a href="@Model.ParentIdDocumentPath" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Parent ID Document</a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.TransferCertificatePath))
+                        {
+                            <a href="@Model.TransferCertificatePath" target="_blank" class="doc-link"><i class="fas fa-exchange-alt"></i> Transfer Certificate</a>
+                        }
+                        @if (string.IsNullOrEmpty(Model.IdDocumentPath) && string.IsNullOrEmpty(Model.ReportCardPath) && string.IsNullOrEmpty(Model.ProofOfResidencePath) && string.IsNullOrEmpty(Model.ParentIdDocumentPath) && string.IsNullOrEmpty(Model.TransferCertificatePath))
+                        {
+                            <p style="color: var(--gray-500); text-align: center; padding: 20px;">No documents uploaded</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Sidebar Column -->
+                <div>
+                    <div class="sidebar-box">
+                        <h4><i class="fas fa-info-circle"></i> Application Status</h4>
+                        <p style="margin: 8px 0;">
+                            <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+                        </p>
+                        <p style="font-size: 13px; color: var(--gray-500); margin: 10px 0;">
+                            <i class="far fa-calendar-alt"></i> Applied: @Model.ApplicationDate.ToString("dd MMM yyyy, hh:mm tt")
+                        </p>
+                        @if (Model.ReviewDate.HasValue)
+                        {
+                            <p style="font-size: 13px; color: var(--gray-500);">
+                                <i class="fas fa-eye"></i> Reviewed: @Model.ReviewDate.Value.ToString("dd MMM yyyy")
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                        {
+                            <div style="margin-top: 12px; padding: 12px; background: #fee2e2; border-radius: 10px;">
+                                <p style="font-size: 13px; color: var(--danger); margin: 0;">
+                                    <strong><i class="fas fa-exclamation-circle"></i> Rejection Reason:</strong><br />
+                                    @Model.RejectionReason
+                                </p>
+                            </div>
+                        }
+
+                        <hr />
+
+                        @{
+                            bool showReview = Model.Status == ApplicationStatus.Pending;
+                            bool showAR = Model.Status == ApplicationStatus.Pending || Model.Status == ApplicationStatus.UnderReview;
+                        }
+
+                        @if (showReview)
+                        {
+                            using (Html.BeginForm("SetUnderReview", "Admin", new { id = Model.Id }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-review">
+                                    <i class="fas fa-eye"></i> Mark Under Review
+                                </button>
+                            }
+                        }
+
+                        @if (showAR)
+                        {
+                            <form id="approveForm" method="post" action="@Url.Action("Approve", "Admin", new { id = Model.Id })">
+                                @Html.AntiForgeryToken()
+                                <select name="classId" required>
+                                    <option value="">-- Select Class --</option>
+                                    @if (availableClasses != null)
+                                    {
+                                        foreach (var cls in availableClasses)
+                                        {
+                                            <option value="@cls.Id">@cls.FullName</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-approve">
+                                    <i class="fas fa-check-circle"></i> Approve Application
+                                </button>
+                            </form>
+
+                            <form method="post" action="@Url.Action("Reject", "Admin", new { id = Model.Id })">
+                                @Html.AntiForgeryToken()
+                                <textarea name="rejectionReason" rows="2" placeholder="Enter rejection reason..."></textarea>
+                                <button type="submit" class="btn btn-reject">
+                                    <i class="fas fa-times-circle"></i> Reject Application
+                                </button>
+                            </form>
+                        }
+
+                        <hr />
+
+                        <a href="@Url.Action("PendingApplications", "Admin")" class="btn btn-back">
+                            <i class="fas fa-arrow-left"></i> Back to Applications
+                        </a>
+                        <a href="@Url.Action("EvaluateApplications", "Admin")" class="btn btn-back" style="margin-top: 8px;">
+                            <i class="fas fa-star"></i> Bulk Evaluate Applications
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleDropdown() {
+        document.getElementById('profileDropdown').classList.toggle('show');
+    }
+
+    document.addEventListener('click', function (e) {
+        var container = document.querySelector('.profile-container');
+        var dropdown = document.getElementById('profileDropdown');
+        if (container && !container.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    function confirmLogout(e) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to logout?')) {
+            document.getElementById('logoutForm').submit();
+        }
+    }
+
+    var approveForm = document.getElementById('approveForm');
+    if (approveForm) {
+        approveForm.addEventListener('submit', function (e) {
+            var classSelect = this.querySelector('[name="classId"]');
+            if (!classSelect.value) {
+                e.preventDefault();
+                alert('Please select a class for this student');
+            } else if (!confirm('Are you sure you want to approve this application?\n\nThe student will be enrolled in the selected class.')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    var rejectForms = document.querySelectorAll('form[action*="Reject"]');
+    rejectForms.forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            var reason = this.querySelector('textarea[name="rejectionReason"]');
+            if (reason && !reason.value.trim()) {
+                e.preventDefault();
+                alert('Please provide a reason for rejection');
+            } else if (!confirm('Are you sure you want to reject this application?\n\nThis action can be undone later if needed.')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>

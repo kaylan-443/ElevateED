@@ -1,0 +1,502 @@
+﻿@model List<ElevateED.ViewModels.ClassRegisterViewModel>
+@{
+    ViewBag.Title = "Class Register";
+    var teacherName = ViewBag.TeacherName as string ?? "Teacher";
+    var showGradeSelection = ViewBag.ShowGradeSelection as bool? ?? false;
+    var showClassSelection = ViewBag.ShowClassSelection as bool? ?? false;
+    var showRegisters = ViewBag.ShowRegisters as bool? ?? false;
+    var grades = ViewBag.Grades as List<string> ?? new List<string>();
+    var classes = ViewBag.Classes as List<string> ?? new List<string>();
+    var selectedGrade = ViewBag.Grade as string ?? "";
+    var selectedClass = ViewBag.ClassName as string ?? "";
+    if (!showGradeSelection && !showClassSelection && !showRegisters) { showGradeSelection = true; }
+}
+
+<style>
+    :root {
+        --primary-blue: #1e3c72;
+        --secondary-blue: #2a5298;
+        --accent-gold: #d4af37;
+        --success-green: #28a745;
+        --info-blue: #17a2b8;
+        --warning-orange: #ffc107;
+        --danger-red: #dc3545;
+        --sidebar-width: 250px;
+        --sidebar-collapsed: 70px;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+        min-height: 100vh;
+    }
+
+    .dashboard-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, var(--primary-blue) 0%, #0d1f3c 100%);
+        color: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    }
+
+    .sidebar-brand {
+        padding: 25px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .sidebar-brand i {
+            font-size: 28px;
+            color: var(--accent-gold);
+        }
+
+        .sidebar-brand h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .sidebar-brand span {
+            color: var(--accent-gold);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 15px 0;
+    }
+
+    .nav-section {
+        margin-bottom: 15px;
+    }
+
+    .nav-section-title {
+        padding: 10px 20px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        font-weight: 600;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        cursor: pointer;
+    }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border-left-color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+    .sidebar-footer {
+        padding: 15px 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .user-details {
+        flex: 1;
+    }
+
+        .user-details strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        .user-details small {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+    .btn-logout {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+        .btn-logout:hover {
+            background: var(--danger-red);
+        }
+
+    .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 30px;
+        min-height: 100vh;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .greeting h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin: 0;
+    }
+
+    .greeting p {
+        color: #888;
+        margin: 5px 0 0 0;
+        font-size: 14px;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+        color: white;
+        padding: 20px 24px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+    }
+
+        .info-card h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+    .breadcrumb {
+        background: #f8f9fa;
+        padding: 10px 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+
+        .breadcrumb a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+            .breadcrumb a:hover {
+                text-decoration: underline;
+            }
+
+    .selection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .grade-card, .class-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .grade-card:hover, .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .grade-card {
+        border-bottom: 4px solid;
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 28px;
+        color: white;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .card-subtitle {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .register-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border-left: 4px solid var(--success-green);
+    }
+
+        .register-card h4 {
+            color: var(--primary-blue);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+    .register-meta {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 12px;
+    }
+
+    .btn-view {
+        background: var(--info-blue);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+        .btn-view:hover {
+            background: #138496;
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+    @@media (max-width: 992px) {
+        .sidebar {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-brand h4, .nav-section-title, .nav-item span, .user-details {
+            display: none;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-collapsed);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            padding: 15px;
+        }
+
+        .selection-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand"><i class="fas fa-graduation-cap"></i><h4>Elevate<span>ED</span></h4></div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main Menu</div>
+                <a href="@Url.Action("Dashboard","Teacher")" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+                <a href="@Url.Action("Timetable","Teacher")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>My Timetable</span></a>
+                <a href="@Url.Action("ClassRegister","Teacher")" class="nav-item active"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Teaching</div>
+                <a href="@Url.Action("StartSession","Attendance")" class="nav-item"><i class="fas fa-user-check"></i><span>Take Attendance</span></a>
+                <a href="@Url.Action("ActiveSessions","Teacher")" class="nav-item"><i class="fas fa-list-alt"></i><span>Active Sessions</span></a>
+                <a href="@Url.Action("Homework","Teacher")" class="nav-item"><i class="fas fa-home"></i><span>Homework</span></a>
+                <a href="@Url.Action("Classwork","Teacher")" class="nav-item"><i class="fas fa-chalkboard"></i><span>Classwork</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Resources</div>
+                <a href="@Url.Action("PastPapers","Teacher")" class="nav-item"><i class="fas fa-archive"></i><span>Past Papers</span></a>
+                <a href="@Url.Action("StudyMaterials","Teacher")" class="nav-item"><i class="fas fa-book"></i><span>Study Materials</span></a>
+                <a href="@Url.Action("Index","TeacherQuiz")" class="nav-item"><i class="fas fa-question-circle"></i><span>Quiz Bank</span></a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Communication</div>
+                <a href="@Url.Action("ViewAnnouncements","Teacher")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info"><div class="user-avatar">T</div><div class="user-details"><strong>@teacherName</strong></div></div>
+            <form action="@Url.Action("LogOff","Account")" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting"><h1><i class="fas fa-clipboard-list" style="color:var(--accent-gold);margin-right:10px;"></i>Class Register</h1></div>
+            <div>
+                @if (showGradeSelection)
+                {<a href="@Url.Action("Dashboard","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a> }
+                else if (showClassSelection)
+                { <a href="@Url.Action("ClassRegister","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Grades</a> }
+                else if (showRegisters)
+                { <a href="@Url.Action("SelectClassRegisterClass","Teacher",new{grade=selectedGrade})" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Classes</a>}
+            </div>
+        </div>
+
+        <div class="info-card"><h3><i class="fas fa-chalkboard-teacher"></i> @teacherName</h3></div>
+
+        @if (showGradeSelection)
+        {
+            <div class="selection-grid">
+                @foreach (var grade in grades)
+                {
+                    string bg = grade.Contains("8") ? "#1e3c72" : grade.Contains("9") ? "#17a2b8" : grade.Contains("10") ? "#28a745" : grade.Contains("11") ? "#ffc107" : "#dc3545";
+                    string bc = grade.Contains("8") ? "#1e3c72" : grade.Contains("9") ? "#17a2b8" : grade.Contains("10") ? "#28a745" : grade.Contains("11") ? "#ffc107" : "#dc3545";
+                    <div class="grade-card" style="border-bottom-color:@bc;" onclick="location.href='@Url.Action("SelectClassRegisterClass","Teacher",new{grade=grade})'">
+                        <div class="card-icon" style="background:@bg;"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="card-title">@grade</div>
+                        <div class="card-subtitle">Click to view classes</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (showClassSelection)
+        {
+            <div class="breadcrumb"><a href="@Url.Action("ClassRegister","Teacher")">All Grades</a> / <span>@selectedGrade</span></div>
+            <div class="selection-grid">
+                @foreach (var cn in classes)
+                {
+                    <div class="class-card" onclick="location.href='@Url.Action("ViewClassRegisters","Teacher",new{grade=selectedGrade,className=cn})'">
+                        <div class="card-icon" style="background:#1abc9c;"><i class="fas fa-users"></i></div>
+                        <div class="card-title">@cn</div>
+                        <div class="card-subtitle">View class register</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (showRegisters)
+        {
+            <div class="breadcrumb">
+                <a href="@Url.Action("ClassRegister","Teacher")">All Grades</a> /
+                <a href="@Url.Action("SelectClassRegisterClass","Teacher",new{grade=selectedGrade})">@selectedGrade</a> /
+                <span>@selectedClass</span>
+            </div>
+            if (Model == null || !Model.Any())
+            {
+                <div class="empty-state"><i class="fas fa-folder-open"></i><h4>No Registers</h4><p>No registers uploaded for @selectedClass yet.</p></div>
+            }
+            else
+            {
+                foreach (var r in Model)
+                {
+                    <div class="register-card">
+                        <h4><i class="fas fa-file-alt"></i> @r.Term @r.Year</h4>
+                        <div class="register-meta"><span><i class="fas fa-calendar"></i> @r.UploadedAt.ToString("dd MMM yyyy")</span><span><i class="fas fa-user"></i> @r.UploadedByName</span></div>
+                        @if (!string.IsNullOrEmpty(r.Description))
+                        {<p style="color:#888;font-size:13px;margin-bottom:10px;">@r.Description</p>}
+                        <a href="@r.FilePath" target="_blank" class="btn-view"><i class="fas fa-eye"></i> View Register</a>
+                    </div>
+                }
+            }
+        }
+    </main>
+</div>

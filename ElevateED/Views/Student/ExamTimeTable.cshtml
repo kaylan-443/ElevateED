@@ -1,0 +1,276 @@
+﻿@model ElevateED.ViewModels.StudentExamTimetableViewModel
+
+@{
+    ViewBag.Title = "My Exam Timetable - Student";
+}
+
+<style>
+    .timetable-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+
+    .info-card {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+    }
+
+        .info-card h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .info-card .dates {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+    .week-section {
+        margin-bottom: 30px;
+    }
+
+    .week-header {
+        background: #f8f9fa;
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        font-weight: 700;
+        font-size: 18px;
+        color: #1e3c72;
+        border-left: 4px solid #d4af37;
+    }
+
+    .exam-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+
+        .exam-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .exam-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .exam-table tr:hover {
+            background: #f8f9fa;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    .print-btn {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .print-btn:hover {
+            background: #5a6268;
+        }
+
+    @@media print {
+        .page-header, .btn-back, .print-btn, footer, nav {
+            display: none !important;
+        }
+
+        .exam-table {
+            box-shadow: none;
+        }
+
+        .info-card {
+            background: #1e3c72;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+<div class="container timetable-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-calendar-alt"></i> My Exam Timetable
+            </h2>
+        </div>
+        <div>
+            <button class="print-btn" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Timetable
+            </button>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (ViewBag.NoTimetable == true)
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Exam Timetable Available</h4>
+            <p>Your exam timetable has not been published yet.</p>
+            <p>Please check back later or contact your class teacher.</p>
+        </div>
+    }
+    else if (Model != null && Model.ExamSessions != null && Model.ExamSessions.Any())
+    {
+        <div class="info-card">
+            <h3><i class="fas fa-user-graduate"></i> @(Model.StudentName ?? "Student")</h3>
+            <div class="dates">
+                <span><i class="fas fa-graduation-cap"></i> Grade: @(Model.GradeName ?? "N/A")</span>
+                <span><i class="fas fa-calendar"></i> Exam Period: @(Model.StartDate.ToString("dd MMM")) - @(Model.EndDate.ToString("dd MMM yyyy"))</span>
+            </div>
+        </div>
+
+        if (Model.SessionsByWeek != null && Model.SessionsByWeek.Any())
+        {
+            foreach (var week in Model.SessionsByWeek)
+            {
+                <div class="week-section">
+                    <div class="week-header">
+                        <i class="fas fa-calendar-week"></i> @week.Key
+                    </div>
+                    <table class="exam-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Subject</th>
+                                <th>Paper</th>
+                                <th>Time</th>
+                                <th>Duration</th>
+                                <th>Venue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var session in week.Value.OrderBy(s => s.ExamDate).ThenBy(s => s.StartTime))
+                            {
+                                <tr>
+                                    <td>@session.ExamDateDisplay</td>
+                                    <td>@session.DayOfWeek</td>
+                                    <td><strong>@session.SubjectName</strong></td>
+                                    <td>Paper @session.PaperNumber</td>
+                                    <td>@session.StartTime - @session.EndTime</td>
+                                    <td>@session.DurationHours h</td>
+                                    <td>@session.Venue</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+        else
+        {
+            <table class="exam-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Week</th>
+                        <th>Subject</th>
+                        <th>Paper</th>
+                        <th>Time</th>
+                        <th>Duration</th>
+                        <th>Venue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.ExamSessions.OrderBy(s => s.ExamDate).ThenBy(s => s.StartTime))
+                    {
+                        <tr>
+                            <td>@session.ExamDateDisplay</td>
+                            <td>@session.DayOfWeek</td>
+                            <td>Week @session.WeekNumber</td>
+                            <td><strong>@session.SubjectName</strong></td>
+                            <td>Paper @session.PaperNumber</td>
+                            <td>@session.StartTime - @session.EndTime</td>
+                            <td>@session.DurationHours h</td>
+                            <td>@session.Venue</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Exam Sessions</h4>
+            <p>Your exam timetable has not been published yet.</p>
+            <p>Please check back later.</p>
+        </div>
+    }
+</div>

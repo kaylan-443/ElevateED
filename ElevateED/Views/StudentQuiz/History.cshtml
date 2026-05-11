@@ -1,0 +1,121 @@
+﻿@model List<ElevateED.Models.QuizAttempt>
+@{
+    ViewBag.Title = "Quiz History";
+}
+
+<style>
+    .history-container {
+        padding: 20px 0 40px 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 700;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    .attempt-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .score-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .score-high {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .score-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .score-low {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+</style>
+
+<div class="container history-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title"><i class="fas fa-history"></i> Quiz History</h2>
+            <p class="text-muted">View your past quiz attempts</p>
+        </div>
+        <a href="@Url.Action("Index", "StudentQuiz")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Quizzes
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-clipboard"></i>
+            <h4>No Quiz Attempts</h4>
+            <p>You haven't taken any quizzes yet.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var attempt in Model)
+        {
+            var scoreClass = attempt.Score >= 70 ? "score-high" : attempt.Score >= 50 ? "score-medium" : "score-low";
+            <div class="attempt-card">
+                <div>
+                    <strong>@(attempt.Subject != null ? attempt.Subject.Name : "N/A")</strong>
+                    <br /><small class="text-muted">@attempt.AttemptedAt.ToString("dd MMM yyyy, HH:mm")</small>
+                    <br /><small>@attempt.CorrectAnswers / @attempt.TotalQuestions correct</small>
+                </div>
+                <div class="text-right">
+                    <span class="score-badge @scoreClass">@attempt.Score%</span>
+                    <br />
+                    <a href="@Url.Action("Results", "StudentQuiz", new { attemptId = attempt.Id })" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
+                </div>
+            </div>
+        }
+    }
+</div>
