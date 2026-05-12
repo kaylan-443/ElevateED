@@ -30,7 +30,6 @@ namespace ElevateED.Services
 
             try
             {
-                // Clean the text - remove podcast markers for better speech
                 var cleanText = CleanTextForSpeech(text);
 
                 var requestBody = new
@@ -38,7 +37,7 @@ namespace ElevateED.Services
                     model = "gpt-4o-mini-tts",
                     voice = voice,
                     input = cleanText,
-                    instructions = instructions ?? "Speak in a warm, engaging, and educational tone like a friendly teacher. Sound natural and conversational.",
+                    instructions = instructions ?? "Speak in a warm, engaging, friendly teacher voice. Sound natural and conversational, like you're explaining concepts to high school students. Vary your tone and pace to keep it interesting.",
                     response_format = "mp3"
                 };
 
@@ -67,15 +66,29 @@ namespace ElevateED.Services
         {
             if (string.IsNullOrEmpty(text)) return text;
 
-            // Remove podcast stage directions
-            text = System.Text.RegularExpressions.Regex.Replace(text, @"\[PAUSE\]", "\n\n");
+            // Remove stage directions in parentheses
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\(.*?(music|sound|fade|intro|outro).*?\)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Remove bracketed markers - replace PAUSE with newline
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\[PAUSE\]", "\n");
             text = System.Text.RegularExpressions.Regex.Replace(text, @"\[EMPHASIS\]", "");
             text = System.Text.RegularExpressions.Regex.Replace(text, @"\[END EMPHASIS\]", "");
             text = System.Text.RegularExpressions.Regex.Replace(text, @"\[PODCAST INTRO\]", "");
             text = System.Text.RegularExpressions.Regex.Replace(text, @"\[PODCAST OUTRO\]", "");
-            text = System.Text.RegularExpressions.Regex.Replace(text, @"\(.*?music.*?\)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            text = System.Text.RegularExpressions.Regex.Replace(text, @"\(Intro.*?\)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            text = System.Text.RegularExpressions.Regex.Replace(text, @"\(Outro.*?\)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Remove markdown bold/italic
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*(.+?)\*\*", "$1");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\*(.+?)\*", "$1");
+
+            // Remove horizontal rules
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"---+", "");
+
+            // Remove speaker labels
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*?(Teacher|Host|Interviewer|Guest)\*?\*?:", "");
+
+            // Clean up whitespace
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\n{3,}", "\n\n");
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
 
             return text.Trim();
         }

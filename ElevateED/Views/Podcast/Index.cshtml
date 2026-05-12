@@ -335,8 +335,10 @@
     <script>
     var currentPodcastId = null;
     var currentScript = null;
-    var audioUrl = null;
     var speechSynth = window.speechSynthesis;
+    var currentUtterance = null;
+    var isPlaying = false;
+    var isPaused = false;
 
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -408,81 +410,195 @@
         var player = document.getElementById('audioPlayer');
         player.style.display = 'block';
         player.innerHTML = `
+            <p style="font-weight:600;margin-bottom:12px;">🔊 Listen to Your Podcast</p>
             <div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;">
-                <button id="genAudioBtn" class="btn-primary" onclick="generateOpenAIAudio()">🎵 Generate Audio</button>
-                <button id="playAudioBtn" class="btn-primary" onclick="playAudio()" style="display:none;background:#10b981;">▶️ Play</button>
-                <button id="stopAudioBtn" class="btn-primary" onclick="stopAudio()" style="display:none;background:#ef4444;">⏹️ Stop</button>
-                <select id="voiceSelect" style="padding:8px;border-radius:8px;border:1px solid #e2e8f0;">
-                    <option value="nova">Nova (Warm)</option>
-                    <option value="ash">Ash (Calm)</option>
-                    <option value="coral">Coral (Clear)</option>
-                    <option value="sage">Sage (Soft)</option>
-                    <option value="alloy">Alloy (Neutral)</option>
-                    <option value="echo">Echo (Deep)</option>
-                    <option value="fable">Fable (British)</option>
-                    <option value="onyx">Onyx (Strong)</option>
-                    <option value="shimmer">Shimmer (Bright)</option>
+                <button id="playBtn" class="btn-primary" onclick="playPodcast()" style="width:auto;background:#10b981;">
+                    ▶️ Play
+                </button>
+                <button id="pauseBtn" class="btn-primary" onclick="pausePodcast()" style="width:auto;display:none;background:#f59e0b;">
+                    ⏸️ Pause
+                </button>
+                <button id="resumeBtn" class="btn-primary" onclick="resumePodcast()" style="width:auto;display:none;background:#3b82f6;">
+                    ▶️ Resume
+                </button>
+                <button id="stopBtn" class="btn-primary" onclick="stopPodcast()" style="width:auto;display:none;background:#ef4444;">
+                    ⏹️ Stop
+                </button>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <label style="font-size:12px;color:#64748b;">Voice:</label>
+                <select id="voiceSelect" onchange="changeVoice()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                    <option value="">Loading voices...</option>
+                </select>
+                <label style="font-size:12px;color:#64748b;margin-left:8px;">Speed:</label>
+                <select id="speedSelect" onchange="changeSpeed()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                    <option value="0.75">0.75x</option>
+                    <option value="0.9">0.9x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
                 </select>
             </div>
             <div id="audioStatus" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
-            <audio id="audioElement" controls style="width:100%;margin-top:12px;display:none;"></audio>
         `;
+        loadVoices();
     }
 
-    function generateOpenAIAudio() {
-        if (!currentPodcastId) { alert('No podcast generated yet'); return; }
-        var btn = document.getElementById('genAudioBtn');
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Generating...';
-        document.getElementById('audioStatus').textContent = 'Generating high-quality audio...';
-        $.ajax({
-            url: '@Url.Action("GenerateAudio", "Podcast")',
-            type: 'POST',
-            data: { podcastId: currentPodcastId },
-            success: function(r) {
-                btn.disabled = false;
-                btn.innerHTML = '🔄 Regenerate';
-                if (r.success) {
-                    audioUrl = r.audioUrl;
-                    document.getElementById('audioElement').src = r.audioUrl;
-                    document.getElementById('audioElement').style.display = 'block';
-                    document.getElementById('playAudioBtn').style.display = 'inline-block';
-                    document.getElementById('stopAudioBtn').style.display = 'inline-block';
-                    document.getElementById('audioStatus').textContent = '✅ Audio ready!';
-                } else {
-                    document.getElementById('audioStatus').innerHTML = '❌ ' + r.message + '<br/><a href="#" onclick="useBrowserTTS();return false;" style="color:#8b5cf6;">Use browser TTS instead</a>';
-                }
-            },
-            error: function() {
-                btn.disabled = false;
-                btn.innerHTML = '🔄 Retry';
-                document.getElementById('audioStatus').textContent = '❌ Error. Try again.';
+    function loadVoices() {
+        var voices = speechSynth.getVoices();
+        var select = document.getElementById('voiceSelect');
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        // Filter English voices
+        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        if (englishVoices.length === 0) englishVoices = voices;
+
+        englishVoices.forEach(function(voice, index) {
+            var option = document.createElement('option');
+            option.value = index;
+            option.textContent = voice.name + ' (' + voice.lang + ')';
+            // Pre-select a good voice
+            if (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Karen') || voice.name.includes('Google UK Female')) {
+                option.selected = true;
             }
+            select.appendChild(option);
         });
+
+        if (englishVoices.length === 0) {
+            select.innerHTML = '<option>No voices available</option>';
+        }
     }
 
-    function playAudio() {
-        var audio = document.getElementById('audioElement');
-        if (audio.src) { audio.play(); document.getElementById('audioStatus').textContent = '🔊 Playing...'; }
+    function getSelectedVoice() {
+        var voices = speechSynth.getVoices();
+        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        if (englishVoices.length === 0) englishVoices = voices;
+        if (englishVoices.length === 0) return null;
+
+        var select = document.getElementById('voiceSelect');
+        var index = select ? parseInt(select.value) : 0;
+        return englishVoices[index] || englishVoices[0];
     }
 
-    function stopAudio() {
-        var audio = document.getElementById('audioElement');
-        audio.pause(); audio.currentTime = 0;
+    function playPodcast() {
+        if (!currentScript) return;
+
+        // Stop any current speech
+        speechSynth.cancel();
+        isPlaying = true;
+        isPaused = false;
+
+        // Clean the script
+        var cleanScript = currentScript
+            .replace(/\[PAUSE\]/g, '\n')
+            .replace(/\[EMPHASIS\]/g, '')
+            .replace(/\[END EMPHASIS\]/g, '')
+            .replace(/\[PODCAST INTRO\]/g, '')
+            .replace(/\[PODCAST OUTRO\]/g, '')
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/\(.*?(music|fade|intro|outro).*?\)/gi, '')
+            .replace(/---+/g, '')
+            .substring(0, 5000);
+
+        currentUtterance = new SpeechSynthesisUtterance(cleanScript);
+
+        var voice = getSelectedVoice();
+        if (voice) currentUtterance.voice = voice;
+
+        var speed = document.getElementById('speedSelect').value;
+        currentUtterance.rate = parseFloat(speed);
+        currentUtterance.pitch = 1;
+        currentUtterance.volume = 1;
+
+        currentUtterance.onstart = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '🔊 Playing...';
+        };
+
+        currentUtterance.onend = function() {
+            resetButtons();
+            document.getElementById('audioStatus').textContent = '✅ Finished playing!';
+            isPlaying = false;
+        };
+
+        currentUtterance.onerror = function(e) {
+            resetButtons();
+            document.getElementById('audioStatus').textContent = '❌ Playback error: ' + (e.error || 'unknown');
+            isPlaying = false;
+        };
+
+        currentUtterance.onpause = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '⏸️ Paused';
+            isPaused = true;
+        };
+
+        currentUtterance.onresume = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '🔊 Playing...';
+            isPaused = false;
+        };
+
+        speechSynth.speak(currentUtterance);
+    }
+
+    function pausePodcast() {
+        if (isPlaying) {
+            speechSynth.pause();
+        }
+    }
+
+    function resumePodcast() {
+        if (isPaused) {
+            speechSynth.resume();
+        }
+    }
+
+    function stopPodcast() {
+        speechSynth.cancel();
+        isPlaying = false;
+        isPaused = false;
+        resetButtons();
         document.getElementById('audioStatus').textContent = '⏹️ Stopped';
     }
 
-    function useBrowserTTS() {
-        if (!currentScript) return;
-        speechSynth.cancel();
-        var utterance = new SpeechSynthesisUtterance(currentScript.substring(0, 5000));
-        var voices = speechSynth.getVoices();
-        var engVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) || voices[0];
-        utterance.voice = engVoice;
-        utterance.rate = 1;
-        speechSynth.speak(utterance);
-        document.getElementById('audioStatus').textContent = '🔊 Playing with browser TTS...';
+    function resetButtons() {
+        document.getElementById('playBtn').style.display = 'inline-block';
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('resumeBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
     }
+
+    function changeVoice() {
+        // Restart with new voice if currently playing
+        if (isPlaying) {
+            speechSynth.cancel();
+            playPodcast();
+        }
+    }
+
+    function changeSpeed() {
+        // Restart with new speed if currently playing
+        if (isPlaying) {
+            speechSynth.cancel();
+            playPodcast();
+        }
+    }
+
+    // Load voices when available
+    speechSynth.onvoiceschanged = loadVoices;
 
     function loadPodcast(id) {
         $.get('@Url.Action("GetPodcast", "Podcast")', { id: id }, function(r) {

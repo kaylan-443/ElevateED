@@ -41,17 +41,16 @@ namespace ElevateED.Services
 
 Convert these student notes into a friendly, engaging educational podcast script.
 
-REQUIREMENTS:
-- Make it engaging and conversational
-- Sound like a friendly teacher explaining concepts
-- Include an introduction that welcomes listeners
-- Break down difficult concepts into simple explanations
-- Include natural transitions between topics
-- End with a conclusion and encouragement
-- Keep it educational but not boring
-- Use [PAUSE] markers for natural breaks
-- Use [EMPHASIS] markers for important points
-- Duration: about " + (Math.Min(notesText.Length / 100, 10)) + @" minutes when spoken
+CRITICAL RULES:
+- Write in PLAIN CONVERSATIONAL TEXT only
+- DO NOT use any formatting markers like: [PAUSE], [EMPHASIS], **bold**, *italic*
+- DO NOT include stage directions like (Intro Music), (Outro Music fades)
+- DO NOT include speaker labels like Teacher: or Host:
+- Write EXACTLY as you would speak naturally
+- Use natural line breaks between paragraphs
+- Sound like a friendly teacher talking directly to students
+- Make it educational and engaging
+- Keep the language warm and conversational
 
 NOTES TO CONVERT:
 " + TruncateText(notesText, 4000);
@@ -78,15 +77,14 @@ NOTES TO CONVERT:
 
                 var json = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-
                 var url = _baseUrl + "?key=" + _apiKey;
+
                 var response = await _httpClient.PostAsync(url, content);
                 var responseText = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
                     dynamic aiResponse = JsonConvert.DeserializeObject<dynamic>(responseText);
-
                     if (aiResponse.candidates != null && aiResponse.candidates.Count > 0)
                     {
                         var script = (string)aiResponse.candidates[0].content.parts[0].text;
@@ -121,34 +119,19 @@ NOTES TO CONVERT:
         {
             var truncated = TruncateText(notesText, 1000);
 
-            return @"🎙️ [PODCAST INTRO]
+            return @"Hey Mpiyakhe High students! Welcome to your study podcast.
 
-Welcome to ElevateED Study Podcast! I'm your host, and today we're diving into an important topic to help you ace your studies.
-
-[PAUSE]
-
-Let's get started with the key concepts you need to know.
+Today we're breaking down some important concepts to help you prepare for your exams. Let's dive right in.
 
 " + truncated + @"
 
-[PAUSE]
+Let me highlight the key takeaways from this material. Understanding these core concepts is essential for your success. Take time to review each point and make sure you can explain them in your own words.
 
-Let me break this down further. The key points to remember are:
-1. Understand the core concepts first
-2. Practice with examples
-3. Review regularly
+Practice makes perfect. Try applying these concepts to real-world examples and past exam questions. That's the best way to cement your understanding.
 
-[EMPHASIS]
-Remember, learning is a journey. Take your time and you'll master this topic!
-[END EMPHASIS]
+You've got this! Keep studying, stay focused, and remember that every bit of effort brings you closer to your goals.
 
-[PAUSE]
-
-That wraps up today's podcast! Review these notes and try explaining the concepts to a friend - that's the best way to learn.
-
-Until next time, keep studying and growing!
-
-[PODCAST OUTRO] 🎙️";
+This has been your ElevateED study podcast. Happy studying!";
         }
 
         private string TruncateText(string text, int maxLength)

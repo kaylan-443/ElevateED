@@ -18,9 +18,6 @@ namespace ElevateED.Controllers
         private PdfExtractionService _pdfService = new PdfExtractionService();
         private PodcastService _podcastService = new PodcastService();
 
-        // ============================================
-        // MAIN PAGE - Upload & History
-        // ============================================
         public ActionResult Index()
         {
             var studentId = GetCurrentStudentId();
@@ -31,23 +28,19 @@ namespace ElevateED.Controllers
             return View(model);
         }
 
-        // ============================================
-        // UPLOAD NOTES & GENERATE PODCAST
-        // ============================================
         [HttpPost]
         public async Task<ActionResult> UploadNotes(HttpPostedFileBase file)
         {
             var studentId = GetCurrentStudentId();
             if (studentId == 0)
-                return Json(new { success = false, message = "Student not found. Please log in again." });
+                return Json(new { success = false, message = "Student not found." });
 
             if (file == null || file.ContentLength == 0)
-                return Json(new { success = false, message = "Please select a file to upload." });
+                return Json(new { success = false, message = "Please select a file." });
 
             if (file.ContentLength > 20 * 1024 * 1024)
-                return Json(new { success = false, message = "File size must be less than 20MB." });
+                return Json(new { success = false, message = "File too large (max 20MB)." });
 
-            // Extract text from file
             string extractedText;
             using (var stream = file.InputStream)
             {
@@ -55,9 +48,8 @@ namespace ElevateED.Controllers
             }
 
             if (string.IsNullOrEmpty(extractedText) || extractedText.StartsWith("Error"))
-                return Json(new { success = false, message = extractedText ?? "Could not extract text from file." });
+                return Json(new { success = false, message = extractedText ?? "Could not extract text." });
 
-            // Create podcast history record
             var podcast = new PodcastHistory
             {
                 StudentId = studentId,
@@ -70,7 +62,6 @@ namespace ElevateED.Controllers
             _context.PodcastHistories.Add(podcast);
             await _context.SaveChangesAsync();
 
-            // Generate script using Gemini AI
             var result = await _geminiService.GeneratePodcastScriptAsync(extractedText);
 
             podcast.GeneratedScript = result.Script;
@@ -87,9 +78,6 @@ namespace ElevateED.Controllers
             });
         }
 
-        // ============================================
-        // GENERATE PODCAST FROM PASTED TEXT
-        // ============================================
         [HttpPost]
         public async Task<ActionResult> GenerateFromText(string notesText, string title)
         {
@@ -98,7 +86,7 @@ namespace ElevateED.Controllers
                 return Json(new { success = false, message = "Student not found." });
 
             if (string.IsNullOrWhiteSpace(notesText))
-                return Json(new { success = false, message = "Please enter some notes or text." });
+                return Json(new { success = false, message = "Please enter text." });
 
             var podcast = new PodcastHistory
             {
@@ -127,9 +115,6 @@ namespace ElevateED.Controllers
             });
         }
 
-        // ============================================
-        // MY PODCASTS PAGE
-        // ============================================
         public ActionResult MyPodcasts()
         {
             var studentId = GetCurrentStudentId();
@@ -137,15 +122,12 @@ namespace ElevateED.Controllers
             return View(podcasts);
         }
 
-        // ============================================
-        // GET PODCAST DETAILS (AJAX)
-        // ============================================
         [HttpGet]
         public ActionResult GetPodcast(int id)
         {
             var podcast = _context.PodcastHistories.Find(id);
             if (podcast == null)
-                return Json(new { success = false, message = "Podcast not found" }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false }, JsonRequestBehavior.AllowGet);
 
             return Json(new
             {
@@ -158,26 +140,20 @@ namespace ElevateED.Controllers
             }, JsonRequestBehavior.AllowGet);
         }
 
-        // ============================================
-        // DELETE PODCAST
-        // ============================================
         [HttpPost]
         public ActionResult DeletePodcast(int id)
         {
             var podcast = _context.PodcastHistories.Find(id);
             if (podcast == null)
-                return Json(new { success = false, message = "Podcast not found" });
+                return Json(new { success = false });
 
             _context.PodcastHistories.Remove(podcast);
             _context.SaveChanges();
-
-            return Json(new { success = true, message = "Podcast deleted" });
+            return Json(new { success = true });
         }
-        // ============================================
-        // GENERATE AUDIO (OpenAI TTS)
-        // ============================================
+
         [HttpPost]
-        public async Task<ActionResult> GenerateAudio(int podcastId)
+        public async Task<ActionResult> GenerateAudio(int podcastId, string voice = "nova")
         {
             var podcast = _context.PodcastHistories.Find(podcastId);
             if (podcast == null)
@@ -188,18 +164,17 @@ namespace ElevateED.Controllers
                 var ttsService = new OpenAITTSService();
                 var audioBytes = await ttsService.GenerateSpeechAsync(
                     podcast.GeneratedScript,
-                    voice: "nova",
-                    instructions: "Speak in a warm, engaging, friendly teacher voice. Sound natural and conversational, like you're explaining concepts to high school students. Vary your tone and pace to keep it interesting."
+                    voice: voice,
+                    instructions: "Speak in a warm, engaging, friendly teacher voice. Sound natural and conversational."
                 );
 
                 if (audioBytes != null)
                 {
-                    // Save audio file
                     var fileName = $"podcast_{podcastId}_{DateTime.Now:yyyyMMddHHmmss}.mp3";
                     var filePath = Server.MapPath("~/Uploads/Podcasts/" + fileName);
-                    var directory = System.IO.Path.GetDirectoryName(filePath);
-                    if (!System.IO.Directory.Exists(directory))
-                        System.IO.Directory.CreateDirectory(directory);
+                    var directory = Path.GetDirectoryName(filePath);
+                    if (!Directory.Exists(directory))
+                        Directory.CreateDirectory(directory);
 
                     System.IO.File.WriteAllBytes(filePath, audioBytes);
 
@@ -209,16 +184,13 @@ namespace ElevateED.Controllers
                     return Json(new { success = true, audioUrl = podcast.AudioUrl });
                 }
 
-                return Json(new { success = false, message = "TTS service unavailable. Add OpenAI API key." });
+                return Json(new { success = false, message = "OpenAI API key not configured." });
             }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Error: " + ex.Message });
             }
         }
-        // ============================================
-        // HELPERS
-        // ============================================
 
         private int GetCurrentStudentId()
         {
