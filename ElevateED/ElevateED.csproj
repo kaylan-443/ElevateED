@@ -603,7 +603,6 @@
     <Content Include="Views\AdminExtraClass\Bookings.cshtml" />
     <Content Include="Views\StudentExtraClass\Index.cshtml" />
     <Content Include="Views\StudentExtraClass\MyBookings.cshtml" />
-    <Content Include="Views\Shared\_DriverLayout.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
     <Content Include="Views\Attendance\EditAttendance.cshtml" />
     <Content Include="Views\Attendance\MarkAttendance.cshtml" />
@@ -626,6 +625,9 @@
     <Content Include="Views\Teacher\SubmissionAnalytics.cshtml" />
     <Content Include="Views\Teacher\ViewTeacherExamTimetable.cshtml" />
     <Content Include="Views\StudentExtraClass\PayWithCard.cshtml" />
+    <Content Include="Views\Student\MathSolver.cshtml" />
+    <Content Include="Views\Shared\_AdminLayout.cshtml" />
+    <Content Include="Views\Shared\_AdminSidebar.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
