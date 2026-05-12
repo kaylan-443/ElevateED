@@ -61,7 +61,10 @@ namespace ElevateED.Models
         // Announcement System (AI-Powered)
         public DbSet<AnnouncementTemplate> AnnouncementTemplates { get; set; }
         public DbSet<AnnouncementGeneratorSession> AnnouncementGeneratorSessions { get; set; }
-
+        public DbSet<PodcastHistory> PodcastHistories { get; set; }
+        public DbSet<AIStudySession> AIStudySessions { get; set; }
+        
+        public DbSet<AIStudyOutput> AIStudyOutputs { get; set; }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             // Extra Classes configurations
