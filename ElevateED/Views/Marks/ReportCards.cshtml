@@ -1,0 +1,90 @@
+@model IEnumerable<ElevateED.ViewModels.ReportCardViewModel>
+
+@{
+    ViewBag.Title = "Report Cards";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Generated Report Cards</h2>
+            <p class="text-muted">These reports are calculated from approved assessment marks.</p>
+        </div>
+        @if (User.IsInRole("Principal"))
+        {
+            @Html.ActionLink("Promotion Rules", "PromotionRules", "Marks", null, new { @class = "btn btn-outline-primary" })
+        }
+    </div>
+
+    @foreach (var report in Model)
+    {
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>@report.StudentName</strong>
+                    <span class="text-muted ms-2">@report.ClassName</span>
+                </div>
+                <span>@report.Term @report.AcademicYear</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-md-3">
+                        <div class="text-muted">Overall Term</div>
+                        <h5>@report.TermMark%</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted">Overall Exam</div>
+                        <h5>@report.ExamMark%</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted">Overall Final</div>
+                        <h5>@report.FinalMark%</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted">Decision</div>
+                        <h5>@report.PromotionDecision</h5>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Term</th>
+                                <th>Exam</th>
+                                <th>Final</th>
+                                <th>Status</th>
+                                <th>Class Avg</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var subject in report.Subjects)
+                            {
+                                <tr>
+                                    <td>@subject.SubjectName</td>
+                                    <td>@subject.TermMark%</td>
+                                    <td>@subject.ExamMark%</td>
+                                    <td><strong>@subject.FinalMark%</strong></td>
+                                    <td>@subject.PassFailStatus</td>
+                                    <td>@subject.ClassAverage%</td>
+                                    <td>@subject.HighestMark%</td>
+                                    <td>@subject.LowestMark%</td>
+                                    <td>@subject.PerformanceTrend</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <p class="mb-0 text-muted">@report.ImprovementComment</p>
+                    @Html.ActionLink("Export PDF", "PrintReportCard", "Marks", new { id = report.Id }, new { @class = "btn btn-sm btn-outline-primary", target = "_blank" })
+                </div>
+            </div>
+        </div>
+    }
+</div>

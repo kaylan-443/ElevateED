@@ -52,7 +52,14 @@ namespace ElevateED.Models
         // Exam Timetable
         public DbSet<ExamTimetable> ExamTimetables { get; set; }
         public DbSet<ExamSession> ExamSessions { get; set; }
+        public DbSet<ExamSessionClass> ExamSessionClasses { get; set; }
         public DbSet<TeacherExamNotification> TeacherExamNotifications { get; set; }
+        public DbSet<Assessment> Assessments { get; set; }
+        public DbSet<AssessmentMark> AssessmentMarks { get; set; }
+        public DbSet<StudentReportCard> StudentReportCards { get; set; }
+        public DbSet<StudentReportCardSubject> StudentReportCardSubjects { get; set; }
+        public DbSet<PromotionRule> PromotionRules { get; set; }
+        public DbSet<PromotionRuleRequiredSubject> PromotionRuleRequiredSubjects { get; set; }
         public DbSet<Trip> Trips { get; set; }
 
         // Math Solver (from friend)
@@ -199,6 +206,97 @@ namespace ElevateED.Models
                 .HasOptional(e => e.Stream)
                 .WithMany()
                 .HasForeignKey(e => e.StreamId)
+                .WillCascadeOnDelete(false); // NO cascade
+
+            modelBuilder.Entity<ExamSession>()
+                .HasOptional(e => e.CreatedByTeacher)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedByTeacherId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<ExamSessionClass>()
+                .HasRequired(e => e.ExamSession)
+                .WithMany(e => e.ExamSessionClasses)
+                .HasForeignKey(e => e.ExamSessionId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExamSessionClass>()
+                .HasRequired(e => e.Class)
+                .WithMany(c => c.ExamSessionClasses)
+                .HasForeignKey(e => e.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Teacher)
+                .WithMany()
+                .HasForeignKey(a => a.TeacherId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Class)
+                .WithMany()
+                .HasForeignKey(a => a.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Subject)
+                .WithMany()
+                .HasForeignKey(a => a.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<AssessmentMark>()
+                .HasRequired(m => m.Assessment)
+                .WithMany(a => a.Marks)
+                .HasForeignKey(m => m.AssessmentId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<AssessmentMark>()
+                .HasRequired(m => m.Student)
+                .WithMany()
+                .HasForeignKey(m => m.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasRequired(r => r.Class)
+                .WithMany()
+                .HasForeignKey(r => r.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCardSubject>()
+                .HasRequired(s => s.StudentReportCard)
+                .WithMany(r => r.Subjects)
+                .HasForeignKey(s => s.StudentReportCardId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<StudentReportCardSubject>()
+                .HasRequired(s => s.Subject)
+                .WithMany()
+                .HasForeignKey(s => s.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<PromotionRule>()
+                .HasOptional(r => r.Grade)
+                .WithMany()
+                .HasForeignKey(r => r.GradeId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<PromotionRuleRequiredSubject>()
+                .HasRequired(r => r.PromotionRule)
+                .WithMany(r => r.RequiredSubjects)
+                .HasForeignKey(r => r.PromotionRuleId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PromotionRuleRequiredSubject>()
+                .HasRequired(r => r.Subject)
+                .WithMany()
+                .HasForeignKey(r => r.SubjectId)
+                .WillCascadeOnDelete(false);
                 .WillCascadeOnDelete(false);
 
             base.OnModelCreating(modelBuilder);

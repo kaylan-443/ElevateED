@@ -1,0 +1,64 @@
+@model ElevateED.ViewModels.CreateAssessmentViewModel
+
+@{
+    ViewBag.Title = "Create Assessment";
+}
+
+<div class="container mt-4">
+    <h2>Create Assessment</h2>
+    <p class="text-muted">Choose the class and subject, then define what learners are being marked for.</p>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.AssignmentId, "Class and Subject", new { @class = "form-label" })
+                    @Html.DropDownListFor(m => m.AssignmentId, Model.AssignmentOptions, "Select class and subject", new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.AssignmentId, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.Name, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Example: Maths Investigation" })
+                        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.Term, new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.Term, Model.TermOptions, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.AcademicYear, "Year", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.AcademicYear, new { @class = "form-control", type = "number" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.AssessmentType, "Type", new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.AssessmentType, Model.AssessmentTypeOptions, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.MaxMark, "Max mark", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.MaxMark, new { @class = "form-control", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.Weight, "Weight", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.Weight, new { @class = "form-control", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.AssessmentDate, "Date", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.AssessmentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create and Capture Marks</button>
+                @Html.ActionLink("Cancel", "Index", "Marks", null, new { @class = "btn btn-outline-secondary ms-2" })
+            </div>
+        </div>
+    }
+</div>

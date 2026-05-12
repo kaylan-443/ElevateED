@@ -473,53 +473,8 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-    // Grade Distribution Chart
-    var gradeData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GradeDistribution));
-    var labels = Object.keys(gradeData);
-    var values = Object.values(gradeData);
-
-    new Chart(document.getElementById('gradeChart'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Students',
-                data: values,
-                backgroundColor: ['#3b82f6','#6366f1','#8b5cf6','#a78bfa','#c4b5fd'],
-                borderRadius: 8,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-
-    // Application Status Chart
-    var appData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
-        Model.ApplicationBreakdown.Select(x => new { x.Status, x.Count, x.Color })
-    ));
-    new Chart(document.getElementById('appChart'), {
-        type: 'doughnut',
-        data: {
-            labels: appData.map(x => x.Status),
-            datasets: [{
-                data: appData.map(x => x.Count),
-                backgroundColor: appData.map(x => x.Color),
-                borderWidth: 0,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-        }
-    });
-    </script>
-}
+<script>
+    function toggleDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
+    document.addEventListener('click', function (e) { var c = document.querySelector('.profile-container'); var d = document.getElementById('profileDropdown'); if (c && !c.contains(e.target)) d.classList.remove('show'); });
+    function confirmLogout(e) { e.preventDefault(); if (confirm('Are you sure you want to logout?')) { document.getElementById('logoutForm').submit(); } }
+</script>

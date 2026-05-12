@@ -72,6 +72,7 @@ namespace ElevateED.ViewModels
         public string SubjectName { get; set; }
         public string GradeName { get; set; }
         public string StreamName { get; set; }
+        public string ClassNames { get; set; }
         public string PaperNumber { get; set; }
         public DateTime ExamDate { get; set; }
         public string ExamDateDisplay { get; set; }

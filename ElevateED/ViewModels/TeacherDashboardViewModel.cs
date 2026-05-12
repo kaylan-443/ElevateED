@@ -17,8 +17,17 @@ namespace ElevateED.ViewModels
         public int TotalClasses { get; set; }
         public int PendingTasks { get; set; }
         public int UnreadMessages { get; set; }
+        public int DraftAssessments { get; set; }
+        public int SubmittedAssessments { get; set; }
+        public int ApprovedAssessments { get; set; }
+        public int ReturnedAssessments { get; set; }
+        public int PendingExamInputs { get; set; }
+        public int UpcomingExamSessions { get; set; }
+        public decimal AverageLearnerMark { get; set; }
+        public decimal LearnerPassRate { get; set; }
         public List<AnnouncementViewModel> RecentAnnouncements { get; set; }
         public List<TimetableViewModel> TodaySchedule { get; set; }
+        public List<TeacherSubjectPerformanceViewModel> SubjectPerformance { get; set; }
 
         public bool IsClassTeacher { get; set; }
         public string ClassTeacherGrade { get; set; }
@@ -134,6 +143,15 @@ namespace ElevateED.ViewModels
         public string SubjectName { get; set; }
         public string Grade { get; set; }
         public string ClassName { get; set; }
+    }
+
+    public class TeacherSubjectPerformanceViewModel
+    {
+        public string SubjectName { get; set; }
+        public string ClassName { get; set; }
+        public int AssessmentCount { get; set; }
+        public decimal AverageMark { get; set; }
+        public decimal PassRate { get; set; }
     }
 
 }

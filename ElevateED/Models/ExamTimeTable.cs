@@ -16,6 +16,14 @@ namespace ElevateED.Models
         Archived = 4
     }
 
+    public enum ExamSessionStatus
+    {
+        Proposed = 0,
+        Approved = 1,
+        Published = 2,
+        Rejected = 3
+    }
+
     public class ExamTimetable
     {
         [Key]
@@ -123,6 +131,8 @@ namespace ElevateED.Models
 
         public int? StreamId { get; set; }
 
+        public int? CreatedByTeacherId { get; set; }
+
         [Required]
         public int PaperNumber { get; set; }
 
@@ -141,6 +151,10 @@ namespace ElevateED.Models
         public int WeekNumber { get; set; }
         public string Venue { get; set; }
         public string Invigilator { get; set; }
+        public string Notes { get; set; }
+        public ExamSessionStatus Status { get; set; }
+        public DateTime? ProposedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
         public bool IsActive { get; set; }
 
         [ForeignKey("ExamTimetableId")]
@@ -155,9 +169,34 @@ namespace ElevateED.Models
         [ForeignKey("StreamId")]
         public virtual Stream Stream { get; set; }
 
+        [ForeignKey("CreatedByTeacherId")]
+        public virtual Teacher CreatedByTeacher { get; set; }
+
+        public virtual ICollection<ExamSessionClass> ExamSessionClasses { get; set; }
+
         public ExamSession()
         {
             IsActive = true;
+            Status = ExamSessionStatus.Approved;
+            ExamSessionClasses = new HashSet<ExamSessionClass>();
         }
+    }
+
+    public class ExamSessionClass
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public int ExamSessionId { get; set; }
+
+        [Required]
+        public int ClassId { get; set; }
+
+        [ForeignKey("ExamSessionId")]
+        public virtual ExamSession ExamSession { get; set; }
+
+        [ForeignKey("ClassId")]
+        public virtual Class Class { get; set; }
     }
 }
