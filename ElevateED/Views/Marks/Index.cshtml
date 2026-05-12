@@ -1,0 +1,66 @@
+@model IEnumerable<ElevateED.ViewModels.AssessmentListItemViewModel>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Assessment Marks";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Assessment Marks</h2>
+            <p class="text-muted">Capture class tests, assignments, projects, practicals, and exam marks.</p>
+        </div>
+        @Html.ActionLink("New Assessment", "Create", "Marks", null, new { @class = "btn btn-primary" })
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Assessment</th>
+                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Term</th>
+                            <th>Type</th>
+                            <th>Captured</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var badge = item.Status == MarkApprovalStatus.Approved ? "success" :
+                                item.Status == MarkApprovalStatus.Submitted ? "warning" :
+                                item.Status == MarkApprovalStatus.Rejected ? "danger" : "secondary";
+                            <tr>
+                                <td>@item.Name</td>
+                                <td>@item.ClassName</td>
+                                <td>@item.SubjectName</td>
+                                <td>@item.Term @item.AcademicYear</td>
+                                <td>@item.AssessmentType</td>
+                                <td>@item.CapturedCount / @item.LearnerCount</td>
+                                <td><span class="badge bg-@badge">@item.Status</span></td>
+                                <td class="text-end">
+                                    @Html.ActionLink("Open", "Capture", "Marks", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-primary" })
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

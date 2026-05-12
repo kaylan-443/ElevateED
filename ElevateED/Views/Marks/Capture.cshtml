@@ -1,0 +1,68 @@
+@model ElevateED.ViewModels.MarkCaptureViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Capture Marks";
+    var locked = Model.Status == MarkApprovalStatus.Approved || Model.Status == MarkApprovalStatus.Submitted;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>@Model.AssessmentName</h2>
+            <p class="text-muted">@Model.ClassName - @Model.SubjectName - @Model.Term @Model.AcademicYear - Max @Model.MaxMark</p>
+        </div>
+        <span class="badge bg-secondary">@Model.Status</span>
+    </div>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.AssessmentId)
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Learner</th>
+                                <th style="width: 180px;">Mark</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Marks.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        @Model.Marks[i].StudentName
+                                        @Html.HiddenFor(m => m.Marks[i].StudentId)
+                                        @Html.HiddenFor(m => m.Marks[i].StudentName)
+                                    </td>
+                                    <td>
+                                        @Html.TextBoxFor(m => m.Marks[i].Mark, new { @class = "form-control", type = "number", step = "0.1", min = "0", max = Model.MaxMark, disabled = locked ? "disabled" : null })
+                                    </td>
+                                    <td>
+                                        @Html.TextBoxFor(m => m.Marks[i].Comment, new { @class = "form-control", disabled = locked ? "disabled" : null })
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (!locked)
+                {
+                    <button type="submit" class="btn btn-primary">Save Marks</button>
+                    <button type="submit" name="submitForApproval" value="true" class="btn btn-success ms-2">Submit for Approval</button>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">These marks are waiting for approval or already approved.</div>
+                }
+                @Html.ActionLink("Back", "Index", "Marks", null, new { @class = "btn btn-outline-secondary ms-2" })
+            </div>
+        </div>
+    }
+</div>

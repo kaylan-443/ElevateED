@@ -1,0 +1,95 @@
+@model ElevateED.ViewModels.AssessmentReviewViewModel
+
+@{
+    ViewBag.Title = "Review Assessment Marks";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>@Model.AssessmentName</h2>
+            <p class="text-muted">@Model.ClassName - @Model.SubjectName - @Model.Term @Model.AcademicYear</p>
+        </div>
+        <span class="badge bg-warning">@Model.Status</span>
+    </div>
+
+    <div class="row text-center mb-3">
+        <div class="col-md-3 mb-2">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Captured</div>
+                <h4>@Model.CapturedCount / @Model.LearnerCount</h4>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-2">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Average</div>
+                <h4>@Model.ClassAverage / @Model.MaxMark</h4>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-2">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Highest</div>
+                <h4>@Model.HighestMark</h4>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-2">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Lowest</div>
+                <h4>@Model.LowestMark</h4>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Teacher:</strong> @Model.TeacherName</p>
+            <p><strong>Type:</strong> @Model.AssessmentType</p>
+            <p><strong>Missing marks:</strong> @Model.MissingCount</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Learner</th>
+                            <th>Mark</th>
+                            <th>Percentage</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mark in Model.Marks)
+                        {
+                            <tr>
+                                <td>@mark.StudentName</td>
+                                <td>@(mark.Mark.HasValue ? mark.Mark.Value.ToString("0.0") : "Not captured")</td>
+                                <td>@(mark.Percentage.HasValue ? mark.Percentage.Value.ToString("0.0") + "%" : "-")</td>
+                                <td>@mark.Comment</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                @using (Html.BeginForm("Approve", "Marks", new { id = Model.AssessmentId }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-success" type="submit">Approve and Generate Reports</button>
+                }
+
+                @using (Html.BeginForm("Reject", "Marks", new { id = Model.AssessmentId }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input class="form-control d-inline-block" style="width: 280px;" name="comment" value="Please review and resubmit." />
+                    <button class="btn btn-outline-danger" type="submit">Return to Teacher</button>
+                }
+
+                @Html.ActionLink("Back", "PendingApproval", "Marks", null, new { @class = "btn btn-outline-secondary" })
+            </div>
+        </div>
+    </div>
+</div>

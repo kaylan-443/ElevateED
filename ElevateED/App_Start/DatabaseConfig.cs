@@ -36,6 +36,24 @@ namespace ElevateED
                         System.Diagnostics.Debug.WriteLine("Admin created: ADMIN001 / Admin@123");
                     }
 
+                    // Seed Principal
+                    if (!context.Users.Any(u => u.StudentNumber == "KHUZWAYO"))
+                    {
+                        var principal = new ApplicationUser
+                        {
+                            StudentNumber = "KHUZWAYO",
+                            Email = "khuzwayo@mpiyakhehs.co.za",
+                            PasswordHash = HashPassword("Hlupha123"),
+                            Role = UserRole.Principal,
+                            IsActive = true,
+                            CreatedAt = DateTime.Now,
+                            HasChangedPassword = true
+                        };
+                        context.Users.Add(principal);
+                        context.SaveChanges();
+                        System.Diagnostics.Debug.WriteLine("Principal created: KHUZWAYO / Hlupha123");
+                    }
+
                     // Seed Grades
                     if (!context.Grades.Any())
                     {

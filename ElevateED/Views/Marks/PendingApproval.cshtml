@@ -1,0 +1,49 @@
+@model IEnumerable<ElevateED.ViewModels.AssessmentListItemViewModel>
+
+@{
+    ViewBag.Title = "Approve Marks";
+}
+
+<div class="container mt-4">
+    <h2>Marks Waiting for Approval</h2>
+    <p class="text-muted">Approving marks automatically regenerates report cards for that class and term.</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Assessment</th>
+                            <th>Class</th>
+                            <th>Subject</th>
+                            <th>Term</th>
+                            <th>Captured</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Name</td>
+                                <td>@item.ClassName</td>
+                                <td>@item.SubjectName</td>
+                                <td>@item.Term @item.AcademicYear</td>
+                                <td>@item.CapturedCount / @item.LearnerCount</td>
+                                <td class="text-end">
+                                    @Html.ActionLink("Review", "Review", "Marks", new { id = item.Id }, new { @class = "btn btn-sm btn-primary" })
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

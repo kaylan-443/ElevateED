@@ -4,6 +4,7 @@ using ElevateED.ViewModels;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Core;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -58,13 +59,150 @@ namespace ElevateED.Controllers
                 YearsOfExperience = teacher?.YearsOfExperience ?? 0,
                 TotalStudents = CalculateTotalStudents(teacher?.Id ?? 0),
                 TotalClasses = CalculateTotalClasses(teacher?.Id ?? 0),
-                PendingTasks = 3,
-                UnreadMessages = 2,
+                DraftAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Draft),
+                SubmittedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Submitted),
+                ApprovedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Approved),
+                ReturnedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Rejected),
+                PendingExamInputs = CalculatePendingExamInputs(teacher?.Id ?? 0),
+                UpcomingExamSessions = CalculateUpcomingExamSessions(teacher?.Id ?? 0),
+                AverageLearnerMark = CalculateAverageLearnerMark(teacher?.Id ?? 0),
+                LearnerPassRate = CalculateLearnerPassRate(teacher?.Id ?? 0),
                 RecentAnnouncements = GetRecentAnnouncements(),
-                TodaySchedule = GetSampleSchedule()
+                TodaySchedule = GetSampleSchedule(),
+                SubjectPerformance = GetSubjectPerformance(teacher?.Id ?? 0)
             };
+            viewModel.PendingTasks = viewModel.DraftAssessments + viewModel.ReturnedAssessments + viewModel.PendingExamInputs;
+            viewModel.UnreadMessages = viewModel.SubmittedAssessments;
 
             return View(viewModel);
+        }
+
+        private int CalculateAssessmentCount(int teacherId, MarkApprovalStatus status)
+        {
+            if (teacherId == 0) return 0;
+            try
+            {
+                return _context.Assessments.Count(a => a.TeacherId == teacherId && a.Status == status);
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private int CalculatePendingExamInputs(int teacherId)
+        {
+            if (teacherId == 0) return 0;
+            try
+            {
+                return _context.TeacherExamNotifications.Count(n => n.TeacherId == teacherId && !n.IsSubmitted);
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private int CalculateUpcomingExamSessions(int teacherId)
+        {
+            if (teacherId == 0) return 0;
+
+            try
+            {
+                var assignments = _context.TeacherSubjectAssignments
+                    .Where(a => a.TeacherId == teacherId && a.IsActive && a.SubjectId > 0)
+                    .Select(a => new { a.SubjectId, a.ClassId })
+                    .ToList();
+
+                var subjectIds = assignments.Select(a => a.SubjectId).Distinct().ToList();
+                var classIds = assignments.Select(a => a.ClassId).Distinct().ToList();
+
+                return _context.ExamSessions
+                    .Include(e => e.ExamSessionClasses)
+                    .Count(e => e.IsActive
+                        && e.ExamDate >= DateTime.Today
+                        && (e.CreatedByTeacherId == teacherId
+                            || (subjectIds.Contains(e.SubjectId)
+                                && (!e.ExamSessionClasses.Any()
+                                    || e.ExamSessionClasses.Any(c => classIds.Contains(c.ClassId))))));
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private decimal CalculateAverageLearnerMark(int teacherId)
+        {
+            var marks = GetTeacherMarkPercentages(teacherId);
+            return marks.Any() ? Math.Round(marks.Average(), 1) : 0;
+        }
+
+        private decimal CalculateLearnerPassRate(int teacherId)
+        {
+            var marks = GetTeacherMarkPercentages(teacherId);
+            return marks.Any() ? Math.Round((decimal)marks.Count(m => m >= 50) * 100 / marks.Count, 1) : 0;
+        }
+
+        private List<decimal> GetTeacherMarkPercentages(int teacherId)
+        {
+            if (teacherId == 0) return new List<decimal>();
+
+            try
+            {
+                return _context.Assessments
+                    .Include(a => a.Marks)
+                    .Where(a => a.TeacherId == teacherId
+                        && a.Status == MarkApprovalStatus.Approved
+                        && a.MaxMark > 0)
+                    .ToList()
+                    .SelectMany(a => a.Marks
+                        .Where(m => m.Mark.HasValue)
+                        .Select(m => (m.Mark.Value / a.MaxMark) * 100))
+                    .ToList();
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return new List<decimal>();
+            }
+        }
+
+        private List<TeacherSubjectPerformanceViewModel> GetSubjectPerformance(int teacherId)
+        {
+            if (teacherId == 0) return new List<TeacherSubjectPerformanceViewModel>();
+
+            try
+            {
+                return _context.Assessments
+                    .Include(a => a.Subject)
+                    .Include(a => a.Class)
+                    .Include(a => a.Marks)
+                    .Where(a => a.TeacherId == teacherId && a.Status == MarkApprovalStatus.Approved && a.MaxMark > 0)
+                    .ToList()
+                    .GroupBy(a => new { Subject = a.Subject?.Name, ClassName = a.Class?.FullName })
+                    .Select(g =>
+                    {
+                        var marks = g.SelectMany(a => a.Marks
+                            .Where(m => m.Mark.HasValue)
+                            .Select(m => (m.Mark.Value / a.MaxMark) * 100))
+                            .ToList();
+
+                        return new TeacherSubjectPerformanceViewModel
+                        {
+                            SubjectName = g.Key.Subject,
+                            ClassName = g.Key.ClassName,
+                            AssessmentCount = g.Count(),
+                            AverageMark = marks.Any() ? Math.Round(marks.Average(), 1) : 0,
+                            PassRate = marks.Any() ? Math.Round((decimal)marks.Count(m => m >= 50) * 100 / marks.Count, 1) : 0
+                        };
+                    })
+                    .OrderBy(x => x.AverageMark)
+                    .ToList();
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return new List<TeacherSubjectPerformanceViewModel>();
+            }
         }
 
         private int CalculateTotalStudents(int teacherId)
@@ -1810,6 +1948,9 @@ namespace ElevateED.Controllers
                     Id = s.Id,
                     SubjectName = s.Subject?.Name ?? "Unknown",
                     GradeName = s.Grade?.Name ?? "Unknown",
+                    ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                        ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                        : s.Grade?.Name ?? "Unknown",
                     PaperNumber = s.PaperNumber.ToString(),
                     ExamDate = s.ExamDate,
                     ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1833,6 +1974,9 @@ namespace ElevateED.Controllers
                         Id = s.Id,
                         SubjectName = s.Subject?.Name ?? "Unknown",
                         GradeName = s.Grade?.Name ?? "Unknown",
+                        ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                            ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                            : s.Grade?.Name ?? "Unknown",
                         PaperNumber = s.PaperNumber.ToString(),
                         ExamDate = s.ExamDate,
                         ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1958,6 +2102,9 @@ namespace ElevateED.Controllers
                     Id = s.Id,
                     SubjectName = s.Subject?.Name ?? "Unknown",
                     GradeName = s.Grade?.Name ?? "Unknown",
+                    ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                        ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                        : s.Grade?.Name ?? "Unknown",
                     PaperNumber = s.PaperNumber.ToString(),
                     ExamDate = s.ExamDate,
                     ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1982,6 +2129,9 @@ namespace ElevateED.Controllers
                         Id = s.Id,
                         SubjectName = s.Subject?.Name ?? "Unknown",
                         GradeName = s.Grade?.Name ?? "Unknown",
+                        ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                            ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                            : s.Grade?.Name ?? "Unknown",
                         PaperNumber = s.PaperNumber.ToString(),
                         ExamDate = s.ExamDate,
                         ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),

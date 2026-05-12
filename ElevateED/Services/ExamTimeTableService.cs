@@ -584,14 +584,29 @@ namespace ElevateED.Services
 
         public List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId)
         {
+            return GetExamSessionsForStudent(timetableId, gradeId, streamId, null);
+        }
+
+        public List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId, int? classId)
+        {
             try
             {
-                return _context.ExamSessions
+                var query = _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
+                    .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
                         && s.GradeId == gradeId
-                        && s.IsActive)
+                        && s.IsActive);
+
+                if (classId.HasValue)
+                {
+                    query = query.Where(s =>
+                        !s.ExamSessionClasses.Any()
+                        || s.ExamSessionClasses.Any(c => c.ClassId == classId.Value));
+                }
+
+                return query
                     .OrderBy(s => s.ExamDate)
                     .ThenBy(s => s.StartTime)
                     .ToList();
@@ -607,17 +622,30 @@ namespace ElevateED.Services
         {
             try
             {
-                var teacherSubjects = _context.TeacherSubjectAssignments
+                var teacherAssignments = _context.TeacherSubjectAssignments
                     .Where(t => t.TeacherId == teacherId && t.IsActive)
+                    .Select(t => new { t.SubjectId, t.ClassId })
+                    .ToList();
+
+                var teacherSubjects = teacherAssignments
                     .Select(t => t.SubjectId)
+                    .Distinct()
+                    .ToList();
+
+                var teacherClasses = teacherAssignments
+                    .Select(t => t.ClassId)
                     .Distinct()
                     .ToList();
 
                 return _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
+                    .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
-                        && teacherSubjects.Contains(s.SubjectId)
+                        && (s.CreatedByTeacherId == teacherId
+                            || (teacherSubjects.Contains(s.SubjectId)
+                                && (!s.ExamSessionClasses.Any()
+                                    || s.ExamSessionClasses.Any(c => teacherClasses.Contains(c.ClassId)))))
                         && s.IsActive)
                     .OrderBy(s => s.ExamDate)
                     .ThenBy(s => s.StartTime)

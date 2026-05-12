@@ -350,6 +350,7 @@
     <Compile Include="Controllers\AttendanceController.cs" />
     <Compile Include="Controllers\DriverController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\MarksController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
     <Compile Include="Controllers\StudentExtraClassController.cs" />
     <Compile Include="Controllers\StudentQuizController.cs" />
@@ -413,6 +414,7 @@
     <Compile Include="Models\ApplicationUser.cs" />
     <Compile Include="Models\AttendanceRecord.cs" />
     <Compile Include="Models\AttendanceSession.cs" />
+    <Compile Include="Models\AcademicMarks.cs" />
     <Compile Include="Models\Class.cs" />
     <Compile Include="Models\ClassRegister.cs" />
     <Compile Include="Models\Driver.cs" />
@@ -450,6 +452,7 @@
     <Compile Include="Services\IAttendanceService.cs" />
     <Compile Include="Services\IExamTimeTableService.cs" />
     <Compile Include="ViewModels\ActiveSessionViewModel.cs" />
+    <Compile Include="ViewModels\AcademicMarksViewModels.cs" />
     <Compile Include="ViewModels\AdminDashboardViewModel.cs" />
     <Compile Include="ViewModels\AnalyticsViewModel.cs" />
     <Compile Include="ViewModels\AnnouncementViewModels.cs" />
@@ -604,11 +607,21 @@
     <Content Include="Views\AdminExtraClass\Drivers.cshtml" />
     <Content Include="Views\Driver\TransportList.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
+    <Content Include="Views\Analytics\Principal.cshtml" />
     <Content Include="Views\Attendance\EditAttendance.cshtml" />
     <Content Include="Views\Attendance\MarkAttendance.cshtml" />
     <Content Include="Views\Attendance\SessionConfirmation.cshtml" />
     <Content Include="Views\Attendance\StartSession.cshtml" />
     <Content Include="Views\Teacher\ActiveSessions.cshtml" />
+    <Content Include="Views\Marks\Capture.cshtml" />
+    <Content Include="Views\Marks\Create.cshtml" />
+    <Content Include="Views\Marks\Index.cshtml" />
+    <Content Include="Views\Marks\MyReportCards.cshtml" />
+    <Content Include="Views\Marks\PendingApproval.cshtml" />
+    <Content Include="Views\Marks\PrintReportCard.cshtml" />
+    <Content Include="Views\Marks\PromotionRules.cshtml" />
+    <Content Include="Views\Marks\ReportCards.cshtml" />
+    <Content Include="Views\Marks\Review.cshtml" />
     <Content Include="Views\Admin\CreateExamTimetable.cshtml" />
     <Content Include="Views\Admin\EditExamSession.cshtml" />
     <Content Include="Views\Admin\ExamTimetables.cshtml" />

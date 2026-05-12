@@ -143,6 +143,7 @@
                     <th>Week</th>
                     <th>Subject</th>
                     <th>Grade</th>
+                    <th>Class(es)</th>
                     <th>Paper</th>
                     <th>Time</th>
                     <th>Duration</th>
@@ -159,6 +160,7 @@
                         <td>Week @session.WeekNumber</td>
                         <td><strong>@session.SubjectName</strong></td>
                         <td>@session.GradeName</td>
+                        <td>@(string.IsNullOrEmpty(session.ClassNames) ? session.GradeName : session.ClassNames)</td>
                         <td>Paper @session.PaperNumber</td>
                         <td>@session.StartTime - @session.EndTime</td>
                         <td>@session.DurationHours h</td>

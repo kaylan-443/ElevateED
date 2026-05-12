@@ -1,0 +1,209 @@
+@model ElevateED.ViewModels.PrincipalAnalyticsViewModel
+
+@{
+    ViewBag.Title = "Principal Analytics";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Principal Analytics</h2>
+            <p class="text-muted">Whole-school academic, assessment, report, teacher, and exam overview.</p>
+        </div>
+        <div>
+            @Html.ActionLink("Approve Marks", "PendingApproval", "Marks", null, new { @class = "btn btn-outline-primary" })
+            @Html.ActionLink("Promotion Rules", "PromotionRules", "Marks", null, new { @class = "btn btn-primary ms-2" })
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Students</div>
+                <h3>@Model.TotalStudents</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Teachers</div>
+                <h3>@Model.TotalTeachers</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Classes</div>
+                <h3>@Model.TotalClasses</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Pending Mark Approvals</div>
+                <h3>@Model.PendingMarkApprovals</h3>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">School Average</div>
+                <h3>@Model.SchoolAverage%</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Pass Rate</div>
+                <h3>@Model.PassRate%</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Report Cards</div>
+                <h3>@Model.GeneratedReportCards</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Exam Sessions</div>
+                <h3>@Model.PublishedExamSessions</h3>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Promoted</div>
+                <h4>@Model.PromotionRate%</h4>
+            </div></div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Progressed</div>
+                <h4>@Model.ProgressionRate%</h4>
+            </div></div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center shadow-sm"><div class="card-body">
+                <div class="text-muted">Not Promoted</div>
+                <h4>@Model.NotPromotedRate%</h4>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><strong>Subject Performance</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead><tr><th>Subject</th><th>Average</th><th>Pass Rate</th><th>Learners</th></tr></thead>
+                        <tbody>
+                            @foreach (var item in Model.SubjectPerformance)
+                            {
+                                <tr>
+                                    <td>@item.SubjectName</td>
+                                    <td>@item.Average%</td>
+                                    <td>@item.PassRate%</td>
+                                    <td>@item.LearnerCount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><strong>Class Performance</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead><tr><th>Class</th><th>Average</th><th>Pass Rate</th><th>Promoted</th><th>Progressed</th><th>Not</th></tr></thead>
+                        <tbody>
+                            @foreach (var item in Model.ClassPerformance)
+                            {
+                                <tr>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.Average%</td>
+                                    <td>@item.PassRate%</td>
+                                    <td>@item.PromotedCount</td>
+                                    <td>@item.ProgressedCount</td>
+                                    <td>@item.NotPromotedCount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><strong>Teacher Performance</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead><tr><th>Teacher</th><th>Approved Assessments</th><th>Average Mark</th><th>Pass Rate</th></tr></thead>
+                        <tbody>
+                            @foreach (var item in Model.TeacherPerformance)
+                            {
+                                <tr>
+                                    <td>@item.TeacherName</td>
+                                    <td>@item.ApprovedAssessmentCount</td>
+                                    <td>@item.AverageLearnerMark%</td>
+                                    <td>@item.PassRate%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><strong>At-Risk Learners</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead><tr><th>Learner</th><th>Class</th><th>Final</th><th>Decision</th><th>Reason</th></tr></thead>
+                        <tbody>
+                            @foreach (var item in Model.AtRiskLearners)
+                            {
+                                <tr>
+                                    <td>@item.StudentName</td>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.FinalMark%</td>
+                                    <td>@item.PromotionDecision</td>
+                                    <td>@item.Reason</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light"><strong>Exam Timetable Activity</strong></div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm table-striped">
+                <thead><tr><th>Timetable</th><th>Status</th><th>Total Sessions</th><th>Proposed</th><th>Published/Approved</th></tr></thead>
+                <tbody>
+                    @foreach (var item in Model.ExamTimetables)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>@item.Status</td>
+                            <td>@item.TotalSessions</td>
+                            <td>@item.ProposedSessions</td>
+                            <td>@item.PublishedSessions</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

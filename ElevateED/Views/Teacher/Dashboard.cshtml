@@ -708,6 +708,9 @@
                 <a href="@Url.Action("Classwork", "Teacher")" class="nav-item">
                     <i class="fas fa-chalkboard"></i> <span>Classwork</span>
                 </a>
+                <a href="@Url.Action("Index", "Marks")" class="nav-item">
+                    <i class="fas fa-clipboard-check"></i> <span>Marks</span>
+                </a>
             </div>
 
             <div class="nav-section">
@@ -826,12 +829,35 @@
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fas fa-tasks"></i></div>
                 <div class="number">@Model.PendingTasks</div>
-                <div class="label">Pending Tasks</div>
+                <div class="label">Needs Attention</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon red"><i class="fas fa-envelope"></i></div>
-                <div class="number">@Model.UnreadMessages</div>
-                <div class="label">Messages</div>
+                <div class="stat-icon red"><i class="fas fa-clipboard-check"></i></div>
+                <div class="number">@Model.SubmittedAssessments</div>
+                <div class="label">Awaiting Approval</div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
+                <div class="number">@Model.AverageLearnerMark%</div>
+                <div class="label">Average Mark</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
+                <div class="number">@Model.LearnerPassRate%</div>
+                <div class="label">Learner Pass Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
+                <div class="number">@Model.DraftAssessments</div>
+                <div class="label">Draft Marks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-calendar-check"></i></div>
+                <div class="number">@Model.UpcomingExamSessions</div>
+                <div class="label">Upcoming Exams</div>
             </div>
         </div>
 
@@ -852,6 +878,11 @@
                 <h5>Upload Classwork</h5>
                 <p>In-class activities</p>
             </a>
+            <a href="@Url.Action("Index", "Marks")" class="quick-action-card" style="border-top-color: #6366f1;">
+                <div class="quick-action-icon" style="background: #6366f1;"><i class="fas fa-clipboard-check"></i></div>
+                <h5>Capture Marks</h5>
+                <p>Assessments & reports</p>
+            </a>
             <a href="@Url.Action("Timetable", "Teacher")" class="quick-action-card timetable">
                 <div class="quick-action-icon"><i class="fas fa-calendar-alt"></i></div>
                 <h5>My Timetable</h5>
@@ -864,7 +895,78 @@
                 <h5>Exam Schedule</h5>
                 <p>View & manage exams</p>
             </a>
+            <a href="@Url.Action("Index", "Analytics")" class="quick-action-card" style="border-top-color: #f59e0b;">
+                <div class="quick-action-icon" style="background: #f59e0b;"><i class="fas fa-chart-bar"></i></div>
+                <h5>My Analytics</h5>
+                <p>Attendance insights</p>
+            </a>
         </div>
+
+        <div class="chart-section">
+            <div class="chart-header">
+                <h4><i class="fas fa-clipboard-check" style="color: var(--accent-gold); margin-right: 10px;"></i>Marks & Assessment Status</h4>
+            </div>
+            <div class="chart-container">
+                <div class="stats-row" style="margin-bottom: 0;">
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
+                        <div class="number">@Model.DraftAssessments</div>
+                        <div class="label">Draft</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-paper-plane"></i></div>
+                        <div class="number">@Model.SubmittedAssessments</div>
+                        <div class="label">Submitted</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-check"></i></div>
+                        <div class="number">@Model.ApprovedAssessments</div>
+                        <div class="label">Approved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red"><i class="fas fa-undo"></i></div>
+                        <div class="number">@Model.ReturnedAssessments</div>
+                        <div class="label">Returned</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.SubjectPerformance != null && Model.SubjectPerformance.Any())
+        {
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h4><i class="fas fa-chart-line" style="color: var(--accent-gold); margin-right: 10px;"></i>Subject Performance</h4>
+                </div>
+                <div class="chart-container">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Class</th>
+                                    <th>Assessments</th>
+                                    <th>Average</th>
+                                    <th>Pass Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.SubjectPerformance)
+                                {
+                                    <tr>
+                                        <td>@item.SubjectName</td>
+                                        <td>@item.ClassName</td>
+                                        <td>@item.AssessmentCount</td>
+                                        <td>@item.AverageMark%</td>
+                                        <td>@item.PassRate%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
 
         <!-- Attendance Analytics Chart -->
         <div class="chart-section">

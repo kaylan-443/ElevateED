@@ -26,6 +26,7 @@ namespace ElevateED.Models
 
         public virtual ICollection<Student> Students { get; set; }
         public virtual ICollection<TeacherSubjectAssignment> TeacherAssignments { get; set; }
+        public virtual ICollection<ExamSessionClass> ExamSessionClasses { get; set; }
 
         public int? ClassTeacherId { get; set; }
 
