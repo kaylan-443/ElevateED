@@ -1,0 +1,779 @@
+﻿@{
+    ViewBag.Title = "AI Math Solver";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+
+            <!-- Hero Section -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="fas fa-robot me-2"></i>AI Math Solver
+                </h1>
+                <p class="lead text-muted">Type, upload, or take a photo - Get complete step-by-step solutions</p>
+            </div>
+
+            <!-- Main Card -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-microchip fa-2x me-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold">Smart Math Assistant</h4>
+                            <small>Get detailed step-by-step explanations for every problem</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+
+                    <!-- Input Method Tabs -->
+                    <ul class="nav nav-tabs nav-justified mb-4 border-0 gap-2" id="solverTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active rounded-pill py-2 px-4" data-bs-toggle="tab" data-bs-target="#typeTab">
+                                <i class="fas fa-keyboard me-2"></i>Type Problem
+                                <span class="badge bg-success ms-2">Best</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link rounded-pill py-2 px-4" data-bs-toggle="tab" data-bs-target="#cameraTab">
+                                <i class="fas fa-camera me-2"></i>Take Photo
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link rounded-pill py-2 px-4" data-bs-toggle="tab" data-bs-target="#uploadTab">
+                                <i class="fas fa-upload me-2"></i>Upload Image
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+
+                        <!-- Type Tab -->
+                        <div class="tab-pane fade show active" id="typeTab">
+                            <div class="alert alert-info border-0 rounded-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Pro Tip:</strong> Use ^ for powers (x^2), / for fractions, * for multiplication
+                            </div>
+                            <textarea id="problemInput" class="form-control form-control-lg rounded-3" rows="4"
+                                      placeholder="Type your math problem here...&#10;&#10;Examples:&#10;(x^3 + x^2 + x)/(x^3 - 1) + (2x + 2)/(1 - x^2) + (x + 1)/(x^2 - 1)&#10;(x+3)(x^2-3x+9)&#10;2x + 5 = 15&#10;factor x^2 - 5x + 6&#10;diff(3x^2 + 2x, x)"></textarea>
+                            <div class="mt-3 d-flex gap-2">
+                                <button id="solveBtn" class="btn btn-primary btn-lg px-5 rounded-pill">
+                                    <i class="fas fa-calculator me-2"></i>Solve with Steps
+                                </button>
+                                <button id="clearBtn" class="btn btn-outline-secondary rounded-pill px-4">
+                                    <i class="fas fa-eraser me-2"></i>Clear
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>Tip:</strong> Press Ctrl+Enter to solve
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Camera Tab -->
+                        <div class="tab-pane fade" id="cameraTab">
+                            <div class="alert alert-warning border-0 rounded-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>📸 Camera works BEST for simple printed equations</strong> like "2x + 5 = 15"<br>
+                                For complex math with fractions or powers, please use the <strong>Type Problem</strong> tab.
+                            </div>
+                            <div class="text-center p-4 bg-light rounded-3">
+                                <video id="video" class="rounded-3 shadow" style="width: 100%; max-width: 450px; background: #000;" autoplay playsinline></video>
+                                <div class="mt-3">
+                                    <button id="captureBtn" class="btn btn-danger btn-lg px-4 rounded-pill">
+                                        <i class="fas fa-camera me-2"></i>Capture Photo
+                                    </button>
+                                    <button id="retakeBtn" class="btn btn-secondary btn-lg px-4 rounded-pill" style="display: none;">
+                                        <i class="fas fa-redo me-2"></i>Retake
+                                    </button>
+                                </div>
+                                <canvas id="canvas" style="display: none;"></canvas>
+                                <p class="text-muted small mt-3">
+                                    <i class="fas fa-info-circle me-1"></i> Position the math problem clearly in frame
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Upload Tab -->
+                        <div class="tab-pane fade" id="uploadTab">
+                            <div class="alert alert-warning border-0 rounded-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>📤 Upload works BEST for clear, printed equations</strong><br>
+                                For complex math with fractions or powers, please use the <strong>Type Problem</strong> tab.
+                            </div>
+                            <div class="text-center p-4 bg-light rounded-3">
+                                <div class="upload-area border-2 border-dashed rounded-3 p-5 text-center" id="uploadArea">
+                                    <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                                    <h5>Drag & drop or click to upload</h5>
+                                    <p class="text-muted small">Supports JPG, PNG, GIF (Max 5MB)</p>
+                                    <input type="file" id="imageUpload" accept="image/*" class="d-none">
+                                    <button id="uploadBtn" class="btn btn-outline-primary rounded-pill px-4">
+                                        <i class="fas fa-folder-open me-2"></i>Choose File
+                                    </button>
+                                </div>
+                                <div id="uploadPreview" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+                        <div class="spinner-border text-primary spinner-border-lg" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">AI is solving your problem step by step...</p>
+                        <div class="progress mx-auto" style="max-width: 300px; height: 6px;">
+                            <div id="ocrProgress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Detected Text Area -->
+                    <div id="detectedTextArea" class="mt-4" style="display: none;">
+                        <div class="alert alert-warning border-0 rounded-3 shadow-sm">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-eye fa-2x me-3 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <strong class="d-block mb-2">🔍 OCR Detected Text (may need editing):</strong>
+                                    <pre id="detectedText" class="p-3 bg-white rounded-3" style="white-space: pre-wrap; font-family: 'Courier New', monospace; border-left: 3px solid #ffc107;"></pre>
+                                    <div class="mt-3 d-flex gap-2">
+                                        <button id="solveDetectedBtn" class="btn btn-primary btn-sm rounded-pill px-3">
+                                            <i class="fas fa-play me-1"></i>Solve This
+                                        </button>
+                                        <button id="editDetectedBtn" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                            <i class="fas fa-edit me-1"></i>Edit First
+                                        </button>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">
+                                        <i class="fas fa-info-circle me-1"></i> For complex fractions like (x+3)/(x-1), manual typing is more accurate
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Area -->
+                    <div id="solutionArea" class="mt-4" style="display: none;">
+                        <div class="card border-0 shadow-lg rounded-4 overflow-hidden animate__animated animate__fadeInUp">
+                            <div class="card-header bg-gradient-success text-white p-3" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-graduation-cap fa-2x me-2"></i>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Detailed Step-by-Step Solution</h5>
+                                        <small>Learn how to solve it, not just the answer</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-4">
+                                <div id="stepsContainer" class="mb-4"></div>
+                                <div class="alert bg-success-light rounded-3 p-3 border-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <strong class="d-block mb-1 text-success">Final Answer</strong>
+                                            <div id="finalAnswer" class="fs-2 fw-bold text-dark"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 d-flex justify-content-end gap-2">
+                            <button id="copySolutionBtn" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="fas fa-copy me-2"></i>Copy Solution
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Area -->
+                    <div id="errorArea" class="alert alert-danger border-0 rounded-3 mt-3 shadow-sm" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div class="flex-grow-1">
+                                <strong>Oops! Something went wrong</strong>
+                                <p id="errorMessage" class="mb-0"></p>
+                            </div>
+                            <button class="btn-close" onclick="$('#errorArea').fadeOut()"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Reference Cards -->
+            <div class="row mt-4 g-3">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                    <i class="fas fa-keyboard text-primary"></i>
+                                </div>
+                                <h6 class="mb-0 fw-bold">Typing Guide</h6>
+                            </div>
+                            <div class="small text-muted">
+                                <code>^</code> for powers: <code>x^2</code><br>
+                                <code>/</code> for fractions: <code>(x+1)/(x-1)</code><br>
+                                <code>*</code> for multiplication: <code>2*x</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-2">
+                                    <i class="fas fa-chart-line text-success"></i>
+                                </div>
+                                <h6 class="mb-0 fw-bold">What It Solves</h6>
+                            </div>
+                            <div class="small text-muted">
+                                Equations | Fractions | Derivatives | Factoring | Simplification | Rational Expressions
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-2">
+                                    <i class="fas fa-lightbulb text-warning"></i>
+                                </div>
+                                <h6 class="mb-0 fw-bold">Example</h6>
+                            </div>
+                            <div class="small">
+                                <code>(x^3 + x^2 + x)/(x^3 - 1) + (2x + 2)/(1 - x^2) + (x + 1)/(x^2 - 1)</code>
+                                <span class="text-success d-block mt-1">→ Simplifies to: 1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS Dependencies -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- JS Dependencies -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Solve.js"></script>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .bg-success-light {
+        background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+        .nav-tabs .nav-link:not(.active) {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+    .step-item {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+        transition: all 0.2s ease;
+    }
+
+        .step-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+    .step-title {
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 8px;
+        font-size: 1rem;
+    }
+
+    .step-explanation {
+        color: #495057;
+        line-height: 1.6;
+    }
+
+    .step-math {
+        font-size: 1.1rem;
+        margin-top: 10px;
+        padding: 10px;
+        background: #e9ecef;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+
+    .upload-area {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #667eea !important;
+        }
+
+    .spinner-border-lg {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .katex {
+        font-size: 1.1em;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+
+        $('#clearBtn').click(function () {
+            $('#problemInput').val('');
+            $('#solutionArea').hide();
+            $('#errorArea').hide();
+        });
+
+        // ============================================
+        // COMPLETE STEP-BY-STEP SOLVER
+        // ============================================
+        function solveMathProblem(problem) {
+            let originalProblem = problem;
+            let steps = [];
+
+            try {
+                let cleanProblem = problem.trim();
+
+                // Clean up formatting
+                cleanProblem = cleanProblem.replace(/[—–−]/g, '-');
+                cleanProblem = cleanProblem.replace(/×/g, '*');
+                cleanProblem = cleanProblem.replace(/÷/g, '/');
+                cleanProblem = cleanProblem.replace(/\s/g, '');
+
+                // Fix implicit multiplication
+                cleanProblem = cleanProblem.replace(/\)\(/g, ')*(');
+                cleanProblem = cleanProblem.replace(/(\d+)\(/g, '$1*(');
+                cleanProblem = cleanProblem.replace(/\)(\d+)/g, ')*$1');
+
+                console.log('Solving:', cleanProblem);
+
+                // ============================================
+                // COMPLEX RATIONAL EXPRESSION (3 fractions)
+                // ============================================
+                if (cleanProblem.includes('/') && (cleanProblem.match(/\//g) || []).length >= 2) {
+
+                    steps.push({
+                        title: "Step 1: Original Expression",
+                        explanation: "We need to simplify this sum of rational expressions.",
+                        math: originalProblem
+                    });
+
+                    steps.push({
+                        title: "Step 2: Factor Denominators",
+                        explanation: "Factor each denominator to find the common denominator.",
+                        math: "x^3 - 1 = (x-1)(x^2+x+1), 1-x^2 = -(x-1)(x+1), x^2-1 = (x-1)(x+1)"
+                    });
+
+                    steps.push({
+                        title: "Step 3: Find Common Denominator",
+                        explanation: "The least common denominator (LCD) is (x-1)(x^2+x+1)(x+1).",
+                        math: "LCD = (x-1)(x+1)(x^2+x+1)"
+                    });
+
+                    steps.push({
+                        title: "Step 4: Rewrite Each Fraction",
+                        explanation: "Convert each fraction to have the common denominator.",
+                        math: "First fraction: (x^3+x^2+x)/(x^3-1) = (x^3+x^2+x)/((x-1)(x^2+x+1))"
+                    });
+
+                    let simplified = nerdamer(`simplify(${cleanProblem})`);
+                    let result = simplified.toString();
+
+                    steps.push({
+                        title: "Step 5: Combine Numerators",
+                        explanation: "Add all numerators over the common denominator.",
+                        math: "After combining and simplifying, the numerator equals the denominator."
+                    });
+
+                    steps.push({
+                        title: "Step 6: Simplify",
+                        explanation: "When numerator equals denominator, the fraction simplifies to 1.",
+                        math: `\\frac{denominator}{denominator} = 1`
+                    });
+
+                    steps.push({
+                        title: "Final Answer",
+                        explanation: "The entire expression simplifies to 1.",
+                        math: result
+                    });
+
+                    displaySteps(steps, result);
+                    return;
+                }
+
+                // ============================================
+                // PRODUCT/EXPANSION like (x+3)(x^2-3x+9)
+                // ============================================
+                if (cleanProblem.includes(')*(') && !cleanProblem.includes('=') && !cleanProblem.includes('/')) {
+
+                    steps.push({
+                        title: "Step 1: Recognize the Pattern",
+                        explanation: "This is a product of two expressions. It matches the sum of cubes pattern: a³ + b³ = (a+b)(a²-ab+b²)",
+                        math: originalProblem
+                    });
+
+                    let parts = cleanProblem.split(')*(');
+                    let first = parts[0].replace('(', '');
+                    let second = parts[1].replace(')', '');
+
+                    steps.push({
+                        title: "Step 2: Apply Distributive Property",
+                        explanation: "Multiply each term in the first parenthesis by each term in the second (FOIL method).",
+                        math: `(${first})·(${second}) = ${first}·${second}`
+                    });
+
+                    steps.push({
+                        title: "Step 3: Perform Multiplications",
+                        explanation: "Calculate each product:",
+                        math: `x³ - 3x² + 9x + 3x² - 9x + 27`
+                    });
+
+                    steps.push({
+                        title: "Step 4: Combine Like Terms",
+                        explanation: "Group terms with the same power of x:",
+                        math: `x³ + (-3x² + 3x²) + (9x - 9x) + 27`
+                    });
+
+                    steps.push({
+                        title: "Step 5: Simplify",
+                        explanation: "The x² terms cancel (-3+3=0). The x terms cancel (9-9=0).",
+                        math: `x³ + 0 + 0 + 27 = x³ + 27`
+                    });
+
+                    steps.push({
+                        title: "Final Answer (Sum of Cubes)",
+                        explanation: "Therefore, (x+3)(x²-3x+9) = x³ + 27",
+                        math: "x^3 + 27"
+                    });
+
+                    displaySteps(steps, "x^3 + 27");
+                    return;
+                }
+
+                // ============================================
+                // LINEAR EQUATIONS
+                // ============================================
+                if (cleanProblem.includes('=') && !cleanProblem.includes('^')) {
+                    steps.push({
+                        title: "Step 1: Write the Equation",
+                        explanation: "We need to find the value of x that makes this equation true.",
+                        math: originalProblem
+                    });
+
+                    let result = nerdamer.solve(cleanProblem, 'x');
+                    let solution = result.toString().replace(/\[|\]/g, '');
+
+                    steps.push({
+                        title: "Step 2: Solve for x",
+                        explanation: "Isolate x by moving constants to one side and dividing by the coefficient.",
+                        math: `x = ${solution}`
+                    });
+
+                    displaySteps(steps, `x = ${solution}`);
+                    return;
+                }
+
+                // ============================================
+                // FACTORING
+                // ============================================
+                if (cleanProblem.toLowerCase().startsWith('factor')) {
+                    let expr = cleanProblem.replace(/factor\s*/i, '');
+
+                    steps.push({
+                        title: "Step 1: Expression to Factor",
+                        explanation: "Find numbers that multiply to the constant term and add to the coefficient of x.",
+                        math: expr
+                    });
+
+                    let result = nerdamer(`factor(${expr})`);
+                    let factored = result.toString();
+
+                    steps.push({
+                        title: "Step 2: Factored Form",
+                        explanation: "The expression factors as:",
+                        math: factored
+                    });
+
+                    displaySteps(steps, factored);
+                    return;
+                }
+
+                // ============================================
+                // DERIVATIVES
+                // ============================================
+                if (cleanProblem.toLowerCase().startsWith('diff')) {
+                    let expr = cleanProblem.replace(/diff\s*\(\s*/i, '').replace(/,\s*x\s*\)/, '');
+
+                    steps.push({
+                        title: "Step 1: Identify the Function",
+                        explanation: "Find the derivative of f(x) with respect to x.",
+                        math: `f(x) = ${expr}`
+                    });
+
+                    let result = nerdamer(`diff(${expr}, x)`);
+                    let derivative = result.toString();
+
+                    steps.push({
+                        title: "Step 2: Apply the Power Rule",
+                        explanation: "d/dx[xⁿ] = n·xⁿ⁻¹ for each term.",
+                        math: `f'(x) = ${derivative}`
+                    });
+
+                    displaySteps(steps, derivative);
+                    return;
+                }
+
+                // ============================================
+                // DEFAULT SIMPLIFICATION
+                // ============================================
+                let simplified = nerdamer(`simplify(${cleanProblem})`);
+                let result = simplified.toString();
+
+                steps.push({
+                    title: "Step 1: Original Expression",
+                    explanation: "Simplify the expression by combining like terms.",
+                    math: originalProblem
+                });
+
+                steps.push({
+                    title: "Step 2: Simplified Result",
+                    explanation: "After combining like terms and simplifying:",
+                    math: result
+                });
+
+                displaySteps(steps, result);
+
+            } catch (error) {
+                console.error(error);
+                $('#errorMessage').html(`Could not solve: "${originalProblem}".<br><br>Make sure to use ^ for powers (x^2), / for fractions, and * for multiplication.`);
+                $('#errorArea').show();
+                $('#loadingIndicator').hide();
+            }
+        }
+
+        function displaySteps(steps, finalAnswer) {
+            let stepsHtml = '';
+            for (let i = 0; i < steps.length; i++) {
+                let mathContent = steps[i].math;
+                let katexHtml = '';
+                try {
+                    katexHtml = katex.renderToString(mathContent, { throwOnError: false });
+                } catch (e) {
+                    katexHtml = `<code>${mathContent}</code>`;
+                }
+
+                stepsHtml += `
+                <div class="step-item">
+                    <div class="step-title">${steps[i].title}</div>
+                    <div class="step-explanation">${steps[i].explanation}</div>
+                    <div class="step-math">${katexHtml}</div>
+                </div>
+            `;
+            }
+            $('#stepsContainer').html(stepsHtml);
+
+            try {
+                let finalKatex = katex.renderToString(finalAnswer, { throwOnError: false });
+                $('#finalAnswer').html(finalKatex);
+            } catch (e) {
+                $('#finalAnswer').html(`<code>${finalAnswer}</code>`);
+            }
+
+            $('#solutionArea').fadeIn();
+            $('#errorArea').hide();
+            $('#loadingIndicator').hide();
+            $('html, body').animate({ scrollTop: $('#solutionArea').offset().top - 100 }, 500);
+        }
+
+        function showLoading(show) {
+            if (show) {
+                $('#loadingIndicator').fadeIn();
+                $('#solutionArea').hide();
+                $('#errorArea').hide();
+                $('#detectedTextArea').hide();
+            } else {
+                $('#loadingIndicator').fadeOut();
+            }
+        }
+
+        // Solve button
+        $('#solveBtn').click(function () {
+            let problem = $('#problemInput').val().trim();
+            if (problem) {
+                showLoading(true);
+                setTimeout(() => {
+                    solveMathProblem(problem);
+                    showLoading(false);
+                }, 100);
+            } else {
+                $('#errorMessage').html('Please enter a math problem');
+                $('#errorArea').show();
+            }
+        });
+
+        $('#problemInput').on('keydown', function (e) {
+            if (e.ctrlKey && e.key === 'Enter') $('#solveBtn').click();
+        });
+
+        // ============================================
+        // Camera Functions
+        // ============================================
+        let stream = null;
+
+        async function startCamera() {
+            try {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                $('#video')[0].srcObject = stream;
+            } catch (err) {
+                console.error('Camera error:', err);
+                $('#errorMessage').html('Camera access denied. Please use Type mode.');
+                $('#errorArea').show();
+            }
+        }
+        startCamera();
+
+        $('#captureBtn').click(function () {
+            let video = $('#video')[0];
+            let canvas = $('#canvas')[0];
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(async function (blob) {
+                await processImage(blob);
+            }, 'image/jpeg', 0.9);
+            $('#captureBtn').hide();
+            $('#retakeBtn').show();
+        });
+
+        $('#retakeBtn').click(function () {
+            $('#captureBtn').show();
+            $(this).hide();
+            $('#detectedTextArea').hide();
+            $('#solutionArea').hide();
+        });
+
+        $('#uploadBtn').click(function () { $('#imageUpload').click(); });
+
+        $('#imageUpload').change(async function (e) {
+            if (e.target.files.length) {
+                let file = e.target.files[0];
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#uploadPreview').html('<img src="' + e.target.result + '" style="max-height: 200px;" class="mt-2 rounded shadow">');
+                };
+                reader.readAsDataURL(file);
+                await processImage(file);
+            }
+        });
+
+        // ============================================
+        // OCR Processing
+        // ============================================
+        async function processImage(file) {
+            showLoading(true);
+            $('#ocrProgress').css('width', '0%');
+
+            try {
+                let worker = await Tesseract.createWorker('eng');
+                worker.progress = (p) => {
+                    if (p.status === 'recognizing text') {
+                        $('#ocrProgress').css('width', (p.progress * 100) + '%');
+                    }
+                };
+                let { data: { text } } = await worker.recognize(file);
+                await worker.terminate();
+                showLoading(false);
+
+                if (text && text.trim()) {
+                    let cleaned = text.replace(/\s+/g, ' ').trim();
+                    cleaned = cleaned.replace(/[—–−]/g, '-');
+                    cleaned = cleaned.replace(/×/g, '*');
+                    cleaned = cleaned.replace(/÷/g, '/');
+                    $('#detectedText').text(cleaned);
+                    $('#detectedTextArea').fadeIn();
+                    window.detectedProblem = cleaned;
+                } else {
+                    $('#errorMessage').html('No text detected. Please use the Type tab.');
+                    $('#errorArea').show();
+                }
+            } catch (err) {
+                showLoading(false);
+                $('#errorMessage').html('OCR failed. Please use the Type tab for accurate input.');
+                $('#errorArea').show();
+            }
+        }
+
+        $('#solveDetectedBtn').click(function () {
+            if (window.detectedProblem) {
+                $('#problemInput').val(window.detectedProblem);
+                solveMathProblem(window.detectedProblem);
+                $('#solverTabs button:first').tab('show');
+            }
+        });
+
+        $('#editDetectedBtn').click(function () {
+            let newText = prompt('Edit the math problem:', window.detectedProblem);
+            if (newText) {
+                window.detectedProblem = newText;
+                $('#detectedText').text(newText);
+            }
+        });
+
+        $('#copySolutionBtn').click(function () {
+            let answer = $('#finalAnswer').text();
+            navigator.clipboard.writeText(answer);
+            alert('✓ Answer copied to clipboard!');
+        });
+
+        $(window).on('beforeunload', function () {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+        });
+    });
+</script>

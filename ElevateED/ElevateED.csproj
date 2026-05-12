@@ -406,6 +406,10 @@
     <Compile Include="Migrations\202605071955205_AddTripModel.Designer.cs">
       <DependentUpon>202605071955205_AddTripModel.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202605112115239_AddMathSolverHistory.cs" />
+    <Compile Include="Migrations\202605112115239_AddMathSolverHistory.Designer.cs">
+      <DependentUpon>202605112115239_AddMathSolverHistory.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Announcement.cs" />
     <Compile Include="Models\Applicant.cs" />
@@ -425,6 +429,7 @@
     <Compile Include="Models\Grade.cs" />
     <Compile Include="Models\Homework.cs" />
     <Compile Include="Models\Issue.cs" />
+    <Compile Include="Models\MathSolverHistory.cs" />
     <Compile Include="Models\Trip.cs" />
     <Compile Include="Models\PastPaper.cs" />
     <Compile Include="Models\QuizConfiguration.cs" />
@@ -464,6 +469,7 @@
     <Compile Include="ViewModels\IssueViewModels.cs" />
     <Compile Include="ViewModels\ManageUsersViewModel.cs" />
     <Compile Include="ViewModels\MarkAttendanceViewModel.cs" />
+    <Compile Include="ViewModels\MathSolverViewModel.cs" />
     <Compile Include="ViewModels\PastPaperViewModel.cs" />
     <Compile Include="ViewModels\QuizViewModels.cs" />
     <Compile Include="ViewModels\StartSessionViewModel.cs" />
@@ -620,8 +626,6 @@
     <Content Include="Views\Teacher\SubmissionAnalytics.cshtml" />
     <Content Include="Views\Teacher\ViewTeacherExamTimetable.cshtml" />
     <Content Include="Views\StudentExtraClass\PayWithCard.cshtml" />
-    <Content Include="Views\AdminAnnouncement\CreateWizard.cshtml" />
-    <Content Include="Views\AdminAnnouncement\Dashboard.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -689,6 +693,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202605071955205_AddTripModel.resx">
       <DependentUpon>202605071955205_AddTripModel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605112115239_AddMathSolverHistory.resx">
+      <DependentUpon>202605112115239_AddMathSolverHistory.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
