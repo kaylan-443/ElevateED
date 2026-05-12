@@ -1,0 +1,796 @@
+﻿@model ElevateED.Models.AIStudySession
+@{
+    ViewBag.Title = Model.SessionTitle ?? "Study Workspace";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --bg: #f1f5f9;
+        --surface: #fff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --text2: #475569;
+        --text3: #94a3b8;
+        --primary: #6366f1;
+        --primary-light: #eef2ff;
+        --success: #10b981;
+        --success-light: #ecfdf5;
+        --warning: #f59e0b;
+        --warning-light: #fffbeb;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --accent: #8b5cf6;
+        --accent-light: #f5f3ff;
+        --shadow: 0 1px 3px rgba(0,0,0,0.06);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        --radius: 14px;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    .workspace {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        min-height: 100vh;
+    }
+
+    @@media (max-width: 1024px) {
+        .workspace {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: white;
+    }
+
+        .sidebar-header h2 {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+    .sidebar-section {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+        .sidebar-section h4 {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s;
+        width: 100%;
+        text-align: left;
+        font-family: inherit;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+        .action-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        .action-btn .a-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+
+    .output-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text2);
+        margin-bottom: 4px;
+    }
+
+        .output-item:hover {
+            background: var(--bg);
+        }
+
+        .output-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .output-item .o-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+    .back-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        color: var(--text2);
+        text-decoration: none;
+        font-size: 13px;
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+    }
+
+        .back-link:hover {
+            color: var(--primary);
+            background: var(--bg);
+        }
+
+    .notes-preview {
+        font-size: 12px;
+        color: var(--text3);
+        line-height: 1.5;
+        max-height: 100px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content {
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        color: white;
+        display: flex;
+        gap: 30px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .summary-stat {
+        text-align: center;
+    }
+
+        .summary-stat .s-val {
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .summary-stat .s-lbl {
+            font-size: 10px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+        .empty-state .big-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--text3);
+        }
+
+    /* ========== SECTION CARDS ========== */
+    .section-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 16px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .section-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        background: var(--bg);
+    }
+
+        .section-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            flex: 1;
+        }
+
+    .section-body {
+        padding: 20px;
+        font-size: 15px;
+        line-height: 1.8;
+        color: var(--text2);
+        transition: all 0.3s;
+    }
+
+        .section-body.collapsed {
+            display: none;
+        }
+
+    .def-box {
+        background: #eff6ff;
+        border-left: 4px solid var(--info);
+        border-radius: 0 10px 10px 0;
+        padding: 14px 18px;
+        margin: 12px 0;
+    }
+
+    .exam-tip {
+        background: var(--warning-light);
+        border-left: 4px solid var(--warning);
+        border-radius: 0 10px 10px 0;
+        padding: 14px 18px;
+        margin: 12px 0;
+    }
+
+    .example-box {
+        background: var(--success-light);
+        border-left: 4px solid var(--success);
+        border-radius: 0 10px 10px 0;
+        padding: 14px 18px;
+        margin: 12px 0;
+    }
+
+    .important-highlight {
+        background: var(--accent-light);
+        border: 1px solid #c4b5fd;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin: 12px 0;
+        font-weight: 600;
+        color: #5b21b6;
+    }
+
+    /* ========== FLASHCARDS ========== */
+    .flashcard-wrap {
+        perspective: 1000px;
+        min-height: 260px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .flashcard {
+        width: 100%;
+        max-width: 500px;
+        min-height: 220px;
+        background: white;
+        border: 2px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        font-weight: 600;
+        box-shadow: var(--shadow-md);
+    }
+
+        .flashcard.flipped {
+            background: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
+        }
+
+    .fc-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 16px;
+    }
+
+        .fc-nav button {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .fc-nav .counter {
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+    /* ========== QUIZ ========== */
+    .quiz-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+        margin-bottom: 12px;
+    }
+
+        .quiz-card h4 {
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+    .quiz-opt {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 12px 16px;
+        margin: 5px 0;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.15s;
+        font-family: inherit;
+    }
+
+        .quiz-opt:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .quiz-opt.selected {
+            border-color: var(--primary);
+            background: #ede9fe;
+            font-weight: 600;
+        }
+
+        .quiz-opt.correct {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+
+        .quiz-opt.wrong {
+            border-color: var(--danger);
+            background: #fef2f2;
+        }
+
+    .score-circle {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    .score-great {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .score-good {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .score-keep {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .loading-screen {
+        display: none;
+        text-align: center;
+        padding: 60px;
+    }
+
+        .loading-screen.active {
+            display: block;
+        }
+
+    .loader {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+</style>
+
+<div class="workspace">
+    <!-- ========== SIDEBAR ========== -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>📚 @(Model.SessionTitle ?? "Study Workspace")</h2>
+            <p>@Model.OriginalFileName | @(Model.ExtractedText?.Length ?? 0) chars</p>
+        </div>
+
+        <!-- AI Tools -->
+        <div class="sidebar-section">
+            <h4>🎯 Generate Content</h4>
+            <button class="action-btn" onclick="generateContent('flashcards')">
+                <div class="a-icon" style="background:#8b5cf6;">📚</div> Generate Flashcards
+            </button>
+            <button class="action-btn" onclick="generateContent('simplify')">
+                <div class="a-icon" style="background:#3b82f6;">🧠</div> Help Me Understand
+            </button>
+            <button class="action-btn" onclick="generateContent('examnotes')">
+                <div class="a-icon" style="background:#10b981;">📝</div> Make Exam Notes
+            </button>
+            <button class="action-btn" onclick="generateContent('quiz')">
+                <div class="a-icon" style="background:#f59e0b;">❓</div> Generate Quiz
+            </button>
+        </div>
+
+        <!-- Generated Outputs -->
+        <div class="sidebar-section">
+            <h4>📑 Generated Content (@(Model.Outputs?.Count ?? 0))</h4>
+            <div id="outputList">
+                @if (Model.Outputs != null && Model.Outputs.Any())
+                {
+                    foreach (var o in Model.Outputs.OrderByDescending(o => o.CreatedDate))
+                    {
+                        var label = o.ContentType == "flashcards" ? "Flashcards" :
+                                   o.ContentType == "simplify" ? "Simplified Notes" :
+                                   o.ContentType == "examnotes" ? "Exam Notes" : "Quiz";
+                        var color = o.ContentType == "flashcards" ? "#8b5cf6" :
+                                   o.ContentType == "simplify" ? "#3b82f6" :
+                                   o.ContentType == "examnotes" ? "#10b981" : "#f59e0b";
+                        <div class="output-item" onclick="loadOutput(@o.Id, this)" data-output-id="@o.Id">
+                            <span class="o-dot" style="background:@color;"></span>
+                            <span style="flex:1;">@label</span>
+                            <span style="font-size:10px;color:var(--text3);">@o.CreatedDate.ToString("HH:mm")</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p style="font-size:12px;color:var(--text3);">No content generated yet</p>
+                }
+            </div>
+        </div>
+
+        <!-- Notes Preview -->
+        <div class="sidebar-section">
+            <h4>📄 Notes Preview</h4>
+            <div class="notes-preview">
+                @{
+                    var preview = Model.ExtractedText ?? "";
+                    if (preview.Length > 300)
+                    {
+                        preview = preview.Substring(0, 300) + "...";
+                    }
+                }
+                @preview
+            </div>
+        </div>
+
+        <a href="@Url.Action("Index")" class="back-link">← Back to Sessions</a>
+    </div>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="main-content">
+        <!-- Summary -->
+        <div class="summary-card">
+            <div class="summary-stat"><div class="s-val">@(Model.Outputs?.Count ?? 0)</div><div class="s-lbl">Outputs</div></div>
+            <div class="summary-stat"><div class="s-val">@(Model.ExtractedText?.Length ?? 0)</div><div class="s-lbl">Characters</div></div>
+            <div class="summary-stat"><div class="s-val">@Model.CreatedDate.ToString("dd MMM")</div><div class="s-lbl">Created</div></div>
+            <div class="summary-stat"><div class="s-val">✅</div><div class="s-lbl">Ready</div></div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loader"></div>
+            <p style="color:var(--primary);font-weight:600;">AI is working...</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer">
+            <div class="empty-state" id="emptyState">
+                <div class="big-icon">🎯</div>
+                <h3>Ready to Study!</h3>
+                <p>Click any generate button on the left to create study materials from your notes</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    var sessionId = @Model.Id;
+    var currentOutputId = null;
+    var flashcardData = [];
+    var quizData = [];
+    var cardIdx = 0;
+
+    function generateContent(type) {
+        document.getElementById('loadingScreen').classList.add('active');
+        document.getElementById('emptyState').classList.add('hidden');
+
+        $.ajax({
+            url: '@Url.Action("GenerateContent", "AIStudy")',
+            type: 'POST',
+            data: { sessionId: sessionId, contentType: type },
+            success: function(r) {
+                document.getElementById('loadingScreen').classList.remove('active');
+                if (r.success) {
+                    currentOutputId = r.outputId;
+                    renderContent(r.contentType, r.content);
+                    addOutputToList(r.outputId, r.contentType);
+                } else { alert(r.message); }
+            },
+            error: function() {
+                document.getElementById('loadingScreen').classList.remove('active');
+                alert('Error generating content');
+            }
+        });
+    }
+
+    function loadOutput(outputId, element) {
+        document.getElementById('loadingScreen').classList.add('active');
+        document.querySelectorAll('.output-item').forEach(e => e.classList.remove('active'));
+        element.classList.add('active');
+
+        $.get('@Url.Action("GetOutput", "AIStudy")', { outputId: outputId }, function(r) {
+            document.getElementById('loadingScreen').classList.remove('active');
+            if (r.success) {
+                currentOutputId = r.outputId;
+                renderContent(r.contentType, r.content);
+            }
+        });
+    }
+
+    function addOutputToList(outputId, contentType) {
+        var labels = { flashcards: 'Flashcards', simplify: 'Simplified Notes', examnotes: 'Exam Notes', quiz: 'Quiz' };
+        var colors = { flashcards: '#8b5cf6', simplify: '#3b82f6', examnotes: '#10b981', quiz: '#f59e0b' };
+        var now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        var html = `<div class="output-item active" onclick="loadOutput(${outputId}, this)" data-output-id="${outputId}">
+            <span class="o-dot" style="background:${colors[contentType]};"></span>
+            <span style="flex:1;">${labels[contentType]}</span>
+            <span style="font-size:10px;color:var(--text3);">${now}</span>
+        </div>`;
+
+        document.querySelectorAll('.output-item').forEach(e => e.classList.remove('active'));
+        document.getElementById('outputList').insertAdjacentHTML('afterbegin', html);
+    }
+
+    function renderContent(type, content) {
+        var container = document.getElementById('resultsContainer');
+        container.innerHTML = '';
+
+        if (type == 'flashcards') {
+            flashcardData = parseFlashcards(content);
+            cardIdx = 0;
+            renderFlashcards(container);
+        } else if (type == 'quiz') {
+            quizData = parseQuiz(content);
+            renderQuiz(container);
+        } else {
+            renderSmartContent(container, content, type);
+        }
+    }
+
+    function renderSmartContent(container, content, type) {
+        var sections = parseSections(content);
+        var html = '';
+        sections.forEach(s => {
+            if (s.content.trim()) {
+                html += buildSectionCard(s);
+            }
+        });
+        container.innerHTML = html || '<div class="section-card"><div class="section-body">Content generated successfully.</div></div>';
+    }
+
+    function parseSections(content) {
+        var sections = [];
+        var lines = content.split('\n');
+        var currentTitle = 'Overview';
+        var currentContent = [];
+        lines.forEach(line => {
+            var t = line.trim();
+            if (!t) { currentContent.push(''); return; }
+            if ((t.startsWith('##') || t.startsWith('🎯') || t.startsWith('📋') || t.startsWith('💡') || t.startsWith('🔑') || t.startsWith('📚') || t.startsWith('📖') || t.startsWith('✅') || t.startsWith('🌟')) && t.length < 80) {
+                if (currentContent.length > 0) sections.push({ title: currentTitle, content: currentContent.join('\n') });
+                currentTitle = t.replace(/^##\s*/, '').replace(/[🎯📋💡🔑📚📖✅🌟]/g, '').trim() || 'Section';
+                currentContent = [];
+            } else { currentContent.push(line); }
+        });
+        if (currentContent.length > 0) sections.push({ title: currentTitle, content: currentContent.join('\n') });
+        return sections;
+    }
+
+    function buildSectionCard(section) {
+        var icon = section.title.includes('Overview')?'📋':section.title.includes('Term')?'📖':section.title.includes('Concept')?'💡':section.title.includes('Example')?'🌟':section.title.includes('Summary')?'✅':'📌';
+        var body = section.content.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/• (.+)/g,'<li style="padding:4px 0 4px 20px;position:relative;color:var(--text2);">$1</li>');
+        return `<div class="section-card"><div class="section-header" onclick="this.nextElementSibling.classList.toggle('collapsed')"><span>${icon}</span><h3>${section.title}</h3><span>▼</span></div><div class="section-body">${body}</div></div>`;
+    }
+
+    function parseFlashcards(text) {
+        var cards = [];
+        var blocks = text.split(/---|\n\n(?=Q:)/);
+        blocks.forEach(b => {
+            var q = b.match(/Q:\s*(.+?)(?:\n|$)/i);
+            var a = b.match(/A:\s*(.+?)(?:\n|$)/i);
+            if (q && a) cards.push({ q: q[1].trim(), a: a[1].trim(), flipped: false });
+        });
+        return cards.length > 0 ? cards : [{ q: 'No flashcards generated', a: 'Try generating again', flipped: false }];
+    }
+
+    function renderFlashcards(container) {
+        var card = flashcardData[cardIdx];
+        container.innerHTML = `<div class="section-card"><div class="section-body"><div class="flashcard-wrap"><div class="flashcard" onclick="flipCard()" id="fc"><span>${card.q}</span><div style="position:absolute;bottom:12px;font-size:11px;color:var(--text3);">Click to reveal</div></div></div><div class="fc-nav"><button onclick="prevCard()" ${cardIdx==0?'disabled':''}>◀</button><span class="counter">${cardIdx+1} / ${flashcardData.length}</span><button onclick="nextCard()" ${cardIdx==flashcardData.length-1?'disabled':''}>▶</button></div></div></div>`;
+    }
+
+    function flipCard() {
+        var card = flashcardData[cardIdx];
+        card.flipped = !card.flipped;
+        var el = document.getElementById('fc');
+        el.classList.toggle('flipped');
+        el.innerHTML = card.flipped ? `<span>${card.a}</span><div style="position:absolute;bottom:12px;font-size:11px;color:var(--text3);">Click to see question</div>` : `<span>${card.q}</span><div style="position:absolute;bottom:12px;font-size:11px;color:var(--text3);">Click to reveal</div>`;
+    }
+
+    function prevCard() { if (cardIdx > 0) { cardIdx--; renderFlashcards(document.getElementById('resultsContainer')); } }
+    function nextCard() { if (cardIdx < flashcardData.length-1) { cardIdx++; renderFlashcards(document.getElementById('resultsContainer')); } }
+
+    function parseQuiz(text) {
+        var qs = [];
+        var blocks = text.split(/---|\n\n(?=Q:)/);
+        blocks.forEach(b => {
+            var qm = b.match(/Q:\s*(.+)/i);
+            var corr = b.match(/Correct:\s*([A-D])/i);
+            if (qm && corr) {
+                qs.push({
+                    q: qm[1].trim(),
+                    opts: [(b.match(/A\)\s*(.+)/i)||[])[1]||'-', (b.match(/B\)\s*(.+)/i)||[])[1]||'-', (b.match(/C\)\s*(.+)/i)||[])[1]||'-', (b.match(/D\)\s*(.+)/i)||[])[1]||'-'],
+                    correct: corr[1].toUpperCase(), selected: null
+                });
+            }
+        });
+        return qs;
+    }
+
+    function renderQuiz(container) {
+        var html = '';
+        quizData.forEach((q, i) => {
+            html += `<div class="quiz-card"><h4>${i+1}. ${q.q}</h4>`;
+            ['A','B','C','D'].forEach((l, j) => { html += `<button class="quiz-opt" onclick="selectQuiz(${i},'${l}')" id="qz${i}_${l}">${l}) ${q.opts[j]}</button>`; });
+            html += '</div>';
+        });
+        html += '<button class="btn btn-primary" onclick="submitQuiz()" style="margin-top:12px;">📝 Submit Quiz</button><div id="quizScore"></div>';
+        container.innerHTML = html;
+    }
+
+    function selectQuiz(qi, l) {
+        quizData[qi].selected = l;
+        ['A','B','C','D'].forEach(lt => { document.getElementById('qz'+qi+'_'+lt).classList.remove('selected'); });
+        document.getElementById('qz'+qi+'_'+l).classList.add('selected');
+    }
+
+    function submitQuiz() {
+        var score = 0;
+        quizData.forEach((q, i) => {
+            if (q.selected === q.correct) score++;
+            ['A','B','C','D'].forEach(l => {
+                var el = document.getElementById('qz'+i+'_'+l);
+                if (l === q.correct) el.classList.add('correct');
+                if (l === q.selected && l !== q.correct) el.classList.add('wrong');
+                el.onclick = null;
+            });
+        });
+        var pct = Math.round((score/quizData.length)*100);
+        document.getElementById('quizScore').innerHTML = `<div style="text-align:center;padding:24px;"><div class="score-circle ${pct>=80?'score-great':pct>=60?'score-good':'score-keep'}">${pct}%</div><h3>${score}/${quizData.length}</h3><p>${pct>=80?'🌟 Excellent!':pct>=60?'👍 Good!':'📚 Keep studying!'}</p></div>`;
+    }
+    </script>
+}

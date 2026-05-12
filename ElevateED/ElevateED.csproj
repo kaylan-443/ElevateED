@@ -76,6 +76,9 @@
     <Reference Include="Microsoft.Bcl.Cryptography, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.Cryptography.8.0.0\lib\net462\Microsoft.Bcl.Cryptography.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.HashCode.6.0.0\lib\net462\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Bcl.TimeProvider, Version=8.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.TimeProvider.8.0.1\lib\net462\Microsoft.Bcl.TimeProvider.dll</HintPath>
     </Reference>
@@ -322,6 +325,27 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="UglyToad.PdfPig, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.Core, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.DocumentLayoutAnalysis, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.DocumentLayoutAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.Fonts, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.Fonts.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.Package, Version=0.1.14.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.Package.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.Tokenization, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.Tokenization.dll</HintPath>
+    </Reference>
+    <Reference Include="UglyToad.PdfPig.Tokens, Version=0.1.14.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfPig.0.1.14\lib\net471\UglyToad.PdfPig.Tokens.dll</HintPath>
+    </Reference>
     <Reference Include="WebGrease">
       <Private>True</Private>
       <HintPath>..\packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
@@ -343,13 +367,15 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdminAnnouncementController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminExtraClassController.cs" />
+    <Compile Include="Controllers\AIStudyController.cs" />
     <Compile Include="Controllers\AnalyticsController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AttendanceController.cs" />
-    <Compile Include="Controllers\DriverController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\PodcastController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
     <Compile Include="Controllers\StudentExtraClassController.cs" />
     <Compile Include="Controllers\StudentQuizController.cs" />
@@ -410,7 +436,20 @@
     <Compile Include="Migrations\202605112115239_AddMathSolverHistory.Designer.cs">
       <DependentUpon>202605112115239_AddMathSolverHistory.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202605121433529_AddPodcastHistory.cs" />
+    <Compile Include="Migrations\202605121433529_AddPodcastHistory.Designer.cs">
+      <DependentUpon>202605121433529_AddPodcastHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202605121556319_AddAIStudySession.cs" />
+    <Compile Include="Migrations\202605121556319_AddAIStudySession.Designer.cs">
+      <DependentUpon>202605121556319_AddAIStudySession.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202605121746409_AddAIStudyWorkspace.cs" />
+    <Compile Include="Migrations\202605121746409_AddAIStudyWorkspace.Designer.cs">
+      <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\AIStudySession.cs" />
     <Compile Include="Models\Announcement.cs" />
     <Compile Include="Models\Applicant.cs" />
     <Compile Include="Models\ApplicationCycle.cs" />
@@ -430,6 +469,7 @@
     <Compile Include="Models\Homework.cs" />
     <Compile Include="Models\Issue.cs" />
     <Compile Include="Models\MathSolverHistory.cs" />
+    <Compile Include="Models\PodcastHistory.cs" />
     <Compile Include="Models\Trip.cs" />
     <Compile Include="Models\PastPaper.cs" />
     <Compile Include="Models\QuizConfiguration.cs" />
@@ -449,11 +489,17 @@
     <Compile Include="Models\TimeTable.cs" />
     <Compile Include="Models\TransportRoute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AIAnnouncementService.cs" />
+    <Compile Include="Services\AIStudyService.cs" />
     <Compile Include="Services\AttendanceService.cs" />
     <Compile Include="Services\EmailService.cs" />
     <Compile Include="Services\ExamTimeTableService.cs" />
+    <Compile Include="Services\GeminiService.cs" />
     <Compile Include="Services\IAttendanceService.cs" />
     <Compile Include="Services\IExamTimeTableService.cs" />
+    <Compile Include="Services\OpenAITTSService.cs" />
+    <Compile Include="Services\PdfExtractionService.cs" />
+    <Compile Include="Services\PodcastService.cs" />
     <Compile Include="ViewModels\ActiveSessionViewModel.cs" />
     <Compile Include="ViewModels\AdminDashboardViewModel.cs" />
     <Compile Include="ViewModels\AnalyticsViewModel.cs" />
@@ -470,6 +516,7 @@
     <Compile Include="ViewModels\MarkAttendanceViewModel.cs" />
     <Compile Include="ViewModels\MathSolverViewModel.cs" />
     <Compile Include="ViewModels\PastPaperViewModel.cs" />
+    <Compile Include="ViewModels\PodcastViewModels.cs" />
     <Compile Include="ViewModels\QuizViewModels.cs" />
     <Compile Include="ViewModels\StartSessionViewModel.cs" />
     <Compile Include="ViewModels\StudentDashboardViewModel.cs" />
@@ -599,16 +646,9 @@
     <Content Include="Views\StudentQuiz\Results.cshtml" />
     <Content Include="Views\StudentQuiz\History.cshtml" />
     <Content Include="Views\AdminExtraClass\Index.cshtml" />
-    <Content Include="Views\AdminExtraClass\Create.cshtml" />
     <Content Include="Views\AdminExtraClass\Bookings.cshtml" />
-    <Content Include="Views\AdminExtraClass\TransportList.cshtml" />
     <Content Include="Views\StudentExtraClass\Index.cshtml" />
     <Content Include="Views\StudentExtraClass\MyBookings.cshtml" />
-    <Content Include="Views\Driver\Login.cshtml" />
-    <Content Include="Views\Driver\Dashboard.cshtml" />
-    <Content Include="Views\Shared\_DriverLayout.cshtml" />
-    <Content Include="Views\AdminExtraClass\Drivers.cshtml" />
-    <Content Include="Views\Driver\TransportList.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
     <Content Include="Views\Attendance\EditAttendance.cshtml" />
     <Content Include="Views\Attendance\MarkAttendance.cshtml" />
@@ -632,6 +672,11 @@
     <Content Include="Views\Teacher\ViewTeacherExamTimetable.cshtml" />
     <Content Include="Views\StudentExtraClass\PayWithCard.cshtml" />
     <Content Include="Views\Student\MathSolver.cshtml" />
+    <Content Include="Views\Shared\_AdminLayout.cshtml" />
+    <Content Include="Views\Shared\_AdminSidebar.cshtml" />
+    <Content Include="Views\Podcast\Index.cshtml" />
+    <Content Include="Views\AIStudy\Index.cshtml" />
+    <Content Include="Views\AIStudy\Workspace.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -702,6 +747,15 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202605112115239_AddMathSolverHistory.resx">
       <DependentUpon>202605112115239_AddMathSolverHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605121433529_AddPodcastHistory.resx">
+      <DependentUpon>202605121433529_AddPodcastHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605121556319_AddAIStudySession.resx">
+      <DependentUpon>202605121556319_AddAIStudySession.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605121746409_AddAIStudyWorkspace.resx">
+      <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

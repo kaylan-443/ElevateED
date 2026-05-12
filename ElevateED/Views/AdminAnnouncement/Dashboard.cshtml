@@ -1,0 +1,127 @@
+﻿@model List<ElevateED.Models.Announcement>
+@{
+    ViewBag.Title = "Announcements Dashboard";
+}
+
+<style>
+    body {
+        background: #f4f6f8;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 30px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+        .header h1 {
+            color: #1e3c72;
+        }
+
+    .btn-create {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        padding: 14px 28px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .stat-card .num {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .stat-card .lbl {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+    .announcement-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-left: 4px solid #6366f1;
+    }
+
+        .announcement-card h3 {
+            margin: 0 0 8px 0;
+            color: #1e3c72;
+        }
+
+        .announcement-card .meta {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-sent {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-draft {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-ai {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+</style>
+
+<div class="container">
+    <div class="header">
+        <h1>📢 Announcements</h1>
+        <a href="@Url.Action("CreateWizard")" class="btn-create">🤖 Create with AI</a>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card"><div class="num">@Model.Count</div><div class="lbl">Total</div></div>
+        <div class="stat-card"><div class="num">@ViewBag.TotalSent</div><div class="lbl">Sent</div></div>
+        <div class="stat-card"><div class="num">@ViewBag.TotalDrafts</div><div class="lbl">Drafts</div></div>
+    </div>
+
+    @foreach (var a in Model)
+    {
+        <div class="announcement-card">
+            <h3>@a.Title @if (a.IsAIGenerated)
+            {<span class="badge badge-ai">AI</span>} <span class="badge @(a.IsSent?"badge-sent":"badge-draft")">@(a.IsSent?"Sent":"Draft")</span></h3>
+            <p style="color:#4b5563;">@(a.Summary ?? a.Content?.Substring(0, Math.Min(100, a.Content?.Length ?? 0)))</p>
+            <div class="meta">@a.TargetAudience | @a.Tone | @a.CreatedAt.ToString("dd MMM yyyy")</div>
+        </div>
+    }
+</div>

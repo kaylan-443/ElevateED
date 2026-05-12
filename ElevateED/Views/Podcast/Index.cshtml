@@ -1,0 +1,625 @@
+﻿@model ElevateED.ViewModels.PodcastIndexViewModel
+@{
+    ViewBag.Title = "AI Podcast Generator";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .podcast-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .podcast-hero {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #ec4899 100%);
+            border-radius: 20px;
+            padding: 36px;
+            text-align: center;
+            color: white;
+            margin-bottom: 28px;
+        }
+
+            .podcast-hero h1 {
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            .podcast-hero .hero-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+            }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+            .card h3 {
+                font-size: 16px;
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 16px;
+            }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+            .upload-zone:hover {
+                border-color: #8b5cf6;
+                background: #f5f3ff;
+            }
+
+            .upload-zone i {
+                font-size: 40px;
+                color: #94a3b8;
+                margin-bottom: 10px;
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+            .form-control:focus {
+                border-color: #8b5cf6;
+                outline: none;
+            }
+
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+            .loading-overlay.active {
+                display: block;
+            }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .script-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Georgia', serif;
+        }
+
+        .audio-player {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .history-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+
+            .history-card:hover {
+                background: #f8fafc;
+            }
+
+        .history-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+            .history-info strong {
+                color: #1e293b;
+            }
+
+            .history-info span {
+                color: #94a3b8;
+                font-size: 12px;
+            }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-warn {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+            .tab-btn.active {
+                background: #8b5cf6;
+                color: white;
+                border-color: #8b5cf6;
+            }
+
+        .tab-content {
+            display: none;
+        }
+
+            .tab-content.active {
+                display: block;
+            }
+    </style>
+}
+
+<div class="podcast-container">
+    <div class="podcast-hero">
+        <div class="hero-icon">🎙️</div>
+        <h1>AI Podcast Generator</h1>
+        <p>Upload your notes and get an educational podcast instantly!</p>
+    </div>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('upload')">📄 Upload Notes</button>
+        <button class="tab-btn" onclick="switchTab('paste')">📝 Paste Text</button>
+        <button class="tab-btn" onclick="switchTab('history')">📚 My Podcasts (@Model.PodcastHistory?.Count ?? 0)</button>
+    </div>
+
+    <!-- Upload Tab -->
+    <div class="tab-content active" id="tab-upload">
+        <div class="card">
+            <h3>📄 Upload Your Study Notes</h3>
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p style="font-weight:600;">Click to browse or drag & drop</p>
+                <p style="color:#94a3b8;font-size:12px;">PDF files (max 20MB)</p>
+                <p id="fileName" style="color:#8b5cf6;font-weight:500;margin-top:8px;"></p>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.txt" style="display:none;" onchange="handleFileSelect(this)" />
+            <button class="btn-primary" id="uploadBtn" onclick="uploadFile()" style="margin-top:16px;width:100%;">🤖 Generate Podcast</button>
+        </div>
+    </div>
+
+    <!-- Paste Tab -->
+    <div class="tab-content" id="tab-paste">
+        <div class="card">
+            <h3>📝 Paste Your Notes</h3>
+            <div class="form-group" style="margin-bottom:12px;">
+                <input type="text" id="pasteTitle" class="form-control" placeholder="Title (optional)">
+            </div>
+            <textarea id="pasteText" class="form-control" placeholder="Paste your notes or study material here..."></textarea>
+            <button class="btn-primary" id="pasteBtn" onclick="generateFromText()" style="margin-top:16px;width:100%;">🤖 Generate Podcast</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingSection">
+        <div class="spinner"></div>
+        <p style="color:#8b5cf6;font-weight:600;">AI is creating your podcast...</p>
+        <p style="color:#94a3b8;font-size:13px;">Extracting text, generating script, preparing audio...</p>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" style="display:none;">
+        <div class="card">
+            <h3 id="resultTitle">🎙️ Your Podcast is Ready!</h3>
+            <div class="script-box" id="scriptBox"></div>
+            <div class="audio-player" id="audioPlayer" style="display:none;">
+                <p style="font-weight:600;margin-bottom:8px;">🔊 Listen to Your Podcast</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="tab-history">
+        <div class="card">
+            <h3>📚 Your Podcast History</h3>
+            @if (Model.PodcastHistory != null && Model.PodcastHistory.Any())
+            {
+                foreach (var podcast in Model.PodcastHistory)
+                {
+                    <div class="history-card">
+                        <div class="history-icon"><i class="fas fa-headphones"></i></div>
+                        <div class="history-info">
+                            <strong>@podcast.Title</strong><br />
+                            <span>@podcast.CreatedAt.ToString("dd MMM yyyy, HH:mm") | @podcast.Status</span>
+                        </div>
+                        <span class="@(podcast.Status == "Completed" ? "badge-success" : "badge-warn")">@podcast.Status</span>
+                        <button class="btn-primary" onclick="loadPodcast(@podcast.PodcastHistoryId)" style="padding:6px 14px;font-size:12px;">▶️ Listen</button>
+                        <button onclick="deletePodcast(@podcast.PodcastHistoryId)" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;">🗑️</button>
+                    </div>
+                }
+            }
+            else
+            {
+                <p style="text-align:center;color:#94a3b8;padding:30px;">No podcasts yet. Upload your notes to get started!</p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    var currentPodcastId = null;
+    var currentScript = null;
+    var speechSynth = window.speechSynthesis;
+    var currentUtterance = null;
+    var isPlaying = false;
+    var isPaused = false;
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileName').textContent = '📎 ' + input.files[0].name;
+        }
+    }
+
+    var dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#8b5cf6'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e1'; });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        handleFileSelect(document.getElementById('fileInput'));
+    });
+
+    function uploadFile() {
+        var file = document.getElementById('fileInput').files[0];
+        if (!file) { alert('Please select a file'); return; }
+        if (file.size > 20 * 1024 * 1024) { alert('File too large (max 20MB)'); return; }
+        var fd = new FormData();
+        fd.append('file', file);
+        processRequest('@Url.Action("UploadNotes", "Podcast")', fd);
+    }
+
+    function generateFromText() {
+        var text = document.getElementById('pasteText').value;
+        if (!text) { alert('Please paste some text'); return; }
+        var fd = new FormData();
+        fd.append('notesText', text);
+        fd.append('title', document.getElementById('pasteTitle').value || 'Study Notes');
+        processRequest('@Url.Action("GenerateFromText", "Podcast")', fd);
+    }
+
+    function processRequest(url, fd) {
+        document.getElementById('loadingSection').classList.add('active');
+        document.getElementById('resultSection').style.display = 'none';
+        $.ajax({
+            url: url, type: 'POST', data: fd, processData: false, contentType: false,
+            success: function(r) {
+                document.getElementById('loadingSection').classList.remove('active');
+                if (r.success) {
+                    currentPodcastId = r.podcastId;
+                    currentScript = r.script;
+                    document.getElementById('scriptBox').textContent = r.script;
+                    document.getElementById('resultTitle').textContent = '🎙️ ' + (r.title || 'Your Podcast');
+                    document.getElementById('resultSection').style.display = 'block';
+                    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                    updateAudioControls();
+                } else {
+                    alert('Error: ' + (r.message || 'Failed'));
+                }
+            },
+            error: function() {
+                document.getElementById('loadingSection').classList.remove('active');
+                alert('An error occurred');
+            }
+        });
+    }
+
+    function updateAudioControls() {
+        var player = document.getElementById('audioPlayer');
+        player.style.display = 'block';
+        player.innerHTML = `
+            <p style="font-weight:600;margin-bottom:12px;">🔊 Listen to Your Podcast</p>
+            <div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <button id="playBtn" class="btn-primary" onclick="playPodcast()" style="width:auto;background:#10b981;">
+                    ▶️ Play
+                </button>
+                <button id="pauseBtn" class="btn-primary" onclick="pausePodcast()" style="width:auto;display:none;background:#f59e0b;">
+                    ⏸️ Pause
+                </button>
+                <button id="resumeBtn" class="btn-primary" onclick="resumePodcast()" style="width:auto;display:none;background:#3b82f6;">
+                    ▶️ Resume
+                </button>
+                <button id="stopBtn" class="btn-primary" onclick="stopPodcast()" style="width:auto;display:none;background:#ef4444;">
+                    ⏹️ Stop
+                </button>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <label style="font-size:12px;color:#64748b;">Voice:</label>
+                <select id="voiceSelect" onchange="changeVoice()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                    <option value="">Loading voices...</option>
+                </select>
+                <label style="font-size:12px;color:#64748b;margin-left:8px;">Speed:</label>
+                <select id="speedSelect" onchange="changeSpeed()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                    <option value="0.75">0.75x</option>
+                    <option value="0.9">0.9x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                </select>
+            </div>
+            <div id="audioStatus" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
+        `;
+        loadVoices();
+    }
+
+    function loadVoices() {
+        var voices = speechSynth.getVoices();
+        var select = document.getElementById('voiceSelect');
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        // Filter English voices
+        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        if (englishVoices.length === 0) englishVoices = voices;
+
+        englishVoices.forEach(function(voice, index) {
+            var option = document.createElement('option');
+            option.value = index;
+            option.textContent = voice.name + ' (' + voice.lang + ')';
+            // Pre-select a good voice
+            if (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Karen') || voice.name.includes('Google UK Female')) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        if (englishVoices.length === 0) {
+            select.innerHTML = '<option>No voices available</option>';
+        }
+    }
+
+    function getSelectedVoice() {
+        var voices = speechSynth.getVoices();
+        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        if (englishVoices.length === 0) englishVoices = voices;
+        if (englishVoices.length === 0) return null;
+
+        var select = document.getElementById('voiceSelect');
+        var index = select ? parseInt(select.value) : 0;
+        return englishVoices[index] || englishVoices[0];
+    }
+
+    function playPodcast() {
+        if (!currentScript) return;
+
+        // Stop any current speech
+        speechSynth.cancel();
+        isPlaying = true;
+        isPaused = false;
+
+        // Clean the script
+        var cleanScript = currentScript
+            .replace(/\[PAUSE\]/g, '\n')
+            .replace(/\[EMPHASIS\]/g, '')
+            .replace(/\[END EMPHASIS\]/g, '')
+            .replace(/\[PODCAST INTRO\]/g, '')
+            .replace(/\[PODCAST OUTRO\]/g, '')
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/\(.*?(music|fade|intro|outro).*?\)/gi, '')
+            .replace(/---+/g, '')
+            .substring(0, 5000);
+
+        currentUtterance = new SpeechSynthesisUtterance(cleanScript);
+
+        var voice = getSelectedVoice();
+        if (voice) currentUtterance.voice = voice;
+
+        var speed = document.getElementById('speedSelect').value;
+        currentUtterance.rate = parseFloat(speed);
+        currentUtterance.pitch = 1;
+        currentUtterance.volume = 1;
+
+        currentUtterance.onstart = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '🔊 Playing...';
+        };
+
+        currentUtterance.onend = function() {
+            resetButtons();
+            document.getElementById('audioStatus').textContent = '✅ Finished playing!';
+            isPlaying = false;
+        };
+
+        currentUtterance.onerror = function(e) {
+            resetButtons();
+            document.getElementById('audioStatus').textContent = '❌ Playback error: ' + (e.error || 'unknown');
+            isPlaying = false;
+        };
+
+        currentUtterance.onpause = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '⏸️ Paused';
+            isPaused = true;
+        };
+
+        currentUtterance.onresume = function() {
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('audioStatus').textContent = '🔊 Playing...';
+            isPaused = false;
+        };
+
+        speechSynth.speak(currentUtterance);
+    }
+
+    function pausePodcast() {
+        if (isPlaying) {
+            speechSynth.pause();
+        }
+    }
+
+    function resumePodcast() {
+        if (isPaused) {
+            speechSynth.resume();
+        }
+    }
+
+    function stopPodcast() {
+        speechSynth.cancel();
+        isPlaying = false;
+        isPaused = false;
+        resetButtons();
+        document.getElementById('audioStatus').textContent = '⏹️ Stopped';
+    }
+
+    function resetButtons() {
+        document.getElementById('playBtn').style.display = 'inline-block';
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('resumeBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
+    }
+
+    function changeVoice() {
+        // Restart with new voice if currently playing
+        if (isPlaying) {
+            speechSynth.cancel();
+            playPodcast();
+        }
+    }
+
+    function changeSpeed() {
+        // Restart with new speed if currently playing
+        if (isPlaying) {
+            speechSynth.cancel();
+            playPodcast();
+        }
+    }
+
+    // Load voices when available
+    speechSynth.onvoiceschanged = loadVoices;
+
+    function loadPodcast(id) {
+        $.get('@Url.Action("GetPodcast", "Podcast")', { id: id }, function(r) {
+            if (r.success) {
+                currentPodcastId = r.podcastId;
+                currentScript = r.script;
+                document.getElementById('scriptBox').textContent = r.script;
+                document.getElementById('resultTitle').textContent = '🎙️ ' + r.title;
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                updateAudioControls();
+                switchTab('upload');
+            }
+        });
+    }
+
+    function deletePodcast(id) {
+        if (!confirm('Delete this podcast?')) return;
+        $.post('@Url.Action("DeletePodcast", "Podcast")', { id: id }, function(r) {
+            if (r.success) location.reload();
+        });
+    }
+    </script>
+}
