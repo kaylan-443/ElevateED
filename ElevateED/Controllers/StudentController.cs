@@ -7,6 +7,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using System.Data.Entity.Validation;
+using System.Text.Json;
 
 namespace ElevateED.Controllers
 {
@@ -15,13 +16,12 @@ namespace ElevateED.Controllers
     {
         private ElevateEDContext _context = new ElevateEDContext();
         private IExamTimetableService _examTimetableService;
+
         public StudentController()
         {
             _context = new ElevateEDContext();
             _examTimetableService = new ExamTimetableService();
-
         }
-
 
         // ============================================
         // DASHBOARD
@@ -64,7 +64,6 @@ namespace ElevateED.Controllers
                 viewModel.ClassTeacher = student.Class?.ClassTeacher?.FullName;
                 viewModel.Status = student.IsActive ? "Active" : "Inactive";
 
-                // Attendance data
                 var attendanceRecords = _context.AttendanceRecords
                     .Where(r => r.StudentId == student.Id)
                     .ToList();
@@ -77,7 +76,6 @@ namespace ElevateED.Controllers
                     ? Math.Round((double)viewModel.PresentDays / viewModel.TotalSchoolDays * 100, 1)
                     : 100;
 
-                // Homework data
                 if (student.ClassId.HasValue)
                 {
                     var now = DateTime.Now;
@@ -101,7 +99,6 @@ namespace ElevateED.Controllers
                         .ToList();
                 }
 
-                // Quiz data
                 var quizAttempts = _context.QuizAttempts
                     .Where(q => q.StudentId == student.Id)
                     .ToList();
@@ -122,7 +119,6 @@ namespace ElevateED.Controllers
                     })
                     .ToList();
 
-                // Today's schedule
                 if (student.Class != null)
                 {
                     viewModel.TodayClasses = _context.TimeTables
@@ -348,6 +344,187 @@ namespace ElevateED.Controllers
         }
 
         // ============================================
+        // MATH SOLVER ACTIONS
+        // ============================================
+
+        [Authorize(Roles = "Student")]
+        public ActionResult MathSolver()
+        {
+            var student = GetCurrentStudent();
+            if (student == null) return RedirectToAction("Login", "Account");
+
+            ViewBag.StudentName = student.FullName;
+            ViewBag.StudentGrade = student.Grade ?? "Not assigned";
+
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Student")]
+        public ActionResult SaveMathSolution(SaveMathSolutionViewModel model)
+        {
+            try
+            {
+                var student = GetCurrentStudent();
+                if (student == null)
+                {
+                    return Json(new { success = false, message = "Student not found" });
+                }
+
+                var history = new MathSolverHistory
+                {
+                    StudentId = student.Id,
+                    ProblemText = model.Problem,
+                    SolutionText = model.Solution,
+                    StepsJson = model.StepsJson,
+                    ProblemType = model.ProblemType ?? "General",
+                    SolvedAt = DateTime.Now,
+                    IsFavorite = false
+                };
+
+                _context.MathSolverHistory.Add(history);
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Solution saved to history!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Student")]
+        public ActionResult MathHistory()
+        {
+            var student = GetCurrentStudent();
+            if (student == null)
+            {
+                return RedirectToAction("Dashboard");
+            }
+
+            var history = _context.MathSolverHistory
+                .Where(h => h.StudentId == student.Id)
+                .OrderByDescending(h => h.SolvedAt)
+                .Select(h => new MathSolverHistoryViewModel
+                {
+                    Id = h.Id,
+                    ProblemText = h.ProblemText,
+                    ProblemPreview = h.ProblemText.Length > 80 ? h.ProblemText.Substring(0, 80) + "..." : h.ProblemText,
+                    SolutionText = h.SolutionText,
+                    SolutionPreview = h.SolutionText != null && h.SolutionText.Length > 60 ? h.SolutionText.Substring(0, 60) + "..." : h.SolutionText,
+                    ProblemType = h.ProblemType,
+                    SolvedAt = h.SolvedAt,
+                    IsFavorite = h.IsFavorite
+                })
+                .ToList();
+
+            return View(history);
+        }
+
+        [Authorize(Roles = "Student")]
+        public ActionResult MathHistoryDetail(int id)
+        {
+            var student = GetCurrentStudent();
+            if (student == null)
+            {
+                return RedirectToAction("Dashboard");
+            }
+
+            var history = _context.MathSolverHistory
+                .FirstOrDefault(h => h.Id == id && h.StudentId == student.Id);
+
+            if (history == null)
+            {
+                return HttpNotFound();
+            }
+
+            List<string> steps = new List<string>();
+            if (!string.IsNullOrEmpty(history.StepsJson))
+            {
+                try
+                {
+                    steps = System.Text.Json.JsonSerializer.Deserialize<List<string>>(history.StepsJson);
+                }
+                catch { }
+            }
+
+            var viewModel = new MathSolverDetailViewModel
+            {
+                Id = history.Id,
+                ProblemText = history.ProblemText,
+                SolutionText = history.SolutionText,
+                Steps = steps,
+                ProblemType = history.ProblemType,
+                SolvedAt = history.SolvedAt,
+                IsFavorite = history.IsFavorite
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Student")]
+        public ActionResult ToggleFavorite(int id)
+        {
+            try
+            {
+                var student = GetCurrentStudent();
+                if (student == null)
+                {
+                    return Json(new { success = false });
+                }
+
+                var history = _context.MathSolverHistory
+                    .FirstOrDefault(h => h.Id == id && h.StudentId == student.Id);
+
+                if (history == null)
+                {
+                    return Json(new { success = false });
+                }
+
+                history.IsFavorite = !history.IsFavorite;
+                _context.SaveChanges();
+
+                return Json(new { success = true, isFavorite = history.IsFavorite });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Student")]
+        public ActionResult DeleteMathHistory(int id)
+        {
+            try
+            {
+                var student = GetCurrentStudent();
+                if (student == null)
+                {
+                    return Json(new { success = false });
+                }
+
+                var history = _context.MathSolverHistory
+                    .FirstOrDefault(h => h.Id == id && h.StudentId == student.Id);
+
+                if (history == null)
+                {
+                    return Json(new { success = false });
+                }
+
+                _context.MathSolverHistory.Remove(history);
+                _context.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ============================================
         // STUDY MATERIALS
         // ============================================
 
@@ -497,7 +674,6 @@ namespace ElevateED.Controllers
                 return View(new List<HomeworkListViewModel>());
             }
 
-            // Get homework for student's class
             var homework = _context.Homeworks
                 .Include(h => h.Teacher)
                 .Where(h => h.IsActive)
@@ -574,7 +750,6 @@ namespace ElevateED.Controllers
                 return View(new List<ClassworkListViewModel>());
             }
 
-            // Get classwork for student's class
             var classwork = _context.Classworks
                 .Include(c => c.Teacher)
                 .Where(c => c.IsActive)
@@ -986,6 +1161,7 @@ namespace ElevateED.Controllers
                 default: return "badge-secondary";
             }
         }
+
         private Student GetCurrentStudent()
         {
             var studentNumber = User.Identity.Name;
@@ -998,6 +1174,7 @@ namespace ElevateED.Controllers
                 .Include(s => s.Stream)
                 .FirstOrDefault(s => s.UserId == user.Id);
         }
+
         // ============================================
         // PLACEHOLDER ACTIONS
         // ============================================
@@ -1011,6 +1188,7 @@ namespace ElevateED.Controllers
         {
             return View();
         }
+
         // ============================================
         // HOMEWORK SUBMISSION
         // ============================================
@@ -1038,7 +1216,6 @@ namespace ElevateED.Controllers
                 return HttpNotFound();
             }
 
-            // Verify student is in the correct class
             if (student.ClassId != homework.ClassId)
             {
                 TempData["ErrorMessage"] = "You are not authorized to submit to this homework.";
@@ -1097,16 +1274,13 @@ namespace ElevateED.Controllers
 
                 bool isLate = homework.DueDate < DateTime.Now;
 
-                // Create upload directory
                 string uploadPath = Server.MapPath("~/Uploads/Submissions/Homework/");
                 if (!System.IO.Directory.Exists(uploadPath))
                     System.IO.Directory.CreateDirectory(uploadPath);
 
-                // Validate file size (10MB max)
                 if (model.SubmissionFile.ContentLength > 10 * 1024 * 1024)
                     return Json(new { success = false, message = "File size exceeds 10MB limit" });
 
-                // Validate file extension
                 string extension = System.IO.Path.GetExtension(model.SubmissionFile.FileName).ToLower();
                 string[] allowedExtensions = { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png" };
 
@@ -1115,13 +1289,11 @@ namespace ElevateED.Controllers
                     return Json(new { success = false, message = "Invalid file type. Please upload PDF, Word, Excel, PowerPoint, or image files." });
                 }
 
-                // Save file
                 string fileName = $"Homework_{homework.Id}_{student.Id}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
                 string fullPath = System.IO.Path.Combine(uploadPath, fileName);
                 model.SubmissionFile.SaveAs(fullPath);
                 string filePath = "/Uploads/Submissions/Homework/" + fileName;
 
-                // Check for existing submission
                 var existingSubmission = _context.HomeworkSubmissions
                     .FirstOrDefault(s => s.HomeworkId == model.HomeworkId && s.StudentId == student.Id);
 
@@ -1144,7 +1316,6 @@ namespace ElevateED.Controllers
                 }
                 else
                 {
-                    // Delete old file
                     if (!string.IsNullOrEmpty(existingSubmission.FilePath))
                     {
                         string oldFilePath = Server.MapPath(existingSubmission.FilePath);
@@ -1458,7 +1629,6 @@ namespace ElevateED.Controllers
             return HttpNotFound();
         }
 
-        // Add to StudentController.cs
         // ============================================
         // EXAM TIMETABLE - STUDENT VIEW
         // ============================================
@@ -1468,7 +1638,6 @@ namespace ElevateED.Controllers
             var student = GetCurrentStudent();
             if (student == null) return RedirectToAction("Login", "Account");
 
-            // Find the active distributed timetable
             var activeTimetable = _context.ExamTimetables
                 .FirstOrDefault(t => t.Status == ExamTimetableStatus.Distributed && t.IsActive && t.EndDate >= DateTime.Now);
 
@@ -1478,7 +1647,6 @@ namespace ElevateED.Controllers
                 return View(new StudentExamTimetableViewModel());
             }
 
-            // Get the student's grade
             var grade = _context.Grades.FirstOrDefault(g => g.Name == student.Grade);
             if (grade == null)
             {
@@ -1486,7 +1654,6 @@ namespace ElevateED.Controllers
                 return View(new StudentExamTimetableViewModel());
             }
 
-            // Get exam sessions for this student's grade
             var sessions = _context.ExamSessions
                 .Include(s => s.Subject)
                 .Include(s => s.Grade)
@@ -1525,7 +1692,6 @@ namespace ElevateED.Controllers
                 }).ToList()
             };
 
-            // Group by Week for better display
             if (sessions.Any())
             {
                 viewModel.SessionsByWeek = sessions
