@@ -343,12 +343,12 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdminAnnouncementController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminExtraClassController.cs" />
     <Compile Include="Controllers\AnalyticsController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AttendanceController.cs" />
-    <Compile Include="Controllers\DriverController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
     <Compile Include="Controllers\StudentExtraClassController.cs" />
@@ -444,6 +444,7 @@
     <Compile Include="Models\TimeTable.cs" />
     <Compile Include="Models\TransportRoute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AIAnnouncementService.cs" />
     <Compile Include="Services\AttendanceService.cs" />
     <Compile Include="Services\EmailService.cs" />
     <Compile Include="Services\ExamTimeTableService.cs" />
@@ -593,16 +594,10 @@
     <Content Include="Views\StudentQuiz\Results.cshtml" />
     <Content Include="Views\StudentQuiz\History.cshtml" />
     <Content Include="Views\AdminExtraClass\Index.cshtml" />
-    <Content Include="Views\AdminExtraClass\Create.cshtml" />
     <Content Include="Views\AdminExtraClass\Bookings.cshtml" />
-    <Content Include="Views\AdminExtraClass\TransportList.cshtml" />
     <Content Include="Views\StudentExtraClass\Index.cshtml" />
     <Content Include="Views\StudentExtraClass\MyBookings.cshtml" />
-    <Content Include="Views\Driver\Login.cshtml" />
-    <Content Include="Views\Driver\Dashboard.cshtml" />
     <Content Include="Views\Shared\_DriverLayout.cshtml" />
-    <Content Include="Views\AdminExtraClass\Drivers.cshtml" />
-    <Content Include="Views\Driver\TransportList.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
     <Content Include="Views\Attendance\EditAttendance.cshtml" />
     <Content Include="Views\Attendance\MarkAttendance.cshtml" />
@@ -625,6 +620,8 @@
     <Content Include="Views\Teacher\SubmissionAnalytics.cshtml" />
     <Content Include="Views\Teacher\ViewTeacherExamTimetable.cshtml" />
     <Content Include="Views\StudentExtraClass\PayWithCard.cshtml" />
+    <Content Include="Views\AdminAnnouncement\CreateWizard.cshtml" />
+    <Content Include="Views\AdminAnnouncement\Dashboard.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

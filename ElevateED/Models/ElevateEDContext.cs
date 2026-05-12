@@ -52,7 +52,8 @@ namespace ElevateED.Models
         public DbSet<ExamSession> ExamSessions { get; set; }
         public DbSet<TeacherExamNotification> TeacherExamNotifications { get; set; }
         public DbSet<Trip> Trips { get; set; }
-
+        public DbSet<AnnouncementTemplate> AnnouncementTemplates { get; set; }
+        public DbSet<AnnouncementGeneratorSession> AnnouncementGeneratorSessions { get; set; }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             // Extra Classes configurations

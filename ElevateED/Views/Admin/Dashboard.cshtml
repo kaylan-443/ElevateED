@@ -982,7 +982,7 @@
             <div class="nav-section">Management</div>
             <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
             <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
-            <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+            <a href="@Url.Action("CreateWizard", "AdminAnnouncement")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
             <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
 
             <div class="nav-section">Extra</div>
@@ -1086,7 +1086,10 @@
                 <a href="@Url.Action("ClassStructure", "Admin")" class="action-card classes"><div class="action-icon classes"><i class="fas fa-school"></i></div><h4>Class Structure</h4><p>@Model.TotalClasses active classes</p></a>
                 <a href="@Url.Action("RegisterTeacher", "Admin")" class="action-card teacher"><div class="action-icon teacher"><i class="fas fa-chalkboard-teacher"></i></div><h4>Register Teacher</h4><p>Add new staff</p></a>
                 <a href="@Url.Action("TimeTable", "Admin")" class="action-card timetable"><div class="action-icon timetable"><i class="fas fa-calendar-alt"></i></div><h4>Manage Timetable</h4><p>Update schedules</p></a>
-                <a href="@Url.Action("SendAnnouncement", "Admin")" class="action-card announcements"><div class="action-icon announcements"><i class="fas fa-bullhorn"></i></div><h4>Send Announcement</h4><p>Notify all users</p></a>
+                <a href="@Url.Action("CreateWizard", "AdminAnnouncement")" class="action-card announcements">
+                    <div class="action-icon announcements" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);"><i class="fas fa-robot"></i></div>
+                    <h4>AI Announcements</h4><p>Create with AI assistant</p>
+                </a>
 
                 <!-- NEW: Exam Management -->
                 <a href="@Url.Action("ExamTimetables", "Admin")" class="action-card" style="border-top-color: #3b82f6;">
