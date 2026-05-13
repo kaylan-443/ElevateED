@@ -2155,6 +2155,11 @@ namespace ElevateED.Controllers
         {
             if (!IsAdmin()) return RedirectToAction("Login", "Account");
 
+            if (model.EndDate < model.StartDate)
+            {
+                ModelState.AddModelError("EndDate", "End date must be on or after the start date.");
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -2167,15 +2172,16 @@ namespace ElevateED.Controllers
                         return View(model);
                     }
 
-                    var endDate = model.StartDate.AddDays((model.NumberOfWeeks * 7) - 1);
+                    var totalDays = (model.EndDate.Date - model.StartDate.Date).Days + 1;
+                    var weeks = Math.Max(1, (int)Math.Ceiling(totalDays / 7.0));
 
                     var timetable = new ExamTimetable
                     {
                         Name = model.Name,
                         AcademicYear = model.AcademicYear,
-                        NumberOfWeeks = model.NumberOfWeeks,
+                        NumberOfWeeks = weeks,
                         StartDate = model.StartDate,
-                        EndDate = endDate,
+                        EndDate = model.EndDate,
                         CreatedBy = adminUser.Id,
                         Status = ExamTimetableStatus.Draft,
                         IsActive = true,

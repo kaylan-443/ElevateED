@@ -1889,6 +1889,52 @@ namespace ElevateED.Controllers
                 ModelState.AddModelError("SubjectId", "You can only propose exams for subjects you teach.");
             }
 
+            // Date must fall within the cycle's window.
+            var cycle = _context.ExamTimetables.Find(model.ExamTimetableId);
+            if (cycle != null && (model.ExamDate.Date < cycle.StartDate.Date || model.ExamDate.Date > cycle.EndDate.Date))
+            {
+                ModelState.AddModelError("ExamDate", $"Date must be between {cycle.StartDate:dd MMM yyyy} and {cycle.EndDate:dd MMM yyyy} (cycle window).");
+            }
+
+            // School-hours / break validation.
+            var proposedEnd = model.StartTime.Add(TimeSpan.FromHours((double)model.DurationHours));
+            var scheduleError = ElevateED.Services.SchoolSchedule.ValidateSlot(model.StartTime, proposedEnd);
+            if (scheduleError != null)
+            {
+                ModelState.AddModelError("StartTime", scheduleError);
+            }
+
+            // Class double-booking: same class can't have two exams overlapping the same time.
+            if (model.ClassIds != null && model.ClassIds.Any())
+            {
+                var classIdsArr = model.ClassIds.Distinct().ToArray();
+                var sameDay = _context.ExamSessions
+                    .Include(s => s.ExamSessionClasses)
+                    .Include(s => s.Subject)
+                    .Where(s => s.ExamTimetableId == model.ExamTimetableId
+                        && s.IsActive
+                        && s.Status != Models.ExamSessionStatus.Rejected
+                        && DbFunctions.TruncateTime(s.ExamDate) == model.ExamDate.Date
+                        && (model.Id == 0 || s.Id != model.Id))
+                    .ToList();
+
+                foreach (var other in sameDay)
+                {
+                    if (!ElevateED.Services.SchoolSchedule.Overlaps(model.StartTime, proposedEnd, other.StartTime, other.EndTime))
+                    {
+                        continue;
+                    }
+                    var otherClassIds = other.ExamSessionClasses.Select(c => c.ClassId).ToArray();
+                    var shared = classIdsArr.Intersect(otherClassIds).ToArray();
+                    if (shared.Any())
+                    {
+                        ModelState.AddModelError("ClassIds",
+                            $"A class is already writing {other.Subject?.Name} at this time. Pick a different time or day.");
+                        break;
+                    }
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 PopulateProposeExamOptions(model, teacher.Id);
@@ -1897,7 +1943,10 @@ namespace ElevateED.Controllers
 
             var endTime = model.StartTime.Add(TimeSpan.FromHours((double)model.DurationHours));
             var subject = _context.Subjects.Find(model.SubjectId);
-            var firstClass = _context.Classes.Include(c => c.Grade).FirstOrDefault(c => c.Id == model.ClassIds.First());
+            // Pull .First() out of the EF lambda — EF6 can't translate List<T>.First()
+            // when it appears inside the SQL-bound expression tree.
+            var firstClassId = model.ClassIds.First();
+            var firstClass = _context.Classes.Include(c => c.Grade).FirstOrDefault(c => c.Id == firstClassId);
             var weekNumber = CalculateWeekNumber(model.ExamTimetableId, model.ExamDate);
 
             ExamSession session;
@@ -2019,6 +2068,99 @@ namespace ElevateED.Controllers
             _context.SaveChanges();
             TempData["SuccessMessage"] = "Exam proposal withdrawn.";
             return RedirectToAction("MyExamProposals");
+        }
+
+        // ============================================================
+        // EXAM CALENDAR — JSON endpoints powering the interactive picker
+        // ============================================================
+
+        // Returns a flat list of day descriptors for the cycle window.
+        public ActionResult ProposeExam_CalendarDays(int cycleId)
+        {
+            var cycle = _context.ExamTimetables.Find(cycleId);
+            if (cycle == null) return HttpNotFound();
+
+            // Count active (non-rejected) sessions per date for the cycle, so the calendar
+            // grid can show "n exams" badges without further round-trips.
+            var perDay = _context.ExamSessions
+                .Where(s => s.ExamTimetableId == cycleId
+                    && s.IsActive
+                    && s.Status != ExamSessionStatus.Rejected)
+                .GroupBy(s => DbFunctions.TruncateTime(s.ExamDate))
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToList();
+
+            var days = new List<object>();
+            for (var d = cycle.StartDate.Date; d <= cycle.EndDate.Date; d = d.AddDays(1))
+            {
+                var dt = d;
+                var match = perDay.FirstOrDefault(x => x.Date.HasValue && x.Date.Value.Date == dt);
+                days.Add(new
+                {
+                    iso = dt.ToString("yyyy-MM-dd"),
+                    label = dt.ToString("ddd"),
+                    dayNumber = dt.Day,
+                    month = dt.ToString("MMM"),
+                    isWeekend = dt.DayOfWeek == DayOfWeek.Saturday || dt.DayOfWeek == DayOfWeek.Sunday,
+                    examCount = match?.Count ?? 0
+                });
+            }
+
+            return Json(new
+            {
+                cycleId = cycle.Id,
+                cycleName = cycle.Name,
+                startDate = cycle.StartDate.ToString("yyyy-MM-dd"),
+                endDate = cycle.EndDate.ToString("yyyy-MM-dd"),
+                days = days
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        // Returns the existing sessions on a given day in a cycle, plus the school's
+        // hard rules (school start, school end, break windows) for the timeline UI.
+        public ActionResult ProposeExam_DaySchedule(int cycleId, string date, int? excludeSessionId)
+        {
+            if (!DateTime.TryParse(date, out var day)) return new HttpStatusCodeResult(400, "Bad date");
+
+            var sessions = _context.ExamSessions
+                .Include(s => s.Subject)
+                .Include(s => s.CreatedByTeacher)
+                .Include(s => s.ExamSessionClasses.Select(c => c.Class))
+                .Where(s => s.ExamTimetableId == cycleId
+                    && s.IsActive
+                    && s.Status != ExamSessionStatus.Rejected
+                    && DbFunctions.TruncateTime(s.ExamDate) == day.Date
+                    && (!excludeSessionId.HasValue || s.Id != excludeSessionId.Value))
+                .OrderBy(s => s.StartTime)
+                .ToList();
+
+            return Json(new
+            {
+                date = day.ToString("yyyy-MM-dd"),
+                schoolStart = SchoolSchedule.SchoolStart.ToString(@"hh\:mm"),
+                schoolEnd = SchoolSchedule.SchoolEnd.ToString(@"hh\:mm"),
+                breaks = SchoolSchedule.Breaks.Select(b => new
+                {
+                    name = b.Name,
+                    start = b.Start.ToString(@"hh\:mm"),
+                    end = b.End.ToString(@"hh\:mm")
+                }),
+                sessions = sessions.Select(s => new
+                {
+                    id = s.Id,
+                    subject = s.Subject?.Name ?? "(unknown)",
+                    paper = s.PaperNumber,
+                    start = s.StartTime.ToString(@"hh\:mm"),
+                    end = s.EndTime.ToString(@"hh\:mm"),
+                    durationHours = s.DurationHours,
+                    venue = s.Venue,
+                    invigilator = s.Invigilator,
+                    proposedBy = s.CreatedByTeacher?.FullName,
+                    status = s.Status.ToString(),
+                    classNames = string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(n => !string.IsNullOrEmpty(n))),
+                    classIds = s.ExamSessionClasses.Select(c => c.ClassId).ToArray()
+                })
+            }, JsonRequestBehavior.AllowGet);
         }
 
         private void PopulateProposeExamOptions(ProposeExamViewModel model, int teacherId)

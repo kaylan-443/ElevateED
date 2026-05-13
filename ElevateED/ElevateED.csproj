@@ -494,6 +494,7 @@
     <Compile Include="Services\AIAnnouncementService.cs" />
     <Compile Include="Services\AIStudyService.cs" />
     <Compile Include="Services\AttendanceService.cs" />
+    <Compile Include="Services\SchoolSchedule.cs" />
     <Compile Include="Services\EmailService.cs" />
     <Compile Include="Services\ExamTimeTableService.cs" />
     <Compile Include="Services\GeminiService.cs" />
