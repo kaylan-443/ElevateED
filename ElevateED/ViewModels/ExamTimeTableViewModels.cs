@@ -10,7 +10,7 @@ namespace ElevateED.ViewModels
     public class CreateExamTimetableViewModel
     {
         [Required]
-        [Display(Name = "Timetable Name")]
+        [Display(Name = "Cycle Name")]
         public string Name { get; set; }
 
         [Required]
@@ -18,14 +18,14 @@ namespace ElevateED.ViewModels
         public int AcademicYear { get; set; }
 
         [Required]
-        [Display(Name = "Number of Weeks")]
-        [Range(1, 4)]
-        public int NumberOfWeeks { get; set; }
-
-        [Required]
         [Display(Name = "Start Date")]
         [DataType(DataType.Date)]
         public DateTime StartDate { get; set; }
+
+        [Required]
+        [Display(Name = "End Date")]
+        [DataType(DataType.Date)]
+        public DateTime EndDate { get; set; }
     }
 
     public class ExamTimetableViewModel
@@ -224,6 +224,7 @@ namespace ElevateED.ViewModels
             ExamCycleOptions = new List<System.Web.Mvc.SelectListItem>();
             SubjectOptions = new List<System.Web.Mvc.SelectListItem>();
             DurationHours = 2;
+            PaperNumber = 1;
         }
     }
 

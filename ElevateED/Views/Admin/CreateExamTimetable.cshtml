@@ -511,19 +511,52 @@
             <div class="form-card">
                 <div class="form-header">
                     <i class="fas fa-calendar-plus"></i>
-                    <h2>Create Exam Timetable</h2>
-                    <p style="color:var(--gray-500);">Set up a new examination timetable</p>
+                    <h2>Create Exam Cycle</h2>
+                    <p style="color:var(--gray-500);">Set the window in which teachers may propose exam sessions.</p>
                 </div>
                 @using (Html.BeginForm("CreateExamTimetable", "Admin", FormMethod.Post))
                 {
                     @Html.AntiForgeryToken()
                     if (!ViewData.ModelState.IsValid)
                     {<div class="validation-summary-errors">@Html.ValidationSummary(true, "Please correct the following errors:", new { @class = "text-danger" })</div>}
-                <div class="info-box"><h5><i class="fas fa-info-circle"></i> Important Information</h5><ul><li>Teachers will be notified to enter exam durations (1-3 hours per paper)</li><li>Exams scheduled between 9:00 AM and 2:15 PM</li><li>Each class writes one exam per day</li><li>Total weeks determine exam duration</li></ul></div>
-                <div class="form-group"><label class="form-label required">Timetable Name</label>@Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "e.g., 2026 June Examinations" })@Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div class="form-group"><label class="form-label required">Academic Year</label>@Html.TextBoxFor(m => m.AcademicYear, new { @class = "form-control", type = "number", min = "2020", max = "2030" })@Html.ValidationMessageFor(m => m.AcademicYear, "", new { @class = "text-danger" })</div><div class="form-group"><label class="form-label required">Number of Weeks</label>@Html.TextBoxFor(m => m.NumberOfWeeks, new { @class = "form-control", type = "number", min = "1", max = "4" })@Html.ValidationMessageFor(m => m.NumberOfWeeks, "", new { @class = "text-danger" })<small style="color:var(--gray-500);">Between 1 and 4 weeks</small></div></div>
-                <div class="form-group"><label class="form-label required">Start Date</label>@Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })@Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })<small style="color:var(--gray-500);">Exams run Monday-Friday only</small></div>
-                <div style="display:flex;gap:14px;margin-top:24px;"><a href="@Url.Action("ExamTimetables","Admin")" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a><button type="submit" class="btn-submit"><i class="fas fa-arrow-right"></i> Create & Notify Teachers</button></div>}
+                    <div class="info-box">
+                        <h5><i class="fas fa-info-circle"></i> How this works</h5>
+                        <ul>
+                            <li>Pick the first and last day teachers may schedule exams for this cycle.</li>
+                            <li>Teachers propose their own exam sessions (subject, paper, classes, time, venue).</li>
+                            <li>The principal reviews and publishes the timetable.</li>
+                            <li>Exams must fit between 07:30 and 14:30 and may not overlap break times.</li>
+                        </ul>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Cycle Name</label>
+                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "e.g. June Exams 2026" })
+                        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Academic Year</label>
+                        @Html.TextBoxFor(m => m.AcademicYear, new { @class = "form-control", type = "number", min = "2020", max = "2030" })
+                        @Html.ValidationMessageFor(m => m.AcademicYear, "", new { @class = "text-danger" })
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-group">
+                            <label class="form-label required">Start Date</label>
+                            @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                            <small style="color:var(--gray-500);">First day exams may be written.</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">End Date</label>
+                            @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                            <small style="color:var(--gray-500);">Last day exams may be written.</small>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:14px;margin-top:24px;">
+                        <a href="@Url.Action("ExamTimetables","Admin")" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
+                        <button type="submit" class="btn-submit"><i class="fas fa-arrow-right"></i> Create Cycle</button>
+                    </div>
+                }
             </div>
         </div>
     </main>
