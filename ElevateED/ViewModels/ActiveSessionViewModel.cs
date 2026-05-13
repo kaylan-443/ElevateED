@@ -6,23 +6,14 @@ namespace ElevateED.ViewModels
     {
         public int SessionId { get; set; }
         public string ClassName { get; set; }
-        public string OTPCode { get; set; }
         public DateTime SessionDate { get; set; }
-        public DateTime OTPExpiry { get; set; }
+        public string OTPCode { get; set; }
+        public string QRCode { get; set; }
+        public DateTime? QRCodeExpiry { get; set; }
         public int TotalStudents { get; set; }
         public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
         public bool IsExpired { get; set; }
-
-        public string TimeRemaining
-        {
-            get
-            {
-                if (IsExpired) return "Expired";
-                var remaining = OTPExpiry - DateTime.Now;
-                if (remaining.TotalMinutes < 1)
-                    return $"{(int)remaining.TotalSeconds}s remaining";
-                return $"{(int)remaining.TotalMinutes}m {remaining.Seconds}s remaining";
-            }
-        }
+        public string TimeRemaining { get; set; }  // Remove the expression body, make it a regular property
     }
 }

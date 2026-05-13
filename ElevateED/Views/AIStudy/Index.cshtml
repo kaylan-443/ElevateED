@@ -2,176 +2,235 @@
 @{
     ViewBag.Title = "AI Study Assistant";
     Layout = "~/Views/Shared/_StudentLayout.cshtml";
-}
-
-@section SidebarNav {
-    <div class="nav-section">Main</div>
-    <a href="@Url.Action("Dashboard", "Student")" class="nav-item">
-        <i class="fas fa-home"></i><span>Dashboard</span>
-    </a>
-    <a href="@Url.Action("Timetable", "Student")" class="nav-item">
-        <i class="fas fa-calendar-alt"></i><span>Timetable</span>
-    </a>
-    <a href="@Url.Action("MarkAttendance", "Attendance")" class="nav-item">
-        <i class="fas fa-user-check"></i><span>Mark Attendance</span>
-    </a>
-
-    <div class="nav-section">Learning</div>
-    <a href="@Url.Action("Homework", "Student")" class="nav-item">
-        <i class="fas fa-home"></i><span>Homework</span>
-    </a>
-    <a href="@Url.Action("Classwork", "Student")" class="nav-item">
-        <i class="fas fa-chalkboard"></i><span>Classwork</span>
-    </a>
-    <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item">
-        <i class="fas fa-book"></i><span>Study Materials</span>
-    </a>
-    <a href="@Url.Action("PastPapers", "Student")" class="nav-item">
-        <i class="fas fa-archive"></i><span>Past Papers</span>
-    </a>
-    <a href="@Url.Action("Index", "StudentQuiz")" class="nav-item">
-        <i class="fas fa-question-circle"></i><span>Quizzes</span>
-    </a>
-    <a href="@Url.Action("Index", "StudentExtraClass")" class="nav-item">
-        <i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span>
-    </a>
-
-    <div class="nav-section">Exams</div>
-    <a href="@Url.Action("ExamTimetable", "Student")" class="nav-item">
-        <i class="fas fa-calendar-check"></i><span>Exam Timetable</span>
-    </a>
-    <a href="@Url.Action("MyReportCards", "Marks")" class="nav-item">
-        <i class="fas fa-file-alt"></i><span>Report Cards</span>
-    </a>
-
-    <div class="nav-section">AI Tools</div>
-    <a href="@Url.Action("Index", "AIStudy")" class="nav-item active">
-        <i class="fas fa-robot"></i><span>AI Study Assistant</span>
-    </a>
-    <a href="@Url.Action("Index", "Podcast")" class="nav-item">
-        <i class="fas fa-podcast"></i><span>AI Podcast Generator</span>
-    </a>
-
-    <div class="nav-section">Other</div>
-    <a href="@Url.Action("ViewAnnouncements", "Student")" class="nav-item">
-        <i class="fas fa-bullhorn"></i><span>Announcements</span>
-    </a>
-    <a href="@Url.Action("ReportIssue", "Student")" class="nav-item">
-        <i class="fas fa-exclamation-triangle"></i><span>Report Issue</span>
-    </a>
-    <a href="@Url.Action("MyIssues", "Student")" class="nav-item">
-        <i class="fas fa-clipboard-list"></i><span>My Issues</span>
-    </a>
+    ViewBag.ActiveSidebar = "aistudy";
 }
 
 @section Styles {
     <style>
-        .container-custom {
-            max-width: 900px;
-            margin: 0 auto;
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
-        .hero {
+        @@keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(99,102,241,0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(99,102,241,0.8), 0 0 80px rgba(139,92,246,0.4);
+            }
+        }
+
+        @@keyframes circuit {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 50px 50px;
+            }
+        }
+
+        .ai-hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%);
+            border-radius: 24px;
+            padding: 40px;
             text-align: center;
-            margin-bottom: 36px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 28px;
+            border: 1px solid rgba(99,102,241,0.3);
+            box-shadow: 0 0 40px rgba(99,102,241,0.15);
         }
 
-            .hero h1 {
-                font-size: 30px;
+            .ai-hero::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+                animation: circuit 8s linear infinite;
+            }
+
+            .ai-hero .hero-content {
+                position: relative;
+                z-index: 1;
+            }
+
+            .ai-hero h1 {
+                font-size: 36px;
                 font-weight: 800;
-                background: linear-gradient(135deg, #4f46e5, #7c3aed);
+                color: white;
+                margin-bottom: 8px;
+                background: linear-gradient(135deg, #818cf8, #a78bfa, #818cf8);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
+                background-size: 200% 200%;
+                animation: float 3s ease-in-out infinite;
             }
 
-            .hero p {
-                color: #64748b;
-                margin-top: 8px;
+            .ai-hero p {
+                color: #94a3b8;
+                font-size: 16px;
             }
 
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            .ai-hero .ai-badge {
+                display: inline-block;
+                background: rgba(99,102,241,0.2);
+                color: #a5b4fc;
+                padding: 6px 16px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 600;
+                border: 1px solid rgba(99,102,241,0.3);
+                margin-bottom: 16px;
+                letter-spacing: 1px;
+            }
+
+        .main-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 24px;
+            overflow: hidden;
             border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            margin-bottom: 24px;
         }
 
-            .card h3 {
-                font-size: 16px;
-                font-weight: 700;
-                margin-bottom: 16px;
-                color: #1e293b;
+            .main-card .card-header {
+                background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+                color: white;
+                padding: 24px 28px;
+                border: none;
+                border-bottom: 1px solid rgba(99,102,241,0.3);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+                .main-card .card-header .icon-box {
+                    width: 40px;
+                    height: 40px;
+                    background: rgba(99,102,241,0.2);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .main-card .card-header h4 {
+                    margin: 0;
+                    font-weight: 700;
+                    font-size: 16px;
+                }
+
+                .main-card .card-header small {
+                    opacity: 0.7;
+                    font-size: 12px;
+                }
+
+            .main-card .card-body {
+                padding: 28px;
             }
 
         .upload-zone {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 30px;
+            border: 2px dashed #6366f1;
+            border-radius: 16px;
+            padding: 40px;
             text-align: center;
             cursor: pointer;
-            background: #f8fafc;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            background: rgba(99,102,241,0.03);
         }
 
             .upload-zone:hover {
-                border-color: #6366f1;
-                background: #eef2ff;
+                background: rgba(99,102,241,0.08);
+                border-color: #818cf8;
             }
 
             .upload-zone i {
-                font-size: 36px;
+                font-size: 40px;
+                color: #6366f1;
+                margin-bottom: 12px;
+            }
+
+            .upload-zone h5 {
+                color: #475569;
+                margin: 0;
+            }
+
+            .upload-zone p {
                 color: #94a3b8;
+                font-size: 12px;
+                margin-top: 4px;
             }
 
-        .form-control {
+        .ai-input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 18px;
+            background: #f8fafc;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 14px;
             font-size: 14px;
-            transition: all 0.2s;
+            color: #1e293b;
+            transition: all 0.3s;
         }
 
-            .form-control:focus {
+            .ai-input:focus {
                 border-color: #6366f1;
+                background: white;
                 outline: none;
+                box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
             }
 
-        textarea.form-control {
-            min-height: 100px;
+        textarea.ai-input {
             resize: vertical;
+            min-height: 120px;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 14px;
+        .btn-ai {
+            padding: 14px 32px;
+            border-radius: 14px;
             border: none;
+            font-weight: 700;
+            font-size: 15px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .btn-primary {
-            background: #6366f1;
-            color: white;
-            width: 100%;
-        }
-
-            .btn-primary:hover {
-                background: #4f46e5;
+            .btn-ai.primary {
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                color: white;
+                box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+                width: 100%;
             }
+
+                .btn-ai.primary:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 30px rgba(99,102,241,0.6);
+                }
 
         .divider {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 16px 0;
+            margin: 24px 0;
             color: #94a3b8;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
             .divider::before, .divider::after {
@@ -181,34 +240,35 @@
                 background: #e2e8f0;
             }
 
-        .session-card {
+        .session-item {
             display: flex;
             align-items: center;
             gap: 14px;
             padding: 16px;
             border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
+            border-radius: 12px;
             transition: all 0.2s;
+            cursor: pointer;
             text-decoration: none;
             color: inherit;
         }
 
-            .session-card:hover {
-                background: #f8fafc;
-                border-radius: 10px;
+            .session-item:hover {
+                background: rgba(99,102,241,0.04);
+                transform: translateX(4px);
             }
 
         .session-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #8b5cf6, #6366f1);
-            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
             color: white;
             flex-shrink: 0;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
         }
 
         .session-info {
@@ -224,87 +284,135 @@
             .session-info .s-meta {
                 font-size: 12px;
                 color: #94a3b8;
+                margin-top: 2px;
             }
 
-        .badge {
-            padding: 4px 10px;
+        .badge-ai {
+            padding: 4px 12px;
             border-radius: 10px;
             font-size: 10px;
             font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-purple {
             background: #ede9fe;
             color: #6d28d9;
         }
 
-        .empty {
+        .arrow {
+            color: #94a3b8;
+            font-size: 18px;
+        }
+
+        .empty-state {
             text-align: center;
             padding: 50px;
             color: #94a3b8;
         }
+
+            .empty-state i {
+                font-size: 48px;
+                color: #d1d5db;
+                margin-bottom: 12px;
+            }
     </style>
 }
 
-<div class="container-custom">
-    <div class="hero">
-        <h1>🧠 AI Study Assistant</h1>
-        <p>Upload your notes once and generate flashcards, quizzes, exam notes, and more</p>
+<div class="container-fluid py-2">
+    <!-- Hero -->
+    <div class="ai-hero">
+        <div class="hero-content">
+            <div class="ai-badge"><i class="fas fa-microchip"></i> AI POWERED</div>
+            <h1>Study Assistant</h1>
+            <p>Upload your notes and generate flashcards, quizzes, exam notes & more</p>
+        </div>
     </div>
 
-    <!-- Upload Card -->
-    <div class="card">
-        <h3>📤 Create New Study Session</h3>
-        <form action="@Url.Action("CreateSession", "AIStudy")" method="post" enctype="multipart/form-data">
-            <div class="form-group" style="margin-bottom:12px;">
-                <input type="text" name="sessionTitle" class="form-control" placeholder="Session name (optional)">
+    <!-- Create Session Card -->
+    <div class="main-card">
+        <div class="card-header">
+            <div class="icon-box"><i class="fas fa-cloud-upload-alt" style="color:#a5b4fc;"></i></div>
+            <div>
+                <h4>Create New Study Session</h4>
+                <small>Upload notes or paste text to get started</small>
             </div>
-            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p style="font-weight:600;margin-top:8px;">Click to upload or drag & drop</p>
-                <p style="font-size:12px;color:#94a3b8;">PDF, TXT (max 20MB)</p>
-                <p id="fileNameDisplay" style="color:#6366f1;font-weight:500;margin-top:8px;"></p>
-            </div>
-            <input type="file" name="file" id="fileInput" accept=".pdf,.txt" style="display:none;" onchange="document.getElementById('fileNameDisplay').textContent='📎 '+this.files[0].name">
-            <div class="divider">or paste text</div>
-            <textarea name="pasteText" class="form-control" placeholder="Paste your study notes here..."></textarea>
-            <button type="submit" class="btn btn-primary" style="margin-top:12px;">📤 Create Session</button>
-        </form>
+        </div>
+        <div class="card-body">
+            <form action="@Url.Action("CreateSession", "AIStudy")" method="post" enctype="multipart/form-data">
+                <div style="margin-bottom:12px;">
+                    <input type="text" name="sessionTitle" class="ai-input" placeholder="Session name (optional)">
+                </div>
+                <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h5>Click to upload or drag & drop</h5>
+                    <p>PDF, TXT (max 20MB)</p>
+                    <p id="fileNameDisplay" style="color:#6366f1;font-weight:500;margin-top:8px;"></p>
+                </div>
+                <input type="file" name="file" id="fileInput" accept=".pdf,.txt" style="display:none;" onchange="document.getElementById('fileNameDisplay').textContent='📎 '+this.files[0].name">
+                <div class="divider">or paste text</div>
+                <textarea name="pasteText" class="ai-input" placeholder="Paste your study notes here..."></textarea>
+                <button type="submit" class="btn-ai primary" style="margin-top:16px;">
+                    <i class="fas fa-magic"></i> Create Study Session
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Existing Sessions -->
-    <div class="card">
-        <h3>📚 Your Study Sessions</h3>
-        @if (Model.Any())
-        {
-            foreach (var s in Model)
+    <!-- Existing Sessions Card -->
+    <div class="main-card">
+        <div class="card-header">
+            <div class="icon-box"><i class="fas fa-folder-open" style="color:#a5b4fc;"></i></div>
+            <div>
+                <h4>Your Study Sessions</h4>
+                <small>@Model.Count session@(Model.Count != 1 ? "s" : "")</small>
+            </div>
+        </div>
+        <div class="card-body" style="padding:12px 20px;">
+            @if (Model.Any())
             {
-                <a href="@Url.Action("Workspace", new { id = s.Id })" class="session-card">
-                    <div class="session-icon">📄</div>
-                    <div class="session-info">
-                        <div class="s-title">@(s.SessionTitle ?? "Untitled")</div>
-                        <div class="s-meta">@s.OutputCount outputs | @s.CreatedDate.ToString("dd MMM yyyy") | @s.TextPreview</div>
-                    </div>
-                    <span class="badge badge-purple">@s.OutputCount items</span>
-                    <span style="color:#94a3b8;">→</span>
-                </a>
+                foreach (var s in Model)
+                {
+                    <a href="@Url.Action("Workspace", new { id = s.Id })" class="session-item">
+                        <div class="session-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="session-info">
+                            <div class="s-title">@(s.SessionTitle ?? "Untitled Session")</div>
+                            <div class="s-meta">@s.OutputCount outputs • @s.CreatedDate.ToString("dd MMM yyyy") • @s.TextPreview</div>
+                        </div>
+                        <span class="badge-ai">@s.OutputCount items</span>
+                        <span class="arrow">→</span>
+                    </a>
+                }
             }
-        }
-        else
-        {
-            <div class="empty">
-                <p>No study sessions yet. Upload notes to get started!</p>
-            </div>
-        }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h5 style="color:#64748b;">No study sessions yet</h5>
+                    <p>Upload your notes above to create your first AI-powered study session!</p>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
         var dz = document.getElementById('dropZone');
-        dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#6366f1'; dz.style.background = '#eef2ff'; });
-        dz.addEventListener('dragleave', () => { dz.style.borderColor = '#cbd5e1'; dz.style.background = '#f8fafc'; });
-        dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#cbd5e1'; dz.style.background = '#f8fafc'; document.getElementById('fileInput').files = e.dataTransfer.files; document.getElementById('fileNameDisplay').textContent = '📎 ' + e.dataTransfer.files[0].name; });
+        dz.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dz.style.borderColor = '#818cf8';
+            dz.style.background = 'rgba(99,102,241,0.08)';
+        });
+        dz.addEventListener('dragleave', function () {
+            dz.style.borderColor = '#6366f1';
+            dz.style.background = 'rgba(99,102,241,0.03)';
+        });
+        dz.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dz.style.borderColor = '#6366f1';
+            dz.style.background = 'rgba(99,102,241,0.03)';
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                document.getElementById('fileNameDisplay').textContent = '📎 ' + files[0].name;
+            }
+        });
     </script>
 }

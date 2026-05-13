@@ -1,69 +1,202 @@
-@model ElevateED.ViewModels.MarkAttendanceViewModel
+﻿@model ElevateED.ViewModels.MarkAttendanceViewModel
 
 @{
     ViewBag.Title = "Mark Attendance";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActiveSidebar = "scanqr";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-user-check"></i> Mark Your Attendance
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            @TempData["Success"]
-                            <button type="button" class="close" data-dismiss="alert"></button>
-                        </div>
-                    }
+@section Styles {
+    <style>
+        .attendance-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
 
-                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            @Model.ErrorMessage
-                            <button type="button" class="close" data-dismiss="alert"></button>
-                        </div>
-                    }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
 
-                    @using (Html.BeginForm("MarkAttendance", "Attendance", FormMethod.Post, new { @class = "form" }))
-                    {
-                        @Html.AntiForgeryToken()
+            .card h3 {
+                font-size: 18px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 12px;
+            }
 
-                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+            .card p {
+                color: #64748b;
+                font-size: 13px;
+                margin-bottom: 16px;
+            }
 
-                        <div class="form-group">
-                            @Html.LabelFor(m => m.OTPInput, new { @class = "form-label" })
-                            @Html.TextBoxFor(m => m.OTPInput, new { @class = "form-control form-control-lg", placeholder = "Enter 6-digit OTP", maxlength = "6", inputmode = "numeric", autocomplete = "off" })
-                            @Html.ValidationMessageFor(m => m.OTPInput, "", new { @class = "text-danger small" })
-                        </div>
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: #94a3b8;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
 
-                        <button type="submit" class="btn btn-info btn-block">
-                            <i class="fas fa-check"></i> Submit Attendance
-                        </button>
-                    }
+            .divider::before, .divider::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: #e2e8f0;
+            }
 
-                    <hr />
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 20px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 6px;
+            font-family: 'Courier New', monospace;
+        }
 
-                    <div class="alert alert-light" role="alert">
-                        <h6 class="alert-heading">
-                            <i class="fas fa-info-circle"></i> Instructions
-                        </h6>
-                        <small>
-                            <ul class="mb-0">
-                                <li>Wait for your teacher to announce the OTP</li>
-                                <li>Enter the 6-digit code above</li>
-                                <li>You can only submit once per session</li>
-                                <li>OTP expires after 5 minutes</li>
-                            </ul>
-                        </small>
-                    </div>
-                </div>
-            </div>
+            .form-control:focus {
+                border-color: #6366f1;
+                outline: none;
+            }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #4f46e5;
+            }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+            .btn-success:hover {
+                background: #059669;
+            }
+
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        #qr-reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #scanStatus {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
+        }
+    </style>
+}
+
+<div class="content-area">
+    <div class="attendance-container">
+        @if (TempData["Success"] != null)
+        {<div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>}
+        @if (TempData["Error"] != null)
+        {<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>}
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @Model.ErrorMessage</div>}
+
+        <!-- QR Scanner -->
+        <div class="card">
+            <h3><i class="fas fa-qrcode" style="color:#6366f1;"></i> Scan QR Code</h3>
+            <p>Point your camera at the teacher's QR code to mark attendance instantly</p>
+            <div id="qr-reader"></div>
+            <button class="btn btn-success" onclick="startScanner()"><i class="fas fa-camera"></i> Start Scanner</button>
+            <div id="scanStatus"></div>
+        </div>
+
+        <div class="divider">or enter code manually</div>
+
+        <!-- OTP Input -->
+        <div class="card">
+            <h3><i class="fas fa-keyboard" style="color:#6366f1;"></i> Enter OTP Code</h3>
+            <p>Type the 6-digit code announced by your teacher</p>
+            @using (Html.BeginForm("MarkAttendance", "Attendance", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.TextBoxFor(m => m.OTPInput, new { @class = "form-control", placeholder = "000000", maxlength = "6", autocomplete = "off" })
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Submit OTP</button>
+            }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        var scanner = null;
+        function startScanner() {
+            document.getElementById('scanStatus').textContent = 'Starting camera...';
+            if (scanner) { scanner.stop().then(function() { scanner.clear(); initScanner(); }); }
+            else { initScanner(); }
+        }
+        function initScanner() {
+            scanner = new Html5Qrcode("qr-reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+                function(decodedText) {
+                    document.getElementById('scanStatus').innerHTML = '<span style="color:#6366f1;">QR detected! Marking attendance...</span>';
+                    scanner.stop();
+                    $.post('@Url.Action("SubmitQRCode", "Attendance")', {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                        qrCode: decodedText
+                    }, function(r) {
+                        document.getElementById('scanStatus').innerHTML = r.success
+                            ? '<span style="color:#10b981;">✅ ' + r.message + '</span>'
+                            : '<span style="color:#ef4444;">❌ ' + r.message + '</span>';
+                    });
+                },
+                function() {},
+                function(err) { document.getElementById('scanStatus').textContent = 'Camera error: ' + err; }
+            ).then(function() { document.getElementById('scanStatus').textContent = 'Camera active - point at QR code'; });
+        }
+    </script>
+}

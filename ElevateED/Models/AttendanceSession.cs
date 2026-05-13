@@ -28,9 +28,9 @@ namespace ElevateED.Models
         [Required]
         [StringLength(6)]
         public string OTPCode { get; set; }
-
+        public string QRCode { get; set; }  // ADD THIS
         public DateTime OTPExpiry { get; set; }
-
+        public DateTime? QRCodeExpiry { get; set; }  // ADD THIS
         [Required]
         public bool IsActive { get; set; } = true;
 

@@ -1,75 +1,451 @@
-@model ElevateED.ViewModels.StartSessionViewModel
+﻿@model ElevateED.ViewModels.StartSessionViewModel
 
 @{
-    ViewBag.Title = "OTP Confirmation";
+    ViewBag.Title = "Session Started";
+    Layout = null;
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-check-circle"></i> Attendance Session Started!
-                    </h5>
-                </div>
-                <div class="card-body text-center">
-                    @if (TempData["Success"] != null)
-                    {
-                        <div class="alert alert-success">@TempData["Success"]</div>
-                    }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - ElevateED Teacher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-                    <p class="text-muted mb-3">Share this OTP code with your learners to mark attendance.</p>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-500: #6b7280;
+            --gray-800: #1f2937;
+            --sidebar-width: 260px;
+            --header-height: 72px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+        }
 
-                    <div class="p-4 bg-light border rounded mb-4">
-                        <h6 class="text-muted mb-2">ONE-TIME PASSWORD (OTP)</h6>
-                        <div style="font-size: 72px; font-family: 'Courier New', monospace; letter-spacing: 12px; font-weight: bold; color: #0056b3;">
-                            @Model.OTPCode
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f1f5f9;
+            color: var(--gray-800);
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+            .logo-text span {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+        }
+
+        .nav-section {
+            padding: 20px 16px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+            .nav-item:hover {
+                background: rgba(255,255,255,0.06);
+                color: rgba(255,255,255,0.9);
+            }
+
+            .nav-item.active {
+                background: rgba(99,102,241,0.2);
+                color: white;
+                font-weight: 600;
+            }
+
+            .nav-item i {
+                width: 18px;
+                font-size: 16px;
+                text-align: center;
+            }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .top-header {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .greeting h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: #f1f5f9;
+            cursor: pointer;
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .profile-container {
+            position: relative;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 4px 12px 4px 4px;
+            border-radius: 14px;
+            background: #f1f5f9;
+            border: none;
+        }
+
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            width: 260px;
+            display: none;
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+        }
+
+            .dropdown-menu.show {
+                display: block;
+                animation: fadeIn 0.15s ease;
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-user {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        }
+
+        .dropdown-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+
+            .dropdown-item:hover {
+                background: #f8fafc;
+            }
+
+        .text-danger {
+            color: #ef4444;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+
+        .content-area {
+            padding: 28px 32px;
+        }
+
+        .qr-card {
+            max-width: 550px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: var(--shadow);
+            padding: 32px;
+            text-align: center;
+        }
+
+            .qr-card h2 {
+                color: var(--success);
+                font-size: 22px;
+                margin-bottom: 8px;
+            }
+
+            .qr-card p {
+                color: var(--gray-500);
+                margin-bottom: 20px;
+            }
+
+        .qr-box {
+            background: #f8fafc;
+            border: 2px dashed #6366f1;
+            border-radius: 16px;
+            padding: 24px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+            .qr-box img {
+                max-width: 250px;
+            }
+
+        .qr-code {
+            font-size: 26px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #6366f1;
+            letter-spacing: 3px;
+            margin-top: 12px;
+        }
+
+        .timer {
+            font-size: 14px;
+            color: #f59e0b;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .info-box {
+            background: #eef2ff;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-top: 16px;
+            text-align: left;
+            font-size: 13px;
+            color: #4338ca;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #4f46e5;
+                color: white;
+                text-decoration: none;
+            }
+
+        @@media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Main Menu</div>
+                <a href="@Url.Action("Dashboard","Teacher")" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+                <div class="nav-section">Teaching</div>
+                <a href="@Url.Action("StartSession","Attendance")" class="nav-item active"><i class="fas fa-user-check"></i><span>Take Attendance</span></a>
+                <a href="@Url.Action("ActiveSessions","Teacher")" class="nav-item"><i class="fas fa-list-alt"></i><span>Active Sessions</span></a>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="top-header">
+                <div class="greeting"><h1>Session Started</h1><p>Students can scan the QR code or enter the OTP</p></div>
+                <div class="header-right">
+                    <button class="header-btn"><i class="far fa-bell"></i></button>
+                    <div class="profile-container">
+                        <button class="profile-trigger" onclick="toggleDropdown()"><div class="profile-avatar">T</div><div class="profile-info"><div class="profile-name">Teacher</div><div class="profile-role">Educator</div></div></button>
+                        <div class="dropdown-menu" id="profileDropdown">
+                            <div class="dropdown-user"><div class="dropdown-avatar">T</div><div style="font-weight:600;">Teacher</div></div>
+                            <div class="dropdown-divider"></div>
+                            <form action="@Url.Action("LogOff","Account")" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
                         </div>
-                        <small class="text-muted d-block mt-2">Valid for 5 minutes</small>
-                        <small class="text-muted d-block">Expires at: <span id="expiryTime">5:00</span></small>
                     </div>
-
-                    <div class="alert alert-warning" role="alert">
-                        <strong>Announce this OTP to your learners now!</strong>
-                        They must submit it within 5 minutes.
+                </div>
+            </header>
+            <div class="content-area">
+                <div class="qr-card">
+                    <h2>✅ Session Started!</h2>
+                    <p>Students can scan this QR code or enter the OTP to mark attendance</p>
+                    <div class="qr-box">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=@Url.Action("ScanQR", "Attendance", new { qrCode = ViewBag.QRCode }, Request.Url.Scheme)" alt="QR Code" />
+                        <div class="qr-code">@ViewBag.QRCode</div>
                     </div>
-
-                    <div class="btn-group mb-3" role="group">
-                        <button type="button" class="btn btn-outline-primary" onclick="copyOTP()">
-                            <i class="fas fa-copy"></i> Copy OTP
-                        </button>
-                        <a href="@Url.Action("EditAttendance", "Attendance", new { sessionId = Model.SessionId })" class="btn btn-outline-info">
-                            <i class="fas fa-edit"></i> Edit Attendance
-                        </a>
+                    <div class="timer">QR code expires in: <span id="countdown"></span></div>
+                    <p style="font-size:13px;color:var(--gray-500);">OTP Code: <strong style="font-size:20px;color:#6366f1;">@Model.OTPCode</strong></p>
+                    <div class="info-box">
+                        <strong>📋 Instructions:</strong><br>
+                        • Display this QR code for students to scan<br>
+                        • Students can also enter the OTP manually<br>
+                        • Only students in this class can use this code<br>
+                        • You can edit attendance manually anytime
+                    </div>
+                    <div style="margin-top:16px;">
+                        <a href="@Url.Action("EditAttendance", new { sessionId = Model.SessionId })" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Attendance</a>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
-</div>
-
-<script>
-    function copyOTP() {
-        var otp = '@Model.OTPCode';
-        navigator.clipboard.writeText(otp).then(function () {
-            alert('OTP copied to clipboard: ' + otp);
-        }, function (err) {
-            alert('Failed to copy OTP');
-        });
-    }
-
-    // Countdown timer
-    var timeLeft = 300; // 5 minutes in seconds
-    setInterval(function () {
-        timeLeft--;
-        var minutes = Math.floor(timeLeft / 60);
-        var seconds = timeLeft % 60;
-        document.getElementById('expiryTime').innerText = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-        
-        if (timeLeft <= 0) {
-            document.querySelector('.btn-group').style.display = 'none';
-            document.querySelector('.alert-warning').innerHTML = '<strong>Session Expired!</strong> The OTP is no longer valid.';
-        }
-    }, 1000);
-</script>
+    <script>
+        function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
+        document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');if(c&&!c.contains(e.target))document.getElementById('profileDropdown').classList.remove('show');});
+        var expiryTime = new Date('@ViewBag.Expiry.ToString("yyyy-MM-ddTHH:mm:ss")').getTime();
+        setInterval(function(){
+            var d = expiryTime - new Date().getTime();
+            if(d<0){document.getElementById('countdown').textContent='EXPIRED';}
+            else{var m=Math.floor(d/60000);var s=Math.floor((d%60000)/1000);document.getElementById('countdown').textContent=m+'m '+s+'s';}
+        },1000);
+    </script>
+</body>
+</html>

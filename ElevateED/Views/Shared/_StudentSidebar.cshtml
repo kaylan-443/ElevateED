@@ -1,0 +1,94 @@
+﻿@*
+    Shared student sidebar. Pass the active page key as the model:
+      @Html.Partial("_StudentSidebar", "extraclasses")
+    Recognised keys: dashboard, timetable, homework, classwork, quizzes,
+    marks, extraclasses, enrollments, attendance, aistudy, mathsolver,
+    podcast, pastpapers, studymaterials, examtimetable, reportcard,
+    scanqr, markattendance, announcements
+*@
+@model string
+@{
+    var active = (Model ?? "").ToLowerInvariant();
+    Func<string, string> cls = key => active == key ? "nav-item active" : "nav-item";
+}
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="logo-text">Elevate<span>ED</span></div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main Menu</div>
+        <a href="@Url.Action("Dashboard","Student")" class="@cls("dashboard")">
+            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+        </a>
+        <a href="@Url.Action("Timetable","Student")" class="@cls("timetable")">
+            <i class="fas fa-calendar-alt"></i> <span>My Timetable</span>
+        </a>
+
+        <div class="nav-section">Learning</div>
+        <a href="@Url.Action("Homework","Student")" class="@cls("homework")">
+            <i class="fas fa-home"></i> <span>Homework</span>
+        </a>
+        <a href="@Url.Action("Classwork","Student")" class="@cls("classwork")">
+            <i class="fas fa-chalkboard"></i> <span>Classwork</span>
+        </a>
+        <a href="@Url.Action("Index","StudentQuiz")" class="@cls("quizzes")">
+            <i class="fas fa-question-circle"></i> <span>Quizzes</span>
+        </a>
+        <a href="@Url.Action("Marks","Student")" class="@cls("marks")">
+            <i class="fas fa-clipboard-check"></i> <span>My Marks</span>
+        </a>
+
+        <div class="nav-section">Extra Classes</div>
+        <a href="@Url.Action("Index","StudentExtraClass")" class="@cls("extraclasses")">
+            <i class="fas fa-chalkboard-teacher"></i> <span>Extra Classes</span>
+        </a>
+        <a href="@Url.Action("MyEnrollments","StudentExtraClass")" class="@cls("enrollments")">
+            <i class="fas fa-list-alt"></i> <span>My Enrollments</span>
+        </a>
+        <a href="@Url.Action("MyAttendance","StudentExtraClass")" class="@cls("attendance")">
+            <i class="fas fa-calendar-check"></i> <span>My Attendance</span>
+        </a>
+
+        <div class="nav-section">AI Tools</div>
+        <a href="@Url.Action("Index","AIStudy")" class="@cls("aistudy")">
+            <i class="fas fa-robot"></i> <span>AI Study Buddy</span>
+        </a>
+        <a href="@Url.Action("MathSolver","Student")" class="@cls("mathsolver")">
+            <i class="fas fa-calculator"></i> <span>AI Math Solver</span>
+        </a>
+        <a href="@Url.Action("Index","Podcast")" class="@cls("podcast")">
+            <i class="fas fa-podcast"></i> <span>AI Podcast Generator</span>
+        </a>
+
+        <div class="nav-section">Resources</div>
+        <a href="@Url.Action("PastPapers","Student")" class="@cls("pastpapers")">
+            <i class="fas fa-archive"></i> <span>Past Papers</span>
+        </a>
+        <a href="@Url.Action("StudyMaterials","Student")" class="@cls("studymaterials")">
+            <i class="fas fa-book"></i> <span>Study Materials</span>
+        </a>
+
+        <div class="nav-section">Exams</div>
+        <a href="@Url.Action("ExamTimetable","Student")" class="@cls("examtimetable")">
+            <i class="fas fa-calendar-week"></i> <span>Exam Timetable</span>
+        </a>
+        <a href="@Url.Action("MyReportCards","Marks")" class="@cls("reportcard")">
+            <i class="fas fa-file-alt"></i> <span>Report Cards</span>
+        </a>
+
+        <div class="nav-section">Other</div>
+        <a href="@Url.Action("MarkAttendance","Attendance")" class="@cls("markattendance")">
+            <i class="fas fa-user-check"></i> <span>Mark Attendance</span>
+        </a>
+        <a href="@Url.Action("ScanAttendance","StudentExtraClass")" class="@cls("scanqr")">
+            <i class="fas fa-qrcode"></i> <span>Scan QR Code</span>
+        </a>
+        <a href="@Url.Action("ViewAnnouncements","Student")" class="@cls("announcements")">
+            <i class="fas fa-bullhorn"></i> <span>Announcements</span>
+        </a>
+    </nav>
+</aside>

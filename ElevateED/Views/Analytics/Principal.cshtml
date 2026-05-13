@@ -2,161 +2,388 @@
 
 @{
     ViewBag.Title = "Principal Analytics";
+    Layout = null;
 }
 
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h2>Principal Analytics</h2>
-            <p class="text-muted">Whole-school academic, assessment, report, teacher, and exam overview.</p>
-        </div>
-        <div>
-            @Html.ActionLink("Exam Proposals", "Index", "ExamApproval", null, new { @class = "btn btn-outline-primary" })
-            @Html.ActionLink("Pending Reports", "PendingReports", "Marks", null, new { @class = "btn btn-outline-primary ms-2" })
-            @Html.ActionLink("All Report Cards", "ReportCards", "Marks", null, new { @class = "btn btn-outline-primary ms-2" })
-            @Html.ActionLink("Promotion Rules", "PromotionRules", "Marks", null, new { @class = "btn btn-primary ms-2" })
-        </div>
-    </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - ElevateED Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <div class="row mb-3">
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Students</div>
-                <h3>@Model.TotalStudents</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Teachers</div>
-                <h3>@Model.TotalTeachers</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Classes</div>
-                <h3>@Model.TotalClasses</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Pending Mark Approvals</div>
-                <h3>@Model.PendingMarkApprovals</h3>
-            </div></div>
-        </div>
-    </div>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
 
-    <div class="row mb-3">
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">School Average</div>
-                <h3>@Model.SchoolAverage%</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Pass Rate</div>
-                <h3>@Model.PassRate%</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Report Cards</div>
-                <h3>@Model.GeneratedReportCards</h3>
-            </div></div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Exam Sessions</div>
-                <h3>@Model.PublishedExamSessions</h3>
-            </div></div>
-        </div>
-    </div>
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
 
-    <div class="row mb-3">
-        <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Promoted</div>
-                <h4>@Model.PromotionRate%</h4>
-            </div></div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Progressed</div>
-                <h4>@Model.ProgressionRate%</h4>
-            </div></div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card text-center shadow-sm"><div class="card-body">
-                <div class="text-muted">Not Promoted</div>
-                <h4>@Model.NotPromotedRate%</h4>
-            </div></div>
-        </div>
-    </div>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-    <div class="row mb-3">
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light"><strong>Subject Performance</strong></div>
-                <div class="card-body table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead><tr><th>Subject</th><th>Average</th><th>Pass Rate</th><th>Learners</th></tr></thead>
-                        <tbody>
-                            @foreach (var item in Model.SubjectPerformance)
-                            {
-                                <tr>
-                                    <td>@item.SubjectName</td>
-                                    <td>@item.Average%</td>
-                                    <td>@item.PassRate%</td>
-                                    <td>@item.LearnerCount</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+            .page-header h1 {
+                font-size: 24px;
+                font-weight: 700;
+                color: #1e293b;
+            }
+
+                .page-header h1 i {
+                    color: #6366f1;
+                    margin-right: 10px;
+                }
+
+            .page-header p {
+                color: #64748b;
+                font-size: 13px;
+                margin-top: 4px;
+            }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #6366f1;
+            border: 1.5px solid #6366f1;
+        }
+
+            .btn-outline:hover {
+                background: #6366f1;
+                color: white;
+                text-decoration: none;
+            }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #4f46e5;
+                text-decoration: none;
+                color: white;
+            }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            }
+
+            .stat-card .stat-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 12px;
+                font-size: 20px;
+            }
+
+            .stat-card .stat-value {
+                font-size: 28px;
+                font-weight: 700;
+                color: #1e293b;
+            }
+
+            .stat-card .stat-label {
+                font-size: 12px;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                font-weight: 600;
+            }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .card-header h3 {
+                font-size: 15px;
+                font-weight: 700;
+                color: #1e293b;
+                margin: 0;
+            }
+
+        .card-body {
+            padding: 20px 24px;
+        }
+
+            .card-body canvas {
+                max-height: 300px;
+            }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-top: 1px solid #f1f5f9;
+            color: #475569;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @@media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-chart-line"></i>Principal Analytics</h1>
+                <p>Whole-school academic, assessment, report, teacher, and exam overview</p>
+            </div>
+            <div class="header-actions">
+                <a href="@Url.Action("Index","ExamApproval")" class="btn btn-outline"><i class="fas fa-calendar-check"></i> Exam Proposals</a>
+                <a href="@Url.Action("PendingReports","Marks")" class="btn btn-outline"><i class="fas fa-file-check"></i> Pending Reports</a>
+                <a href="@Url.Action("ReportCards","Marks")" class="btn btn-outline"><i class="fas fa-file-alt"></i> All Reports</a>
+                <a href="@Url.Action("PromotionRules","Marks")" class="btn btn-primary"><i class="fas fa-gavel"></i> Promotion Rules</a>
             </div>
         </div>
 
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light"><strong>Class Performance</strong></div>
-                <div class="card-body table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead><tr><th>Class</th><th>Average</th><th>Pass Rate</th><th>Promoted</th><th>Progressed</th><th>Not</th></tr></thead>
+        <!-- Stats Row 1 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#dbeafe;color:#3b82f6;"><i class="fas fa-user-graduate"></i></div>
+                <div class="stat-value">@Model.TotalStudents</div>
+                <div class="stat-label">Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#d1fae5;color:#10b981;"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="stat-value">@Model.TotalTeachers</div>
+                <div class="stat-label">Teachers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ede9fe;color:#8b5cf6;"><i class="fas fa-door-open"></i></div>
+                <div class="stat-value">@Model.TotalClasses</div>
+                <div class="stat-label">Classes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef3c7;color:#f59e0b;"><i class="fas fa-clock"></i></div>
+                <div class="stat-value">@Model.PendingMarkApprovals</div>
+                <div class="stat-label">Pending Approvals</div>
+            </div>
+        </div>
+
+        <!-- Stats Row 2 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e0e7ff;color:#6366f1;"><i class="fas fa-chart-bar"></i></div>
+                <div class="stat-value">@Model.SchoolAverage%</div>
+                <div class="stat-label">School Average</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#d1fae5;color:#10b981;"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value">@Model.PassRate%</div>
+                <div class="stat-label">Pass Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fce7f3;color:#ec4899;"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-value">@Model.GeneratedReportCards</div>
+                <div class="stat-label">Report Cards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#cffafe;color:#06b6d4;"><i class="fas fa-calendar-week"></i></div>
+                <div class="stat-value">@Model.PublishedExamSessions</div>
+                <div class="stat-label">Exam Sessions</div>
+            </div>
+        </div>
+
+        <!-- Promotion Stats -->
+        <div class="stats-grid">
+            <div class="stat-card" style="border-top:3px solid #3b82f6;">
+                <div class="stat-value" style="color:#3b82f6;">@Model.PromotionRate%</div>
+                <div class="stat-label">Promoted</div>
+            </div>
+            <div class="stat-card" style="border-top:3px solid #f59e0b;">
+                <div class="stat-value" style="color:#f59e0b;">@Model.ProgressionRate%</div>
+                <div class="stat-label">Progressed</div>
+            </div>
+            <div class="stat-card" style="border-top:3px solid #ef4444;">
+                <div class="stat-value" style="color:#ef4444;">@Model.NotPromotedRate%</div>
+                <div class="stat-label">Not Promoted</div>
+            </div>
+            <div class="stat-card" style="border-top:3px solid #10b981;">
+                <div class="stat-value" style="color:#10b981;">@Model.PassRate%</div>
+                <div class="stat-label">Overall Pass</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+            <!-- Subject Performance Chart -->
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-bar" style="color:#6366f1;"></i><h3>Subject Performance</h3></div>
+                <div class="card-body"><canvas id="subjectChart"></canvas></div>
+            </div>
+            <!-- Promotion Distribution Chart -->
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-pie" style="color:#8b5cf6;"></i><h3>Promotion Distribution</h3></div>
+                <div class="card-body"><canvas id="promotionChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Subject Performance Table -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-header"><i class="fas fa-table" style="color:#6366f1;"></i><h3>Subject Performance Details</h3></div>
+            <div class="card-body table-responsive" style="padding:0;">
+                <table>
+                    <thead><tr><th>Subject</th><th>Average</th><th>Pass Rate</th><th>Learners</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.SubjectPerformance)
+                        {
+                            <tr><td><strong>@item.SubjectName</strong></td><td>@item.Average%</td><td>@item.PassRate%</td><td>@item.LearnerCount</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Class & Teacher Performance -->
+        <div class="charts-row">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-users" style="color:#10b981;"></i><h3>Class Performance</h3></div>
+                <div class="card-body table-responsive" style="padding:0;">
+                    <table>
+                        <thead><tr><th>Class</th><th>Avg</th><th>Pass</th><th>Promoted</th><th>Progressed</th></tr></thead>
                         <tbody>
                             @foreach (var item in Model.ClassPerformance)
                             {
-                                <tr>
-                                    <td>@item.ClassName</td>
-                                    <td>@item.Average%</td>
-                                    <td>@item.PassRate%</td>
-                                    <td>@item.PromotedCount</td>
-                                    <td>@item.ProgressedCount</td>
-                                    <td>@item.NotPromotedCount</td>
-                                </tr>
+                                <tr><td><strong>@item.ClassName</strong></td><td>@item.Average%</td><td>@item.PassRate%</td><td>@item.PromotedCount</td><td>@item.ProgressedCount</td></tr>
                             }
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light"><strong>Teacher Performance</strong></div>
-                <div class="card-body table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead><tr><th>Teacher</th><th>Approved Assessments</th><th>Average Mark</th><th>Pass Rate</th></tr></thead>
+            <div class="card">
+                <div class="card-header"><i class="fas fa-star" style="color:#f59e0b;"></i><h3>Teacher Performance</h3></div>
+                <div class="card-body table-responsive" style="padding:0;">
+                    <table>
+                        <thead><tr><th>Teacher</th><th>Assessments</th><th>Avg Mark</th><th>Pass Rate</th></tr></thead>
                         <tbody>
                             @foreach (var item in Model.TeacherPerformance)
                             {
-                                <tr>
-                                    <td>@item.TeacherName</td>
-                                    <td>@item.ApprovedAssessmentCount</td>
-                                    <td>@item.AverageLearnerMark%</td>
-                                    <td>@item.PassRate%</td>
-                                </tr>
+                                <tr><td><strong>@item.TeacherName</strong></td><td>@item.ApprovedAssessmentCount</td><td>@item.AverageLearnerMark%</td><td>@item.PassRate%</td></tr>
                             }
                         </tbody>
                     </table>
@@ -164,48 +391,85 @@
             </div>
         </div>
 
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light"><strong>At-Risk Learners</strong></div>
-                <div class="card-body table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead><tr><th>Learner</th><th>Class</th><th>Final</th><th>Decision</th><th>Reason</th></tr></thead>
-                        <tbody>
-                            @foreach (var item in Model.AtRiskLearners)
-                            {
-                                <tr>
-                                    <td>@item.StudentName</td>
-                                    <td>@item.ClassName</td>
-                                    <td>@item.FinalMark%</td>
-                                    <td>@item.PromotionDecision</td>
-                                    <td>@item.Reason</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+        <!-- At-Risk Learners -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-header"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i><h3>At-Risk Learners</h3></div>
+            <div class="card-body table-responsive" style="padding:0;">
+                <table>
+                    <thead><tr><th>Learner</th><th>Class</th><th>Final</th><th>Decision</th><th>Reason</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.AtRiskLearners)
+                        {
+                            <tr><td><strong>@item.StudentName</strong></td><td>@item.ClassName</td><td>@item.FinalMark%</td><td>@item.PromotionDecision</td><td>@item.Reason</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Exam Timetable Activity -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-header"><i class="fas fa-calendar-alt" style="color:#06b6d4;"></i><h3>Exam Timetable Activity</h3></div>
+            <div class="card-body table-responsive" style="padding:0;">
+                <table>
+                    <thead><tr><th>Timetable</th><th>Status</th><th>Total Sessions</th><th>Proposed</th><th>Published</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.ExamTimetables)
+                        {
+                            <tr><td><strong>@item.Name</strong></td><td>@item.Status</td><td>@item.TotalSessions</td><td>@item.ProposedSessions</td><td>@item.PublishedSessions</td></tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light"><strong>Exam Timetable Activity</strong></div>
-        <div class="card-body table-responsive">
-            <table class="table table-sm table-striped">
-                <thead><tr><th>Timetable</th><th>Status</th><th>Total Sessions</th><th>Proposed</th><th>Published/Approved</th></tr></thead>
-                <tbody>
-                    @foreach (var item in Model.ExamTimetables)
-                    {
-                        <tr>
-                            <td>@item.Name</td>
-                            <td>@item.Status</td>
-                            <td>@item.TotalSessions</td>
-                            <td>@item.ProposedSessions</td>
-                            <td>@item.PublishedSessions</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    <script>
+        // Subject Performance Chart
+        var subjectCtx = document.getElementById('subjectChart').getContext('2d');
+        new Chart(subjectCtx, {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",", Model.SubjectPerformance.Select(s => "'" + s.SubjectName + "'")))],
+                datasets: [{
+                    label: 'Average %',
+                    data: [@string.Join(",", Model.SubjectPerformance.Select(s => s.Average))],
+                    backgroundColor: '#6366f1',
+                    borderRadius: 8
+                }, {
+                    label: 'Pass Rate %',
+                    data: [@string.Join(",", Model.SubjectPerformance.Select(s => s.PassRate))],
+                    backgroundColor: '#10b981',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+
+        // Promotion Distribution Chart
+        var promotionCtx = document.getElementById('promotionChart').getContext('2d');
+        new Chart(promotionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Promoted', 'Progressed', 'Not Promoted'],
+                datasets: [{
+                    data: [@Model.PromotionRate, @Model.ProgressionRate, @Model.NotPromotedRate],
+                    backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

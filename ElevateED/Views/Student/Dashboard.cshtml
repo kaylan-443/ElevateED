@@ -3,66 +3,7 @@
 @{
     ViewBag.Title = "Student Dashboard - ElevateED";
     Layout = "~/Views/Shared/_StudentLayout.cshtml";
-}
-
-@section SidebarNav {
-    <div class="nav-section">Main</div>
-    <a href="@Url.Action("Dashboard", "Student")" class="nav-item active">
-        <i class="fas fa-home"></i><span>Dashboard</span>
-    </a>
-    <a href="@Url.Action("Timetable", "Student")" class="nav-item">
-        <i class="fas fa-calendar-alt"></i><span>Timetable</span>
-    </a>
-    <a href="@Url.Action("MarkAttendance", "Attendance")" class="nav-item">
-        <i class="fas fa-user-check"></i><span>Mark Attendance</span>
-    </a>
-
-    <div class="nav-section">Learning</div>
-    <a href="@Url.Action("Homework", "Student")" class="nav-item">
-        <i class="fas fa-home"></i><span>Homework</span>
-    </a>
-    <a href="@Url.Action("Classwork", "Student")" class="nav-item">
-        <i class="fas fa-chalkboard"></i><span>Classwork</span>
-    </a>
-    <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item">
-        <i class="fas fa-book"></i><span>Study Materials</span>
-    </a>
-    <a href="@Url.Action("PastPapers", "Student")" class="nav-item">
-        <i class="fas fa-archive"></i><span>Past Papers</span>
-    </a>
-    <a href="@Url.Action("Index", "StudentQuiz")" class="nav-item">
-        <i class="fas fa-question-circle"></i><span>Quizzes</span>
-    </a>
-    <a href="@Url.Action("Index", "StudentExtraClass")" class="nav-item">
-        <i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span>
-    </a>
-
-    <div class="nav-section">AI Tools</div>
-    <a href="@Url.Action("Index", "AIStudy")" class="nav-item">
-        <i class="fas fa-robot"></i><span>AI Study Assistant</span>
-    </a>
-    <a href="@Url.Action("Index", "Podcast")" class="nav-item">
-        <i class="fas fa-podcast"></i><span>AI Podcast Generator</span>
-    </a>
-
-    <div class="nav-section">Exams</div>
-    <a href="@Url.Action("ExamTimetable", "Student")" class="nav-item">
-        <i class="fas fa-calendar-check"></i><span>Exam Timetable</span>
-    </a>
-    <a href="@Url.Action("MyReportCards", "Marks")" class="nav-item">
-        <i class="fas fa-file-alt"></i><span>Report Cards</span>
-    </a>
-
-    <div class="nav-section">Other</div>
-    <a href="@Url.Action("ViewAnnouncements", "Student")" class="nav-item">
-        <i class="fas fa-bullhorn"></i><span>Announcements</span>
-    </a>
-    <a href="@Url.Action("ReportIssue", "Student")" class="nav-item">
-        <i class="fas fa-exclamation-triangle"></i><span>Report Issue</span>
-    </a>
-    <a href="@Url.Action("MyIssues", "Student")" class="nav-item">
-        <i class="fas fa-clipboard-list"></i><span>My Issues</span>
-    </a>
+    ViewBag.ActiveSidebar = "dashboard";
 }
 
 @section Styles {

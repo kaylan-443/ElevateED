@@ -3,373 +3,773 @@
 
 @{
     ViewBag.Title = "Capture Marks";
+    Layout = null;
     var locked = Model.Status == MarkApprovalStatus.Approved;
 
-    // Build attribute dictionaries conditionally — a `disabled = null` key in an anonymous
-    // object still renders as disabled="" which disables the input regardless of value.
     var markAttrs = new Dictionary<string, object>
-    {
-        { "class", "mark-input" },
-        { "type", "number" },
-        { "step", "0.1" },
-        { "min", "0" },
-        { "max", Model.MaxMark },
-        { "placeholder", "—" }
+{
+        { "class", "mark-input" }, { "type", "number" }, { "step", "0.1" }, { "min", "0" }, { "max", Model.MaxMark }, { "placeholder", "—" }
     };
     var commentAttrs = new Dictionary<string, object>
-    {
-        { "class", "comment-input" },
-        { "placeholder", "Optional comment" }
+{
+        { "class", "comment-input" }, { "placeholder", "Optional comment" }
     };
-    if (locked)
-    {
-        markAttrs["disabled"] = "disabled";
-        commentAttrs["disabled"] = "disabled";
-    }
+    if (locked) { markAttrs["disabled"] = "disabled"; commentAttrs["disabled"] = "disabled"; }
 
     var captured = Model.Marks.Count(m => m.Mark.HasValue);
     var total = Model.Marks.Count;
     var pct = total > 0 ? (int)Math.Round((double)captured * 100 / total) : 0;
 }
 
-<style>
-    .assessment-header {
-        background: white;
-        border-radius: 14px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
-        padding: 22px 26px;
-        margin-bottom: 20px;
-    }
-    .assessment-header h2 {
-        margin: 0 0 6px;
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--primary-blue);
-    }
-    .assessment-header .meta {
-        color: #777;
-        font-size: 13px;
-    }
-    .assessment-header .meta span { margin-right: 14px; }
-    .assessment-header .meta i { margin-right: 4px; color: #999; }
-
-    .header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 5px 14px;
-        border-radius: 14px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: .3px;
-    }
-    .status-draft { background: #eef0f3; color: #6c757d; }
-    .status-submitted { background: #e3f2fd; color: #1565c0; }
-    .status-approved { background: #e8f5e9; color: #2e7d32; }
-    .status-rejected { background: #ffebee; color: #c62828; }
-
-    .fallback-banner {
-        background: #fff8e1;
-        border: 1px solid #ffe0b2;
-        color: #b76e00;
-        padding: 12px 16px;
-        border-radius: 10px;
-        margin-top: 14px;
-        font-size: 13px;
-    }
-    .fallback-banner i { margin-right: 6px; }
-
-    .progress-row {
-        margin-top: 18px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-    .progress-row .label { font-size: 13px; color: #555; font-weight: 600; }
-    .progress-track {
-        flex: 1;
-        background: #f1f3f5;
-        border-radius: 8px;
-        height: 10px;
-        overflow: hidden;
-    }
-    .progress-track > div {
-        background: linear-gradient(90deg, #28a745, #38d058);
-        height: 100%;
-        transition: width .25s;
-    }
-    .progress-count {
-        font-size: 13px;
-        color: #444;
-        font-weight: 600;
-        min-width: 60px;
-        text-align: right;
-    }
-
-    .marks-card {
-        background: white;
-        border-radius: 14px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
-        overflow: hidden;
-    }
-
-    .marks-card table { width: 100%; border-collapse: collapse; }
-    .marks-card thead th {
-        background: #f7f8fb;
-        color: #555;
-        font-weight: 600;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-        padding: 14px 18px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-    }
-    .marks-card tbody td {
-        padding: 12px 18px;
-        font-size: 14px;
-        border-top: 1px solid #f1f1f1;
-        vertical-align: middle;
-    }
-    .marks-card tbody tr:hover { background: #fafbfd; }
-
-    .learner-cell {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 500;
-        color: #222;
-    }
-    .learner-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: #e0e7ff;
-        color: #4f46e5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 13px;
-    }
-
-    .mark-cell { display: flex; align-items: center; gap: 8px; }
-    .mark-input {
-        width: 90px;
-        padding: 8px 10px;
-        border: 1px solid #d8dde3;
-        border-radius: 8px;
-        font-size: 14px;
-        text-align: center;
-        font-weight: 600;
-    }
-    .mark-input:focus {
-        border-color: var(--primary-blue);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
-    }
-    .mark-input:disabled { background: #f6f7f9; color: #999; }
-    .mark-max { color: #999; font-size: 13px; }
-
-    .comment-input {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #d8dde3;
-        border-radius: 8px;
-        font-size: 13px;
-    }
-    .comment-input:focus {
-        border-color: var(--primary-blue);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
-    }
-    .comment-input:disabled { background: #f6f7f9; color: #999; }
-
-    .action-bar {
-        position: sticky;
-        bottom: 0;
-        background: white;
-        border-top: 1px solid #eee;
-        padding: 16px 22px;
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .action-bar .note {
-        color: #777;
-        font-size: 13px;
-        margin-right: auto;
-    }
-
-    .btn-save {
-        background: white;
-        color: var(--primary-blue);
-        border: 1.5px solid var(--primary-blue);
-        padding: 9px 22px;
-        border-radius: 22px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-    }
-    .btn-save:hover { background: var(--primary-blue); color: white; }
-
-    .btn-finalize {
-        background: var(--success-green);
-        color: white;
-        border: none;
-        padding: 10px 24px;
-        border-radius: 22px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .btn-finalize:hover { background: #1e7e34; }
-
-    .lock-banner {
-        background: #e8f5e9;
-        border: 1px solid #c8e6c9;
-        color: #1b5e20;
-        padding: 14px 18px;
-        border-radius: 10px;
-        margin: 16px 22px;
-    }
-    .lock-banner i { margin-right: 6px; }
-
-    .alert-flash {
-        border-radius: 10px;
-        padding: 14px 18px;
-        margin-bottom: 18px;
-    }
-    .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-</style>
-
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "marks")
-
-    <main class="main-content">
-        <div class="top-bar">
-            <div class="greeting">
-                <h1><i class="fas fa-pen-to-square" style="color:#6366f1;margin-right:10px;"></i>Capture Marks</h1>
-                <p>Enter learner marks. Click <strong>Finalize Marks</strong> when complete to lock them and trigger report generation.</p>
-            </div>
-            <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> All Assessments</a>
-        </div>
-
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert-flash alert-flash-error">
-                <i class="fas fa-exclamation-triangle"></i>
-                @Html.ValidationSummary(false)
-            </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - ElevateED Teacher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        <div class="assessment-header">
-            <div class="header-row">
-                <div>
-                    <h2>@Model.AssessmentName</h2>
-                    <div class="meta">
-                        <span><i class="fas fa-chalkboard"></i>@Model.ClassName</span>
-                        <span><i class="fas fa-book"></i>@Model.SubjectName</span>
-                        <span><i class="fas fa-calendar"></i>@Model.Term @Model.AcademicYear</span>
-                        <span><i class="fas fa-tag"></i>@Model.AssessmentType</span>
-                        <span><i class="fas fa-bullseye"></i>Max @Model.MaxMark</span>
-                    </div>
-                </div>
-                <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
-            </div>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --sidebar-width: 260px;
+            --header-height: 72px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+        }
 
-            @if (Model.IsActingAsClassTeacher)
-            {
-                <div class="fallback-banner">
-                    <i class="fas fa-user-shield"></i>
-                    You are capturing these marks as the <strong>class teacher</strong>. Subject teacher: <strong>@(string.IsNullOrWhiteSpace(Model.OwningTeacherName) ? "—" : Model.OwningTeacherName)</strong>.
-                </div>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f1f5f9;
+            color: var(--gray-800);
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+            .logo-text span {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
 
-            <div class="progress-row">
-                <div class="label">Captured</div>
-                <div class="progress-track"><div style="width:@(pct)%;"></div></div>
-                <div class="progress-count">@captured / @total</div>
-            </div>
-        </div>
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+        }
 
-        @using (Html.BeginForm())
-        {
-            @Html.AntiForgeryToken()
-            @Html.HiddenFor(m => m.AssessmentId)
+        .nav-section {
+            padding: 20px 16px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-            <div class="marks-card">
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Learner</th>
-                                <th style="width:180px;">Mark</th>
-                                <th>Comment</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (var i = 0; i < Model.Marks.Count; i++)
-                            {
-                                var initials = !string.IsNullOrEmpty(Model.Marks[i].StudentName) && Model.Marks[i].StudentName.Length > 0
-                                    ? Model.Marks[i].StudentName.Substring(0, 1).ToUpper() : "?";
-                                <tr>
-                                    <td>
-                                        <div class="learner-cell">
-                                            <div class="learner-avatar">@initials</div>
-                                            <span>@Model.Marks[i].StudentName</span>
-                                        </div>
-                                        @Html.HiddenFor(m => m.Marks[i].StudentId)
-                                        @Html.HiddenFor(m => m.Marks[i].StudentName)
-                                    </td>
-                                    <td>
-                                        <div class="mark-cell">
-                                            @Html.TextBoxFor(m => m.Marks[i].Mark, markAttrs)
-                                            <span class="mark-max">/ @Model.MaxMark</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @Html.TextBoxFor(m => m.Marks[i].Comment, commentAttrs)
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+            .nav-item:hover {
+                background: rgba(255,255,255,0.06);
+                color: rgba(255,255,255,0.9);
+            }
+
+            .nav-item.active {
+                background: rgba(99,102,241,0.2);
+                color: white;
+                font-weight: 600;
+            }
+
+            .nav-item i {
+                width: 18px;
+                font-size: 16px;
+                text-align: center;
+            }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .top-header {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .greeting h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        .greeting p {
+            color: var(--gray-500);
+            margin: 2px 0 0 0;
+            font-size: 13px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: #f1f5f9;
+            cursor: pointer;
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .profile-container {
+            position: relative;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 4px 12px 4px 4px;
+            border-radius: 14px;
+            background: #f1f5f9;
+            border: none;
+        }
+
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            width: 260px;
+            display: none;
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+        }
+
+            .dropdown-menu.show {
+                display: block;
+                animation: fadeIn 0.15s ease;
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-user {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        }
+
+        .dropdown-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+
+            .dropdown-item:hover {
+                background: #f8fafc;
+            }
+
+        .text-danger {
+            color: #ef4444;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+
+        .content-area {
+            padding: 28px 32px;
+        }
+
+        .assessment-header {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 22px 26px;
+            margin-bottom: 20px;
+        }
+
+            .assessment-header h2 {
+                margin: 0 0 6px;
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--gray-800);
+            }
+
+            .assessment-header .meta {
+                color: #64748b;
+                font-size: 13px;
+            }
+
+                .assessment-header .meta span {
+                    margin-right: 14px;
+                }
+
+                .assessment-header .meta i {
+                    margin-right: 4px;
+                    color: #94a3b8;
+                }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-draft {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .status-submitted {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .fallback-banner {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        .progress-row {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+            .progress-row .label {
+                font-size: 13px;
+                color: #64748b;
+                font-weight: 600;
+            }
+
+        .progress-track {
+            flex: 1;
+            background: #f1f5f9;
+            border-radius: 8px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+            .progress-track > div {
+                background: var(--success);
+                height: 100%;
+                transition: width .25s;
+                border-radius: 8px;
+            }
+
+        .progress-count {
+            font-size: 13px;
+            color: #334155;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .marks-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+            .marks-card table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .marks-card thead th {
+                background: #f8fafc;
+                color: var(--gray-600);
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                padding: 14px 18px;
+                text-align: left;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .marks-card tbody td {
+                padding: 12px 18px;
+                font-size: 13px;
+                border-top: 1px solid #f1f5f9;
+                vertical-align: middle;
+            }
+
+            .marks-card tbody tr:hover {
+                background: #f8fafc;
+            }
+
+        .learner-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .learner-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .mark-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mark-input {
+            width: 90px;
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+            .mark-input:focus {
+                border-color: var(--primary);
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+            }
+
+            .mark-input:disabled {
+                background: #f8fafc;
+                color: #94a3b8;
+            }
+
+        .mark-max {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+            .comment-input:focus {
+                border-color: var(--primary);
+                outline: none;
+            }
+
+            .comment-input:disabled {
+                background: #f8fafc;
+                color: #94a3b8;
+            }
+
+        .action-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 16px 22px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .action-bar .note {
+                color: #64748b;
+                font-size: 13px;
+                margin-right: auto;
+            }
+
+        .btn-save {
+            background: white;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            padding: 9px 22px;
+            border-radius: 22px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+            .btn-save:hover {
+                background: var(--primary);
+                color: white;
+            }
+
+        .btn-finalize {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 22px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-finalize:hover {
+                background: #059669;
+            }
+
+        .lock-banner {
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin: 16px 22px;
+            font-size: 13px;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-back:hover {
+                background: #5a6268;
+                color: white;
+                text-decoration: none;
+            }
+
+        .alert-flash {
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            font-size: 13px;
+        }
+
+        .alert-flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        @@media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .content-area {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Main Menu</div>
+                <a href="@Url.Action("Dashboard","Teacher")" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+                <a href="@Url.Action("Timetable","Teacher")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>My Timetable</span></a>
+                <div class="nav-section">Teaching</div>
+                <a href="@Url.Action("Index","Marks")" class="nav-item active"><i class="fas fa-clipboard-check"></i><span>Marks</span></a>
+                <div class="nav-section">Exams</div>
+                <a href="@Url.Action("MyExamProposals","Teacher")" class="nav-item"><i class="fas fa-calendar-check"></i><span>My Exam Proposals</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="greeting"><h1><i class="fas fa-pen-to-square" style="color:#6366f1;margin-right:10px;"></i>Capture Marks</h1><p>Enter learner marks and finalize when complete</p></div>
+                <div class="header-right">
+                    <button class="header-btn"><i class="far fa-bell"></i></button>
+                    <div class="profile-container">
+                        <button class="profile-trigger" onclick="toggleDropdown()"><div class="profile-avatar">T</div><div class="profile-info"><div class="profile-name">Teacher</div><div class="profile-role">Educator</div></div></button>
+                        <div class="dropdown-menu" id="profileDropdown">
+                            <div class="dropdown-user"><div class="dropdown-avatar">T</div><div style="font-weight:600;">Teacher</div></div>
+                            <div class="dropdown-divider"></div>
+                            <a href="@Url.Action("Dashboard","Teacher")" class="dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <div class="dropdown-divider"></div>
+                            <form action="@Url.Action("LogOff","Account")" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div style="margin-bottom:18px;">
+                    <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> All Assessments</a>
                 </div>
 
-                @if (locked)
-                {
-                    <div class="lock-banner">
-                        <i class="fas fa-lock"></i>
-                        Marks are <strong>finalized</strong>. Report cards have been generated for this class and term.
-                    </div>
-                }
-                else
-                {
-                    <div class="action-bar">
-                        <div class="note">
-                            <i class="fas fa-info-circle"></i>
-                            Save anytime as a draft. Finalize when all marks are entered to generate report cards.
+                @if (!ViewData.ModelState.IsValid)
+                {<div class="alert-flash alert-flash-error"><i class="fas fa-exclamation-triangle"></i> @Html.ValidationSummary(false)</div>}
+
+                <div class="assessment-header">
+                    <div class="header-row">
+                        <div>
+                            <h2>@Model.AssessmentName</h2>
+                            <div class="meta">
+                                <span><i class="fas fa-chalkboard"></i>@Model.ClassName</span>
+                                <span><i class="fas fa-book"></i>@Model.SubjectName</span>
+                                <span><i class="fas fa-calendar"></i>@Model.Term @Model.AcademicYear</span>
+                                <span><i class="fas fa-tag"></i>@Model.AssessmentType</span>
+                                <span><i class="fas fa-bullseye"></i>Max @Model.MaxMark</span>
+                            </div>
                         </div>
-                        <button type="submit" class="btn-save">Save Draft</button>
-                        <button type="submit" name="finalizeMarks" value="true" class="btn-finalize"
-                                onclick="return confirm('Finalize these marks? This locks the assessment and triggers report card generation.');">
-                            <i class="fas fa-lock"></i> Finalize Marks
-                        </button>
+                        <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+                    </div>
+                    @if (Model.IsActingAsClassTeacher)
+                    {<div class="fallback-banner"><i class="fas fa-user-shield"></i> Capturing as <strong>class teacher</strong>. Subject teacher: <strong>@(string.IsNullOrWhiteSpace(Model.OwningTeacherName) ? "—" : Model.OwningTeacherName)</strong></div>}
+                    <div class="progress-row">
+                        <div class="label">Captured</div>
+                        <div class="progress-track"><div style="width:@(pct)%;"></div></div>
+                        <div class="progress-count">@captured / @total</div>
+                    </div>
+                </div>
+
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.AssessmentId)
+                    <div class="marks-card">
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>Learner</th><th style="width:180px;">Mark</th><th>Comment</th></tr></thead>
+                                <tbody>
+                                    @for (var i = 0; i < Model.Marks.Count; i++)
+                                    {
+                                        var initials = !string.IsNullOrEmpty(Model.Marks[i].StudentName) ? Model.Marks[i].StudentName.Substring(0, 1).ToUpper() : "?";
+                                        <tr>
+                                            <td>
+                                                <div class="learner-cell"><div class="learner-avatar">@initials</div><span>@Model.Marks[i].StudentName</span></div>
+                                                @Html.HiddenFor(m => m.Marks[i].StudentId) @Html.HiddenFor(m => m.Marks[i].StudentName)
+                                            </td>
+                                            <td><div class="mark-cell">@Html.TextBoxFor(m => m.Marks[i].Mark, markAttrs)<span class="mark-max">/ @Model.MaxMark</span></div></td>
+                                            <td>@Html.TextBoxFor(m => m.Marks[i].Comment, commentAttrs)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (locked)
+                        {<div class="lock-banner"><i class="fas fa-lock"></i> Marks are <strong>finalized</strong>. Report cards have been generated.</div>}
+                        else
+                        {
+                            <div class="action-bar">
+                                <div class="note"><i class="fas fa-info-circle"></i> Save as draft anytime. Finalize when complete to generate report cards.</div>
+                                <button type="submit" class="btn-save">Save Draft</button>
+                                <button type="submit" name="finalizeMarks" value="true" class="btn-finalize" onclick="return confirm('Finalize these marks? This locks the assessment and triggers report card generation.');"><i class="fas fa-lock"></i> Finalize Marks</button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
-        }
-    </main>
-</div>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        function toggleDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
+        document.addEventListener('click', function (e) { var c = document.querySelector('.profile-container'); if (c && !c.contains(e.target)) document.getElementById('profileDropdown').classList.remove('show'); });
+    </script>
+</body>
+</html>

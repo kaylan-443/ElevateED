@@ -180,10 +180,16 @@ namespace ElevateED.Controllers
             using (var db = new ElevateEDContext())
             {
                 var session = db.AttendanceSessions
+                    .Include("Class")
                     .FirstOrDefault(s => s.AttendanceSessionId == sessionId);
 
                 if (session == null)
                     return HttpNotFound();
+
+                ViewBag.QRCode = session.QRCode;
+                ViewBag.Expiry = session.QRCodeExpiry ?? DateTime.Now.AddHours(2); // SET THIS
+                ViewBag.ClassName = session.Class?.FullName;
+                ViewBag.SessionId = sessionId;
 
                 var viewModel = new StartSessionViewModel
                 {
@@ -295,6 +301,153 @@ namespace ElevateED.Controllers
             return View(viewModel);
         }
 
+        // ADD THESE ACTIONS TO AttendanceController
+
+        // Teacher views the QR code
+        [Authorize(Roles = "Teacher")]
+        public ActionResult ShowQRCode(int sessionId)
+        {
+            using (var db = new ElevateEDContext())
+            {
+                var session = db.AttendanceSessions
+                    .Include("Class")
+                    .FirstOrDefault(s => s.AttendanceSessionId == sessionId);
+
+                if (session == null)
+                    return HttpNotFound();
+
+                // Generate QR code URL for scanning
+                var qrCodeUrl = Url.Action("ScanQR", "Attendance",
+                    new { qrCode = session.QRCode }, Request.Url.Scheme);
+
+                ViewBag.QRCodeUrl = qrCodeUrl;
+                ViewBag.QRCode = session.QRCode;
+                ViewBag.ClassName = session.Class?.FullName;
+                ViewBag.Expiry = session.QRCodeExpiry;
+                ViewBag.SessionId = sessionId;
+
+                return View();
+            }
+        }
+
+        // Student scans QR code (GET - redirects to POST)
+        [Authorize(Roles = "Student")]
+        public ActionResult ScanQR(string qrCode)
+        {
+            if (string.IsNullOrEmpty(qrCode))
+                return RedirectToAction("MarkAttendance");
+
+            using (var db = new ElevateEDContext())
+            {
+                var studentNumber = User.Identity.Name;
+                var user = db.Users.FirstOrDefault(u => u.StudentNumber == studentNumber);
+                if (user == null) return RedirectToAction("Login", "Account");
+
+                var student = db.Students.FirstOrDefault(s => s.UserId == user.Id);
+                if (student == null) return RedirectToAction("Login", "Account");
+
+                var result = _attendanceService.ScanQRCode(qrCode, student.Id);
+
+                if (result.StartsWith("SUCCESS"))
+                {
+                    TempData["Success"] = result.Replace("SUCCESS|", "");
+                }
+                else
+                {
+                    TempData["Error"] = result;
+                }
+
+                return RedirectToAction("MarkAttendance");
+            }
+        }
+
+        // Student submits QR code manually (POST)
+        [HttpPost]
+        [Authorize(Roles = "Student")]
+        [ValidateAntiForgeryToken]
+        public ActionResult SubmitQRCode(string qrCode)
+        {
+            using (var db = new ElevateEDContext())
+            {
+                var studentNumber = User.Identity.Name;
+                var user = db.Users.FirstOrDefault(u => u.StudentNumber == studentNumber);
+                if (user == null) return Json(new { success = false, message = "Student not found" });
+
+                var student = db.Students.FirstOrDefault(s => s.UserId == user.Id);
+                if (student == null) return Json(new { success = false, message = "Student not found" });
+
+                var result = _attendanceService.ScanQRCode(qrCode, student.Id);
+
+                if (result.StartsWith("SUCCESS"))
+                {
+                    return Json(new { success = true, message = result.Replace("SUCCESS|", "") });
+                }
+                else
+                {
+                    return Json(new { success = false, message = result });
+                }
+            }
+        }
+        [Authorize(Roles = "Teacher")]
+        public ActionResult ActiveSessions()
+        {
+            using (var db = new ElevateEDContext())
+            {
+                var studentNumber = User.Identity.Name;
+                var user = db.Users.FirstOrDefault(u => u.StudentNumber == studentNumber);
+                if (user == null) return RedirectToAction("Login", "Account");
+
+                var teacher = db.Teachers.FirstOrDefault(t => t.UserId == user.Id);
+                if (teacher == null) return RedirectToAction("Login", "Account");
+
+                // Get classes where teacher is class teacher OR subject teacher
+                var teacherClassIds = new List<int>();
+
+                // Class teacher
+                var classTeacherClasses = db.Classes
+                    .Where(c => c.ClassTeacherId == teacher.Id)
+                    .Select(c => c.Id);
+                teacherClassIds.AddRange(classTeacherClasses);
+
+                // Subject teacher
+                var subjectClasses = db.TeacherSubjectAssignments
+                    .Where(a => a.TeacherId == teacher.Id && a.IsActive)
+                    .Select(a => a.ClassId);
+                teacherClassIds.AddRange(subjectClasses.Distinct());
+
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+
+                var sessions = db.AttendanceSessions
+                    .Include("Class")
+                    .Include("AttendanceRecords")
+                    .Where(s => teacherClassIds.Contains(s.ClassId)
+                        && s.IsActive
+                        && s.SessionDate >= today
+                        && s.SessionDate < tomorrow)
+                    .OrderByDescending(s => s.SessionDate)
+                    .ToList();
+
+                var viewModel = sessions.Select(s => new ActiveSessionViewModel
+                {
+                    SessionId = s.AttendanceSessionId,
+                    ClassName = s.Class?.FullName ?? "Unknown",
+                    SessionDate = s.SessionDate,
+                    OTPCode = s.OTPCode,
+                    QRCode = s.QRCode,
+                    QRCodeExpiry = s.QRCodeExpiry,
+                    TotalStudents = s.AttendanceRecords?.Count ?? 0,
+                    PresentCount = s.AttendanceRecords?.Count(r => r.IsPresent) ?? 0,
+                    AbsentCount = s.AttendanceRecords?.Count(r => !r.IsPresent) ?? 0,
+                    IsExpired = s.QRCodeExpiry.HasValue && s.QRCodeExpiry < DateTime.Now,
+                    TimeRemaining = s.QRCodeExpiry.HasValue && s.QRCodeExpiry > DateTime.Now
+                        ? $"{(s.QRCodeExpiry.Value - DateTime.Now).Minutes}m {(s.QRCodeExpiry.Value - DateTime.Now).Seconds}s"
+                        : "Expired"
+                }).ToList();
+
+                return View(viewModel);
+            }
+        }
         [HttpPost]
         [Authorize(Roles = "Teacher")]
         [ValidateAntiForgeryToken]

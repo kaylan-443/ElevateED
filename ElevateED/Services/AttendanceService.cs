@@ -27,6 +27,7 @@ namespace ElevateED.Services
                     return null;
 
                 string otp = GenerateSecureOTP();
+                string qrCode = GenerateQRCode();
 
                 var session = new AttendanceSession
                 {
@@ -34,7 +35,9 @@ namespace ElevateED.Services
                     TeacherId = teacherId,
                     SessionDate = DateTime.Now,
                     OTPCode = otp,
+                    QRCode = qrCode,
                     OTPExpiry = DateTime.Now.AddMinutes(5),
+                    QRCodeExpiry = DateTime.Now.AddHours(2), // QR valid for 2 hours
                     IsActive = true,
                     CreatedAt = DateTime.Now
                 };
@@ -59,6 +62,54 @@ namespace ElevateED.Services
 
                 db.SaveChanges();
                 return session;
+            }
+        }
+
+        // NEW: QR Code scanning for students
+        public string ScanQRCode(string qrCode, int studentId)
+        {
+            using (var db = new ElevateEDContext())
+            {
+                var student = db.Students
+                    .Include(s => s.Class)
+                    .FirstOrDefault(s => s.Id == studentId);
+
+                if (student == null || student.ClassId == null)
+                    return "Student not found or not assigned to a class.";
+
+                var session = db.AttendanceSessions
+                    .Include(s => s.Class)
+                    .FirstOrDefault(s => s.QRCode == qrCode
+                        && s.IsActive
+                        && s.QRCodeExpiry > DateTime.Now);
+
+                if (session == null)
+                    return "Invalid or expired QR code.";
+
+                // Check if student belongs to the same class
+                if (session.ClassId != student.ClassId)
+                    return "This QR code is for a different class. You cannot use it.";
+
+                // Check if student is in the same grade
+                if (session.Class?.GradeId != student.Class?.GradeId)
+                    return "This QR code is for a different grade.";
+
+                var record = db.AttendanceRecords
+                    .FirstOrDefault(r => r.AttendanceSessionId == session.AttendanceSessionId
+                        && r.StudentId == studentId);
+
+                if (record == null)
+                    return "You are not enrolled in this class.";
+
+                if (record.IsPresent)
+                    return "You have already been marked present for this session.";
+
+                record.IsPresent = true;
+                record.MarkedAt = DateTime.Now;
+                record.IsManualOverride = false;
+                db.SaveChanges();
+
+                return $"SUCCESS|Attendance marked for {session.Class?.FullName}";
             }
         }
 
@@ -168,14 +219,12 @@ namespace ElevateED.Services
                     var teacher = db.Teachers.FirstOrDefault(t => t.User.StudentNumber == teacherId);
                     if (teacher != null)
                     {
-                        // Get classes as Class Teacher
                         var classTeacherClasses = db.Classes
                             .Include("Grade")
                             .Where(c => c.ClassTeacherId == teacher.Id)
                             .ToList();
                         availableClasses.AddRange(classTeacherClasses);
 
-                        // Get classes as Subject Teacher
                         var subjectClasses = db.TeacherSubjectAssignments
                             .Include("Class")
                             .Include("Class.Grade")
@@ -271,19 +320,21 @@ namespace ElevateED.Services
             }
         }
 
+        private string GenerateQRCode()
+        {
+            var random = new Random();
+            return "ATT" + DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
+        }
+
         private DateTime GetStartDate(string filter)
         {
             DateTime today = DateTime.Today;
             switch (filter?.ToLower())
             {
-                case "daily":
-                    return today;
-                case "weekly":
-                    return today.AddDays(-(int)today.DayOfWeek);
-                case "monthly":
-                    return new DateTime(today.Year, today.Month, 1);
-                default:
-                    return today.AddDays(-7);
+                case "daily": return today;
+                case "weekly": return today.AddDays(-(int)today.DayOfWeek);
+                case "monthly": return new DateTime(today.Year, today.Month, 1);
+                default: return today.AddDays(-7);
             }
         }
     }

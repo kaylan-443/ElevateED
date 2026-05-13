@@ -9,11 +9,13 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background: #f0f2f5;
     }
+
     .principal-shell {
         max-width: 1200px;
         margin: 0 auto;
         padding: 30px 24px;
     }
+
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -22,13 +24,19 @@
         gap: 18px;
         margin-bottom: 22px;
     }
-    .page-header h1 {
-        font-size: 26px;
-        font-weight: 700;
-        color: #1e3c72;
-        margin: 0;
-    }
-    .page-header p { color: #888; font-size: 14px; margin: 4px 0 0; }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: #888;
+            font-size: 14px;
+            margin: 4px 0 0;
+        }
 
     .btn-link-back {
         background: #6c757d;
@@ -41,7 +49,12 @@
         align-items: center;
         gap: 8px;
     }
-    .btn-link-back:hover { background: #5a6268; color: white; text-decoration: none; }
+
+        .btn-link-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
 
     .reports-card {
         background: white;
@@ -49,25 +62,34 @@
         box-shadow: 0 3px 15px rgba(0,0,0,0.06);
         overflow: hidden;
     }
-    .reports-card table { width: 100%; border-collapse: collapse; }
-    .reports-card thead th {
-        background: #f7f8fb;
-        color: #555;
-        font-weight: 600;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-        padding: 14px 18px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-    }
-    .reports-card tbody td {
-        padding: 14px 18px;
-        font-size: 14px;
-        border-top: 1px solid #f1f1f1;
-        vertical-align: middle;
-    }
-    .reports-card tbody tr:hover { background: #fafbfd; }
+
+        .reports-card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .reports-card thead th {
+            background: #f7f8fb;
+            color: #555;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reports-card tbody td {
+            padding: 14px 18px;
+            font-size: 14px;
+            border-top: 1px solid #f1f1f1;
+            vertical-align: middle;
+        }
+
+        .reports-card tbody tr:hover {
+            background: #fafbfd;
+        }
 
     .pill {
         display: inline-block;
@@ -76,16 +98,52 @@
         font-size: 12px;
         font-weight: 600;
     }
-    .pill-pass { background: #e8f5e9; color: #2e7d32; }
-    .pill-fail { background: #ffebee; color: #c62828; }
-    .pill-promoted { background: #e3f2fd; color: #1565c0; }
-    .pill-progressed { background: #fff8e1; color: #b76e00; }
-    .pill-notpromoted { background: #ffebee; color: #c62828; }
-    .pill-pending { background: #eef0f3; color: #6c757d; }
-    .pill-yes { background: #e8f5e9; color: #2e7d32; }
-    .pill-no { background: #fff8e1; color: #b76e00; }
 
-    .row-actions { display: flex; gap: 8px; }
+    .pill-pass {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .pill-fail {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .pill-promoted {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .pill-progressed {
+        background: #fff8e1;
+        color: #b76e00;
+    }
+
+    .pill-notpromoted {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .pill-pending {
+        background: #eef0f3;
+        color: #6c757d;
+    }
+
+    .pill-yes {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .pill-no {
+        background: #fff8e1;
+        color: #b76e00;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 8px;
+    }
+
     .btn-view {
         background: white;
         color: #1e3c72;
@@ -96,7 +154,13 @@
         font-weight: 600;
         text-decoration: none;
     }
-    .btn-view:hover { background: #1e3c72; color: white; text-decoration: none; }
+
+        .btn-view:hover {
+            background: #1e3c72;
+            color: white;
+            text-decoration: none;
+        }
+
     .btn-publish {
         background: #28a745;
         color: white;
@@ -107,7 +171,10 @@
         font-weight: 600;
         cursor: pointer;
     }
-    .btn-publish:hover { background: #1e7e34; }
+
+        .btn-publish:hover {
+            background: #1e7e34;
+        }
 
     .empty-state {
         text-align: center;
@@ -115,16 +182,33 @@
         background: white;
         border-radius: 14px;
     }
-    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
-    .empty-state h4 { color: #333; margin-bottom: 6px; }
-    .empty-state p { color: #888; }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5dd;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h4 {
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .empty-state p {
+            color: #888;
+        }
 
     .alert-flash {
         border-radius: 10px;
         padding: 14px 18px;
         margin-bottom: 18px;
     }
-    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+    .alert-flash-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
 
     .nav-links {
         display: flex;
@@ -132,18 +216,26 @@
         flex-wrap: wrap;
         margin-bottom: 18px;
     }
-    .nav-links a {
-        background: white;
-        color: #1e3c72;
-        padding: 8px 16px;
-        border-radius: 18px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 13px;
-        border: 1.5px solid #e0e7ff;
-    }
-    .nav-links a.active { background: #1e3c72; color: white; }
-    .nav-links a:hover { text-decoration: none; }
+
+        .nav-links a {
+            background: white;
+            color: #1e3c72;
+            padding: 8px 16px;
+            border-radius: 18px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1.5px solid #e0e7ff;
+        }
+
+            .nav-links a.active {
+                background: #1e3c72;
+                color: white;
+            }
+
+            .nav-links a:hover {
+                text-decoration: none;
+            }
 </style>
 
 <div class="principal-shell">

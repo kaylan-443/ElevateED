@@ -374,6 +374,7 @@
     <Compile Include="Controllers\AnalyticsController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AttendanceController.cs" />
+    <Compile Include="Controllers\ExamApprovalController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarksController.cs" />
     <Compile Include="Controllers\PodcastController.cs" />
@@ -660,7 +661,7 @@
     <Content Include="Views\Attendance\MarkAttendance.cshtml" />
     <Content Include="Views\Attendance\SessionConfirmation.cshtml" />
     <Content Include="Views\Attendance\StartSession.cshtml" />
-    <Content Include="Views\Teacher\ActiveSessions.cshtml" />
+    <Content Include="Views\Attendance\ActiveSessions.cshtml" />
     <Content Include="Views\Marks\Capture.cshtml" />
     <Content Include="Views\Marks\Create.cshtml" />
     <Content Include="Views\Marks\Index.cshtml" />
@@ -708,6 +709,8 @@
     <Content Include="Views\StudentExtraClass\MyAttendance.cshtml" />
     <Content Include="Views\AdminExtraClass\Analytics.cshtml" />
     <Content Include="Views\StudentExtraClass\ScanAttendance.cshtml" />
+    <Content Include="Views\Shared\_StudentSidebar.cshtml" />
+    <Content Include="Views\Shared\_TeacherLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

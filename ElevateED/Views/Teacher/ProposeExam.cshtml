@@ -2,593 +2,847 @@
 
 @{
     ViewBag.Title = Model.Id == 0 ? "Propose Exam" : "Edit Exam Proposal";
+    Layout = null;
 }
 
-<style>
-    .propose-grid {
-        display: grid;
-        grid-template-columns: minmax(320px, 380px) 1fr;
-        gap: 20px;
-        align-items: start;
-    }
-    @@media (max-width: 1100px) { .propose-grid { grid-template-columns: 1fr; } }
-
-    .card {
-        background: white;
-        border-radius: 14px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
-        padding: 22px 24px;
-    }
-    .card h3 {
-        font-size: 16px;
-        color: var(--primary-blue);
-        font-weight: 700;
-        margin-bottom: 4px;
-    }
-    .card .sub { color: #888; font-size: 12px; margin-bottom: 16px; }
-
-    label.lbl {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 600;
-        font-size: 12px;
-        color: #444;
-        text-transform: uppercase;
-        letter-spacing: .4px;
-    }
-    .ctrl {
-        width: 100%;
-        padding: 9px 12px;
-        border: 1px solid #d8dde3;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-    }
-    .ctrl:focus {
-        border-color: var(--primary-blue);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
-    }
-    textarea.ctrl { resize: vertical; min-height: 60px; }
-    .text-danger { font-size: 12px; color: #c62828; }
-
-    .field { margin-bottom: 14px; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    /* -------- CALENDAR GRID -------- */
-    .calendar-wrap {
-        background: white;
-        border-radius: 14px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
-        padding: 18px 20px;
-        margin-bottom: 18px;
-    }
-    .calendar-head {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 12px;
-    }
-    .calendar-head h3 { font-size: 16px; color: var(--primary-blue); font-weight: 700; margin: 0; }
-    .calendar-head .range { color: #888; font-size: 12px; }
-
-    .day-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-    }
-    .day-card {
-        background: #f7f8fb;
-        border: 1.5px solid transparent;
-        border-radius: 10px;
-        padding: 10px 8px;
-        text-align: center;
-        cursor: pointer;
-        transition: all .15s;
-        position: relative;
-    }
-    .day-card:hover { background: #eef1f6; }
-    .day-card.weekend { opacity: .55; }
-    .day-card.selected {
-        background: var(--primary-blue);
-        color: white;
-        border-color: var(--primary-blue);
-    }
-    .day-card .dow {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-        color: #777;
-        font-weight: 600;
-    }
-    .day-card.selected .dow { color: rgba(255,255,255,.85); }
-    .day-card .num { font-size: 18px; font-weight: 700; margin: 2px 0; }
-    .day-card .mo { font-size: 10px; color: #888; }
-    .day-card.selected .mo { color: rgba(255,255,255,.85); }
-    .day-card .pill {
-        display: inline-block;
-        margin-top: 3px;
-        background: #c62828;
-        color: white;
-        font-size: 10px;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 8px;
-    }
-    .day-card.selected .pill { background: #ffe0b2; color: #b76e00; }
-
-    /* -------- DAY TIMELINE -------- */
-    .timeline {
-        position: relative;
-        height: 480px;
-        background: #fafbfd;
-        border: 1px solid #eef0f3;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .hour-row {
-        position: absolute;
-        left: 0; right: 0;
-        height: 1px;
-        background: #e5e7eb;
-    }
-    .hour-label {
-        position: absolute;
-        left: 0;
-        width: 56px;
-        font-size: 11px;
-        color: #999;
-        padding: 2px 6px;
-        font-weight: 600;
-    }
-    .slot {
-        position: absolute;
-        left: 60px;
-        right: 12px;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 12px;
-        overflow: hidden;
-        border: 1px solid;
-    }
-    .slot.break {
-        background: repeating-linear-gradient(
-            45deg, #f1f3f5, #f1f3f5 6px, #e9ecef 6px, #e9ecef 12px);
-        color: #6c757d;
-        border-color: #e9ecef;
-        font-style: italic;
-    }
-    .slot.exam {
-        background: #ffebee;
-        color: #c62828;
-        border-color: #ffcdd2;
-    }
-    .slot.exam.clash {
-        background: #ffd7d7;
-        border-color: #c62828;
-        font-weight: 600;
-    }
-    .slot.proposed {
-        background: #c8f7c5;
-        color: #1b5e20;
-        border-color: #2e7d32;
-        font-weight: 600;
-        z-index: 5;
-    }
-    .slot.proposed.invalid {
-        background: #ffcdd2;
-        color: #b71c1c;
-        border-color: #c62828;
-    }
-    .slot .meta { font-size: 10px; opacity: .75; }
-
-    .validation-banner {
-        margin-top: 12px;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-    }
-    .validation-banner.ok { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-    .validation-banner.warn { background: #fff3cd; color: #856404; border: 1px solid #ffe69c; }
-    .validation-banner.err { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-
-    .err-summary {
-        background: #ffebee;
-        border: 1px solid #ffcdd2;
-        color: #c62828;
-        padding: 12px 16px;
-        border-radius: 10px;
-        margin-bottom: 16px;
-        font-size: 13px;
-    }
-
-    .class-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 8px;
-    }
-    .class-pick {
-        display: flex; align-items: center; gap: 8px;
-        padding: 8px 12px;
-        background: #f7f8fb;
-        border: 1.5px solid transparent;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 13px;
-    }
-    .class-pick:hover { background: #eef1f6; }
-    .class-pick.selected { border-color: var(--primary-blue); background: #eef2ff; }
-    .class-pick input[type="checkbox"] { accent-color: var(--primary-blue); }
-    .class-pick .pname { font-weight: 600; color: #222; font-size: 13px; }
-    .class-pick .pgrade { font-size: 10px; color: #999; }
-
-    .empty-state-card {
-        background: white;
-        border-radius: 14px;
-        padding: 60px 30px;
-        text-align: center;
-        color: #888;
-    }
-    .empty-state-card i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
-
-    .form-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
-    .btn-primary-pill {
-        background: var(--primary-blue); color: white;
-        padding: 10px 22px; border-radius: 22px;
-        font-weight: 600; border: none; font-size: 14px;
-        cursor: pointer;
-    }
-    .btn-primary-pill:hover { background: var(--secondary-blue); }
-    .btn-primary-pill:disabled { background: #adb5bd; cursor: not-allowed; }
-    .btn-cancel {
-        background: white; color: #555;
-        padding: 10px 22px; border-radius: 22px;
-        font-weight: 600; border: 1.5px solid #d8dde3;
-        text-decoration: none; font-size: 14px;
-    }
-</style>
-
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "propose-exam")
-
-    <main class="main-content">
-        <div class="top-bar">
-            <div class="greeting">
-                <h1><i class="fas fa-calendar-plus" style="color:#6366f1;margin-right:10px;"></i>@ViewBag.Title</h1>
-                <p>Pick a date on the calendar, choose a free time slot, and submit for the principal's approval.</p>
-            </div>
-            <a href="@Url.Action("MyExamProposals")" class="btn-back"><i class="fas fa-arrow-left"></i> My Proposals</a>
-        </div>
-
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="err-summary">@Html.ValidationSummary(false)</div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - ElevateED Teacher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        @using (Html.BeginForm("ProposeExam", "Teacher", FormMethod.Post, new { id = "proposeExamForm" }))
-        {
-            @Html.AntiForgeryToken()
-            @Html.HiddenFor(m => m.Id)
-
-            <div class="field" style="max-width:500px;margin-bottom:18px;">
-                <label class="lbl">Exam Cycle</label>
-                @Html.DropDownListFor(m => m.ExamTimetableId, Model.ExamCycleOptions, "Select cycle (e.g. June Exams 2026)", new { @class = "ctrl", id = "cycleSelect" })
-                @Html.ValidationMessageFor(m => m.ExamTimetableId, "", new { @class = "text-danger" })
-            </div>
-
-            <div id="calendarSection" style="display:none;">
-                <div class="calendar-wrap">
-                    <div class="calendar-head">
-                        <div>
-                            <h3>Click a day to see what's booked</h3>
-                            <div class="range" id="cycleRange"></div>
-                        </div>
-                    </div>
-                    <div id="dayGrid" class="day-grid"></div>
-                </div>
-
-                <div class="propose-grid">
-                    <!-- LEFT: form fields -->
-                    <div class="card">
-                        <h3>Session details</h3>
-                        <p class="sub">Fields update the timeline on the right live.</p>
-
-                        @Html.HiddenFor(m => m.ExamDate, new { id = "examDateHidden" })
-
-                        <div class="field">
-                            <label class="lbl">Subject</label>
-                            @Html.DropDownListFor(m => m.SubjectId, Model.SubjectOptions, "Select a subject you teach", new { @class = "ctrl" })
-                            @Html.ValidationMessageFor(m => m.SubjectId, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="field-row">
-                            <div class="field">
-                                <label class="lbl">Paper Number</label>
-                                @Html.TextBoxFor(m => m.PaperNumber, new { @class = "ctrl", type = "number", min = "1", max = "3", id = "paperNum" })
-                            </div>
-                            <div class="field">
-                                <label class="lbl">Duration (hrs)</label>
-                                @Html.TextBoxFor(m => m.DurationHours, new { @class = "ctrl", type = "number", step = "0.25", min = "0.5", max = "6", id = "durationHrs" })
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label class="lbl">Start Time</label>
-                            @Html.TextBoxFor(m => m.StartTime, "{0:hh\\:mm}", new { @class = "ctrl", type = "time", id = "startTime" })
-                            <small style="color:#888;font-size:11px;">Must be inside school hours (07:30–14:30) and not overlap a break.</small>
-                        </div>
-
-                        <div class="field">
-                            <label class="lbl">Venue</label>
-                            @Html.TextBoxFor(m => m.Venue, new { @class = "ctrl", placeholder = "e.g. Hall A, Room 12" })
-                        </div>
-
-                        <div class="field">
-                            <label class="lbl">Invigilator / Examiner</label>
-                            @Html.TextBoxFor(m => m.Invigilator, new { @class = "ctrl", placeholder = "Staff member on duty" })
-                        </div>
-
-                        <div class="field">
-                            <label class="lbl">Notes for the principal</label>
-                            @Html.TextAreaFor(m => m.Notes, new { @class = "ctrl", placeholder = "Optional — anything the principal should know." })
-                        </div>
-
-                        <div class="field">
-                            <label class="lbl">Classes Writing</label>
-                            @Html.ValidationMessageFor(m => m.ClassIds, "", new { @class = "text-danger" })
-                            <div class="class-grid" id="classGrid">
-                                @foreach (var option in Model.ClassOptions)
-                                {
-                                    <label class="class-pick @(option.Selected ? "selected" : "")">
-                                        <input type="checkbox" name="ClassIds" value="@option.ClassId" data-class-id="@option.ClassId"
-                                               @(option.Selected ? "checked" : "")
-                                               onchange="this.parentElement.classList.toggle('selected', this.checked); refreshTimeline();" />
-                                        <div>
-                                            <div class="pname">@option.ClassName</div>
-                                            <div class="pgrade">@option.GradeName</div>
-                                        </div>
-                                    </label>
-                                }
-                                @if (!Model.ClassOptions.Any())
-                                {
-                                    <div style="color:#888;font-size:13px;">No classes assigned to you yet.</div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT: day timeline -->
-                    <div class="card">
-                        <h3 id="timelineTitle">Day schedule</h3>
-                        <p class="sub" id="timelineSub">Pick a day above to see what's already booked.</p>
-                        <div class="timeline" id="timeline"></div>
-                        <div id="validationBanner" class="validation-banner ok" style="display:none;"></div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <a href="@Url.Action("MyExamProposals")" class="btn-cancel">Cancel</a>
-                    <button type="submit" class="btn-primary-pill" id="submitBtn"><i class="fas fa-paper-plane"></i> Submit Proposal</button>
-                </div>
-            </div>
-
-            <div id="emptyState" class="empty-state-card">
-                <i class="fas fa-calendar"></i>
-                <h4 style="color:#333;">Pick an exam cycle to start</h4>
-                <p>Choose a cycle above and the school calendar will appear here.</p>
-            </div>
-        }
-    </main>
-</div>
-
-<script>
-    (function () {
-        // === Constants ===
-        var SCHOOL_START_MIN, SCHOOL_END_MIN;
-        var BREAKS = [];
-        var DAYS = [];
-        var SESSIONS = [];
-        var SELECTED_DATE = @Html.Raw(Model.ExamDate != default(DateTime) ? "'" + Model.ExamDate.ToString("yyyy-MM-dd") + "'" : "null");
-        var EXCLUDE_SESSION_ID = @(Model.Id == 0 ? "null" : Model.Id.ToString());
-
-        function toMin(hhmm) {
-            if (!hhmm) return 0;
-            var parts = hhmm.split(':');
-            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-        }
-        function fmtMin(m) {
-            var h = Math.floor(m / 60), mm = m % 60;
-            return (h < 10 ? '0' : '') + h + ':' + (mm < 10 ? '0' : '') + mm;
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-200: #e5e7eb;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --sidebar-width: 260px;
+            --header-height: 72px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
         }
 
-        // === Cycle change → load calendar ===
-        document.getElementById('cycleSelect').addEventListener('change', function () {
-            var cid = this.value;
-            if (!cid) {
-                document.getElementById('calendarSection').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-                return;
-            }
-            loadCalendar(cid);
-        });
-
-        function loadCalendar(cycleId) {
-            fetch('@Url.Action("ProposeExam_CalendarDays", "Teacher")?cycleId=' + cycleId)
-                .then(r => r.json())
-                .then(data => {
-                    DAYS = data.days;
-                    document.getElementById('cycleRange').textContent =
-                        'Window: ' + data.startDate + ' → ' + data.endDate;
-                    renderCalendar();
-                    document.getElementById('calendarSection').style.display = 'block';
-                    document.getElementById('emptyState').style.display = 'none';
-
-                    // If editing or already had a date, jump to it; otherwise pick first weekday.
-                    var target = SELECTED_DATE || (DAYS.find(d => !d.isWeekend) || {}).iso;
-                    if (target) selectDay(target);
-                });
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f1f5f9;
+            color: var(--gray-800);
         }
 
-        function renderCalendar() {
-            var grid = document.getElementById('dayGrid');
-            grid.innerHTML = '';
-            DAYS.forEach(function (d) {
-                var card = document.createElement('div');
-                card.className = 'day-card' + (d.isWeekend ? ' weekend' : '');
-                card.dataset.iso = d.iso;
-                card.innerHTML =
-                    '<div class="dow">' + d.label + '</div>' +
-                    '<div class="num">' + d.dayNumber + '</div>' +
-                    '<div class="mo">' + d.month + '</div>' +
-                    (d.examCount > 0 ? '<div class="pill">' + d.examCount + ' exam' + (d.examCount > 1 ? 's' : '') + '</div>' : '');
-                card.addEventListener('click', function () { selectDay(d.iso); });
-                grid.appendChild(card);
-            });
+        .app-container {
+            display: flex;
+            min-height: 100vh;
         }
 
-        function selectDay(iso) {
-            SELECTED_DATE = iso;
-            document.getElementById('examDateHidden').value = iso;
-            document.querySelectorAll('.day-card').forEach(function (c) {
-                c.classList.toggle('selected', c.dataset.iso === iso);
-            });
-            document.getElementById('timelineTitle').textContent = 'Schedule for ' + iso;
-            loadDaySchedule();
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
 
-        function loadDaySchedule() {
-            var cycleId = document.getElementById('cycleSelect').value;
-            if (!cycleId || !SELECTED_DATE) return;
-            var url = '@Url.Action("ProposeExam_DaySchedule", "Teacher")?cycleId=' + cycleId + '&date=' + SELECTED_DATE;
-            if (EXCLUDE_SESSION_ID) url += '&excludeSessionId=' + EXCLUDE_SESSION_ID;
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    SCHOOL_START_MIN = toMin(data.schoolStart);
-                    SCHOOL_END_MIN = toMin(data.schoolEnd);
-                    BREAKS = data.breaks;
-                    SESSIONS = data.sessions;
-                    refreshTimeline();
-                });
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
-        // === Timeline render ===
-        function refreshTimeline() {
-            var tl = document.getElementById('timeline');
-            if (SCHOOL_START_MIN == null) return;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-            tl.innerHTML = '';
-            var totalMin = SCHOOL_END_MIN - SCHOOL_START_MIN;
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+        }
 
-            // hour grid
-            for (var h = Math.floor(SCHOOL_START_MIN / 60); h <= Math.ceil(SCHOOL_END_MIN / 60); h++) {
-                var pos = ((h * 60) - SCHOOL_START_MIN) / totalMin * 100;
-                if (pos < 0 || pos > 100) continue;
-                var line = document.createElement('div');
-                line.className = 'hour-row';
-                line.style.top = pos + '%';
-                tl.appendChild(line);
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
 
-                var lbl = document.createElement('div');
-                lbl.className = 'hour-label';
-                lbl.style.top = pos + '%';
-                lbl.textContent = (h < 10 ? '0' : '') + h + ':00';
-                tl.appendChild(lbl);
+            .logo-text span {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
 
-            // breaks
-            BREAKS.forEach(function (b) {
-                addSlot(tl, toMin(b.start), toMin(b.end), 'break', b.name + ' (' + b.start + '–' + b.end + ')', '');
-            });
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+        }
 
-            // proposed session's selected classes for clash detection
-            var selectedClassIds = Array.from(document.querySelectorAll('input[name="ClassIds"]:checked'))
-                .map(function (i) { return parseInt(i.value, 10); });
+        .nav-section {
+            padding: 20px 16px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.25);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-            // booked exam sessions
-            SESSIONS.forEach(function (s) {
-                var startM = toMin(s.start), endM = toMin(s.end);
-                var hasClash = false;
-                if (selectedClassIds.length && s.classIds) {
-                    hasClash = s.classIds.some(function (cid) { return selectedClassIds.indexOf(cid) >= 0; });
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+            .nav-item:hover {
+                background: rgba(255,255,255,0.06);
+                color: rgba(255,255,255,0.9);
+            }
+
+            .nav-item.active {
+                background: rgba(99,102,241,0.2);
+                color: white;
+                font-weight: 600;
+            }
+
+            .nav-item i {
+                width: 18px;
+                font-size: 16px;
+                text-align: center;
+            }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .top-header {
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .greeting h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        .greeting p {
+            color: var(--gray-500);
+            margin: 2px 0 0 0;
+            font-size: 13px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: #f1f5f9;
+            cursor: pointer;
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .profile-container {
+            position: relative;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 4px 12px 4px 4px;
+            border-radius: 14px;
+            background: #f1f5f9;
+            border: none;
+        }
+
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            width: 260px;
+            display: none;
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+        }
+
+            .dropdown-menu.show {
+                display: block;
+                animation: fadeIn 0.15s ease;
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-user {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+        }
+
+        .dropdown-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 14px;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+
+            .dropdown-item:hover {
+                background: #f8fafc;
+            }
+
+        .text-danger {
+            color: #ef4444;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 0;
+        }
+
+        .content-area {
+            padding: 28px 32px;
+        }
+
+        .propose-grid {
+            display: grid;
+            grid-template-columns: minmax(320px, 380px) 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @@media (max-width: 1100px) {
+            .propose-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 22px 24px;
+        }
+
+            .card h3 {
+                font-size: 16px;
+                color: var(--gray-800);
+                font-weight: 700;
+                margin-bottom: 4px;
+            }
+
+            .card .sub {
+                color: #888;
+                font-size: 12px;
+                margin-bottom: 16px;
+            }
+
+        label.lbl {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .ctrl {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d8dde3;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+            .ctrl:focus {
+                border-color: var(--primary);
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+            }
+
+        textarea.ctrl {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .text-danger {
+            font-size: 12px;
+            color: #c62828;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .calendar-wrap {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 18px 20px;
+            margin-bottom: 18px;
+        }
+
+        .calendar-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+            .calendar-head h3 {
+                font-size: 16px;
+                color: var(--gray-800);
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .calendar-head .range {
+                color: #888;
+                font-size: 12px;
+            }
+
+        .day-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day-card {
+            background: #f7f8fb;
+            border: 1.5px solid transparent;
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .day-card:hover {
+                background: #eef1f6;
+            }
+
+            .day-card.weekend {
+                opacity: .55;
+            }
+
+            .day-card.selected {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+
+            .day-card .dow {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                color: #777;
+                font-weight: 600;
+            }
+
+            .day-card.selected .dow {
+                color: rgba(255,255,255,.85);
+            }
+
+            .day-card .num {
+                font-size: 18px;
+                font-weight: 700;
+                margin: 2px 0;
+            }
+
+            .day-card .mo {
+                font-size: 10px;
+                color: #888;
+            }
+
+            .day-card.selected .mo {
+                color: rgba(255,255,255,.85);
+            }
+
+            .day-card .pill {
+                display: inline-block;
+                margin-top: 3px;
+                background: #c62828;
+                color: white;
+                font-size: 10px;
+                font-weight: 600;
+                padding: 1px 6px;
+                border-radius: 8px;
+            }
+
+            .day-card.selected .pill {
+                background: #ddd6fe;
+                color: #5b21b6;
+            }
+
+        .timeline {
+            position: relative;
+            height: 480px;
+            background: #fafbfd;
+            border: 1px solid #eef0f3;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .hour-row {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .hour-label {
+            position: absolute;
+            left: 0;
+            width: 56px;
+            font-size: 11px;
+            color: #999;
+            padding: 2px 6px;
+            font-weight: 600;
+        }
+
+        .slot {
+            position: absolute;
+            left: 60px;
+            right: 12px;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            overflow: hidden;
+            border: 1px solid;
+        }
+
+            .slot.break {
+                background: repeating-linear-gradient(45deg, #f1f3f5, #f1f3f5 6px, #e9ecef 6px, #e9ecef 12px);
+                color: #6c757d;
+                border-color: #e9ecef;
+                font-style: italic;
+            }
+
+            .slot.exam {
+                background: #ffebee;
+                color: #c62828;
+                border-color: #ffcdd2;
+            }
+
+                .slot.exam.clash {
+                    background: #ffd7d7;
+                    border-color: #c62828;
+                    font-weight: 600;
                 }
-                addSlot(tl, startM, endM, 'exam' + (hasClash ? ' clash' : ''),
-                    s.subject + ' — Paper ' + s.paper,
-                    (s.classNames || '') + (s.venue ? ' · ' + s.venue : '') + ' · ' + s.status);
-            });
 
-            // proposed slot (current user input)
-            var startVal = document.getElementById('startTime').value;
-            var durVal = parseFloat(document.getElementById('durationHrs').value);
-            var banner = document.getElementById('validationBanner');
+            .slot.proposed {
+                background: #c8f7c5;
+                color: #1b5e20;
+                border-color: #2e7d32;
+                font-weight: 600;
+                z-index: 5;
+            }
 
-            if (startVal && durVal > 0) {
-                var startM = toMin(startVal);
-                var endM = startM + Math.round(durVal * 60);
-                var problems = validateProposed(startM, endM, selectedClassIds);
-                addSlot(tl, startM, endM, 'proposed' + (problems.length ? ' invalid' : ''),
-                    'Proposed: ' + fmtMin(startM) + '–' + fmtMin(endM),
-                    (durVal.toFixed(2) + 'h'));
-
-                if (problems.length) {
-                    banner.className = 'validation-banner err';
-                    banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + problems.join(' • ');
-                } else {
-                    banner.className = 'validation-banner ok';
-                    banner.innerHTML = '<i class="fas fa-check-circle"></i> Slot is clear. You can submit.';
+                .slot.proposed.invalid {
+                    background: #ffcdd2;
+                    color: #b71c1c;
+                    border-color: #c62828;
                 }
-                banner.style.display = 'block';
-                document.getElementById('submitBtn').disabled = problems.length > 0;
-            } else {
-                banner.style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+
+            .slot .meta {
+                font-size: 10px;
+                opacity: .75;
+            }
+
+        .validation-banner {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+            .validation-banner.ok {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+
+            .validation-banner.err {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fecaca;
+            }
+
+        .err-summary {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+        }
+
+        .class-pick {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f7f8fb;
+            border: 1.5px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+            .class-pick:hover {
+                background: #eef1f6;
+            }
+
+            .class-pick.selected {
+                border-color: var(--primary);
+                background: #eef2ff;
+            }
+
+            .class-pick .pname {
+                font-weight: 600;
+                color: #222;
+                font-size: 13px;
+            }
+
+            .class-pick .pgrade {
+                font-size: 10px;
+                color: #999;
+            }
+
+        .empty-state-card {
+            background: white;
+            border-radius: 14px;
+            padding: 60px 30px;
+            text-align: center;
+            color: #888;
+            box-shadow: var(--shadow);
+        }
+
+            .empty-state-card i {
+                font-size: 48px;
+                color: #d1d5db;
+                margin-bottom: 12px;
+            }
+
+        .form-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-primary-pill {
+            background: var(--primary);
+            color: white;
+            padding: 10px 22px;
+            border-radius: 22px;
+            font-weight: 600;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+            .btn-primary-pill:hover {
+                background: var(--primary-dark);
+            }
+
+            .btn-primary-pill:disabled {
+                background: #cbd5e1;
+                cursor: not-allowed;
+            }
+
+        .btn-cancel {
+            background: white;
+            color: #555;
+            padding: 10px 22px;
+            border-radius: 22px;
+            font-weight: 600;
+            border: 1.5px solid #d8dde3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-back:hover {
+                background: #5a6268;
+                color: white;
+                text-decoration: none;
+            }
+
+        @@media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
             }
         }
 
-        function addSlot(tl, startM, endM, klass, title, sub) {
-            var totalMin = SCHOOL_END_MIN - SCHOOL_START_MIN;
-            var topPct = (startM - SCHOOL_START_MIN) / totalMin * 100;
-            var heightPct = (endM - startM) / totalMin * 100;
-            if (topPct + heightPct < 0 || topPct > 100) return;
-            // clamp
-            if (topPct < 0) { heightPct += topPct; topPct = 0; }
-            if (topPct + heightPct > 100) heightPct = 100 - topPct;
-
-            var div = document.createElement('div');
-            div.className = 'slot ' + klass;
-            div.style.top = topPct + '%';
-            div.style.height = heightPct + '%';
-            div.innerHTML = '<div><strong>' + title + '</strong></div>' + (sub ? '<div class="meta">' + sub + '</div>' : '');
-            tl.appendChild(div);
-        }
-
-        function validateProposed(startM, endM, selectedClassIds) {
-            var problems = [];
-            if (endM <= startM) problems.push('End time must be after start.');
-            if (startM < SCHOOL_START_MIN) problems.push('Starts before school opens (' + fmtMin(SCHOOL_START_MIN) + ').');
-            if (endM > SCHOOL_END_MIN) problems.push('Runs past end of school day (' + fmtMin(SCHOOL_END_MIN) + ').');
-            BREAKS.forEach(function (b) {
-                var bs = toMin(b.start), be = toMin(b.end);
-                if (startM < be && bs < endM) problems.push('Overlaps ' + b.name + '.');
-            });
-            if (selectedClassIds.length) {
-                SESSIONS.forEach(function (s) {
-                    var ss = toMin(s.start), se = toMin(s.end);
-                    if (startM < se && ss < endM) {
-                        var shared = (s.classIds || []).filter(function (c) { return selectedClassIds.indexOf(c) >= 0; });
-                        if (shared.length) problems.push('Selected class already writing ' + s.subject + ' at this time.');
-                    }
-                });
+        @@media (max-width: 768px) {
+            .content-area {
+                padding: 16px;
             }
-            return problems;
-        }
 
-        // Hook form inputs that change the proposed slot
-        ['startTime', 'durationHrs'].forEach(function (id) {
-            document.getElementById(id).addEventListener('input', refreshTimeline);
-        });
-
-        // Initial load if cycle already selected (edit mode)
-        if (document.getElementById('cycleSelect').value) {
-            loadCalendar(document.getElementById('cycleSelect').value);
+            .field-row {
+                grid-template-columns: 1fr;
+            }
         }
-    })();
-</script>
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Main Menu</div>
+                <a href="@Url.Action("Dashboard","Teacher")" class="nav-item"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+                <a href="@Url.Action("Timetable","Teacher")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>My Timetable</span></a>
+                <div class="nav-section">Exams</div>
+                <a href="@Url.Action("MyExamProposals","Teacher")" class="nav-item"><i class="fas fa-calendar-check"></i><span>My Exam Proposals</span></a>
+                <a href="@Url.Action("ProposeExam","Teacher")" class="nav-item active"><i class="fas fa-calendar-plus"></i><span>Propose Exam</span></a>
+                <a href="@Url.Action("ViewTeacherExamTimetable","Teacher")" class="nav-item"><i class="fas fa-calendar-week"></i><span>My Exam Timetable</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="greeting"><h1><i class="fas fa-calendar-plus" style="color:#6366f1;margin-right:10px;"></i>@ViewBag.Title</h1><p>Pick a date, choose a time slot, and submit for approval.</p></div>
+                <div class="header-right">
+                    <button class="header-btn"><i class="far fa-bell"></i></button>
+                    <div class="profile-container">
+                        <button class="profile-trigger" onclick="toggleDropdown()">
+                            <div class="profile-avatar">T</div>
+                            <div class="profile-info"><div class="profile-name">Teacher</div><div class="profile-role">Educator</div></div>
+                        </button>
+                        <div class="dropdown-menu" id="profileDropdown">
+                            <div class="dropdown-user"><div class="dropdown-avatar">T</div><div style="font-weight:600;">Teacher</div></div>
+                            <div class="dropdown-divider"></div>
+                            <a href="@Url.Action("Dashboard","Teacher")" class="dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <div class="dropdown-divider"></div>
+                            <form action="@Url.Action("LogOff","Account")" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div style="margin-bottom:18px;">
+                    <a href="@Url.Action("MyExamProposals")" class="btn-back"><i class="fas fa-arrow-left"></i> My Proposals</a>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {<div class="err-summary">@Html.ValidationSummary(false)</div>}
+
+                @using (Html.BeginForm("ProposeExam", "Teacher", FormMethod.Post, new { id = "proposeExamForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+
+                    <div class="field" style="max-width:500px;margin-bottom:18px;">
+                        <label class="lbl">Exam Cycle</label>
+                        @Html.DropDownListFor(m => m.ExamTimetableId, Model.ExamCycleOptions, "Select cycle (e.g. June Exams 2026)", new { @class = "ctrl", id = "cycleSelect" })
+                        @Html.ValidationMessageFor(m => m.ExamTimetableId, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div id="calendarSection" style="display:none;">
+                        <div class="calendar-wrap">
+                            <div class="calendar-head"><div><h3>Click a day to see what's booked</h3><div class="range" id="cycleRange"></div></div></div>
+                            <div id="dayGrid" class="day-grid"></div>
+                        </div>
+
+                        <div class="propose-grid">
+                            <div class="card">
+                                <h3>Session details</h3>
+                                <p class="sub">Fields update the timeline on the right live.</p>
+                                @Html.HiddenFor(m => m.ExamDate, new { id = "examDateHidden" })
+                                <div class="field">
+                                    <label class="lbl">Subject</label>
+                                    @Html.DropDownListFor(m => m.SubjectId, Model.SubjectOptions, "Select a subject you teach", new { @class = "ctrl" })
+                                </div>
+                                <div class="field-row">
+                                    <div class="field"><label class="lbl">Paper Number</label>@Html.TextBoxFor(m => m.PaperNumber, new { @class = "ctrl", type = "number", min = "1", max = "3", id = "paperNum" })</div>
+                                    <div class="field"><label class="lbl">Duration (hrs)</label>@Html.TextBoxFor(m => m.DurationHours, new { @class = "ctrl", type = "number", step = "0.25", min = "0.5", max = "6", id = "durationHrs" })</div>
+                                </div>
+                                <div class="field"><label class="lbl">Start Time</label>@Html.TextBoxFor(m => m.StartTime, "{0:hh\\:mm}", new { @class = "ctrl", type = "time", id = "startTime" })</div>
+                                <div class="field"><label class="lbl">Venue</label>@Html.TextBoxFor(m => m.Venue, new { @class = "ctrl", placeholder = "e.g. Hall A, Room 12" })</div>
+                                <div class="field"><label class="lbl">Invigilator</label>@Html.TextBoxFor(m => m.Invigilator, new { @class = "ctrl", placeholder = "Staff member on duty" })</div>
+                                <div class="field"><label class="lbl">Notes</label>@Html.TextAreaFor(m => m.Notes, new { @class = "ctrl", placeholder = "Optional" })</div>
+                                <div class="field">
+                                    <label class="lbl">Classes Writing</label>
+                                    <div class="class-grid" id="classGrid">
+                                        @foreach (var option in Model.ClassOptions)
+                                        {
+                                            <label class="class-pick @(option.Selected ? "selected" : "")">
+                                                <input type="checkbox" name="ClassIds" value="@option.ClassId" @(option.Selected ? "checked" : "") onchange="this.parentElement.classList.toggle('selected', this.checked); refreshTimeline();" />
+                                                <div><div class="pname">@option.ClassName</div><div class="pgrade">@option.GradeName</div></div>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 id="timelineTitle">Day schedule</h3>
+                                <p class="sub" id="timelineSub">Pick a day above to see what's already booked.</p>
+                                <div class="timeline" id="timeline"></div>
+                                <div id="validationBanner" class="validation-banner ok" style="display:none;"></div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <a href="@Url.Action("MyExamProposals")" class="btn-cancel">Cancel</a>
+                            <button type="submit" class="btn-primary-pill" id="submitBtn"><i class="fas fa-paper-plane"></i> Submit Proposal</button>
+                        </div>
+                    </div>
+                    <div id="emptyState" class="empty-state-card"><i class="fas fa-calendar"></i><h4 style="color:#333;">Pick an exam cycle to start</h4><p>Choose a cycle above and the school calendar will appear.</p></div>
+                }
+            </div>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        function toggleDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
+        document.addEventListener('click', function (e) { var c = document.querySelector('.profile-container'); if (c && !c.contains(e.target)) document.getElementById('profileDropdown').classList.remove('show'); });
+    </script>
+    <script>
+        (function(){var SCHOOL_START_MIN,SCHOOL_END_MIN;var BREAKS=[];var DAYS=[];var SESSIONS=[];var SELECTED_DATE=@Html.Raw(Model.ExamDate!=default(DateTime)?"'"+Model.ExamDate.ToString("yyyy-MM-dd")+"'":"null");var EXCLUDE_SESSION_ID=@(Model.Id==0?"null":Model.Id.ToString());function toMin(h){if(!h)return 0;var p=h.split(':');return parseInt(p[0],10)*60+parseInt(p[1],10);}function fmtMin(m){var h=Math.floor(m/60),mm=m%60;return(h<10?'0':'')+h+':'+(mm<10?'0':'')+mm;}document.getElementById('cycleSelect').addEventListener('change',function(){var c=this.value;if(!c){document.getElementById('calendarSection').style.display='none';document.getElementById('emptyState').style.display='block';return;}loadCalendar(c);});function loadCalendar(id){fetch('@Url.Action("ProposeExam_CalendarDays","Teacher")?cycleId='+id).then(r=>r.json()).then(data=>{DAYS=data.days;document.getElementById('cycleRange').textContent='Window: '+data.startDate+' → '+data.endDate;renderCalendar();document.getElementById('calendarSection').style.display='block';document.getElementById('emptyState').style.display='none';var t=SELECTED_DATE||(DAYS.find(d=>!d.isWeekend)||{}).iso;if(t)selectDay(t);});}function renderCalendar(){var g=document.getElementById('dayGrid');g.innerHTML='';DAYS.forEach(function(d){var c=document.createElement('div');c.className='day-card'+(d.isWeekend?' weekend':'');c.dataset.iso=d.iso;c.innerHTML='<div class="dow">'+d.label+'</div><div class="num">'+d.dayNumber+'</div><div class="mo">'+d.month+'</div>'+(d.examCount>0?'<div class="pill">'+d.examCount+' exam'+(d.examCount>1?'s':'')+'</div>':'');c.addEventListener('click',function(){selectDay(d.iso);});g.appendChild(c);});}function selectDay(iso){SELECTED_DATE=iso;document.getElementById('examDateHidden').value=iso;document.querySelectorAll('.day-card').forEach(function(c){c.classList.toggle('selected',c.dataset.iso===iso);});document.getElementById('timelineTitle').textContent='Schedule for '+iso;loadDaySchedule();}function loadDaySchedule(){var cid=document.getElementById('cycleSelect').value;if(!cid||!SELECTED_DATE)return;var url='@Url.Action("ProposeExam_DaySchedule","Teacher")?cycleId='+cid+'&date='+SELECTED_DATE;if(EXCLUDE_SESSION_ID)url+='&excludeSessionId='+EXCLUDE_SESSION_ID;fetch(url).then(r=>r.json()).then(data=>{SCHOOL_START_MIN=toMin(data.schoolStart);SCHOOL_END_MIN=toMin(data.schoolEnd);BREAKS=data.breaks;SESSIONS=data.sessions;refreshTimeline();});}function refreshTimeline(){var tl=document.getElementById('timeline');if(SCHOOL_START_MIN==null)return;tl.innerHTML='';var totalMin=SCHOOL_END_MIN-SCHOOL_START_MIN;for(var h=Math.floor(SCHOOL_START_MIN/60);h<=Math.ceil(SCHOOL_END_MIN/60);h++){var pos=((h*60)-SCHOOL_START_MIN)/totalMin*100;if(pos<0||pos>100)continue;var line=document.createElement('div');line.className='hour-row';line.style.top=pos+'%';tl.appendChild(line);var lbl=document.createElement('div');lbl.className='hour-label';lbl.style.top=pos+'%';lbl.textContent=(h<10?'0':'')+h+':00';tl.appendChild(lbl);}BREAKS.forEach(function(b){addSlot(tl,toMin(b.start),toMin(b.end),'break',b.name+' ('+b.start+'–'+b.end+')','');});var selectedClassIds=Array.from(document.querySelectorAll('input[name="ClassIds"]:checked')).map(function(i){return parseInt(i.value,10);});SESSIONS.forEach(function(s){var startM=toMin(s.start),endM=toMin(s.end);var hasClash=false;if(selectedClassIds.length&&s.classIds){hasClash=s.classIds.some(function(cid){return selectedClassIds.indexOf(cid)>=0;});}addSlot(tl,startM,endM,'exam'+(hasClash?' clash':''),s.subject+' — Paper '+s.paper,(s.classNames||'')+(s.venue?' · '+s.venue:'')+' · '+s.status);});var startVal=document.getElementById('startTime').value;var durVal=parseFloat(document.getElementById('durationHrs').value);var banner=document.getElementById('validationBanner');if(startVal&&durVal>0){var startM=toMin(startVal);var endM=startM+Math.round(durVal*60);var problems=validateProposed(startM,endM,selectedClassIds);addSlot(tl,startM,endM,'proposed'+(problems.length?' invalid':''),'Proposed: '+fmtMin(startM)+'–'+fmtMin(endM),(durVal.toFixed(2)+'h'));if(problems.length){banner.className='validation-banner err';banner.innerHTML='<i class="fas fa-exclamation-triangle"></i> '+problems.join(' • ');}else{banner.className='validation-banner ok';banner.innerHTML='<i class="fas fa-check-circle"></i> Slot is clear. You can submit.';}banner.style.display='block';document.getElementById('submitBtn').disabled=problems.length>0;}else{banner.style.display='none';document.getElementById('submitBtn').disabled=false;}}function addSlot(tl,startM,endM,klass,title,sub){var totalMin=SCHOOL_END_MIN-SCHOOL_START_MIN;var topPct=(startM-SCHOOL_START_MIN)/totalMin*100;var heightPct=(endM-startM)/totalMin*100;if(topPct+heightPct<0||topPct>100)return;if(topPct<0){heightPct+=topPct;topPct=0;}if(topPct+heightPct>100)heightPct=100-topPct;var div=document.createElement('div');div.className='slot '+klass;div.style.top=topPct+'%';div.style.height=heightPct+'%';div.innerHTML='<div><strong>'+title+'</strong></div>'+(sub?'<div class="meta">'+sub+'</div>':'');tl.appendChild(div);}function validateProposed(startM,endM,selectedClassIds){var problems=[];if(endM<=startM)problems.push('End time must be after start.');if(startM<SCHOOL_START_MIN)problems.push('Starts before school opens.');if(endM>SCHOOL_END_MIN)problems.push('Runs past end of school day.');BREAKS.forEach(function(b){var bs=toMin(b.start),be=toMin(b.end);if(startM<be&&bs<endM)problems.push('Overlaps '+b.name+'.');});if(selectedClassIds.length){SESSIONS.forEach(function(s){var ss=toMin(s.start),se=toMin(s.end);if(startM<se&&ss<endM){var shared=(s.classIds||[]).filter(function(c){return selectedClassIds.indexOf(c)>=0;});if(shared.length)problems.push('Selected class already writing '+s.subject+' at this time.');}});}return problems;}['startTime','durationHrs'].forEach(function(id){document.getElementById(id).addEventListener('input',refreshTimeline);});if(document.getElementById('cycleSelect').value){loadCalendar(document.getElementById('cycleSelect').value);}})();
+    </script>
+</body>
+</html>
