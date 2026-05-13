@@ -1,0 +1,162 @@
+﻿@model ElevateED.ViewModels.ExtraClassAttendanceRecordViewModel
+
+@{
+    ViewBag.Title = "Mark Attendance - " + Model.ClassName;
+}
+
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .student-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+        .student-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .student-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+    .present-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    .select-all {
+        margin-right: 10px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-clipboard-list"></i> Mark Attendance
+            </h2>
+            <p class="text-muted">@Model.ClassName - @Model.SessionDate.ToString("dd MMM yyyy")</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ActiveSession", new { sessionId = Model.SessionId })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <form id="attendanceForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="sessionId" value="@Model.SessionId" />
+
+        <div class="student-table">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" class="select-all" onclick="toggleAll(this)" />
+                        </th>
+                        <th>Student</th>
+                        <th>Student Number</th>
+                        <th>Status</th>
+                        <th>Scan Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model.Records)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="presentStudentIds" value="@student.StudentId" class="student-checkbox" @(student.IsPresent ? "checked" : "") />
+                            </td>
+                            <td>
+                                <strong>@student.StudentName</strong>
+                            </td>
+                            <td>@student.StudentNumber</td>
+                            <td>
+                                <span class="badge @(student.IsPresent ? "bg-success" : "bg-danger")">
+                                    @(student.IsPresent ? "Present" : "Absent")
+                                </span>
+                            </td>
+                            <td>
+                                @(student.ScanTime?.ToString("HH:mm") ?? "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="button" class="btn-save" onclick="saveAttendance()">
+                <i class="fas fa-save"></i> Save Attendance
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleAll(source) {
+        var checkboxes = document.getElementsByClassName('student-checkbox');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+
+    function saveAttendance() {
+        var form = document.getElementById('attendanceForm');
+        var formData = new FormData(form);
+
+        var presentIds = [];
+        $('.student-checkbox:checked').each(function() {
+            presentIds.push($(this).val());
+        });
+
+        $.ajax({
+            url: '@Url.Action("UpdateAttendance", "TeacherExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                sessionId: @Model.SessionId,
+                presentStudentIds: presentIds
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    window.location.href = '@Url.Action("ActiveSession", new { sessionId = Model.SessionId })';
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred');
+            }
+        });
+    }
+</script>

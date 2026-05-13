@@ -1,0 +1,402 @@
+﻿@model ElevateED.ViewModels.ExtraClassDetailsViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = Model.ExtraClass?.Name ?? "Class Details";
+}
+
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .class-header {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+    .info-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #d4af37;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .teacher-select {
+        max-width: 300px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+
+    .btn-assign {
+        background: var(--success);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .ai-recommendation {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+
+    .topic-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .topic-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .feedback-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .rating-stars {
+        color: #fbbf24;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-info-circle"></i> @Model.ExtraClass?.Name
+            </h2>
+        </div>
+        <div>
+            <a href="@Url.Action("Index", "AdminExtraClass")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="class-header">
+        <h3>@Model.ExtraClass?.Name</h3>
+        <p>@(Model.ExtraClass?.Description ?? "No description")</p>
+        <div class="mt-2">
+            <span class="badge bg-light text-dark">@Model.ExtraClass?.Status</span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Class Information -->
+            <div class="info-card">
+                <div class="info-title"><i class="fas fa-info-circle"></i> Class Information</div>
+                <div class="info-grid">
+                    <div class="info-item"><i class="fas fa-book"></i> <strong>Subject:</strong> @(Model.ExtraClass?.Subject?.Name ?? "N/A")</div>
+                    <div class="info-item"><i class="fas fa-graduation-cap"></i> <strong>Grade:</strong> @(Model.ExtraClass?.Grade?.Name ?? "N/A")</div>
+                    <div class="info-item"><i class="fas fa-calendar"></i> <strong>Start Date:</strong> @(Model.ExtraClass?.StartDate.ToString("dd MMM yyyy") ?? "N/A")</div>
+                    <div class="info-item"><i class="fas fa-calendar"></i> <strong>End Date:</strong> @(Model.ExtraClass?.EndDate.ToString("dd MMM yyyy") ?? "N/A")</div>
+                    <div class="info-item"><i class="fas fa-clock"></i> <strong>Schedule:</strong> @(Model.ExtraClass?.Schedule ?? "N/A")</div>
+                    <div class="info-item"><i class="fas fa-map-marker-alt"></i> <strong>Venue:</strong> @(Model.ExtraClass?.Venue ?? "TBA")</div>
+                    <div class="info-item"><i class="fas fa-tag"></i> <strong>Price:</strong> R @(Model.ExtraClass?.Price.ToString("0.00") ?? "0.00")</div>
+                    <div class="info-item"><i class="fas fa-users"></i> <strong>Capacity:</strong> @(Model.ExtraClass?.CurrentEnrollment ?? 0)/@(Model.ExtraClass?.Capacity ?? 0)</div>
+                </div>
+            </div>
+
+            <!-- Teacher Assignment -->
+            <div class="info-card">
+                <div class="info-title"><i class="fas fa-user-tie"></i> Teacher Assignment</div>
+                @if (Model.ExtraClass?.TeacherId != null)
+                {
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Current Teacher:</strong> @(Model.ExtraClass?.Teacher?.FullName ?? "Unknown")
+                            <br />
+                            <small>@(Model.ExtraClass?.Teacher?.User?.Email ?? "")</small>
+                        </div>
+                        <button class="btn btn-sm btn-warning" onclick="openTeacherModal(@Model.ExtraClass.Id)">
+                            <i class="fas fa-sync-alt"></i> Change Teacher
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <p class="text-warning">No teacher assigned yet</p>
+                        <button class="btn btn-primary btn-sm" onclick="openTeacherModal(@Model.ExtraClass.Id)">
+                            <i class="fas fa-user-plus"></i> Assign Teacher
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <!-- AI Recommendation -->
+            @if (Model.AIRecommendation != null)
+            {
+                <div class="ai-recommendation">
+                    <h5><i class="fas fa-robot"></i> AI Teaching Recommendation</h5>
+                    <p><strong>Predicted Improvement:</strong> +@Model.AIRecommendation.PredictedImprovement%</p>
+
+                    @if (!string.IsNullOrEmpty(Model.AIRecommendation.EasyWinTopics))
+                    {
+                        <div>
+                            <strong>Easy Win Topics:</strong>
+                            <div class="topic-list">
+                                @foreach (var topic in Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(Model.AIRecommendation.EasyWinTopics ?? "[]"))
+                                {
+                                    <span class="topic-badge">✅ @topic</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.AIRecommendation.DifficultTopics))
+                    {
+                        <div class="mt-2">
+                            <strong>Difficult Topics (Need Focus):</strong>
+                            <div class="topic-list">
+                                @foreach (var topic in Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(Model.AIRecommendation.DifficultTopics ?? "[]"))
+                                {
+                                    <span class="topic-badge">⚠️ @topic</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Attendance Sessions -->
+            @if (Model.AttendanceSessions.Any())
+            {
+                <div class="info-card">
+                    <div class="info-title"><i class="fas fa-calendar-check"></i> Attendance Sessions</div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>Date</th><th>Session</th><th>Present/Absent</th><th>Attendance %</th><th>Topics Covered</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var session in Model.AttendanceSessions.OrderByDescending(s => s.SessionDate))
+                                {
+                                    var total = session.AttendanceRecords?.Count ?? 0;
+                                    var present = session.AttendanceRecords?.Count(r => r.IsPresent) ?? 0;
+                                    var percent = total > 0 ? Math.Round((double)present / total * 100, 1) : 0;
+
+                                    <tr>
+                                        <td>@session.SessionDate.ToString("dd MMM yyyy")</td>
+                                        <td>Session @session.SessionNumber</td>
+                                        <td>@present/@total</td>
+                                        <td>@percent%</td>
+                                        <td>@(session.TopicsCovered ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Feedback -->
+            @if (Model.Feedbacks.Any())
+            {
+                <div class="info-card">
+                    <div class="info-title"><i class="fas fa-star"></i> Student Feedback (⭐ @Model.AverageRating)</div>
+                    @foreach (var feedback in Model.Feedbacks.Take(5))
+                    {
+                        <div class="feedback-card">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>@(feedback.Student?.FullName ?? "Anonymous")</strong>
+                                    <div class="rating-stars">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= feedback.Rating)
+                                            {
+                                                <i class="fas fa-star"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="far fa-star"></i>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                                <small>@feedback.DateSubmitted.ToString("dd MMM yyyy")</small>
+                            </div>
+                            @if (!string.IsNullOrEmpty(feedback.Comment))
+                            {
+                                <p class="mt-2 mb-0">"@feedback.Comment"</p>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-number">@Model.TotalEnrolled</div>
+                    <div>Enrolled</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@Model.TotalPaid</div>
+                    <div>Paid</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@Model.AttendanceRate%</div>
+                    <div>Attendance</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="info-card">
+                <div class="info-title"><i class="fas fa-bolt"></i> Quick Actions</div>
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("Enrollments", new { id = Model.ExtraClass?.Id })" class="btn btn-primary">
+                        <i class="fas fa-users"></i> View Enrollments
+                    </a>
+                    <a href="@Url.Action("SessionHistory", "TeacherExtraClass", new { classId = Model.ExtraClass?.Id })" class="btn btn-info">
+                        <i class="fas fa-history"></i> Session History
+                    </a>
+                    <a href="@Url.Action("ViewFeedback", "TeacherExtraClass", new { classId = Model.ExtraClass?.Id })" class="btn btn-secondary">
+                        <i class="fas fa-star"></i> View All Feedback
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Teacher Modal -->
+<div class="modal fade" id="assignTeacherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-tie"></i> Assign Teacher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <select id="teacherSelect" class="form-control">
+                    <option value="">-- Select Teacher --</option>
+                    @if (ViewBag.Teachers != null)
+                    {
+                        foreach (var teacher in ViewBag.Teachers)
+                        {
+                            <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                        }
+                    }
+                </select>
+                <div id="assignMessage" class="mt-3 alert" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignTeacher()">Assign Teacher</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var currentClassId = 0;
+
+    function openTeacherModal(classId) {
+        currentClassId = classId;
+        $('#assignTeacherModal').modal('show');
+        $('#assignMessage').hide();
+        $('#teacherSelect').val('');
+    }
+
+    function assignTeacher() {
+        var teacherId = $('#teacherSelect').val();
+        if (!teacherId) {
+            $('#assignMessage').removeClass('alert-success').addClass('alert-danger')
+                .text('Please select a teacher').show();
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("AssignTeacher", "AdminExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                classId: currentClassId,
+                teacherId: teacherId
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#assignMessage').removeClass('alert-danger').addClass('alert-success')
+                        .html('<i class="fas fa-check-circle"></i> ' + response.message).show();
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    $('#assignMessage').removeClass('alert-success').addClass('alert-danger')
+                        .text(response.message).show();
+                }
+            }
+        });
+    }
+</script>

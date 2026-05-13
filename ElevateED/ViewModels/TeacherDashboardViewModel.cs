@@ -122,14 +122,7 @@ namespace ElevateED.ViewModels
         public List<StudentAttendanceViewModel> Students { get; set; }
     }
 
-    public class StudentAttendanceViewModel
-    {
-        public int StudentId { get; set; }
-        public string StudentNumber { get; set; }
-        public string FullName { get; set; }
-        public AttendanceStatus Status { get; set; }
-        public string Remarks { get; set; }
-    }
+  
 
     public enum AttendanceStatus
     {

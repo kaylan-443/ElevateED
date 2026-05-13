@@ -3,282 +3,57 @@
 
 @{
     ViewBag.Title = "Available Extra Classes";
-    var myBookings = ViewBag.MyBookings as List<int> ?? new List<int>();
+    var myEnrollments = ViewBag.MyEnrollments as List<int> ?? new List<int>();
+    var studentId = ViewBag.StudentId as int?;
 }
 
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
     :root {
         --primary: #4f46e5;
-        --accent: #fbbf24;
         --success: #10b981;
         --warning: #f59e0b;
         --danger: #ef4444;
         --info: #3b82f6;
-        --purple: #8b5cf6;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        --sidebar-width: 280px;
-        --header-height: 70px;
-    }
-
-    body {
-        font-family: 'Inter', -apple-system, sans-serif;
-        background: var(--gray-50);
-    }
-
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: var(--sidebar-width);
-        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        z-index: 100;
-        overflow-y: auto;
-    }
-
-    .sidebar-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .logo-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--accent), #f59e0b);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1e1b4b;
-        font-size: 20px;
-    }
-
-    .logo-text {
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-    }
-
-        .logo-text span {
-            color: var(--accent);
-        }
-
-    .sidebar-nav {
-        flex: 1;
-        padding: 24px 16px;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 12px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.2s;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--accent), #f59e0b);
-            color: #1e1b4b;
-        }
-
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
-    .nav-section {
-        margin-top: 24px;
-        margin-bottom: 12px;
-        padding: 0 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .main-content {
-        flex: 1;
-        margin-left: var(--sidebar-width);
-        min-height: 100vh;
-    }
-
-    .top-header {
-        height: var(--header-height);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 0 32px;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        background: none;
-        border: none;
-    }
-
-        .profile-trigger:hover {
-            background: var(--gray-100);
-        }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), #4338ca);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        width: 200px;
-        overflow: hidden;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-        }
-
-    .content-area {
-        padding: 32px;
     }
 
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 30px;
         flex-wrap: wrap;
         gap: 15px;
     }
 
-        .page-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--gray-900);
-        }
-
-    .btn-primary {
-        background: var(--primary);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
     }
 
-        .btn-primary:hover {
-            background: #4338ca;
-            color: white;
-            text-decoration: none;
-        }
-
-    .btn-back {
-        background: white;
-        color: var(--gray-700);
-        padding: 10px 20px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 500;
-        border: 1px solid var(--gray-200);
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-        .btn-back:hover {
-            background: var(--gray-100);
-            text-decoration: none;
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
         }
 
     .class-card {
         background: white;
         border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 16px;
-        border: 1px solid var(--gray-200);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        transition: all 0.3s;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
         border-left: 4px solid var(--primary);
     }
 
         .class-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
         }
 
-        .class-card.booked {
+        .class-card.enrolled {
             border-left-color: var(--success);
-            background: #f0fdf4;
+            background: linear-gradient(to right, white, #f0fdf4);
         }
 
         .class-card.full {
@@ -286,50 +61,19 @@
             opacity: 0.8;
         }
 
-    .card-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
     .class-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--gray-900);
-    }
-
-    .fee-badge {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 14px;
-    }
-
-        .fee-badge.paid {
-            background: var(--accent);
-            color: #1e1b4b;
-        }
-
-        .fee-badge.free {
-            background: var(--success);
-            color: white;
-        }
-
-    .class-desc {
-        color: var(--gray-500);
-        font-size: 14px;
-        margin-bottom: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 8px;
     }
 
     .class-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 20px;
         font-size: 13px;
-        color: var(--gray-600);
+        color: #666;
         margin-bottom: 15px;
     }
 
@@ -339,157 +83,239 @@
             gap: 6px;
         }
 
-        .class-meta i {
-            color: var(--primary);
-            width: 16px;
-        }
+            .class-meta span i {
+                width: 18px;
+                color: var(--primary);
+            }
 
-    .btn-join {
-        background: var(--success);
-        color: white;
-        padding: 10px 24px;
-        border-radius: 10px;
-        border: none;
-        font-weight: 500;
-        cursor: pointer;
+    .class-description {
+        color: #555;
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.5;
     }
 
-        .btn-join:hover {
-            background: #059669;
-        }
-
-        .btn-join:disabled {
-            background: var(--gray-400);
-            cursor: not-allowed;
-        }
-
-    .btn-booked {
-        background: var(--info);
-        color: white;
-        padding: 10px 24px;
-        border-radius: 10px;
-        font-weight: 500;
+    .price-badge {
         display: inline-block;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .free-badge {
+        background: linear-gradient(135deg, var(--success), #059669);
+    }
+
+    .capacity-badge {
+        background: #e0e7ff;
+        color: #1e3c72;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .btn-enroll {
+        background: var(--success);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-enroll:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16,185,129,0.3);
+        }
+
+    .btn-enrolled {
+        background: #e0e7ff;
+        color: #1e3c72;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+        .btn-enrolled:hover {
+            background: #c7d2fe;
+            text-decoration: none;
+            color: #1e3c72;
+        }
+
+    .btn-full {
+        background: #e5e7eb;
+        color: #6b7280;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: not-allowed;
     }
 
     .empty-state {
         text-align: center;
-        padding: 60px;
+        padding: 60px 20px;
         background: white;
-        border-radius: 16px;
-        border: 1px solid var(--gray-200);
+        border-radius: 20px;
     }
 
         .empty-state i {
-            font-size: 48px;
-            color: var(--gray-400);
-            margin-bottom: 15px;
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
         }
 
-    .alert-warning {
-        background: #fef3c7;
-        color: #92400e;
-        padding: 12px 16px;
-        border-radius: 10px;
+    .alert {
+        padding: 15px 20px;
+        border-radius: 12px;
         margin-bottom: 20px;
-    }
-
-    @@media (max-width: 1024px) {
-        .sidebar {
-            transform: translateX(-100%);
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .content-area {
-            padding: 20px;
-        }
     }
 </style>
 
-<div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <a href="@Url.Action("Dashboard", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-            <div class="nav-section">Learning</div>
-            <a href="@Url.Action("Index", "StudentExtraClass")" class="nav-item active"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
-        </nav>
-    </aside>
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">S</div></button>
-                    <div class="dropdown-menu" id="profileDropdown">
-                        <div class="dropdown-header"><div style="font-weight:600;">Student</div></div>
-                        <div class="dropdown-divider"></div>
-                        <form action="@Url.Action("LogOff", "Account")" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="dropdown-item" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <div class="content-area">
-            <div class="page-header">
-                <div><h1><i class="fas fa-chalkboard-teacher" style="color:var(--purple);"></i> Extra Classes</h1><p style="color:var(--gray-500);">Available for your grade</p></div>
-                <div style="display:flex;gap:10px;">
-                    <a href="@Url.Action("MyBookings", "StudentExtraClass")" class="btn-primary"><i class="fas fa-list"></i> My Bookings</a>
-                    <a href="@Url.Action("Dashboard", "Student")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
-                </div>
-            </div>
-            @if (TempData["ErrorMessage"] != null)
-            {<div class="alert-warning">@TempData["ErrorMessage"]</div>}
-            @if (!Model.Any())
-            {
-                <div class="empty-state"><i class="fas fa-calendar-times"></i><h4>No Extra Classes</h4><p>None scheduled for your grade right now.</p></div>
-            }
-            else
-            {
-                foreach (var cls in Model)
-                {
-                    bool isBooked = myBookings.Contains(cls.Id);
-                    int bookingCount = cls.Bookings?.Count(b => b.Status != BookingStatus.Cancelled) ?? 0;
-                    bool isFull = bookingCount >= cls.MaxStudents;
-                    string cardClass = isBooked ? "booked" : (isFull ? "full" : "");
-                    <div class="class-card @cardClass">
-                        <div class="card-top">
-                            <div class="class-title">@cls.Title</div>
-                            <span class="fee-badge @(cls.Fee > 0 ? "paid" : "free")">@(cls.Fee > 0 ? $"R {cls.Fee:0.00}" : "FREE")</span>
-                        </div>
-                        @if (!string.IsNullOrEmpty(cls.Description))
-                        {<p class="class-desc">@cls.Description</p>}
-                        <div class="class-meta">
-                            <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
-                            <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
-                            <span><i class="fas fa-calendar"></i> @cls.ClassDate.ToString("dd MMM yyyy")</span>
-                            <span><i class="fas fa-clock"></i> @cls.StartTime.ToString(@"hh\:mm") - @cls.EndTime.ToString(@"hh\:mm")</span>
-                            <span><i class="fas fa-map-marker-alt"></i> @(cls.Location ?? "TBA")</span>
-                            <span><i class="fas fa-users"></i> @bookingCount/@cls.MaxStudents</span>
-                        </div>
-                        <div style="text-align:right;">
-                            @if (isBooked)
-                            {<span class="btn-booked"><i class="fas fa-check-circle"></i> Already Booked</span> }
-                            else if (isFull)
-                            { <button class="btn-join" disabled><i class="fas fa-ban"></i> Class Full</button> }
-                            else
-                            { <button class="btn-join" onclick="joinClass(@cls.Id, '@cls.Title', @cls.Fee)"><i class="fas fa-plus-circle"></i> Join Class</button>}
-                        </div>
-                    </div>
-                }
-            }
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-chalkboard-teacher"></i> Available Extra Classes
+            </h2>
+            <p class="text-muted">Browse and enroll in extra classes to boost your performance</p>
         </div>
-    </main>
+        <div>
+            <a href="@Url.Action("MyEnrollments", "StudentExtraClass")" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> My Enrollments
+            </a>
+            <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Extra Classes Available</h4>
+            <p>There are no extra classes available for your grade at the moment.</p>
+            <p>Check back later for new classes!</p>
+        </div>
+    }
+    else
+    {
+        foreach (var extraClass in Model)
+        {
+            bool isEnrolled = myEnrollments.Contains(extraClass.Id);
+            bool isFull = extraClass.CurrentEnrollment >= extraClass.Capacity;
+            string priceClass = extraClass.Price == 0 ? "free-badge" : "";
+
+            <div class="class-card @(isEnrolled ? "enrolled" : "") @(isFull ? "full" : "")">
+                <div class="class-title">@extraClass.Name</div>
+                <div class="class-meta">
+                    <span><i class="fas fa-book"></i> @(extraClass.Subject?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-graduation-cap"></i> @(extraClass.Grade?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-calendar"></i> Starts: @extraClass.StartDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-clock"></i> @extraClass.Schedule</span>
+                    <span><i class="fas fa-map-marker-alt"></i> @(extraClass.Venue ?? "TBA")</span>
+                    <span><i class="fas fa-users"></i> @extraClass.CurrentEnrollment/@extraClass.Capacity enrolled</span>
+                </div>
+                @if (!string.IsNullOrEmpty(extraClass.Description))
+                {
+                    <div class="class-description">@extraClass.Description</div>
+                }
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <span class="price-badge @priceClass">
+                            @if (extraClass.Price == 0)
+                            {
+                                <i class="fas fa-gift"></i> @:FREE
+                            }
+                            else
+                            {
+                                <i class="fas fa-rand"></i> @:R @extraClass.Price.ToString("0.00")
+                            }
+                        </span>
+                        @if (isFull)
+                        {
+                            <span class="capacity-badge ml-2"><i class="fas fa-ban"></i> Class Full</span>
+                        }
+                    </div>
+                    <div>
+                        @if (isEnrolled)
+                        {
+                            <a href="@Url.Action("Details", "StudentExtraClass", new { id = extraClass.Id })" class="btn-enrolled">
+                                <i class="fas fa-check-circle"></i> Enrolled - View Details
+                            </a>
+                        }
+                        else if (isFull)
+                        {
+                            <button class="btn-full" disabled>
+                                <i class="fas fa-ban"></i> Class Full
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn-enroll" onclick="enrollClass(@extraClass.Id, '@extraClass.Name.Replace("'", "\\'")', @extraClass.Price)">
+                                <i class="fas fa-plus-circle"></i> Enroll Now
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
+
 <script>
-    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
-    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
-    function joinClass(classId,title,fee){var msg='Join "'+title+'"?';if(fee>0){msg+='\n\nFee: R '+fee.toFixed(2);}if(!confirm(msg))return;$.ajax({url:'@Url.Action("Join", "StudentExtraClass")',type:'POST',data:{classId:classId},success:function(r){alert(r.message);location.reload();},error:function(){alert('An error occurred');}});}
+    function enrollClass(classId, className, price) {
+        var message = 'Enroll in "' + className + '"?';
+        if (price > 0) {
+            message += '\n\nFee: R ' + price.toFixed(2) + '\nYou will need to pay to confirm your spot.';
+        } else {
+            message += '\n\nThis is a FREE class!';
+        }
+
+        if (!confirm(message)) return;
+
+        $.ajax({
+            url: '@Url.Action("Join", "StudentExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                classId: classId
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.requiresPayment && price > 0) {
+                        alert(response.message + '\n\nYou will be redirected to payment.');
+                        window.location.href = '@Url.Action("MyEnrollments", "StudentExtraClass")';
+                    } else {
+                        alert(response.message);
+                        location.reload();
+                    }
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
 </script>

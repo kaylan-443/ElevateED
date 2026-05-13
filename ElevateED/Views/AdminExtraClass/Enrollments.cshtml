@@ -1,0 +1,231 @@
+﻿@model List<ElevateED.Models.ExtraClassEnrollment>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Enrollments - " + (ViewBag.ExtraClass?.Name ?? "Class");
+    var extraClass = ViewBag.ExtraClass as ExtraClass;
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .class-info {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+
+    .enrollment-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+        .enrollment-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .enrollment-table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #eee;
+        }
+
+    .status-paid {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .btn-mark-paid {
+        background: var(--success);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-delete {
+        background: var(--danger);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-users"></i> Enrollments
+            </h2>
+        </div>
+        <div>
+            <a href="@Url.Action("Details", new { id = extraClass?.Id })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Class
+            </a>
+        </div>
+    </div>
+
+    @if (extraClass != null)
+    {
+        <div class="class-info">
+            <h4><i class="fas fa-chalkboard-teacher"></i> @extraClass.Name</h4>
+            <p>@(extraClass.Subject?.Name) | @(extraClass.Grade?.Name) | @extraClass.Schedule</p>
+            <div>
+                <span class="badge bg-light text-dark">Total Enrolled: @Model.Count</span>
+                <span class="badge bg-success ms-2">Paid: @Model.Count(e => e.IsPaid)</span>
+                <span class="badge bg-warning ms-2">Pending: @Model.Count(e => !e.IsPaid)</span>
+            </div>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h4>No Enrollments Yet</h4>
+            <p>No students have enrolled in this class yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="enrollment-table">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Student #</th>
+                        <th>Class</th>
+                        <th>Enrolled Date</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var enrollment in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@(enrollment.Student?.FullName ?? "Unknown")</strong>
+                                <br />
+                                <small>@(enrollment.Student?.User?.Email ?? "")</small>
+                            </td>
+                            <td>@(enrollment.Student?.User?.StudentNumber ?? "N/A")</td>
+                            <td>@(enrollment.Student?.Class?.FullName ?? "N/A")</td>
+                            <td>@enrollment.EnrollmentDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                @if (enrollment.IsPaid)
+                                {
+                                    <span class="status-paid"><i class="fas fa-check-circle"></i> Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pending"><i class="fas fa-clock"></i> Pending</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!enrollment.IsPaid && extraClass?.Price > 0)
+                                {
+                                    <button class="btn-mark-paid" onclick="markPayment(@enrollment.Id)">
+                                        <i class="fas fa-credit-card"></i> Mark Paid
+                                    </button>
+                                }
+                                <button class="btn-delete ms-1" onclick="deleteEnrollment(@enrollment.Id, '@(enrollment.Student?.FullName)')">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<script>
+    function markPayment(enrollmentId) {
+        var ref = prompt('Enter payment reference number:', 'PAY-' + new Date().getTime());
+        if (!ref) return;
+
+        $.ajax({
+            url: '@Url.Action("MarkPayment", "AdminExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                enrollmentId: enrollmentId,
+                paymentReference: ref
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    }
+
+    function deleteEnrollment(enrollmentId, studentName) {
+        if (confirm('Remove ' + studentName + ' from this class?')) {
+            $.ajax({
+                url: '@Url.Action("DeleteEnrollment", "AdminExtraClass")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    enrollmentId: enrollmentId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+    }
+</script>

@@ -381,6 +381,7 @@
     <Compile Include="Controllers\StudentExtraClassController.cs" />
     <Compile Include="Controllers\StudentQuizController.cs" />
     <Compile Include="Controllers\TeacherController.cs" />
+    <Compile Include="Controllers\TeacherExtraClassController.cs" />
     <Compile Include="Controllers\TeacherQuizController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -449,6 +450,10 @@
     <Compile Include="Migrations\202605121746409_AddAIStudyWorkspace.Designer.cs">
       <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202605131107216_AddExtraClassesSystem.cs" />
+    <Compile Include="Migrations\202605131107216_AddExtraClassesSystem.Designer.cs">
+      <DependentUpon>202605131107216_AddExtraClassesSystem.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AIStudySession.cs" />
     <Compile Include="Models\Announcement.cs" />
@@ -460,9 +465,7 @@
     <Compile Include="Models\AcademicMarks.cs" />
     <Compile Include="Models\Class.cs" />
     <Compile Include="Models\ClassRegister.cs" />
-    <Compile Include="Models\Driver.cs" />
     <Compile Include="Models\ElevateEDContext.cs" />
-    <Compile Include="Models\EmergencyAlert.cs" />
     <Compile Include="Models\Enums.cs" />
     <Compile Include="Models\ExamTimeTable.cs" />
     <Compile Include="Models\ExtraClass.cs" />
@@ -472,11 +475,9 @@
     <Compile Include="Models\Issue.cs" />
     <Compile Include="Models\MathSolverHistory.cs" />
     <Compile Include="Models\PodcastHistory.cs" />
-    <Compile Include="Models\Trip.cs" />
     <Compile Include="Models\PastPaper.cs" />
     <Compile Include="Models\QuizConfiguration.cs" />
     <Compile Include="Models\QuizQuestion.cs" />
-    <Compile Include="Models\RouteTracking.cs" />
     <Compile Include="Models\SchoolSubjects.cs" />
     <Compile Include="Models\Stream.cs" />
     <Compile Include="Models\Student.cs" />
@@ -489,7 +490,6 @@
     <Compile Include="Models\TeacherSubjectAssignment.cs" />
     <Compile Include="Models\TeacherSubjectQualification.cs" />
     <Compile Include="Models\TimeTable.cs" />
-    <Compile Include="Models\TransportRoute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AIAnnouncementService.cs" />
     <Compile Include="Services\AIStudyService.cs" />
@@ -513,6 +513,7 @@
     <Compile Include="ViewModels\ClassRegisterViewModel.cs" />
     <Compile Include="ViewModels\EditAttendanceViewModel.cs" />
     <Compile Include="ViewModels\ExamTimeTableViewModels.cs" />
+    <Compile Include="ViewModels\ExtraClassViewModels.cs" />
     <Compile Include="ViewModels\HomeworkViewModels.cs" />
     <Compile Include="ViewModels\IssueViewModels.cs" />
     <Compile Include="ViewModels\ManageUsersViewModel.cs" />
@@ -651,9 +652,7 @@
     <Content Include="Views\StudentQuiz\Results.cshtml" />
     <Content Include="Views\StudentQuiz\History.cshtml" />
     <Content Include="Views\AdminExtraClass\Index.cshtml" />
-    <Content Include="Views\AdminExtraClass\Bookings.cshtml" />
     <Content Include="Views\StudentExtraClass\Index.cshtml" />
-    <Content Include="Views\StudentExtraClass\MyBookings.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
     <Content Include="Views\Analytics\Principal.cshtml" />
     <Content Include="Views\Attendance\EditAttendance.cshtml" />
@@ -692,6 +691,21 @@
     <Content Include="Views\AIStudy\Index.cshtml" />
     <Content Include="Views\AIStudy\Workspace.cshtml" />
     <Content Include="Views\Shared\_StudentLayout.cshtml" />
+    <Content Include="Views\AdminExtraClass\Create.cshtml" />
+    <Content Include="Views\AdminExtraClass\Details.cshtml" />
+    <Content Include="Views\AdminExtraClass\Enrollments.cshtml" />
+    <Content Include="Views\TeacherExtraClass\Index.cshtml" />
+    <Content Include="Views\TeacherExtraClass\ClassDetails.cshtml" />
+    <Content Include="Views\TeacherExtraClass\StartSession.cshtml" />
+    <Content Include="Views\TeacherExtraClass\ActiveSession.cshtml" />
+    <Content Include="Views\TeacherExtraClass\MarkAttendance.cshtml" />
+    <Content Include="Views\TeacherExtraClass\EnrolledStudents.cshtml" />
+    <Content Include="Views\TeacherExtraClass\SessionHistory.cshtml" />
+    <Content Include="Views\TeacherExtraClass\ViewFeedback.cshtml" />
+    <Content Include="Views\StudentExtraClass\MyEnrollments.cshtml" />
+    <Content Include="Views\StudentExtraClass\Details.cshtml" />
+    <Content Include="Views\StudentExtraClass\MyAttendance.cshtml" />
+    <Content Include="Views\AdminExtraClass\Analytics.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -771,6 +785,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202605121746409_AddAIStudyWorkspace.resx">
       <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202605131107216_AddExtraClassesSystem.resx">
+      <DependentUpon>202605131107216_AddExtraClassesSystem.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

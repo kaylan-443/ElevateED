@@ -1,0 +1,136 @@
+﻿@model IEnumerable<ElevateED.ViewModels.SessionHistoryViewModel>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Session History - " + (ViewBag.ExtraClass?.Name ?? "Class");
+    var extraClass = ViewBag.ExtraClass as ExtraClass;
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .session-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+        .session-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .session-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+    .progress-bar {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        width: 100px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-history"></i> Session History
+            </h2>
+        </div>
+        <div>
+            <a href="@Url.Action("ClassDetails", new { id = extraClass?.Id })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (extraClass != null)
+    {
+        <div class="alert alert-info">
+            <strong>@extraClass.Name</strong> - @extraClass.Schedule
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Sessions Yet</h4>
+            <p>No attendance sessions have been started for this class yet.</p>
+            <a href="@Url.Action("StartSession", new { classId = extraClass?.Id })" class="btn btn-primary mt-3">
+                <i class="fas fa-play"></i> Start First Session
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="session-table">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Session #</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Attendance</th>
+                        <th>Topics Covered</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.OrderByDescending(s => s.SessionDate))
+                    {
+                        <tr>
+                            <td>Session @session.SessionNumber</td>
+                            <td>@session.SessionDate.ToString("dd MMM yyyy")</td>
+                            <td>@session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")</td>
+                            <td>
+                                @session.PresentCount/@session.TotalStudents
+                                <div class="progress-bar mt-1">
+                                    <div class="progress-fill" style="width: @session.AttendancePercentage%; background: @(session.AttendancePercentage >= 70 ? "#10b981" : session.AttendancePercentage >= 50 ? "#f59e0b" : "#ef4444")"></div>
+                                </div>
+                                <small>@session.AttendancePercentage%</small>
+                            </td>
+                            <td>@(session.TopicsCovered ?? "-")</td>
+                            <td>
+                                <a href="@Url.Action("MarkAttendance", new { sessionId = session.SessionId })" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

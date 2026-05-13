@@ -1,0 +1,113 @@
+﻿@model ElevateED.ViewModels.StartAttendanceSessionViewModel
+
+@{
+    ViewBag.Title = "Start Attendance Session";
+}
+
+<style>
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px;
+        width: 100%;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-qrcode"></i> Start Attendance Session
+            </h2>
+            <p class="text-muted">Generate a QR code for students to scan</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ClassDetails", new { id = Model.ExtraClassId })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="form-card">
+        @using (Html.BeginForm("StartSession", "TeacherExtraClass", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ExtraClassId)
+
+            <div class="form-group">
+                <label class="form-label">Session Number</label>
+                @Html.TextBoxFor(m => m.SessionNumber, new { @class = "form-control", @readonly = "readonly" })
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Session Date</label>
+                @Html.TextBoxFor(m => m.SessionDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        @Html.TextBoxFor(m => m.StartTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">End Time</label>
+                        @Html.TextBoxFor(m => m.EndTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Topics to Cover</label>
+                @Html.TextAreaFor(m => m.TopicsToCover, new { @class = "form-control", rows = 3, placeholder = "What topics will be covered in this session?" })
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-qrcode"></i> Generate QR Code & Start Session
+            </button>
+        }
+    </div>
+</div>

@@ -1,0 +1,145 @@
+﻿@model List<ElevateED.Models.ExtraClassEnrollment>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Enrolled Students - " + (ViewBag.ExtraClass?.Name ?? "Class");
+    var extraClass = ViewBag.ExtraClass as ExtraClass;
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .student-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+        .student-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .student-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+    .status-paid {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-users"></i> Enrolled Students
+            </h2>
+        </div>
+        <div>
+            <a href="@Url.Action("ClassDetails", new { id = extraClass?.Id })" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (extraClass != null)
+    {
+        <div class="alert alert-info">
+            <strong>@extraClass.Name</strong> - @extraClass.Schedule | Total Enrolled: @Model.Count
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h4>No Students Enrolled</h4>
+            <p>No students have enrolled in this class yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="student-table">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Student Number</th>
+                        <th>Class</th>
+                        <th>Parent Contact</th>
+                        <th>Enrolled Date</th>
+                        <th>Payment Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var enrollment in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@(enrollment.Student?.FullName ?? "Unknown")</strong>
+                                <br />
+                                <small>@(enrollment.Student?.User?.Email ?? "")</small>
+                            </td>
+                            <td>@(enrollment.Student?.User?.StudentNumber ?? "N/A")</td>
+                            <td>@(enrollment.Student?.Class?.FullName ?? "N/A")</td>
+                            <td>
+                                @(enrollment.Student?.ParentCellPhone ?? "N/A")
+                                <br />
+                                <small>@(enrollment.Student?.ParentEmail ?? "")</small>
+                            </td>
+                            <td>@enrollment.EnrollmentDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                @if (enrollment.IsPaid)
+                                {
+                                    <span class="status-paid"><i class="fas fa-check-circle"></i> Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pending"><i class="fas fa-clock"></i> Pending</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

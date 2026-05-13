@@ -1,6 +1,6 @@
 ﻿@{
     ViewBag.Title = "Card Payment";
-    var booking = ViewBag.Booking as ElevateED.Models.ExtraClassBooking;
+    var enrollment = ViewBag.Enrollment as ElevateED.Models.ExtraClassEnrollment;
     Layout = null;
 }
 
@@ -151,7 +151,7 @@
 
             .form-control:focus {
                 border-color: var(--primary);
-                box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+                box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
                 outline: none;
             }
 
@@ -179,7 +179,7 @@
 
             .btn-pay:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(16,185,129,0.3);
+                box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
             }
 
             .btn-pay:disabled {
@@ -202,6 +202,12 @@
             margin-top: 10px;
             text-decoration: none;
         }
+
+            .btn-cancel:hover {
+                background: #f8f9fa;
+                text-decoration: none;
+                color: #666;
+            }
 
         .card-icons {
             display: flex;
@@ -226,7 +232,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -307,12 +313,14 @@
         <!-- Order Summary -->
         <div class="card-info">
             <h4><i class="fas fa-shopping-cart"></i> Order Summary</h4>
-            <div class="info-row"><span class="label">Class</span><span class="value">@(booking?.ExtraClass?.Title ?? "N/A")</span></div>
-            <div class="info-row"><span class="label">Subject</span><span class="value">@(booking?.ExtraClass?.Subject?.Name ?? "N/A")</span></div>
-            <div class="info-row"><span class="label">Date</span><span class="value">@(booking?.ExtraClass?.ClassDate.ToString("dd MMM yyyy"))</span></div>
-            <div class="info-row"><span class="label">Time</span><span class="value">@(booking?.ExtraClass?.StartTime.ToString(@"hh\:mm") ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Class</span><span class="value">@(enrollment?.ExtraClass?.Name ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Subject</span><span class="value">@(enrollment?.ExtraClass?.Subject?.Name ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Grade</span><span class="value">@(enrollment?.ExtraClass?.Grade?.Name ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Schedule</span><span class="value">@(enrollment?.ExtraClass?.Schedule ?? "N/A")</span></div>
+            <div class="info-row"><span class="label">Venue</span><span class="value">@(enrollment?.ExtraClass?.Venue ?? "TBA")</span></div>
+            <div class="info-row"><span class="label">Start Date</span><span class="value">@(enrollment?.ExtraClass?.StartDate.ToString("dd MMM yyyy") ?? "N/A")</span></div>
             <div class="info-row"><span class="label">Student</span><span class="value">@ViewBag.StudentName</span></div>
-            <div class="total-row"><span>Total</span><span>R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")</span></div>
+            <div class="total-row"><span>Total</span><span>R @(enrollment?.ExtraClass?.Price.ToString("0.00") ?? "0.00")</span></div>
         </div>
 
         <!-- Card Form -->
@@ -337,7 +345,7 @@
 
             <form id="paymentForm">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="bookingId" value="@(booking?.Id)" />
+                <input type="hidden" name="enrollmentId" value="@(enrollment?.Id)" />
 
                 <div class="form-group">
                     <label>Card Number</label>
@@ -357,7 +365,7 @@
                             @for (int i = 1; i <= 12; i++)
                             {
                                 <option value="@i.ToString("D2")">@i.ToString("D2")</option>
-}
+                            }
                         </select>
                     </div>
                     <div class="form-group">
@@ -367,7 +375,7 @@
                             @for (int i = DateTime.Now.Year; i <= DateTime.Now.Year + 10; i++)
                             {
                                 <option value="@i">@i</option>
-}
+                            }
                         </select>
                     </div>
                 </div>
@@ -380,9 +388,9 @@
                 <div id="errorMessage" class="alert alert-danger" style="display:none;"></div>
 
                 <button type="button" class="btn-pay" onclick="processPayment()" id="payBtn">
-                    <i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")
+                    <i class="fas fa-lock"></i> Pay R @(enrollment?.ExtraClass?.Price.ToString("0.00") ?? "0.00")
                 </button>
-                <a href="@Url.Action("MyBookings", "StudentExtraClass")" class="btn-cancel">Cancel</a>
+                <a href="@Url.Action("MyEnrollments", "StudentExtraClass")" class="btn-cancel">Cancel</a>
             </form>
         </div>
     </div>
@@ -392,11 +400,11 @@
         <div class="receipt">
             <div class="check-icon"><i class="fas fa-check"></i></div>
             <h4>Payment Successful!</h4>
-            <p style="color:#666;">Your booking is confirmed</p>
+            <p style="color:#666;">Your enrollment is confirmed</p>
             <div class="receipt-details" id="receiptDetails"></div>
             <button class="btn-receipt" onclick="printReceipt()"><i class="fas fa-print"></i> Print Receipt</button>
-            <button class="btn-receipt" onclick="goToBookings()"><i class="fas fa-list"></i> My Bookings</button>
-            <button class="btn-close" onclick="goToBookings()">Close</button>
+            <button class="btn-receipt" onclick="goToEnrollments()"><i class="fas fa-list"></i> My Enrollments</button>
+            <button class="btn-close" onclick="goToEnrollments()">Close</button>
         </div>
     </div>
 
@@ -441,7 +449,7 @@
                 type: 'POST',
                 data: {
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
-                    bookingId: @(booking?.Id ?? 0),
+                    enrollmentId: @(enrollment?.Id ?? 0),
                     cardNumber: cardNum,
                     cardHolder: holder,
                     expiryMonth: month,
@@ -450,7 +458,7 @@
                 },
                 success: function(res) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")';
+                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(enrollment?.ExtraClass?.Price.ToString("0.00") ?? "0.00")';
 
                     if (res.success) {
                         showReceipt(res.receipt);
@@ -460,7 +468,7 @@
                 },
                 error: function() {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(booking?.ExtraClass?.Fee.ToString("0.00") ?? "0.00")';
+                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay R @(enrollment?.ExtraClass?.Price.ToString("0.00") ?? "0.00")';
                     showError('Payment failed. Please try again.');
                 }
             });
@@ -498,8 +506,8 @@
             win.print();
         }
 
-        function goToBookings() {
-            window.location.href = '@Url.Action("MyBookings", "StudentExtraClass")';
+        function goToEnrollments() {
+            window.location.href = '@Url.Action("MyEnrollments", "StudentExtraClass")';
         }
     </script>
 </body>

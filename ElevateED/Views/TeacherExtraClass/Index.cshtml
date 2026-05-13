@@ -1,0 +1,312 @@
+﻿@model ElevateED.ViewModels.TeacherExtraClassDashboardViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "My Extra Classes";
+}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+        .page-title i {
+            color: #d4af37;
+            margin-right: 10px;
+        }
+
+    /* Stats Cards */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1e3c72;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    /* Active Sessions */
+    .active-session-card {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+    }
+
+    /* Class Cards */
+    .class-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        border-left: 4px solid var(--primary);
+    }
+
+        .class-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .class-card.upcoming {
+            border-left-color: var(--info);
+        }
+
+        .class-card.inprogress {
+            border-left-color: var(--warning);
+        }
+
+        .class-card.completed {
+            border-left-color: var(--success);
+        }
+
+    .class-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 8px;
+    }
+
+    .class-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+        .class-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+    .btn-sm {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">
+                <i class="fas fa-chalkboard-teacher"></i> My Extra Classes
+            </h2>
+            <p class="text-muted">Manage your assigned extra classes and track attendance</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Dashboard", "Teacher")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-number">@Model.TotalStudents</div>
+            <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.TotalSessions</div>
+            <div class="stat-label">Total Sessions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.AverageAttendance%</div>
+            <div class="stat-label">Avg Attendance</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">@Model.MyClasses.Count</div>
+            <div class="stat-label">Active Classes</div>
+        </div>
+    </div>
+
+    <!-- Active Sessions -->
+    @if (Model.ActiveSessions != null && Model.ActiveSessions.Any())
+    {
+        <h4 class="mb-3"><i class="fas fa-video"></i> Active Sessions</h4>
+        foreach (var session in Model.ActiveSessions)
+        {
+            <div class="active-session-card">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h5 class="mb-1">@session.ExtraClass?.Name</h5>
+                        <p class="mb-0 small">Session @session.SessionNumber | @session.SessionDate.ToString("dd MMM yyyy")</p>
+                        <p class="mb-0 small">QR Code: <strong>@session.QRCode</strong> (expires @session.QRCodeExpiry.ToString("HH:mm"))</p>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("ActiveSession", new { sessionId = session.Id })" class="btn btn-light btn-sm">
+                            <i class="fas fa-qrcode"></i> View QR Code
+                        </a>
+                        <a href="@Url.Action("MarkAttendance", new { sessionId = session.Id })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Mark Attendance
+                        </a>
+                        <button class="btn btn-danger btn-sm" onclick="endSession(@session.Id)">
+                            <i class="fas fa-stop"></i> End Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- My Classes -->
+    <h4 class="mb-3 mt-4"><i class="fas fa-list"></i> My Classes</h4>
+
+    @if (!Model.MyClasses.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h4>No Extra Classes Assigned</h4>
+            <p>You haven't been assigned to any extra classes yet.</p>
+            <p>Contact the administrator for assignments.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var cls in Model.MyClasses.OrderBy(c => c.StartDate))
+        {
+            var enrolledCount = cls.Enrollments?.Count(e => e.IsActive) ?? 0;
+            var statusClass = cls.Status.ToString().ToLower();
+
+            <div class="class-card @statusClass">
+                <div class="class-title">@cls.Name</div>
+                <div class="class-meta">
+                    <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
+                    <span><i class="fas fa-calendar"></i> @cls.StartDate.ToString("dd MMM yyyy")</span>
+                    <span><i class="fas fa-clock"></i> @cls.Schedule</span>
+                    <span><i class="fas fa-map-marker-alt"></i> @(cls.Venue ?? "TBA")</span>
+                    <span><i class="fas fa-users"></i> @enrolledCount/@cls.Capacity enrolled</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="badge @(statusClass == "upcoming" ? "bg-info" : statusClass == "inprogress" ? "bg-warning" : statusClass == "completed" ? "bg-success" : "bg-secondary")">
+                            @cls.Status
+                        </span>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("ClassDetails", new { id = cls.Id })" class="btn btn-sm btn-info">
+                            <i class="fas fa-eye"></i> Details
+                        </a>
+                        <a href="@Url.Action("EnrolledStudents", new { classId = cls.Id })" class="btn btn-sm btn-primary">
+                            <i class="fas fa-users"></i> Students
+                        </a>
+                        <a href="@Url.Action("SessionHistory", new { classId = cls.Id })" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-history"></i> Sessions
+                        </a>
+                        <a href="@Url.Action("StartSession", new { classId = cls.Id })" class="btn btn-sm btn-success">
+                            <i class="fas fa-play"></i> Start Session
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function endSession(sessionId) {
+        var topics = prompt('Topics covered in this session:');
+        if (topics === null) return;
+
+        $.ajax({
+            url: '@Url.Action("EndSession", "TeacherExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                sessionId: sessionId,
+                topicsCovered: topics
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    }
+</script>

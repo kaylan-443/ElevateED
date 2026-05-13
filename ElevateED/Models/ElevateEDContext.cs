@@ -6,10 +6,6 @@ namespace ElevateED.Models
     {
         public ElevateEDContext() : base("ElevateEDConnection")
         {
-            // Initializer is configured once in DatabaseConfig.Initialize() to apply
-            // MigrateDatabaseToLatestVersion. Setting it to null here used to wipe that
-            // out on every context construction, which is why new schema (Assessments,
-            // ExamSessionClasses, new ExamSession columns) never reached the database.
             this.Configuration.ProxyCreationEnabled = false;
             this.Configuration.LazyLoadingEnabled = false;
         }
@@ -28,6 +24,9 @@ namespace ElevateED.Models
         public DbSet<Classwork> Classworks { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<Issue> Issues { get; set; }
+        public DbSet<PodcastHistory> PodcastHistories { get; set; }
+        public DbSet<AIStudySession> AIStudySessions { get; set; }
+        public DbSet<AIStudyOutput> AIStudyOutputs { get; set; }
 
         // NEW DbSets
         public DbSet<Subject> Subjects { get; set; }
@@ -40,13 +39,19 @@ namespace ElevateED.Models
         public DbSet<QuizQuestion> QuizQuestions { get; set; }
         public DbSet<QuizAttempt> QuizAttempts { get; set; }
         public DbSet<QuizAnswer> QuizAnswers { get; set; }
+
+        // Extra Classes - Updated Models
         public DbSet<ExtraClass> ExtraClasses { get; set; }
+        public DbSet<ExtraClassEnrollment> ExtraClassEnrollments { get; set; }
+        public DbSet<ExtraClassAttendanceSession> ExtraClassAttendanceSessions { get; set; }
+        public DbSet<ExtraClassAttendanceRecord> ExtraClassAttendanceRecords { get; set; }
+        public DbSet<ExtraClassFeedback> ExtraClassFeedbacks { get; set; }
+        public DbSet<ExtraClassAIRecommendation> ExtraClassAIRecommendations { get; set; }
+
+        // Keep for backward compatibility (will be deprecated)
         public DbSet<ExtraClassBooking> ExtraClassBookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
-        public DbSet<Driver> Drivers { get; set; }
-        public DbSet<TransportRoute> TransportRoutes { get; set; }
-        public DbSet<RouteTracking> RouteTrackings { get; set; }
-        public DbSet<EmergencyAlert> EmergencyAlerts { get; set; }
+
         public DbSet<AttendanceSession> AttendanceSessions { get; set; }
         public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
         public DbSet<HomeworkSubmission> HomeworkSubmissions { get; set; }
@@ -63,7 +68,6 @@ namespace ElevateED.Models
         public DbSet<StudentReportCardSubject> StudentReportCardSubjects { get; set; }
         public DbSet<PromotionRule> PromotionRules { get; set; }
         public DbSet<PromotionRuleRequiredSubject> PromotionRuleRequiredSubjects { get; set; }
-        public DbSet<Trip> Trips { get; set; }
 
         // Math Solver (from friend)
         public DbSet<MathSolverHistory> MathSolverHistory { get; set; }
@@ -71,19 +75,110 @@ namespace ElevateED.Models
         // Announcement System (AI-Powered)
         public DbSet<AnnouncementTemplate> AnnouncementTemplates { get; set; }
         public DbSet<AnnouncementGeneratorSession> AnnouncementGeneratorSessions { get; set; }
-        public DbSet<PodcastHistory> PodcastHistories { get; set; }
-        public DbSet<AIStudySession> AIStudySessions { get; set; }
-        
-        public DbSet<AIStudyOutput> AIStudyOutputs { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            // Extra Classes configurations
-            modelBuilder.Configurations.Add(new ExtraClassConfiguration());
-            modelBuilder.Configurations.Add(new ExtraClassBookingConfiguration());
-            modelBuilder.Configurations.Add(new PaymentConfiguration());
-            modelBuilder.Configurations.Add(new TransportRouteConfiguration());
-            modelBuilder.Configurations.Add(new RouteTrackingConfiguration());
-            modelBuilder.Configurations.Add(new EmergencyAlertConfiguration());
+            // ============================================
+            // EXTRA CLASS CONFIGURATIONS (UPDATED)
+            // ============================================
+
+            // ExtraClass configurations
+            modelBuilder.Entity<ExtraClass>()
+                .HasRequired(e => e.Subject)
+                .WithMany()
+                .HasForeignKey(e => e.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<ExtraClass>()
+                .HasRequired(e => e.Grade)
+                .WithMany()
+                .HasForeignKey(e => e.GradeId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<ExtraClass>()
+                .HasOptional(e => e.Teacher)
+                .WithMany()
+                .HasForeignKey(e => e.TeacherId)
+                .WillCascadeOnDelete(false);
+
+            // ExtraClassEnrollment configurations
+            modelBuilder.Entity<ExtraClassEnrollment>()
+                .HasRequired(e => e.ExtraClass)
+                .WithMany(c => c.Enrollments)
+                .HasForeignKey(e => e.ExtraClassId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExtraClassEnrollment>()
+                .HasRequired(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // ExtraClassAttendanceSession configurations
+            modelBuilder.Entity<ExtraClassAttendanceSession>()
+                .HasRequired(s => s.ExtraClass)
+                .WithMany(c => c.AttendanceSessions)
+                .HasForeignKey(s => s.ExtraClassId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExtraClassAttendanceSession>()
+                .HasRequired(s => s.Teacher)
+                .WithMany()
+                .HasForeignKey(s => s.TeacherId)
+                .WillCascadeOnDelete(false);
+
+            // ExtraClassAttendanceRecord configurations
+            modelBuilder.Entity<ExtraClassAttendanceRecord>()
+                .HasRequired(r => r.AttendanceSession)
+                .WithMany(s => s.AttendanceRecords)
+                .HasForeignKey(r => r.AttendanceSessionId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExtraClassAttendanceRecord>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // ExtraClassFeedback configurations
+            modelBuilder.Entity<ExtraClassFeedback>()
+                .HasRequired(f => f.ExtraClass)
+                .WithMany(c => c.Feedbacks)
+                .HasForeignKey(f => f.ExtraClassId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExtraClassFeedback>()
+                .HasRequired(f => f.Student)
+                .WithMany()
+                .HasForeignKey(f => f.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // ExtraClassAIRecommendation configurations
+            modelBuilder.Entity<ExtraClassAIRecommendation>()
+                .HasRequired(r => r.ExtraClass)
+                .WithMany(c => c.AIRecommendations)
+                .HasForeignKey(r => r.ExtraClassId)
+                .WillCascadeOnDelete(true);
+
+            // Keep old ExtraClassBooking configuration for backward compatibility
+            modelBuilder.Entity<ExtraClassBooking>()
+                .HasRequired(b => b.ExtraClass)
+                .WithMany(e => e.Bookings)
+                .HasForeignKey(b => b.ExtraClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<ExtraClassBooking>()
+                .HasRequired(b => b.Student)
+                .WithMany()
+                .HasForeignKey(b => b.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // Payment configuration (keep for backward compatibility)
+            modelBuilder.Entity<Payment>()
+                .HasRequired(p => p.Booking)
+                .WithMany()
+                .HasForeignKey(p => p.BookingId)
+                .WillCascadeOnDelete(false);
 
             // Configure Many-to-Many: Grade <-> Subject (Core Subjects)
             modelBuilder.Entity<Grade>()
@@ -209,7 +304,7 @@ namespace ElevateED.Models
                 .HasOptional(e => e.Stream)
                 .WithMany()
                 .HasForeignKey(e => e.StreamId)
-                .WillCascadeOnDelete(false); // NO cascade
+                .WillCascadeOnDelete(false);
 
             modelBuilder.Entity<ExamSession>()
                 .HasOptional(e => e.CreatedByTeacher)
@@ -306,7 +401,7 @@ namespace ElevateED.Models
                 .WithMany()
                 .HasForeignKey(r => r.SubjectId)
                 .WillCascadeOnDelete(false);
-              
+
             base.OnModelCreating(modelBuilder);
         }
     }
