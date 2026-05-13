@@ -349,6 +349,7 @@
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AttendanceController.cs" />
     <Compile Include="Controllers\DriverController.cs" />
+    <Compile Include="Controllers\ExamApprovalController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarksController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
@@ -567,6 +568,9 @@
     <Content Include="Views\Teacher\ViewClassRegisters.cshtml" />
     <Content Include="Views\Teacher\SelectClassRegisterClass.cshtml" />
     <Content Include="Views\Teacher\Homework.cshtml" />
+    <Content Include="Views\Teacher\ProposeExam.cshtml" />
+    <Content Include="Views\Teacher\MyExamProposals.cshtml" />
+    <Content Include="Views\ExamApproval\Index.cshtml" />
     <Content Include="Views\Teacher\SelectGradeForHomework.cshtml" />
     <Content Include="Views\Teacher\SelectClassForHomework.cshtml" />
     <Content Include="Views\Teacher\UploadHomework.cshtml" />
@@ -625,15 +629,12 @@
     <Content Include="Views\Marks\PendingReports.cshtml" />
     <Content Include="Views\Shared\_TeacherSidebar.cshtml" />
     <Content Include="Views\Admin\CreateExamTimetable.cshtml" />
-    <Content Include="Views\Admin\EditExamSession.cshtml" />
     <Content Include="Views\Admin\ExamTimetables.cshtml" />
-    <Content Include="Views\Admin\ViewExamTimetable.cshtml" />
     <Content Include="Views\Student\MyClassworkSubmissions.cshtml" />
     <Content Include="Views\Student\MyHomeworkSubmissions.cshtml" />
     <Content Include="Views\Student\SubmitClasswork.cshtml" />
     <Content Include="Views\Student\SubmitHomework.cshtml" />
     <Content Include="Views\Student\ExamTimeTable.cshtml" />
-    <Content Include="Views\Teacher\ExamDurationRequests.cshtml" />
     <Content Include="Views\Teacher\GradeClasswork.cshtml" />
     <Content Include="Views\Teacher\GradeHomework.cshtml" />
     <Content Include="Views\Teacher\MyClassworkSubmissions.cshtml" />

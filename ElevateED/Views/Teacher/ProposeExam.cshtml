@@ -1,0 +1,235 @@
+@model ElevateED.ViewModels.ProposeExamViewModel
+
+@{
+    ViewBag.Title = Model.Id == 0 ? "Propose Exam" : "Edit Exam Proposal";
+}
+
+<style>
+    .propose-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 28px 30px;
+        max-width: 980px;
+    }
+    .propose-card h3 {
+        font-size: 18px;
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .propose-card .sub { color: #888; font-size: 13px; margin-bottom: 22px; }
+
+    .form-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; margin-bottom: 16px; }
+    .col-12 { grid-column: span 12; } .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; } .col-3 { grid-column: span 3; }
+    .col-2 { grid-column: span 2; }
+
+    label.lbl {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #444;
+    }
+    .ctrl {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d8dde3;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+    }
+    .ctrl:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
+    }
+    .text-danger { font-size: 12px; color: #c62828; }
+
+    .class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 4px;
+    }
+    .class-pick {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #f7f8fb;
+        border: 1.5px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all .15s;
+    }
+    .class-pick:hover { background: #eef1f6; }
+    .class-pick input[type="checkbox"] { accent-color: var(--primary-blue); transform: scale(1.1); }
+    .class-pick.selected { border-color: var(--primary-blue); background: #eef2ff; }
+    .class-pick .pname { font-weight: 600; font-size: 13px; color: #222; }
+    .class-pick .pgrade { font-size: 11px; color: #999; }
+
+    .err-summary {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        color: #1565c0;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+    .info-box i { margin-right: 6px; }
+
+    .form-actions { margin-top: 22px; display: flex; gap: 12px; }
+    .btn-primary-pill {
+        background: var(--primary-blue);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .btn-primary-pill:hover { background: var(--secondary-blue); }
+    .btn-cancel {
+        background: white;
+        color: #555;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: 1.5px solid #d8dde3;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    textarea.ctrl { resize: vertical; min-height: 80px; }
+
+    @@media (max-width: 768px) {
+        .col-6, .col-4, .col-3, .col-2 { grid-column: span 12; }
+    }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "propose-exam")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-calendar-plus" style="color:#6366f1;margin-right:10px;"></i>@ViewBag.Title</h1>
+                <p>Set up an exam session. The principal will review it before publication.</p>
+            </div>
+            <a href="@Url.Action("MyExamProposals")" class="btn-back"><i class="fas fa-arrow-left"></i> My Proposals</a>
+        </div>
+
+        <div class="info-box">
+            <i class="fas fa-info-circle"></i>
+            One session can apply to <strong>multiple classes</strong> writing the same paper at the same time. Tick all the classes that will sit this exam.
+        </div>
+
+        <div class="propose-card">
+            <h3>Exam details</h3>
+            <p class="sub">All times are start times; the end time is auto-calculated from the duration.</p>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Id)
+
+                if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="err-summary">@Html.ValidationSummary(false)</div>
+                }
+
+                <div class="form-row">
+                    <div class="col-6">
+                        <label class="lbl">Exam cycle</label>
+                        @Html.DropDownListFor(m => m.ExamTimetableId, Model.ExamCycleOptions, "Select cycle (e.g. June Exams 2026)", new { @class = "ctrl" })
+                        @Html.ValidationMessageFor(m => m.ExamTimetableId, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-4">
+                        <label class="lbl">Subject</label>
+                        @Html.DropDownListFor(m => m.SubjectId, Model.SubjectOptions, "Select subject", new { @class = "ctrl" })
+                        @Html.ValidationMessageFor(m => m.SubjectId, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-2">
+                        <label class="lbl">Paper #</label>
+                        @Html.TextBoxFor(m => m.PaperNumber, new { @class = "ctrl", type = "number", min = "1", max = "3" })
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-4">
+                        <label class="lbl">Date</label>
+                        @Html.TextBoxFor(m => m.ExamDate, "{0:yyyy-MM-dd}", new { @class = "ctrl", type = "date" })
+                    </div>
+                    <div class="col-4">
+                        <label class="lbl">Start time</label>
+                        @Html.TextBoxFor(m => m.StartTime, "{0:hh\\:mm}", new { @class = "ctrl", type = "time" })
+                    </div>
+                    <div class="col-4">
+                        <label class="lbl">Duration (hours)</label>
+                        @Html.TextBoxFor(m => m.DurationHours, new { @class = "ctrl", type = "number", step = "0.25", min = "0.5", max = "6" })
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-6">
+                        <label class="lbl">Venue</label>
+                        @Html.TextBoxFor(m => m.Venue, new { @class = "ctrl", placeholder = "Example: Hall A or Room 12" })
+                    </div>
+                    <div class="col-6">
+                        <label class="lbl">Invigilator / Examiner</label>
+                        @Html.TextBoxFor(m => m.Invigilator, new { @class = "ctrl", placeholder = "Name of staff member on duty" })
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-12">
+                        <label class="lbl">Notes for the principal (optional)</label>
+                        @Html.TextAreaFor(m => m.Notes, new { @class = "ctrl", placeholder = "Anything the principal should know before approving — special requirements, double-period clash, etc." })
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-12">
+                        <label class="lbl">Classes writing this exam</label>
+                        @Html.ValidationMessageFor(m => m.ClassIds, "", new { @class = "text-danger" })
+                        <div class="class-grid">
+                            @foreach (var option in Model.ClassOptions)
+                            {
+                                <label class="class-pick @(option.Selected ? "selected" : "")">
+                                    <input type="checkbox" name="ClassIds" value="@option.ClassId" @(option.Selected ? "checked" : "") onchange="this.parentElement.classList.toggle('selected', this.checked)" />
+                                    <div>
+                                        <div class="pname">@option.ClassName</div>
+                                        <div class="pgrade">@option.GradeName</div>
+                                    </div>
+                                </label>
+                            }
+                            @if (!Model.ClassOptions.Any())
+                            {
+                                <div style="color:#888;font-size:13px;">No classes assigned to you — ask the admin to assign you to a class first.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-pill"><i class="fas fa-paper-plane"></i> Submit Proposal</button>
+                    <a href="@Url.Action("MyExamProposals")" class="btn-cancel">Cancel</a>
+                </div>
+            }
+        </div>
+    </main>
+</div>

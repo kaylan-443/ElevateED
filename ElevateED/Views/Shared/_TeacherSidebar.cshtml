@@ -181,6 +181,12 @@
             <a href="@Url.Action("ClassTeacherReports","Marks")" class="@cls("marks-comments")"><i class="fas fa-comment-dots"></i><span>Class Reports</span></a>
         </div>
         <div class="nav-section">
+            <div class="nav-section-title">Exams</div>
+            <a href="@Url.Action("MyExamProposals","Teacher")" class="@cls("my-proposals")"><i class="fas fa-calendar-check"></i><span>My Exam Proposals</span></a>
+            <a href="@Url.Action("ProposeExam","Teacher")" class="@cls("propose-exam")"><i class="fas fa-calendar-plus"></i><span>Propose Exam</span></a>
+            <a href="@Url.Action("ViewTeacherExamTimetable","Teacher")" class="@cls("exam-timetable")"><i class="fas fa-calendar-week"></i><span>My Exam Timetable</span></a>
+        </div>
+        <div class="nav-section">
             <div class="nav-section-title">Resources</div>
             <a href="@Url.Action("PastPapers","Teacher")" class="@cls("pastpapers")"><i class="fas fa-archive"></i><span>Past Papers</span></a>
             <a href="@Url.Action("StudyMaterials","Teacher")" class="@cls("studymaterials")"><i class="fas fa-book"></i><span>Study Materials</span></a>

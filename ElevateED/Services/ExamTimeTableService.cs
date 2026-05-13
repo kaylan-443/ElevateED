@@ -591,13 +591,15 @@ namespace ElevateED.Services
         {
             try
             {
+                // Students only ever see published sessions.
                 var query = _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
                     .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
                         && s.GradeId == gradeId
-                        && s.IsActive);
+                        && s.IsActive
+                        && s.Status == ExamSessionStatus.Published);
 
                 if (classId.HasValue)
                 {
@@ -637,16 +639,21 @@ namespace ElevateED.Services
                     .Distinct()
                     .ToList();
 
+                // Teachers see published sessions for subjects/classes they teach, plus their
+                // own approved or published proposals (so they can prepare even before the
+                // principal publishes the whole cycle).
                 return _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
                     .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
-                        && (s.CreatedByTeacherId == teacherId
-                            || (teacherSubjects.Contains(s.SubjectId)
+                        && s.IsActive
+                        && ((s.CreatedByTeacherId == teacherId
+                                && (s.Status == ExamSessionStatus.Approved || s.Status == ExamSessionStatus.Published))
+                            || (s.Status == ExamSessionStatus.Published
+                                && teacherSubjects.Contains(s.SubjectId)
                                 && (!s.ExamSessionClasses.Any()
-                                    || s.ExamSessionClasses.Any(c => teacherClasses.Contains(c.ClassId)))))
-                        && s.IsActive)
+                                    || s.ExamSessionClasses.Any(c => teacherClasses.Contains(c.ClassId))))))
                     .OrderBy(s => s.ExamDate)
                     .ThenBy(s => s.StartTime)
                     .ToList();
