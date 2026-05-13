@@ -62,8 +62,11 @@ namespace ElevateED.ViewModels
         public int AcademicYear { get; set; }
         public string ClassName { get; set; }
         public string SubjectName { get; set; }
+        public string AssessmentType { get; set; }
         public decimal MaxMark { get; set; }
         public MarkApprovalStatus Status { get; set; }
+        public string OwningTeacherName { get; set; }
+        public bool IsActingAsClassTeacher { get; set; }
         public List<StudentMarkEntryViewModel> Marks { get; set; }
 
         public MarkCaptureViewModel()
@@ -125,12 +128,63 @@ namespace ElevateED.ViewModels
         public PromotionDecision PromotionDecision { get; set; }
         public string ImprovementComment { get; set; }
         public DateTime GeneratedAt { get; set; }
+        public string ClassTeacherComment { get; set; }
+        public string ClassTeacherName { get; set; }
+        public DateTime? ClassTeacherCommentedAt { get; set; }
+        public bool IsPublished { get; set; }
+        public DateTime? PublishedAt { get; set; }
         public List<ReportCardSubjectViewModel> Subjects { get; set; }
 
         public ReportCardViewModel()
         {
             Subjects = new List<ReportCardSubjectViewModel>();
         }
+    }
+
+    public class ClassTeacherReportListItemViewModel
+    {
+        public int ReportId { get; set; }
+        public string StudentName { get; set; }
+        public string ClassName { get; set; }
+        public string Term { get; set; }
+        public int AcademicYear { get; set; }
+        public decimal FinalMark { get; set; }
+        public string PassFailStatus { get; set; }
+        public PromotionDecision PromotionDecision { get; set; }
+        public bool HasClassTeacherComment { get; set; }
+        public bool IsPublished { get; set; }
+    }
+
+    public class ClassTeacherReportCommentViewModel
+    {
+        public int ReportId { get; set; }
+        public string StudentName { get; set; }
+        public string ClassName { get; set; }
+        public string Term { get; set; }
+        public int AcademicYear { get; set; }
+        public decimal FinalMark { get; set; }
+        public string PassFailStatus { get; set; }
+        public PromotionDecision PromotionDecision { get; set; }
+        public bool IsPublished { get; set; }
+
+        [StringLength(2000)]
+        public string ClassTeacherComment { get; set; }
+    }
+
+    public class PendingReportListItemViewModel
+    {
+        public int ReportId { get; set; }
+        public string StudentName { get; set; }
+        public string ClassName { get; set; }
+        public string Term { get; set; }
+        public int AcademicYear { get; set; }
+        public decimal FinalMark { get; set; }
+        public string PassFailStatus { get; set; }
+        public PromotionDecision PromotionDecision { get; set; }
+        public string ClassTeacherName { get; set; }
+        public bool HasClassTeacherComment { get; set; }
+        public bool IsPublished { get; set; }
+        public DateTime GeneratedAt { get; set; }
     }
 
     public class ReportCardSubjectViewModel

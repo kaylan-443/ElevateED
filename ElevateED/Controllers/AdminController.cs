@@ -2124,8 +2124,9 @@ namespace ElevateED.Controllers
                     GeneratedAt = t.GeneratedAt,
                     DistributedAt = t.DistributedAt,
                     TotalSessions = _context.ExamSessions.Count(s => s.ExamTimetableId == t.Id && s.IsActive),
-                    CanGenerate = t.Status == ExamTimetableStatus.AwaitingTeacherInput && AllTeachersResponded(t.Id),
-                    CanDistribute = t.Status == ExamTimetableStatus.Generated
+                    // Old admin-driven flow fields kept on the VM for back-compat but unused now.
+                    CanGenerate = false,
+                    CanDistribute = false
                 }).ToList();
 
                 return View(viewModels);
@@ -2184,10 +2185,7 @@ namespace ElevateED.Controllers
                     _context.ExamTimetables.Add(timetable);
                     _context.SaveChanges();
 
-                    // Send notifications
-                    CreateAndSendNotifications(timetable.Id);
-
-                    TempData["SuccessMessage"] = $"Exam timetable '{model.Name}' created! Notifications sent to teachers.";
+                    TempData["SuccessMessage"] = $"Exam cycle '{model.Name}' created. Teachers can now propose exam sessions for this cycle.";
                     return RedirectToAction("ExamTimetables");
                 }
                 catch (Exception ex)
@@ -2201,159 +2199,8 @@ namespace ElevateED.Controllers
         }
 
         // ============================================
-        // EXAM TIMETABLE - VIEW
+        // EXAM TIMETABLE - DELETE CYCLE
         // ============================================
-
-        public ActionResult ViewExamTimetable(int id)
-        {
-            if (!IsAdmin()) return RedirectToAction("Login", "Account");
-
-            var timetable = _context.ExamTimetables.Find(id);
-            if (timetable == null) return HttpNotFound();
-
-            var sessions = _context.ExamSessions
-                .Include(s => s.Subject)
-                .Include(s => s.Grade)
-                .Where(s => s.ExamTimetableId == id && s.IsActive)
-                .OrderBy(s => s.ExamDate)
-                .ThenBy(s => s.StartTime)
-                .ToList();
-
-            var viewModel = new ExamTimetableDetailViewModel
-            {
-                Id = timetable.Id,
-                Name = timetable.Name,
-                AcademicYear = timetable.AcademicYear,
-                NumberOfWeeks = timetable.NumberOfWeeks,
-                StartDate = timetable.StartDate,
-                EndDate = timetable.EndDate,
-                Status = timetable.Status,
-                ExamSessions = sessions.Select(s => new ExamSessionViewModel
-                {
-                    Id = s.Id,
-                    SubjectName = s.Subject?.Name ?? "Unknown",
-                    GradeName = s.Grade?.Name ?? "Unknown",
-                    PaperNumber = s.PaperNumber.ToString(),
-                    ExamDate = s.ExamDate,
-                    ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
-                    DayOfWeek = s.ExamDate.DayOfWeek.ToString(),
-                    StartTime = s.StartTime.ToString(@"hh\:mm"),
-                    EndTime = s.EndTime.ToString(@"hh\:mm"),
-                    DurationHours = s.DurationHours,
-                    WeekNumber = s.WeekNumber,
-                    Venue = s.Venue,
-                    Invigilator = s.Invigilator,
-                    IsEditable = timetable.Status == ExamTimetableStatus.Generated || timetable.Status == ExamTimetableStatus.Distributed
-                }).ToList()
-            };
-
-            if (sessions.Any())
-            {
-                viewModel.SessionsByWeek = sessions
-                    .GroupBy(s => $"Week {s.WeekNumber}")
-                    .ToDictionary(g => g.Key, g => g.Select(s => new ExamSessionViewModel
-                    {
-                        Id = s.Id,
-                        SubjectName = s.Subject?.Name ?? "Unknown",
-                        GradeName = s.Grade?.Name ?? "Unknown",
-                        PaperNumber = s.PaperNumber.ToString(),
-                        ExamDate = s.ExamDate,
-                        ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
-                        DayOfWeek = s.ExamDate.DayOfWeek.ToString(),
-                        StartTime = s.StartTime.ToString(@"hh\:mm"),
-                        EndTime = s.EndTime.ToString(@"hh\:mm"),
-                        DurationHours = s.DurationHours,
-                        WeekNumber = s.WeekNumber,
-                        Venue = s.Venue,
-                        Invigilator = s.Invigilator,
-                        IsEditable = timetable.Status == ExamTimetableStatus.Generated || timetable.Status == ExamTimetableStatus.Distributed
-                    }).ToList());
-            }
-
-            return View(viewModel);
-        }
-
-        // ============================================
-        // EXAM TIMETABLE - ACTIONS (AJAX)
-        // ============================================
-
-        [HttpPost]
-        public ActionResult SendTeacherNotifications(int id)
-        {
-            if (!IsAdmin()) return Json(new { success = false, message = "Unauthorized" });
-
-            try
-            {
-                CreateAndSendNotifications(id);
-                return Json(new { success = true, message = "Notifications sent to teachers!" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "Error: " + ex.Message });
-            }
-        }
-
-        [HttpPost]
-        public ActionResult GenerateExamTimetable(int id)
-        {
-            if (!IsAdmin()) return Json(new { success = false, message = "Unauthorized" });
-
-            try
-            {
-                var pendingCount = _context.TeacherExamNotifications
-                    .Count(n => n.ExamTimetableId == id && !n.IsSubmitted);
-
-                if (pendingCount > 0)
-                {
-                    return Json(new { success = false, message = $"Cannot generate: {pendingCount} teacher(s) have not submitted durations." });
-                }
-
-                var result = GenerateTimetableSessions(id);
-
-                if (result.Success)
-                {
-                    return Json(new { success = true, message = result.Message, sessionsGenerated = result.SessionsGenerated });
-                }
-                else
-                {
-                    return Json(new { success = false, message = result.Message });
-                }
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "Error: " + ex.Message });
-            }
-        }
-
-        [HttpPost]
-        public ActionResult DistributeExamTimetable(int id)
-        {
-            if (!IsAdmin()) return Json(new { success = false, message = "Unauthorized" });
-
-            try
-            {
-                var timetable = _context.ExamTimetables.Find(id);
-                if (timetable == null)
-                {
-                    return Json(new { success = false, message = "Timetable not found." });
-                }
-
-                if (timetable.Status != ExamTimetableStatus.Generated)
-                {
-                    return Json(new { success = false, message = "Please generate the timetable first." });
-                }
-
-                timetable.Status = ExamTimetableStatus.Distributed;
-                timetable.DistributedAt = DateTime.Now;
-                _context.SaveChanges();
-
-                return Json(new { success = true, message = "Timetable distributed to all students and teachers!" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = "Error: " + ex.Message });
-            }
-        }
 
         [HttpPost]
         public ActionResult DeleteExamTimetable(int id)
@@ -2365,16 +2212,21 @@ namespace ElevateED.Controllers
                 var timetable = _context.ExamTimetables.Find(id);
                 if (timetable == null)
                 {
-                    return Json(new { success = false, message = "Timetable not found." });
+                    return Json(new { success = false, message = "Cycle not found." });
                 }
 
-                if (timetable.Status >= ExamTimetableStatus.Distributed)
-                {
-                    return Json(new { success = false, message = "Cannot delete a distributed timetable." });
-                }
-
+                // Old-flow notifications may exist for cycles created before the new flow —
+                // clean them up so the FK on TeacherExamNotifications doesn't block delete.
                 var notifications = _context.TeacherExamNotifications.Where(n => n.ExamTimetableId == id);
                 _context.TeacherExamNotifications.RemoveRange(notifications);
+
+                // Sessions and their class links.
+                var sessionIds = _context.ExamSessions
+                    .Where(s => s.ExamTimetableId == id)
+                    .Select(s => s.Id)
+                    .ToList();
+                var sessionClassLinks = _context.ExamSessionClasses.Where(c => sessionIds.Contains(c.ExamSessionId));
+                _context.ExamSessionClasses.RemoveRange(sessionClassLinks);
 
                 var sessions = _context.ExamSessions.Where(s => s.ExamTimetableId == id);
                 _context.ExamSessions.RemoveRange(sessions);
@@ -2382,7 +2234,7 @@ namespace ElevateED.Controllers
                 _context.ExamTimetables.Remove(timetable);
                 _context.SaveChanges();
 
-                return Json(new { success = true, message = "Timetable deleted successfully." });
+                return Json(new { success = true, message = "Exam cycle deleted." });
             }
             catch (Exception ex)
             {
@@ -2393,222 +2245,6 @@ namespace ElevateED.Controllers
         // ============================================
         // PRIVATE HELPER METHODS
         // ============================================
-
-        private void CreateAndSendNotifications(int timetableId)
-        {
-            var timetable = _context.ExamTimetables.Find(timetableId);
-            if (timetable == null || timetable.Status != ExamTimetableStatus.Draft) return;
-
-            var teacherSubjects = _context.TeacherSubjectAssignments
-                .Include("Teacher")
-                .Include("Subject")
-                .Include("Class")
-                .Include("Class.Grade")
-                .Where(t => t.IsActive)
-                .Select(t => new
-                {
-                    t.TeacherId,
-                    t.SubjectId,
-                    GradeId = t.Class.GradeId
-                })
-                .Distinct()
-                .ToList();
-
-            foreach (var item in teacherSubjects)
-            {
-                var existing = _context.TeacherExamNotifications
-                    .FirstOrDefault(n => n.ExamTimetableId == timetableId
-                        && n.TeacherId == item.TeacherId
-                        && n.SubjectId == item.SubjectId
-                        && n.GradeId == item.GradeId);
-
-                if (existing == null)
-                {
-                    var notification = new TeacherExamNotification
-                    {
-                        ExamTimetableId = timetableId,
-                        TeacherId = item.TeacherId,
-                        SubjectId = item.SubjectId,
-                        GradeId = item.GradeId,
-                        HasPaper1 = true,
-                        HasPaper2 = false,
-                        HasPaper3 = false,
-                        IsSubmitted = false,
-                        NotifiedAt = DateTime.Now
-                    };
-                    _context.TeacherExamNotifications.Add(notification);
-                }
-            }
-
-            timetable.Status = ExamTimetableStatus.AwaitingTeacherInput;
-            _context.SaveChanges();
-        }
-
-        private bool AllTeachersResponded(int timetableId)
-        {
-            var pendingCount = _context.TeacherExamNotifications
-                .Count(n => n.ExamTimetableId == timetableId && !n.IsSubmitted);
-            return pendingCount == 0;
-        }
-
-        private TimetableGenerationResult GenerateTimetableSessions(int timetableId)
-        {
-            var result = new TimetableGenerationResult();
-
-            try
-            {
-                var timetable = _context.ExamTimetables.Find(timetableId);
-                if (timetable == null)
-                {
-                    result.Success = false;
-                    result.Message = "Timetable not found";
-                    return result;
-                }
-
-                var notifications = _context.TeacherExamNotifications
-                    .Include(n => n.Subject)
-                    .Include(n => n.Grade)
-                    .Where(n => n.ExamTimetableId == timetableId && n.IsSubmitted)
-                    .ToList();
-
-                if (!notifications.Any())
-                {
-                    result.Success = false;
-                    result.Message = "No teacher submissions found";
-                    return result;
-                }
-
-                // Clear existing sessions
-                var existingSessions = _context.ExamSessions.Where(s => s.ExamTimetableId == timetableId);
-                _context.ExamSessions.RemoveRange(existingSessions);
-                _context.SaveChanges();
-
-                // Generate exam dates (Monday to Friday only)
-                var examDates = new List<DateTime>();
-                var currentDate = timetable.StartDate;
-                int totalDays = timetable.NumberOfWeeks * 5;
-
-                while (examDates.Count < totalDays && currentDate <= timetable.EndDate)
-                {
-                    if (currentDate.DayOfWeek != DayOfWeek.Saturday && currentDate.DayOfWeek != DayOfWeek.Sunday)
-                    {
-                        examDates.Add(currentDate);
-                    }
-                    currentDate = currentDate.AddDays(1);
-                }
-
-                int sessionsGenerated = 0;
-                var startTimes = new List<TimeSpan> { new TimeSpan(9, 0, 0), new TimeSpan(11, 0, 0), new TimeSpan(13, 0, 0) };
-                int dateIndex = 0;
-                int timeSlotIndex = 0;
-
-                foreach (var notification in notifications)
-                {
-                    if (notification.HasPaper1 && notification.Paper1Duration.HasValue)
-                    {
-                        if (dateIndex >= examDates.Count) dateIndex = 0;
-
-                        var session = new ExamSession
-                        {
-                            ExamTimetableId = timetableId,
-                            SubjectId = notification.SubjectId,
-                            GradeId = notification.GradeId,
-                            PaperNumber = 1,
-                            ExamDate = examDates[dateIndex],
-                            StartTime = startTimes[timeSlotIndex % startTimes.Count],
-                            EndTime = startTimes[timeSlotIndex % startTimes.Count].Add(TimeSpan.FromHours((double)notification.Paper1Duration.Value)),
-                            DurationHours = notification.Paper1Duration.Value,
-                            WeekNumber = (dateIndex / 5) + 1,
-                            Venue = GetVenueByGrade(notification.Grade.Level),
-                            Invigilator = "To be assigned",
-                            IsActive = true
-                        };
-                        _context.ExamSessions.Add(session);
-                        sessionsGenerated++;
-                        dateIndex++;
-                        timeSlotIndex++;
-                    }
-
-                    if (notification.HasPaper2 && notification.Paper2Duration.HasValue)
-                    {
-                        if (dateIndex >= examDates.Count) dateIndex = 0;
-
-                        var session = new ExamSession
-                        {
-                            ExamTimetableId = timetableId,
-                            SubjectId = notification.SubjectId,
-                            GradeId = notification.GradeId,
-                            PaperNumber = 2,
-                            ExamDate = examDates[dateIndex],
-                            StartTime = startTimes[timeSlotIndex % startTimes.Count],
-                            EndTime = startTimes[timeSlotIndex % startTimes.Count].Add(TimeSpan.FromHours((double)notification.Paper2Duration.Value)),
-                            DurationHours = notification.Paper2Duration.Value,
-                            WeekNumber = (dateIndex / 5) + 1,
-                            Venue = GetVenueByGrade(notification.Grade.Level),
-                            Invigilator = "To be assigned",
-                            IsActive = true
-                        };
-                        _context.ExamSessions.Add(session);
-                        sessionsGenerated++;
-                        dateIndex++;
-                        timeSlotIndex++;
-                    }
-
-                    if (notification.HasPaper3 && notification.Paper3Duration.HasValue)
-                    {
-                        if (dateIndex >= examDates.Count) dateIndex = 0;
-
-                        var session = new ExamSession
-                        {
-                            ExamTimetableId = timetableId,
-                            SubjectId = notification.SubjectId,
-                            GradeId = notification.GradeId,
-                            PaperNumber = 3,
-                            ExamDate = examDates[dateIndex],
-                            StartTime = startTimes[timeSlotIndex % startTimes.Count],
-                            EndTime = startTimes[timeSlotIndex % startTimes.Count].Add(TimeSpan.FromHours((double)notification.Paper3Duration.Value)),
-                            DurationHours = notification.Paper3Duration.Value,
-                            WeekNumber = (dateIndex / 5) + 1,
-                            Venue = GetVenueByGrade(notification.Grade.Level),
-                            Invigilator = "To be assigned",
-                            IsActive = true
-                        };
-                        _context.ExamSessions.Add(session);
-                        sessionsGenerated++;
-                        dateIndex++;
-                        timeSlotIndex++;
-                    }
-                }
-
-                timetable.Status = ExamTimetableStatus.Generated;
-                timetable.GeneratedAt = DateTime.Now;
-                _context.SaveChanges();
-
-                result.Success = true;
-                result.SessionsGenerated = sessionsGenerated;
-                result.Message = $"Timetable generated with {sessionsGenerated} sessions";
-            }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Message = $"Error: {ex.Message}";
-            }
-
-            return result;
-        }
-
-        private string GetVenueByGrade(int gradeLevel)
-        {
-            switch (gradeLevel)
-            {
-                case 8: return "Grade 8 Block";
-                case 9: return "Grade 9 Block";
-                case 10: return "Science Block";
-                case 11: return "Commerce Block";
-                case 12: return "Matric Centre";
-                default: return "Main Hall";
-            }
-        }
 
         private string GetStatusDisplay(ExamTimetableStatus status)
         {
@@ -2636,73 +2272,5 @@ namespace ElevateED.Controllers
             }
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult EditExamSession(EditExamSessionViewModel model)
-        {
-            if (!IsAdmin()) return Json(new { success = false, message = "Unauthorized" });
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var session = _context.ExamSessions.Find(model.Id);
-                    if (session == null)
-                    {
-                        return Json(new { success = false, message = "Session not found." });
-                    }
-
-                    // Validate time constraints
-                    if (model.StartTime < new TimeSpan(9, 0, 0))
-                    {
-                        return Json(new { success = false, message = "Start time cannot be before 09:00." });
-                    }
-                    if (model.EndTime > new TimeSpan(14, 15, 0))
-                    {
-                        return Json(new { success = false, message = "End time cannot be after 14:15." });
-                    }
-                    if (model.DurationHours < 1 || model.DurationHours > 3)
-                    {
-                        return Json(new { success = false, message = "Duration must be between 1 and 3 hours." });
-                    }
-
-                    // Validate date is within timetable period
-                    var timetable = _context.ExamTimetables.Find(session.ExamTimetableId);
-                    if (timetable != null)
-                    {
-                        if (model.ExamDate < timetable.StartDate || model.ExamDate > timetable.EndDate)
-                        {
-                            return Json(new { success = false, message = "Exam date must be within the timetable period." });
-                        }
-                    }
-
-                    session.ExamDate = model.ExamDate;
-                    session.StartTime = model.StartTime;
-                    session.EndTime = model.EndTime;
-                    session.DurationHours = model.DurationHours;
-                    session.Venue = model.Venue;
-                    session.Invigilator = model.Invigilator;
-
-                    _context.SaveChanges();
-
-                    return Json(new { success = true, message = "Exam session updated successfully!" });
-                }
-                catch (Exception ex)
-                {
-                    return Json(new { success = false, message = "Error: " + ex.Message });
-                }
-            }
-
-            return Json(new { success = false, message = "Invalid data. Please check all fields." });
-        }
-
-
-        public class TimetableGenerationResult
-        {
-            public bool Success { get; set; }
-            public string Message { get; set; }
-            public int SessionsGenerated { get; set; }
-            public List<string> Warnings { get; set; } = new List<string>();
-        }
     }
 }

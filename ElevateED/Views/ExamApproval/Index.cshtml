@@ -1,0 +1,359 @@
+@model IEnumerable<ElevateED.ViewModels.ExamProposalReviewListItemViewModel>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Exam Proposals Review";
+    var cycleOptions = (List<SelectListItem>)ViewBag.CycleOptions;
+    var currentCycleId = (int?)ViewBag.CycleId;
+    var currentFilter = (string)ViewBag.StatusFilter ?? "Proposed";
+}
+
+<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+    .principal-shell { max-width: 1300px; margin: 0 auto; padding: 30px 24px; }
+    .page-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        flex-wrap: wrap; gap: 18px; margin-bottom: 22px;
+    }
+    .page-header h1 {
+        font-size: 26px; font-weight: 700;
+        color: #1e3c72; margin: 0;
+    }
+    .page-header p { color: #888; font-size: 14px; margin: 4px 0 0; }
+
+    .btn-link-back {
+        background: #6c757d; color: white;
+        padding: 10px 20px; border-radius: 25px;
+        text-decoration: none; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-link-back:hover { background: #5a6268; color: white; text-decoration: none; }
+
+    .filter-bar {
+        background: white; border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 18px 22px; margin-bottom: 22px;
+        display: flex; gap: 18px; align-items: end; flex-wrap: wrap;
+    }
+    .filter-bar label { font-weight: 600; font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: .5px; }
+    .filter-bar select {
+        padding: 8px 12px; border-radius: 8px;
+        border: 1px solid #d8dde3; min-width: 180px;
+        font-size: 14px; background: white;
+    }
+    .filter-bar .field { display: flex; flex-direction: column; gap: 6px; }
+    .filter-bar .actions { margin-left: auto; display: flex; gap: 10px; }
+
+    .btn-go {
+        background: #1e3c72; color: white;
+        border: none; padding: 9px 20px;
+        border-radius: 20px; font-weight: 600;
+        font-size: 13px; cursor: pointer;
+    }
+    .btn-publish {
+        background: #28a745; color: white;
+        border: none; padding: 9px 20px;
+        border-radius: 20px; font-weight: 600;
+        font-size: 13px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-publish:hover { background: #1e7e34; }
+    .btn-publish:disabled { background: #adb5bd; cursor: not-allowed; }
+
+    .nav-tabs {
+        display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .nav-tabs a {
+        background: white; color: #1e3c72;
+        padding: 8px 18px; border-radius: 18px;
+        text-decoration: none; font-weight: 600; font-size: 13px;
+        border: 1.5px solid #e0e7ff;
+    }
+    .nav-tabs a.active { background: #1e3c72; color: white; }
+    .nav-tabs a:hover { text-decoration: none; }
+
+    .proposal-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 22px 24px; margin-bottom: 16px;
+    }
+    .proposal-head {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 16px; flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+    .proposal-head h3 {
+        margin: 0 0 4px;
+        font-size: 18px; font-weight: 700; color: #1e3c72;
+    }
+    .proposal-head .meta {
+        color: #777; font-size: 13px;
+    }
+    .proposal-head .meta span { margin-right: 12px; }
+    .proposal-head .meta i { color: #999; margin-right: 4px; }
+
+    .status-pill {
+        display: inline-block; padding: 4px 12px;
+        border-radius: 14px; font-size: 12px; font-weight: 600;
+    }
+    .status-proposed { background: #fff8e1; color: #b76e00; }
+    .status-approved { background: #e3f2fd; color: #1565c0; }
+    .status-published { background: #e8f5e9; color: #2e7d32; }
+    .status-rejected { background: #ffebee; color: #c62828; }
+
+    .proposal-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px; margin-bottom: 14px;
+    }
+    .info-tile {
+        background: #f7f8fb; border-radius: 8px;
+        padding: 10px 14px;
+    }
+    .info-tile .lbl {
+        font-size: 11px; text-transform: uppercase;
+        letter-spacing: .4px; color: #888; font-weight: 600;
+    }
+    .info-tile .val {
+        font-size: 14px; font-weight: 600;
+        color: #222; margin-top: 2px;
+    }
+
+    .notes-box {
+        background: #fafbfd; border: 1px solid #eef0f3;
+        border-radius: 8px; padding: 10px 14px;
+        font-size: 13px; color: #444;
+        margin-bottom: 14px; white-space: pre-wrap;
+    }
+
+    .clash-banner {
+        background: #fff3cd; border: 1px solid #ffe69c;
+        color: #856404; border-radius: 8px;
+        padding: 10px 14px; margin-bottom: 14px;
+        font-size: 13px;
+    }
+    .clash-banner ul { margin: 4px 0 0; padding-left: 22px; }
+    .clash-banner i { margin-right: 6px; }
+
+    .proposal-actions {
+        display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .btn-action {
+        padding: 9px 18px; border-radius: 20px;
+        font-weight: 600; font-size: 13px;
+        text-decoration: none; border: none; cursor: pointer;
+    }
+    .btn-approve { background: #28a745; color: white; }
+    .btn-approve:hover { background: #1e7e34; }
+    .btn-reject {
+        background: white; color: #c62828;
+        border: 1.5px solid #c62828;
+    }
+    .btn-reject:hover { background: #c62828; color: white; }
+    .btn-unpublish {
+        background: white; color: #b76e00;
+        border: 1.5px solid #b76e00;
+    }
+    .btn-unpublish:hover { background: #b76e00; color: white; }
+
+    .reject-inline {
+        display: none; gap: 8px; margin-top: 10px;
+        background: #ffebee; padding: 10px 14px; border-radius: 8px;
+    }
+    .reject-inline input[type="text"] {
+        flex: 1; padding: 7px 10px;
+        border: 1px solid #d8dde3; border-radius: 8px;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center; padding: 60px 20px;
+        background: white; border-radius: 14px;
+    }
+    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
+    .empty-state h4 { color: #333; margin-bottom: 6px; }
+    .empty-state p { color: #888; }
+
+    .alert-flash { border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
+    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+</style>
+
+<div class="principal-shell">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-clipboard-check" style="color:#6366f1;margin-right:10px;"></i>Exam Proposals</h1>
+            <p>Review exam sessions proposed by teachers. Approve or send back, then publish the whole cycle.</p>
+        </div>
+        <a href="@Url.Action("Principal","Analytics")" class="btn-link-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-flash alert-flash-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+
+    @using (Html.BeginForm("Index", "ExamApproval", FormMethod.Get, new { @class = "filter-bar" }))
+    {
+        <div class="field">
+            <label>Exam cycle</label>
+            <select name="cycleId">
+                <option value="">All cycles</option>
+                @foreach (var opt in cycleOptions)
+                {
+                    <option value="@opt.Value" @(opt.Selected ? "selected" : "")>@opt.Text</option>
+                }
+            </select>
+        </div>
+        <div class="field">
+            <label>Status</label>
+            <select name="statusFilter">
+                @{ var statuses = new[] { "Proposed", "Approved", "Rejected", "Published", "All" }; }
+                @foreach (var s in statuses)
+                {
+                    <option value="@s" @(string.Equals(currentFilter, s, StringComparison.OrdinalIgnoreCase) ? "selected" : "")>@s</option>
+                }
+            </select>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn-go">Apply Filter</button>
+            @if (currentCycleId.HasValue)
+            {
+                using (Html.BeginForm("PublishCycle", "ExamApproval", new { cycleId = currentCycleId.Value }, FormMethod.Post, new { style = "margin:0;" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-publish" onclick="return confirm('Publish ALL approved sessions in this cycle? Students and teachers will see them immediately.');"
+                            @(User.IsInRole("Principal") ? "" : "disabled title=\"Principal only\"")>
+                        <i class="fas fa-broadcast-tower"></i> Publish Cycle
+                    </button>
+                }
+            }
+        </div>
+    }
+
+    <div class="nav-tabs">
+        @{ var tabs = new[] { "Proposed", "Approved", "Rejected", "Published", "All" }; }
+        @foreach (var t in tabs)
+        {
+            <a href="@Url.Action("Index", new { cycleId = currentCycleId, statusFilter = t })"
+               class="@(string.Equals(currentFilter, t, StringComparison.OrdinalIgnoreCase) ? "active" : "")">@t</a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>Nothing here</h4>
+            <p>No exam sessions match the current filter.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var p in Model)
+        {
+            <div class="proposal-card">
+                <div class="proposal-head">
+                    <div>
+                        <h3>@p.SubjectName — Paper @p.PaperNumber</h3>
+                        <div class="meta">
+                            <span><i class="fas fa-layer-group"></i>@p.ExamCycleName</span>
+                            <span><i class="fas fa-user-tie"></i>@(p.ProposedBy ?? "—")</span>
+                            <span><i class="fas fa-clock"></i>Proposed @(p.ProposedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</span>
+                        </div>
+                    </div>
+                    <span class="status-pill status-@p.Status.ToString().ToLower()">@p.Status</span>
+                </div>
+
+                <div class="proposal-body">
+                    <div class="info-tile">
+                        <div class="lbl">Date</div>
+                        <div class="val">@p.ExamDate.ToString("ddd, dd MMM yyyy")</div>
+                    </div>
+                    <div class="info-tile">
+                        <div class="lbl">Time</div>
+                        <div class="val">@p.StartTime.ToString(@"hh\:mm") – @p.EndTime.ToString(@"hh\:mm")</div>
+                    </div>
+                    <div class="info-tile">
+                        <div class="lbl">Duration</div>
+                        <div class="val">@p.DurationHours.ToString("0.##") h</div>
+                    </div>
+                    <div class="info-tile">
+                        <div class="lbl">Venue</div>
+                        <div class="val">@(string.IsNullOrWhiteSpace(p.Venue) ? "—" : p.Venue)</div>
+                    </div>
+                    <div class="info-tile">
+                        <div class="lbl">Invigilator</div>
+                        <div class="val">@(string.IsNullOrWhiteSpace(p.Invigilator) ? "—" : p.Invigilator)</div>
+                    </div>
+                    <div class="info-tile" style="grid-column: span 2;">
+                        <div class="lbl">Classes writing</div>
+                        <div class="val">@(string.IsNullOrEmpty(p.ClassNames) ? "—" : p.ClassNames)</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(p.Notes))
+                {
+                    <div class="notes-box"><strong>Notes:</strong>@(" ")@p.Notes</div>
+                }
+
+                @if (p.Clashes != null && p.Clashes.Any())
+                {
+                    <div class="clash-banner">
+                        <i class="fas fa-exclamation-triangle"></i><strong>Clash detected</strong>
+                        <ul>
+                            @foreach (var c in p.Clashes)
+                            {
+                                <li>@c</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="proposal-actions">
+                    @if (p.Status == ExamSessionStatus.Proposed || p.Status == ExamSessionStatus.Rejected)
+                    {
+                        using (Html.BeginForm("Approve", "ExamApproval", new { id = p.Id }, FormMethod.Post, new { style = "margin:0;" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-action btn-approve"><i class="fas fa-check"></i> Approve</button>
+                        }
+                        <button type="button" class="btn-action btn-reject" onclick="document.getElementById('reject-@p.Id').style.display='flex';">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    }
+                    else if (p.Status == ExamSessionStatus.Approved)
+                    {
+                        using (Html.BeginForm("Reject", "ExamApproval", new { id = p.Id }, FormMethod.Post, new { style = "margin:0;" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="reason" value="" />
+                            <button type="submit" class="btn-action btn-reject" onclick="return confirm('Move this back to Rejected and let the teacher revise?');">
+                                <i class="fas fa-undo"></i> Send Back
+                            </button>
+                        }
+                    }
+                    else if (p.Status == ExamSessionStatus.Published && User.IsInRole("Principal"))
+                    {
+                        using (Html.BeginForm("UnpublishSession", "ExamApproval", new { id = p.Id }, FormMethod.Post, new { style = "margin:0;" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-action btn-unpublish" onclick="return confirm('Unpublish this session? It will be hidden from students.');">
+                                <i class="fas fa-eye-slash"></i> Unpublish
+                            </button>
+                        }
+                    }
+                </div>
+
+                @if (p.Status == ExamSessionStatus.Proposed || p.Status == ExamSessionStatus.Rejected)
+                {
+                    using (Html.BeginForm("Reject", "ExamApproval", new { id = p.Id }, FormMethod.Post, new { id = $"reject-{p.Id}", @class = "reject-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="reason" placeholder="Reason — sent back to the teacher" required />
+                        <button type="submit" class="btn-action btn-reject">Send Back</button>
+                    }
+                }
+            </div>
+        }
+    }
+</div>

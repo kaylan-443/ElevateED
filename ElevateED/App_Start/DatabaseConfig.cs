@@ -121,6 +121,22 @@ namespace ElevateED
                         context.SaveChanges();
                     }
 
+                    // One-time fixup: when the new ExamSession.Status column is added by
+                    // auto-migration, every pre-existing row defaults to 0 (Proposed). Older
+                    // rows came from the admin-driven flow and had no Status concept — they
+                    // were effectively "Published". Mark them as such so they keep appearing
+                    // for students/teachers. Identified by absent ProposedAt (new flow always
+                    // sets ProposedAt at proposal time).
+                    try
+                    {
+                        context.Database.ExecuteSqlCommand(
+                            "UPDATE dbo.ExamSessions SET Status = 2 WHERE Status = 0 AND ProposedAt IS NULL");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"ExamSessions status backfill skipped: {ex.Message}");
+                    }
+
                     // Seed Streams
                     if (!context.Streams.Any())
                     {

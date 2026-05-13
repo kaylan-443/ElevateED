@@ -3,48 +3,344 @@
 
 @{
     ViewBag.Title = "Capture Marks";
-    var locked = Model.Status == MarkApprovalStatus.Approved || Model.Status == MarkApprovalStatus.Submitted;
+    var locked = Model.Status == MarkApprovalStatus.Approved;
+
+    // Build attribute dictionaries conditionally — a `disabled = null` key in an anonymous
+    // object still renders as disabled="" which disables the input regardless of value.
+    var markAttrs = new Dictionary<string, object>
+    {
+        { "class", "mark-input" },
+        { "type", "number" },
+        { "step", "0.1" },
+        { "min", "0" },
+        { "max", Model.MaxMark },
+        { "placeholder", "—" }
+    };
+    var commentAttrs = new Dictionary<string, object>
+    {
+        { "class", "comment-input" },
+        { "placeholder", "Optional comment" }
+    };
+    if (locked)
+    {
+        markAttrs["disabled"] = "disabled";
+        commentAttrs["disabled"] = "disabled";
+    }
+
+    var captured = Model.Marks.Count(m => m.Mark.HasValue);
+    var total = Model.Marks.Count;
+    var pct = total > 0 ? (int)Math.Round((double)captured * 100 / total) : 0;
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h2>@Model.AssessmentName</h2>
-            <p class="text-muted">@Model.ClassName - @Model.SubjectName - @Model.Term @Model.AcademicYear - Max @Model.MaxMark</p>
+<style>
+    .assessment-header {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 22px 26px;
+        margin-bottom: 20px;
+    }
+    .assessment-header h2 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary-blue);
+    }
+    .assessment-header .meta {
+        color: #777;
+        font-size: 13px;
+    }
+    .assessment-header .meta span { margin-right: 14px; }
+    .assessment-header .meta i { margin-right: 4px; color: #999; }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 14px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .3px;
+    }
+    .status-draft { background: #eef0f3; color: #6c757d; }
+    .status-submitted { background: #e3f2fd; color: #1565c0; }
+    .status-approved { background: #e8f5e9; color: #2e7d32; }
+    .status-rejected { background: #ffebee; color: #c62828; }
+
+    .fallback-banner {
+        background: #fff8e1;
+        border: 1px solid #ffe0b2;
+        color: #b76e00;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-top: 14px;
+        font-size: 13px;
+    }
+    .fallback-banner i { margin-right: 6px; }
+
+    .progress-row {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .progress-row .label { font-size: 13px; color: #555; font-weight: 600; }
+    .progress-track {
+        flex: 1;
+        background: #f1f3f5;
+        border-radius: 8px;
+        height: 10px;
+        overflow: hidden;
+    }
+    .progress-track > div {
+        background: linear-gradient(90deg, #28a745, #38d058);
+        height: 100%;
+        transition: width .25s;
+    }
+    .progress-count {
+        font-size: 13px;
+        color: #444;
+        font-weight: 600;
+        min-width: 60px;
+        text-align: right;
+    }
+
+    .marks-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+
+    .marks-card table { width: 100%; border-collapse: collapse; }
+    .marks-card thead th {
+        background: #f7f8fb;
+        color: #555;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        padding: 14px 18px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .marks-card tbody td {
+        padding: 12px 18px;
+        font-size: 14px;
+        border-top: 1px solid #f1f1f1;
+        vertical-align: middle;
+    }
+    .marks-card tbody tr:hover { background: #fafbfd; }
+
+    .learner-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        color: #222;
+    }
+    .learner-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e0e7ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .mark-cell { display: flex; align-items: center; gap: 8px; }
+    .mark-input {
+        width: 90px;
+        padding: 8px 10px;
+        border: 1px solid #d8dde3;
+        border-radius: 8px;
+        font-size: 14px;
+        text-align: center;
+        font-weight: 600;
+    }
+    .mark-input:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
+    }
+    .mark-input:disabled { background: #f6f7f9; color: #999; }
+    .mark-max { color: #999; font-size: 13px; }
+
+    .comment-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d8dde3;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .comment-input:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
+    }
+    .comment-input:disabled { background: #f6f7f9; color: #999; }
+
+    .action-bar {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid #eee;
+        padding: 16px 22px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .action-bar .note {
+        color: #777;
+        font-size: 13px;
+        margin-right: auto;
+    }
+
+    .btn-save {
+        background: white;
+        color: var(--primary-blue);
+        border: 1.5px solid var(--primary-blue);
+        padding: 9px 22px;
+        border-radius: 22px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .btn-save:hover { background: var(--primary-blue); color: white; }
+
+    .btn-finalize {
+        background: var(--success-green);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 22px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-finalize:hover { background: #1e7e34; }
+
+    .lock-banner {
+        background: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        color: #1b5e20;
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin: 16px 22px;
+    }
+    .lock-banner i { margin-right: 6px; }
+
+    .alert-flash {
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+    }
+    .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "marks")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-pen-to-square" style="color:#6366f1;margin-right:10px;"></i>Capture Marks</h1>
+                <p>Enter learner marks. Click <strong>Finalize Marks</strong> when complete to lock them and trigger report generation.</p>
+            </div>
+            <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> All Assessments</a>
         </div>
-        <span class="badge bg-secondary">@Model.Status</span>
-    </div>
 
-    @using (Html.BeginForm())
-    {
-        @Html.AntiForgeryToken()
-        @Html.HiddenFor(m => m.AssessmentId)
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-flash alert-flash-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                @Html.ValidationSummary(false)
+            </div>
+        }
 
-        <div class="card">
-            <div class="card-body">
+        <div class="assessment-header">
+            <div class="header-row">
+                <div>
+                    <h2>@Model.AssessmentName</h2>
+                    <div class="meta">
+                        <span><i class="fas fa-chalkboard"></i>@Model.ClassName</span>
+                        <span><i class="fas fa-book"></i>@Model.SubjectName</span>
+                        <span><i class="fas fa-calendar"></i>@Model.Term @Model.AcademicYear</span>
+                        <span><i class="fas fa-tag"></i>@Model.AssessmentType</span>
+                        <span><i class="fas fa-bullseye"></i>Max @Model.MaxMark</span>
+                    </div>
+                </div>
+                <span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+            </div>
+
+            @if (Model.IsActingAsClassTeacher)
+            {
+                <div class="fallback-banner">
+                    <i class="fas fa-user-shield"></i>
+                    You are capturing these marks as the <strong>class teacher</strong>. Subject teacher: <strong>@(string.IsNullOrWhiteSpace(Model.OwningTeacherName) ? "—" : Model.OwningTeacherName)</strong>.
+                </div>
+            }
+
+            <div class="progress-row">
+                <div class="label">Captured</div>
+                <div class="progress-track"><div style="width:@(pct)%;"></div></div>
+                <div class="progress-count">@captured / @total</div>
+            </div>
+        </div>
+
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.AssessmentId)
+
+            <div class="marks-card">
                 <div class="table-responsive">
-                    <table class="table table-striped align-middle">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Learner</th>
-                                <th style="width: 180px;">Mark</th>
+                                <th style="width:180px;">Mark</th>
                                 <th>Comment</th>
                             </tr>
                         </thead>
                         <tbody>
                             @for (var i = 0; i < Model.Marks.Count; i++)
                             {
+                                var initials = !string.IsNullOrEmpty(Model.Marks[i].StudentName) && Model.Marks[i].StudentName.Length > 0
+                                    ? Model.Marks[i].StudentName.Substring(0, 1).ToUpper() : "?";
                                 <tr>
                                     <td>
-                                        @Model.Marks[i].StudentName
+                                        <div class="learner-cell">
+                                            <div class="learner-avatar">@initials</div>
+                                            <span>@Model.Marks[i].StudentName</span>
+                                        </div>
                                         @Html.HiddenFor(m => m.Marks[i].StudentId)
                                         @Html.HiddenFor(m => m.Marks[i].StudentName)
                                     </td>
                                     <td>
-                                        @Html.TextBoxFor(m => m.Marks[i].Mark, new { @class = "form-control", type = "number", step = "0.1", min = "0", max = Model.MaxMark, disabled = locked ? "disabled" : null })
+                                        <div class="mark-cell">
+                                            @Html.TextBoxFor(m => m.Marks[i].Mark, markAttrs)
+                                            <span class="mark-max">/ @Model.MaxMark</span>
+                                        </div>
                                     </td>
                                     <td>
-                                        @Html.TextBoxFor(m => m.Marks[i].Comment, new { @class = "form-control", disabled = locked ? "disabled" : null })
+                                        @Html.TextBoxFor(m => m.Marks[i].Comment, commentAttrs)
                                     </td>
                                 </tr>
                             }
@@ -52,17 +348,28 @@
                     </table>
                 </div>
 
-                @if (!locked)
+                @if (locked)
                 {
-                    <button type="submit" class="btn btn-primary">Save Marks</button>
-                    <button type="submit" name="submitForApproval" value="true" class="btn btn-success ms-2">Submit for Approval</button>
+                    <div class="lock-banner">
+                        <i class="fas fa-lock"></i>
+                        Marks are <strong>finalized</strong>. Report cards have been generated for this class and term.
+                    </div>
                 }
                 else
                 {
-                    <div class="alert alert-info mb-0">These marks are waiting for approval or already approved.</div>
+                    <div class="action-bar">
+                        <div class="note">
+                            <i class="fas fa-info-circle"></i>
+                            Save anytime as a draft. Finalize when all marks are entered to generate report cards.
+                        </div>
+                        <button type="submit" class="btn-save">Save Draft</button>
+                        <button type="submit" name="finalizeMarks" value="true" class="btn-finalize"
+                                onclick="return confirm('Finalize these marks? This locks the assessment and triggers report card generation.');">
+                            <i class="fas fa-lock"></i> Finalize Marks
+                        </button>
+                    </div>
                 }
-                @Html.ActionLink("Back", "Index", "Marks", null, new { @class = "btn btn-outline-secondary ms-2" })
             </div>
-        </div>
-    }
+        }
+    </main>
 </div>

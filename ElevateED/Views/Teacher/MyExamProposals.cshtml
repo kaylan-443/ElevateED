@@ -1,0 +1,166 @@
+@model IEnumerable<ElevateED.ViewModels.MyExamProposalListItemViewModel>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "My Exam Proposals";
+}
+
+<style>
+    .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+    .toolbar .lead { color: #555; font-size: 14px; }
+    .btn-primary-pill {
+        background: var(--primary-blue); color: white;
+        padding: 10px 22px; border-radius: 25px;
+        text-decoration: none; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 8px; border: none;
+    }
+    .btn-primary-pill:hover { background: var(--secondary-blue); color: white; text-decoration: none; }
+
+    .alert-flash { border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; }
+    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+    .props-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .props-card table { width: 100%; border-collapse: collapse; }
+    .props-card thead th {
+        background: #f7f8fb; color: #555;
+        font-weight: 600; font-size: 12px;
+        text-transform: uppercase; letter-spacing: .5px;
+        padding: 14px 18px; text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .props-card tbody td {
+        padding: 14px 18px; font-size: 14px;
+        border-top: 1px solid #f1f1f1; vertical-align: middle;
+    }
+    .props-card tbody tr:hover { background: #fafbfd; }
+
+    .status-pill {
+        display: inline-block; padding: 4px 12px;
+        border-radius: 14px; font-size: 12px; font-weight: 600;
+    }
+    .status-proposed { background: #fff8e1; color: #b76e00; }
+    .status-approved { background: #e3f2fd; color: #1565c0; }
+    .status-published { background: #e8f5e9; color: #2e7d32; }
+    .status-rejected { background: #ffebee; color: #c62828; }
+
+    .row-actions { display: flex; gap: 6px; }
+    .btn-mini {
+        padding: 6px 12px; border-radius: 16px;
+        font-size: 13px; font-weight: 600;
+        text-decoration: none; border: none; cursor: pointer;
+    }
+    .btn-edit { background: white; color: var(--primary-blue); border: 1.5px solid var(--primary-blue); }
+    .btn-edit:hover { background: var(--primary-blue); color: white; text-decoration: none; }
+    .btn-delete { background: white; color: #c62828; border: 1.5px solid #c62828; }
+    .btn-delete:hover { background: #c62828; color: white; }
+
+    .empty-state {
+        text-align: center; padding: 60px 20px;
+        background: white; border-radius: 14px;
+    }
+    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
+    .empty-state h4 { color: #333; margin-bottom: 6px; }
+    .empty-state p { color: #888; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "my-proposals")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-calendar-check" style="color:#6366f1;margin-right:10px;"></i>My Exam Proposals</h1>
+                <p>Exam sessions you've proposed. Approval and publication are handled by the principal.</p>
+            </div>
+            <a href="@Url.Action("Dashboard","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-error"><i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]</div>
+        }
+
+        <div class="toolbar">
+            <div class="lead">@Model.Count() proposal@(Model.Count() == 1 ? "" : "s").</div>
+            <a href="@Url.Action("ProposeExam")" class="btn-primary-pill"><i class="fas fa-plus"></i> Propose Exam</a>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-plus"></i>
+                <h4>No proposals yet</h4>
+                <p>Click <strong>Propose Exam</strong> above to set up your first exam session for the current cycle.</p>
+            </div>
+        }
+        else
+        {
+            <div class="props-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cycle</th>
+                                <th>Subject</th>
+                                <th>Paper</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Classes</th>
+                                <th>Venue</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                var canEdit = p.Status == ExamSessionStatus.Proposed || p.Status == ExamSessionStatus.Rejected;
+                                <tr>
+                                    <td>@p.ExamCycleName</td>
+                                    <td><strong>@p.SubjectName</strong></td>
+                                    <td>Paper @p.PaperNumber</td>
+                                    <td>@p.ExamDate.ToString("ddd, dd MMM yyyy")</td>
+                                    <td>@p.StartTime.ToString(@"hh\:mm") – @p.EndTime.ToString(@"hh\:mm")<br><span style="color:#999;font-size:12px;">@p.DurationHours h</span></td>
+                                    <td>@(string.IsNullOrEmpty(p.ClassNames) ? "—" : p.ClassNames)</td>
+                                    <td>@(string.IsNullOrEmpty(p.Venue) ? "—" : p.Venue)</td>
+                                    <td><span class="status-pill status-@p.Status.ToString().ToLower()">@p.Status</span></td>
+                                    <td>
+                                        <div class="row-actions">
+                                            @if (canEdit)
+                                            {
+                                                <a href="@Url.Action("ProposeExam", new { id = p.Id })" class="btn-mini btn-edit">Edit</a>
+                                                using (Html.BeginForm("DeleteExamProposal", "Teacher", new { id = p.Id }, FormMethod.Post, new { style = "display:inline;" }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-mini btn-delete"
+                                                            onclick="return confirm('Withdraw this exam proposal?');">Withdraw</button>
+                                                }
+                                            }
+                                            else if (p.Status == ExamSessionStatus.Published)
+                                            {
+                                                <span style="color:#999;font-size:13px;">Locked</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:#999;font-size:13px;">—</span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </main>
+</div>

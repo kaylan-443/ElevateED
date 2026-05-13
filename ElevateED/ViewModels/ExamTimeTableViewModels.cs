@@ -163,4 +163,119 @@ namespace ElevateED.ViewModels
         public string StreamName { get; set; }
         public string PaperNumber { get; set; }
     }
+
+    // ============================================================
+    // New teacher-proposed exam session flow
+    // ============================================================
+
+    public class ProposeExamViewModel
+    {
+        public int Id { get; set; } // 0 for new
+
+        [Required]
+        [Display(Name = "Exam Cycle")]
+        public int ExamTimetableId { get; set; }
+
+        [Required]
+        [Display(Name = "Subject")]
+        public int SubjectId { get; set; }
+
+        [Required]
+        [Range(1, 3)]
+        [Display(Name = "Paper Number")]
+        public int PaperNumber { get; set; }
+
+        [Required]
+        [DataType(DataType.Date)]
+        [Display(Name = "Date")]
+        public DateTime ExamDate { get; set; }
+
+        [Required]
+        [DataType(DataType.Time)]
+        [Display(Name = "Start Time")]
+        public TimeSpan StartTime { get; set; }
+
+        [Required]
+        [Range(0.5, 6.0)]
+        [Display(Name = "Duration (hours)")]
+        public decimal DurationHours { get; set; }
+
+        [StringLength(120)]
+        public string Venue { get; set; }
+
+        [StringLength(120)]
+        public string Invigilator { get; set; }
+
+        [StringLength(1000)]
+        public string Notes { get; set; }
+
+        [Required(ErrorMessage = "Pick at least one class.")]
+        [Display(Name = "Classes Writing")]
+        public List<int> ClassIds { get; set; }
+
+        public IEnumerable<System.Web.Mvc.SelectListItem> ExamCycleOptions { get; set; }
+        public IEnumerable<System.Web.Mvc.SelectListItem> SubjectOptions { get; set; }
+        public IEnumerable<ClassCheckboxOption> ClassOptions { get; set; }
+
+        public ProposeExamViewModel()
+        {
+            ClassIds = new List<int>();
+            ClassOptions = new List<ClassCheckboxOption>();
+            ExamCycleOptions = new List<System.Web.Mvc.SelectListItem>();
+            SubjectOptions = new List<System.Web.Mvc.SelectListItem>();
+            DurationHours = 2;
+        }
+    }
+
+    public class ClassCheckboxOption
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; }
+        public string GradeName { get; set; }
+        public bool Selected { get; set; }
+    }
+
+    public class MyExamProposalListItemViewModel
+    {
+        public int Id { get; set; }
+        public string ExamCycleName { get; set; }
+        public string SubjectName { get; set; }
+        public int PaperNumber { get; set; }
+        public DateTime ExamDate { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public decimal DurationHours { get; set; }
+        public string Venue { get; set; }
+        public string Invigilator { get; set; }
+        public string ClassNames { get; set; }
+        public ExamSessionStatus Status { get; set; }
+        public DateTime? ProposedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+    }
+
+    public class ExamProposalReviewListItemViewModel
+    {
+        public int Id { get; set; }
+        public string ExamCycleName { get; set; }
+        public int ExamCycleId { get; set; }
+        public string SubjectName { get; set; }
+        public int PaperNumber { get; set; }
+        public DateTime ExamDate { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public decimal DurationHours { get; set; }
+        public string Venue { get; set; }
+        public string Invigilator { get; set; }
+        public string Notes { get; set; }
+        public string ClassNames { get; set; }
+        public string ProposedBy { get; set; }
+        public ExamSessionStatus Status { get; set; }
+        public DateTime? ProposedAt { get; set; }
+        public List<string> Clashes { get; set; }
+
+        public ExamProposalReviewListItemViewModel()
+        {
+            Clashes = new List<string>();
+        }
+    }
 }
