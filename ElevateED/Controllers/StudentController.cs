@@ -1659,15 +1659,7 @@ namespace ElevateED.Controllers
                 grade.Id,
                 student.StreamId,
                 student.ClassId);
-            var sessions = _context.ExamSessions
-                .Include(s => s.Subject)
-                .Include(s => s.Grade)
-                .Where(s => s.ExamTimetableId == activeTimetable.Id
-                    && s.GradeId == grade.Id
-                    && s.IsActive)
-                .OrderBy(s => s.ExamDate)
-                .ThenBy(s => s.StartTime)
-                .ToList();
+            
 
             var viewModel = new StudentExamTimetableViewModel
             {

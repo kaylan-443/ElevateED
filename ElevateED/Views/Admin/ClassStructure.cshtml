@@ -2,757 +2,402 @@
 
 @{
     ViewBag.Title = "Class Structure - Admin";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+@section SidebarNav {
+    <div class="nav-section">Main</div>
+    <a href="@Url.Action("Dashboard", "Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="@Url.Action("PendingApplications", "Admin")" class="nav-item"><i class="fas fa-file-alt"></i><span>Applications</span></a>
+    <a href="@Url.Action("ManageUsers", "Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+    <a href="@Url.Action("ClassStructure", "Admin")" class="nav-item active"><i class="fas fa-school"></i><span>Classes</span></a>
+    <a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
 
-    :root {
-        --primary: #4f46e5;
-        --primary-light: #6366f1;
-        --primary-dark: #4338ca;
-        --primary-bg: #f5f3ff;
-        --primary-soft: #ede9fe;
-        --primary-hover: #e0e7ff;
-        --accent: #fbbf24;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --info: #3b82f6;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        --sidebar-width: 280px;
-        --header-height: 70px;
-    }
+    <div class="nav-section">Management</div>
+    <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+    <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
+    <a href="@Url.Action("ClassRegister", "Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+    <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
 
-    body {
-        font-family: 'Inter', -apple-system, sans-serif;
-        background: var(--gray-50);
-        overflow-x: hidden;
-    }
+    <div class="nav-section">Extra</div>
+    <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
+    <a href="@Url.Action("EmergencyAlerts", "AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
+    <a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
+    <a href="@Url.Action("Index", "Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+}
 
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: var(--sidebar-width);
-        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease;
-        z-index: 100;
-        overflow-y: auto;
-    }
-
-    .sidebar-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .logo-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--accent), #f59e0b);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1e1b4b;
-        font-size: 20px;
-    }
-
-    .logo-text {
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-    }
-
-        .logo-text span {
-            color: var(--accent);
+@section Styles {
+    <style>
+        :root {
+            --primary-blue: #1e3c72;
+            --secondary-blue: #2a5298;
+            --accent-gold: #d4af37;
+            --success-green: #28a745;
+            --info-blue: #17a2b8;
+            --danger-red: #dc3545;
         }
 
-    .sidebar-nav {
-        flex: 1;
-        padding: 24px 16px;
-    }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
 
-    .nav-section {
-        margin-top: 24px;
-        margin-bottom: 12px;
-        padding: 0 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+        .header-left h2 {
+            margin: 0;
+            color: #1e3c72;
+            font-weight: 700;
+        }
 
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 12px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
+        .page-title {
+            margin: 0;
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
 
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
+            .page-title i {
+                color: var(--accent-gold);
+                margin-right: 10px;
+            }
+
+        .btn-back {
+            background: #6c757d;
             color: white;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--accent), #f59e0b);
-            color: #1e1b4b;
-        }
-
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
-        .nav-item span {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-    .main-content {
-        flex: 1;
-        margin-left: var(--sidebar-width);
-        min-height: 100vh;
-    }
-
-    .top-header {
-        height: var(--header-height);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 0 32px;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .notification-btn {
-        position: relative;
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--gray-500);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-
-        .notification-btn:hover {
-            background: var(--gray-100);
-        }
-
-    .notification-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 8px;
-        height: 8px;
-        background: var(--danger);
-        border-radius: 50%;
-    }
-
-    .profile-container {
-        position: relative;
-    }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        transition: all 0.2s;
-        background: none;
-        border: none;
-    }
-
-        .profile-trigger:hover {
-            background: var(--gray-100);
-        }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-        text-transform: uppercase;
-    }
-
-    .profile-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    .dropdown-icon {
-        font-size: 12px;
-        color: var(--gray-400);
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        width: 240px;
-        overflow: hidden;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-            animation: fadeInDown 0.2s ease;
-        }
-
-    @@keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 16px;
-        border-bottom: 1px solid var(--gray-200);
-        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
-    }
-
-        .dropdown-header .user-name {
+            padding: 8px 20px;
+            border-radius: 50px;
             font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 4px;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .dropdown-header .user-email {
-            font-size: 12px;
-            color: var(--gray-500);
+            .btn-back:hover {
+                background: #5a6268;
+                transform: translateY(-2px);
+                color: white;
+                text-decoration: none;
+            }
+
+        .grade-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            overflow: hidden;
         }
 
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        text-decoration: none;
-        color: var(--gray-700);
-        transition: all 0.2s;
-        cursor: pointer;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-    }
-
-        .dropdown-item:hover {
-            background: var(--primary-hover);
-            color: var(--primary);
+        .grade-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            padding: 15px 20px;
+            font-size: 20px;
+            font-weight: 600;
         }
 
-        .dropdown-item i {
-            width: 20px;
+            .grade-header i {
+                margin-right: 10px;
+            }
+
+        .grade-body {
+            padding: 20px;
+        }
+
+        .class-row {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--accent-gold);
+            transition: all 0.3s ease;
+        }
+
+            .class-row:hover {
+                transform: translateX(5px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                background: #fff;
+            }
+
+        .class-name {
+            font-weight: 700;
             font-size: 16px;
-            color: var(--gray-500);
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-    .dropdown-divider {
-        height: 1px;
-        background: var(--gray-200);
-        margin: 8px 0;
-    }
-
-    .dashboard-content {
-        padding: 32px;
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #e0e0e0;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    .header-left h2 {
-        margin: 0;
-        color: #1e3c72;
-        font-weight: 700;
-    }
-
-    .page-title {
-        margin: 0;
-        color: var(--primary-blue);
-        font-weight: 700;
-    }
-
-        .page-title i {
-            color: var(--accent-gold);
-            margin-right: 10px;
+        .class-badge {
+            background: var(--accent-gold);
+            color: var(--primary-blue);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
-    .btn-back {
-        background: #6c757d;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 50px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: none;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-        .btn-back:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-            color: white;
-            text-decoration: none;
+        .teacher-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
         }
 
-    .grade-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        margin-bottom: 25px;
-        overflow: hidden;
-    }
-
-    .grade-header {
-        background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
-        color: white;
-        padding: 15px 20px;
-        font-size: 20px;
-        font-weight: 600;
-    }
-
-        .grade-header i {
-            margin-right: 10px;
+        .teacher-badge {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-    .grade-body {
-        padding: 20px;
-    }
-
-    .class-row {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-left: 4px solid var(--accent-gold);
-        transition: all 0.3s ease;
-    }
-
-        .class-row:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            background: #fff;
-        }
-
-    .class-name {
-        font-weight: 700;
-        font-size: 16px;
-        color: var(--primary-blue);
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .class-badge {
-        background: var(--accent-gold);
-        color: var(--primary-blue);
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .teacher-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-
-    .teacher-badge {
-        background: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-        .teacher-badge i {
-            color: var(--success-green);
-        }
-
-    .assign-teacher-select {
-        padding: 5px 10px;
-        border-radius: 20px;
-        border: 1px solid #ddd;
-        font-size: 13px;
-        min-width: 200px;
-    }
-
-    .btn-assign {
-        background: var(--success-green);
-        color: white;
-        border: none;
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-        .btn-assign:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
-
-    .btn-remove {
-        background: var(--danger-red);
-        color: white;
-        border: none;
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-        .btn-remove:hover {
-            background: #c82333;
-            transform: translateY(-2px);
-        }
-
-    .btn-manage {
-        background: var(--info-blue);
-        color: white;
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-        .btn-manage:hover {
-            background: #138496;
-            color: white;
-            text-decoration: none;
-        }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 15px;
-    }
-
-        .empty-state i {
-            font-size: 64px;
-            color: #ddd;
-            margin-bottom: 20px;
-        }
-
-    :root {
-        --primary-blue: #1e3c72;
-        --secondary-blue: #2a5298;
-        --accent-gold: #d4af37;
-        --success-green: #28a745;
-        --info-blue: #17a2b8;
-        --danger-red: #dc3545;
-    }
-</style>
-
-<div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-                <div class="logo-text">Elevate<span>ED</span></div>
-            </div>
-        </div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <a href="@Url.Action("Dashboard", "Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-            <a href="@Url.Action("PendingApplications", "Admin")" class="nav-item"><i class="fas fa-file-alt"></i><span>Applications</span></a>
-            <a href="@Url.Action("ManageUsers", "Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
-            <a href="@Url.Action("ClassStructure", "Admin")" class="nav-item active"><i class="fas fa-school"></i><span>Classes</span></a>
-            <a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
-
-            <div class="nav-section">Management</div>
-            <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
-            <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
-            <a href="@Url.Action("ClassRegister", "Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
-            <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
-            <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
-
-            <div class="nav-section">Extra</div>
-            <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
-            <a href="@Url.Action("EmergencyAlerts", "AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
-            <a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
-            <a href="@Url.Action("Index", "Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
-        </nav>
-    </aside>
-
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <button class="notification-btn"><i class="far fa-bell"></i><span class="notification-badge"></span></button>
-                <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleDropdown()">
-                        <div class="avatar">A</div>
-                        <span class="profile-name">Admin</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </button>
-                    <div class="dropdown-menu" id="profileDropdown">
-                        <div class="dropdown-header">
-                            <div class="user-name">Administrator</div>
-                            <div class="user-email">admin@mpiyakhehs.co.za</div>
-                        </div>
-                        <a href="@Url.Action("ManageUsers", "Admin")" class="dropdown-item"><i class="fas fa-users"></i><span>Manage Users</span></a>
-                        <div class="dropdown-divider"></div>
-                        <form action="@Url.Action("LogOff", "Account")" method="post" id="logoutForm">
-                            @Html.AntiForgeryToken()
-                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <div class="dashboard-content">
-            @Html.AntiForgeryToken()
-
-            <div class="page-header">
-                <div class="header-left">
-                    <h2 class="page-title">
-                        <i class="fas fa-school"></i> Class Structure
-                    </h2>
-                    <small class="text-muted">Assign class teachers and manage subject teachers</small>
-                </div>
-                <div class="header-right">
-                    <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
-                </div>
-            </div>
-
-            @if (Model.Grades == null || !Model.Grades.Any())
-            {
-                <div class="empty-state">
-                    <i class="fas fa-school"></i>
-                    <h4>No Grades Found</h4>
-                    <p>Please seed the database first.</p>
-                    <a href="@Url.Action("SeedData", "Admin")" class="btn btn-primary mt-3">
-                        <i class="fas fa-database"></i> Seed Data
-                    </a>
-                </div>
+            .teacher-badge i {
+                color: var(--success-green);
             }
-            else
-            {
-                foreach (var grade in Model.Grades.OrderBy(g => g.Level))
-                {
-                    var gradeClasses = Model.Classes.Where(c => c.GradeId == grade.Id).OrderBy(c => c.Name).ToList();
 
-                    <div class="grade-card">
-                        <div class="grade-header">
-                            <i class="fas fa-graduation-cap"></i> @grade.Name
-                        </div>
-                        <div class="grade-body">
-                            @foreach (var cls in gradeClasses)
-                            {
-                                <div class="class-row">
-                                    <div class="class-name">
-                                        <span>
-                                            <i class="fas fa-chalkboard"></i> @cls.FullName
-                                        </span>
-                                        <span class="class-badge">
-                                            <i class="fas fa-users"></i> Capacity: @cls.Capacity
-                                        </span>
-                                    </div>
-                                    <div class="teacher-info" id="teacher-info-@cls.Id">
-                                        @if (cls.ClassTeacherId.HasValue)
-                                        {
-                                            <div class="teacher-badge">
-                                                <i class="fas fa-user-tie"></i> Class Teacher:
-                                                <strong>@(cls.ClassTeacher?.FullName ?? "Unknown")</strong>
-                                            </div>
-                                            <button class="btn-remove" onclick="removeClassTeacher(@cls.Id)">
-                                                <i class="fas fa-trash"></i> Remove
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <select id="teacherSelect_@cls.Id" class="assign-teacher-select">
-                                                <option value="">-- Select Class Teacher --</option>
-                                                @foreach (var teacher in Model.Teachers.OrderBy(t => t.LastName))
-                                                {
-                                                    <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
-                                                }
-                                            </select>
-                                            <button class="btn-assign" onclick="assignClassTeacher(@cls.Id)">
-                                                <i class="fas fa-user-plus"></i> Assign Class Teacher
-                                            </button>
-                                        }
-                                    </div>
-                                    <div class="mt-2">
-                                        <a href="@Url.Action("ClassDetails", "Admin", new { classId = cls.Id })" class="btn-manage">
-                                            <i class="fas fa-cog"></i> Manage Subjects
-                                        </a>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
+        .assign-teacher-select {
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            min-width: 200px;
+        }
+
+        .btn-assign {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .btn-assign:hover {
+                background: #218838;
+                transform: translateY(-2px);
             }
-        </div>
-    </main>
+
+        .btn-remove {
+            background: var(--danger-red);
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .btn-remove:hover {
+                background: #c82333;
+                transform: translateY(-2px);
+            }
+
+        .btn-manage {
+            background: var(--info-blue);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .btn-manage:hover {
+                background: #138496;
+                color: white;
+                text-decoration: none;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+        }
+
+            .empty-state i {
+                font-size: 64px;
+                color: #ddd;
+                margin-bottom: 20px;
+            }
+
+        .mt-2 {
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header">
+    <div class="header-left">
+        <h2 class="page-title">
+            <i class="fas fa-school"></i> Class Structure
+        </h2>
+        <small class="text-muted">Assign class teachers and manage subject teachers</small>
+    </div>
+    <div class="header-right">
+        <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
 </div>
 
-<script>
-    function toggleDropdown() {
-        document.getElementById('profileDropdown').classList.toggle('show');
-    }
+@if (Model.Grades == null || !Model.Grades.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-school"></i>
+        <h4>No Grades Found</h4>
+        <p>Please seed the database first.</p>
+        <a href="@Url.Action("SeedData", "Admin")" class="btn-primary mt-3">
+            <i class="fas fa-database"></i> Seed Data
+        </a>
+    </div>
+}
+else
+{
+    foreach (var grade in Model.Grades.OrderBy(g => g.Level))
+    {
+        var gradeClasses = Model.Classes.Where(c => c.GradeId == grade.Id).OrderBy(c => c.Name).ToList();
 
-    document.addEventListener('click', function(e) {
-        var container = document.querySelector('.profile-container');
-        var dropdown = document.getElementById('profileDropdown');
-        if (container && !container.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
-
-    function confirmLogout(e) {
-        e.preventDefault();
-        if (confirm('Are you sure you want to logout?')) {
-            document.getElementById('logoutForm').submit();
-        }
-    }
-
-    function assignClassTeacher(classId) {
-        var select = $('#teacherSelect_' + classId);
-        var teacherId = select.val();
-
-        if (!teacherId) {
-            alert('Please select a teacher');
-            return;
-        }
-
-        var token = $('input[name="__RequestVerificationToken"]').val();
-
-        $.ajax({
-            url: '@Url.Action("AssignClassTeacher", "Admin")',
-            type: 'POST',
-            data: {
-                __RequestVerificationToken: token,
-                classId: classId,
-                teacherId: teacherId
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert(response.message);
+        <div class="grade-card">
+            <div class="grade-header">
+                <i class="fas fa-graduation-cap"></i> @grade.Name
+            </div>
+            <div class="grade-body">
+                @foreach (var cls in gradeClasses)
+                {
+                    <div class="class-row">
+                        <div class="class-name">
+                            <span>
+                                <i class="fas fa-chalkboard"></i> @cls.FullName
+                            </span>
+                            <span class="class-badge">
+                                <i class="fas fa-users"></i> Capacity: @cls.Capacity
+                            </span>
+                        </div>
+                        <div class="teacher-info" id="teacher-info-@cls.Id">
+                            @if (cls.ClassTeacherId.HasValue)
+                            {
+                                <div class="teacher-badge">
+                                    <i class="fas fa-user-tie"></i> Class Teacher:
+                                    <strong>@(cls.ClassTeacher?.FullName ?? "Unknown")</strong>
+                                </div>
+                                <button class="btn-remove" onclick="removeClassTeacher(@cls.Id)">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            }
+                            else
+                            {
+                                <select id="teacherSelect_@cls.Id" class="assign-teacher-select">
+                                    <option value="">-- Select Class Teacher --</option>
+                                    @foreach (var teacher in Model.Teachers.OrderBy(t => t.LastName))
+                                    {
+                                        <option value="@teacher.Id">@teacher.FullName (@teacher.User?.StudentNumber)</option>
+                                    }
+                                </select>
+                                <button class="btn-assign" onclick="assignClassTeacher(@cls.Id)">
+                                    <i class="fas fa-user-plus"></i> Assign Class Teacher
+                                </button>
+                            }
+                        </div>
+                        <div class="mt-2">
+                            <a href="@Url.Action("ClassDetails", "Admin", new { classId = cls.Id })" class="btn-manage">
+                                <i class="fas fa-cog"></i> Manage Subjects
+                            </a>
+                        </div>
+                    </div>
                 }
-            }
-        });
+            </div>
+        </div>
     }
+}
 
-    function removeClassTeacher(classId) {
-        if (!confirm('Remove class teacher?')) return;
+@section Scripts {
+    <script>
+        function assignClassTeacher(classId) {
+            var select = $('#teacherSelect_' + classId);
+            var teacherId = select.val();
 
-        var token = $('input[name="__RequestVerificationToken"]').val();
+            if (!teacherId) {
+                alert('Please select a teacher');
+                return;
+            }
 
-        $.ajax({
-            url: '@Url.Action("RemoveClassTeacher", "Admin")',
-            type: 'POST',
-            data: {
-                __RequestVerificationToken: token,
-                classId: classId
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert(response.message);
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("AssignClassTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId,
+                    teacherId: teacherId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
                 }
-            }
-        });
-    }
-</script>
+            });
+        }
+
+        function removeClassTeacher(classId) {
+            if (!confirm('Remove class teacher?')) return;
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("RemoveClassTeacher", "Admin")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    classId: classId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+    </script>
+}

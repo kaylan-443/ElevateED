@@ -630,7 +630,6 @@
     <Content Include="Views\Student\Homework.cshtml" />
     <Content Include="Views\Student\Classwork.cshtml" />
     <Content Include="Views\Teacher\ViewMyHomework.cshtml" />
-    <Content Include="Views\Admin\SendAnnouncement.cshtml" />
     <Content Include="Views\Admin\ViewAnnouncements.cshtml" />
     <Content Include="Views\Teacher\ViewAnnouncements.cshtml" />
     <Content Include="Views\Student\ViewAnnouncements.cshtml" />
@@ -690,6 +689,7 @@
     <Content Include="Views\Podcast\Index.cshtml" />
     <Content Include="Views\AIStudy\Index.cshtml" />
     <Content Include="Views\AIStudy\Workspace.cshtml" />
+    <Content Include="Views\Shared\_StudentLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

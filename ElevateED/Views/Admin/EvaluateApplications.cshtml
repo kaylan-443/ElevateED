@@ -3,683 +3,532 @@
 
 @{
     ViewBag.Title = "Evaluate Applications - Admin";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var gradeGroups = Model.GradeGroups ?? new List<IGrouping<string, ElevateED.Models.Applicant>>();
 }
 
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    :root {
-        --primary: #4f46e5;
-        --primary-light: #6366f1;
-        --primary-dark: #4338ca;
-        --primary-bg: #f5f3ff;
-        --primary-soft: #ede9fe;
-        --primary-hover: #e0e7ff;
-        --accent: #fbbf24;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --info: #3b82f6;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        --sidebar-width: 280px;
-        --header-height: 70px;
-    }
-
-    body {
-        font-family: 'Inter', -apple-system, sans-serif;
-        background: var(--gray-50);
-        overflow-x: hidden;
-    }
-
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: var(--sidebar-width);
-        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease;
-        z-index: 100;
-        overflow-y: auto;
-    }
-
-    .sidebar-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .logo-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--accent), #f59e0b);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1e1b4b;
-        font-size: 20px;
-    }
-
-    .logo-text {
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-    }
-
-        .logo-text span {
-            color: var(--accent);
-        }
-
-    .sidebar-nav {
-        flex: 1;
-        padding: 24px 16px;
-    }
-
-    .nav-section {
-        margin-top: 24px;
-        margin-bottom: 12px;
-        padding: 0 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 12px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--accent), #f59e0b);
-            color: #1e1b4b;
-        }
-
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
-        .nav-item span {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-    .main-content {
-        flex: 1;
-        margin-left: var(--sidebar-width);
-        min-height: 100vh;
-    }
-
-    .top-header {
-        height: var(--header-height);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 0 32px;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .notification-btn {
-        position: relative;
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--gray-500);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-
-        .notification-btn:hover {
-            background: var(--gray-100);
-        }
-
-    .notification-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 8px;
-        height: 8px;
-        background: var(--danger);
-        border-radius: 50%;
-    }
-
-    .profile-container {
-        position: relative;
-    }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        transition: all 0.2s;
-        background: none;
-        border: none;
-    }
-
-        .profile-trigger:hover {
-            background: var(--gray-100);
-        }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-        text-transform: uppercase;
-    }
-
-    .profile-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    .dropdown-icon {
-        font-size: 12px;
-        color: var(--gray-400);
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        width: 240px;
-        overflow: hidden;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-            animation: fadeInDown 0.2s ease;
-        }
-
-    @@keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 16px;
-        border-bottom: 1px solid var(--gray-200);
-        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
-    }
-
-        .dropdown-header .user-name {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 4px;
-        }
-
-        .dropdown-header .user-email {
-            font-size: 12px;
-            color: var(--gray-500);
-        }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        text-decoration: none;
-        color: var(--gray-700);
-        transition: all 0.2s;
-        cursor: pointer;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-    }
-
-        .dropdown-item:hover {
-            background: var(--primary-hover);
-            color: var(--primary);
-        }
-
-        .dropdown-item i {
-            width: 20px;
-            font-size: 16px;
-            color: var(--gray-500);
-        }
-
-    .dropdown-divider {
-        height: 1px;
-        background: var(--gray-200);
-        margin: 8px 0;
-    }
-
-    .dashboard-content {
-        padding: 32px;
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-        .page-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--gray-900);
-        }
-
-    .btn-back {
-        background: white;
-        color: var(--gray-700);
-        padding: 10px 20px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 500;
-        border: 1px solid var(--gray-200);
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-        .btn-back:hover {
-            background: var(--gray-100);
-            text-decoration: none;
-        }
-
-    .info-banner {
-        background: linear-gradient(135deg, var(--primary), #4338ca);
-        color: white;
-        padding: 20px 24px;
-        border-radius: 16px;
-        margin-bottom: 20px;
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
-    }
-
-    .stat-item {
-        text-align: center;
-    }
-
-    .stat-val {
-        font-size: 28px;
-        font-weight: 700;
-    }
-
-    .stat-lbl {
-        font-size: 12px;
-        opacity: 0.9;
-    }
-
-    .filter-bar {
-        background: white;
-        border-radius: 16px;
-        padding: 16px 20px;
-        border: 1px solid var(--gray-200);
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .btn-sm {
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 500;
-        border: 1px solid var(--gray-200);
-        background: white;
-        color: var(--gray-700);
-        cursor: pointer;
-        margin-right: 6px;
-    }
-
-        .btn-sm:hover {
-            background: var(--gray-100);
-        }
-
-    .btn-approve {
-        background: var(--success);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        border: none;
-        font-weight: 500;
-        cursor: pointer;
-    }
-
-    .btn-reject {
-        background: var(--danger);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        border: none;
-        font-weight: 500;
-        cursor: pointer;
-        margin-left: 8px;
-    }
-
-    .grade-section {
-        margin-bottom: 24px;
-    }
-
-    .grade-header {
-        background: var(--gray-100);
-        padding: 14px 20px;
-        border-radius: 12px 12px 0 0;
-        font-weight: 600;
-        color: var(--gray-800);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .table-wrap {
-        background: white;
-        border-radius: 0 0 12px 12px;
-        border: 1px solid var(--gray-200);
-        border-top: none;
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-
-    th {
-        background: var(--gray-800);
-        color: white;
-        padding: 10px 14px;
-        text-align: left;
-        font-weight: 500;
-        font-size: 12px;
-    }
-
-    td {
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--gray-100);
-        vertical-align: middle;
-    }
-
-    tr:hover td {
-        background: var(--gray-50);
-    }
-
-    .perf-high {
-        background: #f0fdf4 !important;
-    }
-
-    .perf-med {
-        background: #fefce8 !important;
-    }
-
-    .perf-low {
-        background: #fef2f2 !important;
-    }
-
-    .avg-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px;
-        background: white;
-        border-radius: 16px;
-        border: 1px solid var(--gray-200);
-    }
-
-        .empty-state i {
-            font-size: 40px;
-            color: var(--gray-400);
-            margin-bottom: 10px;
-        }
-
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1050;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .modal-overlay.show {
+@section SidebarNav {
+    <div class="nav-section">Main</div>
+    <a href="@Url.Action("Dashboard","Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="@Url.Action("PendingApplications","Admin")" class="nav-item active"><i class="fas fa-file-alt"></i><span>Applications</span></a>
+    <a href="@Url.Action("ManageUsers","Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+    <a href="@Url.Action("ClassStructure","Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
+    <a href="@Url.Action("RegisterTeacher","Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
+    <div class="nav-section">Management</div>
+    <a href="@Url.Action("TimeTable","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+    <a href="@Url.Action("ExamTimetables","Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
+    <a href="@Url.Action("ClassRegister","Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+    <a href="@Url.Action("SendAnnouncement","Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="@Url.Action("Issues","Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
+    <div class="nav-section">Extra</div>
+    <a href="@Url.Action("Index","AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
+    <a href="@Url.Action("EmergencyAlerts","AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
+    <a href="@Url.Action("ApplicationCycles","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
+    <a href="@Url.Action("Index","Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+}
+
+@section Styles {
+    <style>
+        .page-header {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-    .modal-box {
-        background: white;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 500px;
-    }
-
-    .modal-header {
-        padding: 20px 24px;
-        background: var(--danger);
-        color: white;
-        border-radius: 16px 16px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-body {
-        padding: 24px;
-    }
-
-        .modal-body textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            min-height: 100px;
-            font-size: 14px;
-        }
-
-    .modal-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 22px;
-        cursor: pointer;
-    }
-
-    .btn-cancel {
-        padding: 8px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--gray-200);
-        background: white;
-        cursor: pointer;
-    }
-
-    .btn-confirm {
-        padding: 8px 20px;
-        border-radius: 10px;
-        border: none;
-        background: var(--danger);
-        color: white;
-        cursor: pointer;
-    }
-
-    @@media (max-width: 1024px) {
-        .sidebar {
-            transform: translateX(-100%);
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .dashboard-content {
-            padding: 20px;
-        }
-    }
-</style>
-
-<div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <a href="@Url.Action("Dashboard","Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-            <a href="@Url.Action("PendingApplications","Admin")" class="nav-item active"><i class="fas fa-file-alt"></i><span>Applications</span></a>
-            <a href="@Url.Action("ManageUsers","Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
-            <a href="@Url.Action("ClassStructure","Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
-            <a href="@Url.Action("RegisterTeacher","Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
-            <div class="nav-section">Management</div>
-            <a href="@Url.Action("TimeTable","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
-            <a href="@Url.Action("ExamTimetables","Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
-            <a href="@Url.Action("ClassRegister","Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
-            <a href="@Url.Action("SendAnnouncement","Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
-            <a href="@Url.Action("Issues","Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
-            <div class="nav-section">Extra</div>
-            <a href="@Url.Action("Index","AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
-            <a href="@Url.Action("EmergencyAlerts","AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
-            <a href="@Url.Action("ApplicationCycles","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
-            <a href="@Url.Action("Index","Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
-        </nav>
-    </aside>
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <button class="notification-btn"><i class="far fa-bell"></i><span class="notification-badge"></span></button>
-                <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">A</div><span class="profile-name">Admin</span><i class="fas fa-chevron-down dropdown-icon"></i></button>
-                    <div class="dropdown-menu" id="profileDropdown">
-                        <div class="dropdown-header"><div class="user-name">Administrator</div><div class="user-email">admin@mpiyakhehs.co.za</div></div>
-                        <a href="@Url.Action("ManageUsers","Admin")" class="dropdown-item"><i class="fas fa-users"></i><span>Manage Users</span></a>
-                        <div class="dropdown-divider"></div>
-                        <form action="@Url.Action("LogOff","Account")" method="post" id="logoutForm">
-                            @Html.AntiForgeryToken()
-                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <div class="dashboard-content">
-            <div class="page-header"><div><h1><i class="fas fa-clipboard-check" style="color:var(--success);"></i> Evaluate Applications</h1><p style="color:var(--gray-500);">@Model.Cycle.Name - @Model.Cycle.AcademicYear</p></div><a href="@Url.Action("ApplicationCycles","Admin")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a></div>
-            <div class="info-banner"><div class="stat-item"><div class="stat-val">@Model.Applicants.Count</div><div class="stat-lbl">Total Pending</div></div><div class="stat-item"><div class="stat-val">@Model.Applicants.Count(a => a.AcademicAverage >= 70)</div><div class="stat-lbl">Above 70%</div></div><div class="stat-item"><div class="stat-val">@Model.Applicants.Count(a => a.AcademicAverage >= 80)</div><div class="stat-lbl">Above 80%</div></div></div>
-            @if (!Model.Applicants.Any())
-            {<div class="empty-state"><i class="fas fa-inbox"></i><h4>No Pending Applications</h4></div>}
-            else
-            {
-                <div class="filter-bar"><div><button class="btn-sm" onclick="selectTop(80)"><i class="fas fa-star"></i> Top 80%+</button><button class="btn-sm" onclick="selectAll()"><i class="fas fa-check-square"></i> Select All</button><button class="btn-sm" onclick="clearAll()"><i class="fas fa-square"></i> Clear</button></div><div style="display:flex;align-items:center;gap:10px;"><span id="selectedCount" style="font-weight:600;">0</span> selected<button class="btn-approve" onclick="bulkApprove()"><i class="fas fa-check-circle"></i> Approve</button><button class="btn-reject" onclick="bulkReject()"><i class="fas fa-times-circle"></i> Reject</button></div></div>
-                <form id="bulkForm">@Html.AntiForgeryToken()<input type="hidden" name="SelectedApplicantIds" id="SelectedApplicantIds" /><input type="hidden" name="RejectionReason" id="RejectionReason" /></form>
-                foreach (var gg in gradeGroups.OrderBy(g => g.Key))
-                {<div class="grade-section"><div class="grade-header"><span><i class="fas fa-graduation-cap"></i> @gg.Key</span><button class="btn-sm" onclick="selectGrade('@gg.Key')">Select All in @gg.Key</button></div><div class="table-wrap"><table><thead><tr><th width="30"><input type="checkbox" onchange="toggleGrade(this,'@gg.Key')" /></th><th>#</th><th>Applicant</th><th>Student #</th><th>Average</th><th>Stream</th><th>Applied</th><th></th></tr></thead><tbody>@{int r = 1; foreach (var a in gg.OrderByDescending(x => x.AcademicAverage))
-                    {
-                        var pc = a.AcademicAverage >= 80 ? "perf-high" : a.AcademicAverage >= 60 ? "perf-med" : "perf-low"; var bg = a.AcademicAverage >= 80 ? "#d1fae5" : a.AcademicAverage >= 60 ? "#fef3c7" : "#fee2e2"; var fc = a.AcademicAverage >= 80 ? "#065f46" : a.AcademicAverage >= 60 ? "#92400e" : "#991b1b";<tr class="@pc" data-grade="@gg.Key"><td><input type="checkbox" class="app-cb" value="@a.Id" data-avg="@a.AcademicAverage" data-grade="@gg.Key" /></td><td><strong>#@r</strong></td><td><strong>@a.FullName</strong><br /><small style="color:var(--gray-500);">@a.PreviousSchool</small></td><td>@(a.User?.StudentNumber??"—")</td><td><span class="avg-badge" style="background:@bg;color:@fc;">@(a.AcademicAverage?.ToString("0.0")??"—")%</span></td><td>@(a.StreamChoiceDisplay??"—")</td><td>@a.ApplicationDate.ToString("dd MMM yyyy")</td><td><a href="@Url.Action("ViewApplication",new{id=a.Id})" style="color:var(--info);text-decoration:none;"><i class="fas fa-eye"></i></a></td></tr>r++;
-                    }}</tbody></table></div></div>}
+            .page-header h1 {
+                font-size: 26px;
+                font-weight: 700;
+                color: var(--gray-900);
             }
-        </div>
-    </main>
+
+        .btn-back {
+            background: white;
+            color: var(--gray-700);
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 500;
+            border: 1px solid var(--gray-200);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-back:hover {
+                background: var(--gray-100);
+                text-decoration: none;
+            }
+
+        .info-banner {
+            background: linear-gradient(135deg, var(--primary), #4338ca);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-lbl {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .filter-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border: 1px solid var(--gray-200);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--gray-200);
+            background: white;
+            color: var(--gray-700);
+            cursor: pointer;
+            margin-right: 6px;
+        }
+
+            .btn-sm:hover {
+                background: var(--gray-100);
+            }
+
+        .btn-approve {
+            background: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-reject {
+            background: var(--danger);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .grade-section {
+            margin-bottom: 24px;
+        }
+
+        .grade-header {
+            background: var(--gray-100);
+            padding: 14px 20px;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+            color: var(--gray-800);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-wrap {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            border: 1px solid var(--gray-200);
+            border-top: none;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: var(--gray-800);
+            color: white;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: var(--gray-50);
+        }
+
+        .perf-high {
+            background: #f0fdf4 !important;
+        }
+
+        .perf-med {
+            background: #fefce8 !important;
+        }
+
+        .perf-low {
+            background: #fef2f2 !important;
+        }
+
+        .avg-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+        }
+
+            .empty-state i {
+                font-size: 40px;
+                color: var(--gray-400);
+                margin-bottom: 10px;
+            }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            background: var(--danger);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+            .modal-body textarea {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid var(--gray-200);
+                border-radius: 10px;
+                min-height: 100px;
+                font-size: 14px;
+            }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn-confirm {
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: none;
+            background: var(--danger);
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div>
+        <h1>
+            <i class="fas fa-clipboard-check" style="color:var(--success);"></i>
+            Evaluate Applications
+        </h1>
+        <p style="color:var(--gray-500);">@Model.Cycle.Name - @Model.Cycle.AcademicYear</p>
+    </div>
+    <a href="@Url.Action("ApplicationCycles","Admin")" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
 </div>
 
-<!-- Reject Modal -->
-<div class="modal-overlay" id="rejectModal"><div class="modal-box"><div class="modal-header"><h4><i class="fas fa-times-circle"></i> Reject Applications</h4><button class="modal-close" onclick="closeRejectModal()">&times;</button></div><div class="modal-body"><label style="font-weight:600;display:block;margin-bottom:6px;">Rejection Reason (Optional)</label><textarea id="rejectionReasonText" placeholder="Reason for rejection..."></textarea><small style="color:var(--gray-500);">This will be shared with applicants</small><div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;"><button class="btn-cancel" onclick="closeRejectModal()">Cancel</button><button class="btn-confirm" onclick="confirmBulkReject()">Confirm Reject</button></div></div></div></div>
+<div class="info-banner">
+    <div class="stat-item">
+        <div class="stat-val">@Model.Applicants.Count</div>
+        <div class="stat-lbl">Total Pending</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-val">@Model.Applicants.Count(a => a.AcademicAverage >= 70)</div>
+        <div class="stat-lbl">Above 70%</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-val">@Model.Applicants.Count(a => a.AcademicAverage >= 80)</div>
+        <div class="stat-lbl">Above 80%</div>
+    </div>
+</div>
 
-<script>
-    function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
-    document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
-    function confirmLogout(e){e.preventDefault();if(confirm('Are you sure you want to logout?')){document.getElementById('logoutForm').submit();}}
-    function closeRejectModal(){document.getElementById('rejectModal').classList.remove('show');}
-    function updateCount(){document.getElementById('selectedCount').textContent=document.querySelectorAll('.app-cb:checked').length;}
-    document.querySelectorAll('.app-cb').forEach(c=>c.addEventListener('change',updateCount));
-    function toggleGrade(cb,g){document.querySelectorAll('tr[data-grade="'+g+'"] .app-cb').forEach(c=>c.checked=cb.checked);updateCount();}
-    function selectGrade(g){document.querySelectorAll('tr[data-grade="'+g+'"] .app-cb').forEach(c=>c.checked=true);updateCount();}
-    function selectTop(t){document.querySelectorAll('.app-cb').forEach(c=>{c.checked=parseFloat(c.dataset.avg||0)>=t;});updateCount();}
-    function selectAll(){document.querySelectorAll('.app-cb').forEach(c=>c.checked=true);updateCount();}
-    function clearAll(){document.querySelectorAll('.app-cb').forEach(c=>c.checked=false);document.querySelectorAll('th input[type="checkbox"]').forEach(c=>c.checked=false);updateCount();}
-    function getIds(){var i=[];document.querySelectorAll('.app-cb:checked').forEach(c=>i.push(c.value));return i.join(',');}
-    function bulkApprove(){var ids=getIds();if(!ids){alert('Select applicants');return;}if(confirm('Approve selected?')){document.getElementById('SelectedApplicantIds').value=ids;var f=document.getElementById('bulkForm');fetch('@Url.Action("BulkApprove","Admin")',{method:'POST',body:new FormData(f)}).then(r=>r.json()).then(r=>{alert(r.message);location.reload();});}}
-    function bulkReject(){var ids=getIds();if(!ids){alert('Select applicants');return;}document.getElementById('rejectModal').classList.add('show');}
-    function confirmBulkReject(){var ids=getIds();document.getElementById('SelectedApplicantIds').value=ids;document.getElementById('RejectionReason').value=document.getElementById('rejectionReasonText').value;var f=document.getElementById('bulkForm');fetch('@Url.Action("BulkReject","Admin")',{method:'POST',body:new FormData(f)}).then(r=>r.json()).then(r=>{alert(r.message);closeRejectModal();location.reload();});}
-</script>
+@if (!Model.Applicants.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h4>No Pending Applications</h4>
+    </div>
+}
+else
+{
+    <div class="filter-bar">
+        <div>
+            <button class="btn-sm" onclick="selectTop(80)">
+                <i class="fas fa-star"></i> Top 80%+
+            </button>
+            <button class="btn-sm" onclick="selectAll()">
+                <i class="fas fa-check-square"></i> Select All
+            </button>
+            <button class="btn-sm" onclick="clearAll()">
+                <i class="fas fa-square"></i> Clear
+            </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span id="selectedCount" style="font-weight:600;">0</span> selected
+            <button class="btn-approve" onclick="bulkApprove()">
+                <i class="fas fa-check-circle"></i> Approve
+            </button>
+            <button class="btn-reject" onclick="bulkReject()">
+                <i class="fas fa-times-circle"></i> Reject
+            </button>
+        </div>
+    </div>
+
+    <form id="bulkForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SelectedApplicantIds" id="SelectedApplicantIds" />
+        <input type="hidden" name="RejectionReason" id="RejectionReason" />
+    </form>
+
+    foreach (var gg in gradeGroups.OrderBy(g => g.Key))
+    {
+        <div class="grade-section">
+            <div class="grade-header">
+                <span><i class="fas fa-graduation-cap"></i> @gg.Key</span>
+                <button class="btn-sm" onclick="selectGrade('@gg.Key')">Select All in @gg.Key</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="30"><input type="checkbox" onchange="toggleGrade(this,'@gg.Key')" /></th>
+                            <th>#</th>
+                            <th>Applicant</th>
+                            <th>Student #</th>
+                            <th>Average</th>
+                            <th>Stream</th>
+                            <th>Applied</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int r = 1;
+                            foreach (var a in gg.OrderByDescending(x => x.AcademicAverage))
+                            {
+                                var pc = a.AcademicAverage >= 80 ? "perf-high" : a.AcademicAverage >= 60 ? "perf-med" : "perf-low";
+                                var bg = a.AcademicAverage >= 80 ? "#d1fae5" : a.AcademicAverage >= 60 ? "#fef3c7" : "#fee2e2";
+                                var fc = a.AcademicAverage >= 80 ? "#065f46" : a.AcademicAverage >= 60 ? "#92400e" : "#991b1b";
+
+                                <tr class="@pc" data-grade="@gg.Key">
+                                    <td>
+                                        <input type="checkbox" class="app-cb" value="@a.Id"
+                                               data-avg="@a.AcademicAverage" data-grade="@gg.Key" />
+                                    </td>
+                                    <td><strong>#@r</strong></td>
+                                    <td>
+                                        <strong>@a.FullName</strong><br />
+                                        <small style="color:var(--gray-500);">@a.PreviousSchool</small>
+                                    </td>
+                                    <td>@(a.User?.StudentNumber ?? "—")</td>
+                                    <td>
+                                        <span class="avg-badge" style="background:@bg;color:@fc;">
+                                            @(a.AcademicAverage?.ToString("0.0") ?? "—")%
+                                        </span>
+                                    </td>
+                                    <td>@(a.StreamChoiceDisplay ?? "—")</td>
+                                    <td>@a.ApplicationDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <a href="@Url.Action("ViewApplication",new{id=a.Id})"
+                                           style="color:var(--info);text-decoration:none;">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                r++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h4><i class="fas fa-times-circle"></i> Reject Applications</h4>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label style="font-weight:600;display:block;margin-bottom:6px;">Rejection Reason (Optional)</label>
+            <textarea id="rejectionReasonText" placeholder="Reason for rejection..."></textarea>
+            <small style="color:var(--gray-500);">This will be shared with applicants</small>
+            <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+                <button class="btn-cancel" onclick="closeRejectModal()">Cancel</button>
+                <button class="btn-confirm" onclick="confirmBulkReject()">Confirm Reject</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.remove('show');
+        }
+
+        function updateCount() {
+            document.getElementById('selectedCount').textContent =
+                document.querySelectorAll('.app-cb:checked').length;
+        }
+
+        document.querySelectorAll('.app-cb').forEach(c =>
+            c.addEventListener('change', updateCount));
+
+        function toggleGrade(cb, g) {
+            document.querySelectorAll('tr[data-grade="' + g + '"] .app-cb').forEach(c =>
+                c.checked = cb.checked);
+            updateCount();
+        }
+
+        function selectGrade(g) {
+            document.querySelectorAll('tr[data-grade="' + g + '"] .app-cb').forEach(c =>
+                c.checked = true);
+            updateCount();
+        }
+
+        function selectTop(t) {
+            document.querySelectorAll('.app-cb').forEach(c => {
+                c.checked = parseFloat(c.dataset.avg || 0) >= t;
+            });
+            updateCount();
+        }
+
+        function selectAll() {
+            document.querySelectorAll('.app-cb').forEach(c => c.checked = true);
+            updateCount();
+        }
+
+        function clearAll() {
+            document.querySelectorAll('.app-cb').forEach(c => c.checked = false);
+            document.querySelectorAll('th input[type="checkbox"]').forEach(c => c.checked = false);
+            updateCount();
+        }
+
+        function getIds() {
+            var i = [];
+            document.querySelectorAll('.app-cb:checked').forEach(c => i.push(c.value));
+            return i.join(',');
+        }
+
+        function bulkApprove() {
+            var ids = getIds();
+            if (!ids) { alert('Select applicants'); return; }
+            if (confirm('Approve selected?')) {
+                document.getElementById('SelectedApplicantIds').value = ids;
+                var f = document.getElementById('bulkForm');
+                fetch('@Url.Action("BulkApprove","Admin")', {
+                    method: 'POST',
+                    body: new FormData(f)
+                }).then(r => r.json()).then(r => {
+                    alert(r.message);
+                    location.reload();
+                });
+            }
+        }
+
+        function bulkReject() {
+            var ids = getIds();
+            if (!ids) { alert('Select applicants'); return; }
+            document.getElementById('rejectModal').classList.add('show');
+        }
+
+        function confirmBulkReject() {
+            var ids = getIds();
+            document.getElementById('SelectedApplicantIds').value = ids;
+            document.getElementById('RejectionReason').value =
+                document.getElementById('rejectionReasonText').value;
+            var f = document.getElementById('bulkForm');
+            fetch('@Url.Action("BulkReject","Admin")', {
+                method: 'POST',
+                body: new FormData(f)
+            }).then(r => r.json()).then(r => {
+                alert(r.message);
+                closeRejectModal();
+                location.reload();
+            });
+        }
+    </script>
+}

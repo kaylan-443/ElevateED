@@ -1,7 +1,67 @@
 ﻿@model ElevateED.ViewModels.PodcastIndexViewModel
 @{
     ViewBag.Title = "AI Podcast Generator";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+@section SidebarNav {
+    <div class="nav-section">Main</div>
+    <a href="@Url.Action("Dashboard", "Student")" class="nav-item">
+        <i class="fas fa-home"></i><span>Dashboard</span>
+    </a>
+    <a href="@Url.Action("Timetable", "Student")" class="nav-item">
+        <i class="fas fa-calendar-alt"></i><span>Timetable</span>
+    </a>
+    <a href="@Url.Action("MarkAttendance", "Attendance")" class="nav-item">
+        <i class="fas fa-user-check"></i><span>Mark Attendance</span>
+    </a>
+
+    <div class="nav-section">Learning</div>
+    <a href="@Url.Action("Homework", "Student")" class="nav-item">
+        <i class="fas fa-home"></i><span>Homework</span>
+    </a>
+    <a href="@Url.Action("Classwork", "Student")" class="nav-item">
+        <i class="fas fa-chalkboard"></i><span>Classwork</span>
+    </a>
+    <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item">
+        <i class="fas fa-book"></i><span>Study Materials</span>
+    </a>
+    <a href="@Url.Action("PastPapers", "Student")" class="nav-item">
+        <i class="fas fa-archive"></i><span>Past Papers</span>
+    </a>
+    <a href="@Url.Action("Index", "StudentQuiz")" class="nav-item">
+        <i class="fas fa-question-circle"></i><span>Quizzes</span>
+    </a>
+    <a href="@Url.Action("Index", "StudentExtraClass")" class="nav-item">
+        <i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span>
+    </a>
+
+    <div class="nav-section">Exams</div>
+    <a href="@Url.Action("ExamTimetable", "Student")" class="nav-item">
+        <i class="fas fa-calendar-check"></i><span>Exam Timetable</span>
+    </a>
+    <a href="@Url.Action("MyReportCards", "Marks")" class="nav-item">
+        <i class="fas fa-file-alt"></i><span>Report Cards</span>
+    </a>
+
+    <div class="nav-section">AI Tools</div>
+    <a href="@Url.Action("Index", "AIStudy")" class="nav-item">
+        <i class="fas fa-robot"></i><span>AI Study Assistant</span>
+    </a>
+    <a href="@Url.Action("Index", "Podcast")" class="nav-item active">
+        <i class="fas fa-podcast"></i><span>AI Podcast Generator</span>
+    </a>
+
+    <div class="nav-section">Other</div>
+    <a href="@Url.Action("ViewAnnouncements", "Student")" class="nav-item">
+        <i class="fas fa-bullhorn"></i><span>Announcements</span>
+    </a>
+    <a href="@Url.Action("ReportIssue", "Student")" class="nav-item">
+        <i class="fas fa-exclamation-triangle"></i><span>Report Issue</span>
+    </a>
+    <a href="@Url.Action("MyIssues", "Student")" class="nav-item">
+        <i class="fas fa-clipboard-list"></i><span>My Issues</span>
+    </a>
 }
 
 @section Styles {
@@ -333,293 +393,286 @@
 
 @section Scripts {
     <script>
-    var currentPodcastId = null;
-    var currentScript = null;
-    var speechSynth = window.speechSynthesis;
-    var currentUtterance = null;
-    var isPlaying = false;
-    var isPaused = false;
+        var currentPodcastId = null;
+        var currentScript = null;
+        var speechSynth = window.speechSynthesis;
+        var currentUtterance = null;
+        var isPlaying = false;
+        var isPaused = false;
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        event.target.classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
-    }
-
-    function handleFileSelect(input) {
-        if (input.files && input.files[0]) {
-            document.getElementById('fileName').textContent = '📎 ' + input.files[0].name;
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
         }
-    }
 
-    var dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#8b5cf6'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e1'; });
-    dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        document.getElementById('fileInput').files = e.dataTransfer.files;
-        handleFileSelect(document.getElementById('fileInput'));
-    });
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('fileName').textContent = '📎 ' + input.files[0].name;
+            }
+        }
 
-    function uploadFile() {
-        var file = document.getElementById('fileInput').files[0];
-        if (!file) { alert('Please select a file'); return; }
-        if (file.size > 20 * 1024 * 1024) { alert('File too large (max 20MB)'); return; }
-        var fd = new FormData();
-        fd.append('file', file);
-        processRequest('@Url.Action("UploadNotes", "Podcast")', fd);
-    }
+        var dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#8b5cf6'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd5e1'; });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            document.getElementById('fileInput').files = e.dataTransfer.files;
+            handleFileSelect(document.getElementById('fileInput'));
+        });
 
-    function generateFromText() {
-        var text = document.getElementById('pasteText').value;
-        if (!text) { alert('Please paste some text'); return; }
-        var fd = new FormData();
-        fd.append('notesText', text);
-        fd.append('title', document.getElementById('pasteTitle').value || 'Study Notes');
-        processRequest('@Url.Action("GenerateFromText", "Podcast")', fd);
-    }
+        function uploadFile() {
+            var file = document.getElementById('fileInput').files[0];
+            if (!file) { alert('Please select a file'); return; }
+            if (file.size > 20 * 1024 * 1024) { alert('File too large (max 20MB)'); return; }
+            var fd = new FormData();
+            fd.append('file', file);
+            processRequest('@Url.Action("UploadNotes", "Podcast")', fd);
+        }
 
-    function processRequest(url, fd) {
-        document.getElementById('loadingSection').classList.add('active');
-        document.getElementById('resultSection').style.display = 'none';
-        $.ajax({
-            url: url, type: 'POST', data: fd, processData: false, contentType: false,
-            success: function(r) {
-                document.getElementById('loadingSection').classList.remove('active');
+        function generateFromText() {
+            var text = document.getElementById('pasteText').value;
+            if (!text) { alert('Please paste some text'); return; }
+            var fd = new FormData();
+            fd.append('notesText', text);
+            fd.append('title', document.getElementById('pasteTitle').value || 'Study Notes');
+            processRequest('@Url.Action("GenerateFromText", "Podcast")', fd);
+        }
+
+        function processRequest(url, fd) {
+            document.getElementById('loadingSection').classList.add('active');
+            document.getElementById('resultSection').style.display = 'none';
+            $.ajax({
+                url: url, type: 'POST', data: fd, processData: false, contentType: false,
+                success: function(r) {
+                    document.getElementById('loadingSection').classList.remove('active');
+                    if (r.success) {
+                        currentPodcastId = r.podcastId;
+                        currentScript = r.script;
+                        document.getElementById('scriptBox').textContent = r.script;
+                        document.getElementById('resultTitle').textContent = '🎙️ ' + (r.title || 'Your Podcast');
+                        document.getElementById('resultSection').style.display = 'block';
+                        document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                        updateAudioControls();
+                    } else {
+                        alert('Error: ' + (r.message || 'Failed'));
+                    }
+                },
+                error: function() {
+                    document.getElementById('loadingSection').classList.remove('active');
+                    alert('An error occurred');
+                }
+            });
+        }
+
+        function updateAudioControls() {
+            var player = document.getElementById('audioPlayer');
+            player.style.display = 'block';
+            player.innerHTML = `
+                <p style="font-weight:600;margin-bottom:12px;">🔊 Listen to Your Podcast</p>
+                <div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;">
+                    <button id="playBtn" class="btn-primary" onclick="playPodcast()" style="width:auto;background:#10b981;">
+                        ▶️ Play
+                    </button>
+                    <button id="pauseBtn" class="btn-primary" onclick="pausePodcast()" style="width:auto;display:none;background:#f59e0b;">
+                        ⏸️ Pause
+                    </button>
+                    <button id="resumeBtn" class="btn-primary" onclick="resumePodcast()" style="width:auto;display:none;background:#3b82f6;">
+                        ▶️ Resume
+                    </button>
+                    <button id="stopBtn" class="btn-primary" onclick="stopPodcast()" style="width:auto;display:none;background:#ef4444;">
+                        ⏹️ Stop
+                    </button>
+                </div>
+                <div style="margin-top:12px;display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <label style="font-size:12px;color:#64748b;">Voice:</label>
+                    <select id="voiceSelect" onchange="changeVoice()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                        <option value="">Loading voices...</option>
+                    </select>
+                    <label style="font-size:12px;color:#64748b;margin-left:8px;">Speed:</label>
+                    <select id="speedSelect" onchange="changeSpeed()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
+                        <option value="0.75">0.75x</option>
+                        <option value="0.9">0.9x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                    </select>
+                </div>
+                <div id="audioStatus" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
+            `;
+            loadVoices();
+        }
+
+        function loadVoices() {
+            var voices = speechSynth.getVoices();
+            var select = document.getElementById('voiceSelect');
+            if (!select) return;
+
+            select.innerHTML = '';
+
+            var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+            if (englishVoices.length === 0) englishVoices = voices;
+
+            englishVoices.forEach(function(voice, index) {
+                var option = document.createElement('option');
+                option.value = index;
+                option.textContent = voice.name + ' (' + voice.lang + ')';
+                if (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Karen') || voice.name.includes('Google UK Female')) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            if (englishVoices.length === 0) {
+                select.innerHTML = '<option>No voices available</option>';
+            }
+        }
+
+        function getSelectedVoice() {
+            var voices = speechSynth.getVoices();
+            var englishVoices = voices.filter(v => v.lang.startsWith('en'));
+            if (englishVoices.length === 0) englishVoices = voices;
+            if (englishVoices.length === 0) return null;
+
+            var select = document.getElementById('voiceSelect');
+            var index = select ? parseInt(select.value) : 0;
+            return englishVoices[index] || englishVoices[0];
+        }
+
+        function playPodcast() {
+            if (!currentScript) return;
+
+            speechSynth.cancel();
+            isPlaying = true;
+            isPaused = false;
+
+            var cleanScript = currentScript
+                .replace(/\[PAUSE\]/g, '\n')
+                .replace(/\[EMPHASIS\]/g, '')
+                .replace(/\[END EMPHASIS\]/g, '')
+                .replace(/\[PODCAST INTRO\]/g, '')
+                .replace(/\[PODCAST OUTRO\]/g, '')
+                .replace(/\*\*(.+?)\*\*/g, '$1')
+                .replace(/\*(.+?)\*/g, '$1')
+                .replace(/\(.*?(music|fade|intro|outro).*?\)/gi, '')
+                .replace(/---+/g, '')
+                .substring(0, 5000);
+
+            currentUtterance = new SpeechSynthesisUtterance(cleanScript);
+
+            var voice = getSelectedVoice();
+            if (voice) currentUtterance.voice = voice;
+
+            var speed = document.getElementById('speedSelect').value;
+            currentUtterance.rate = parseFloat(speed);
+            currentUtterance.pitch = 1;
+            currentUtterance.volume = 1;
+
+            currentUtterance.onstart = function() {
+                document.getElementById('playBtn').style.display = 'none';
+                document.getElementById('pauseBtn').style.display = 'inline-block';
+                document.getElementById('resumeBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                document.getElementById('audioStatus').textContent = '🔊 Playing...';
+            };
+
+            currentUtterance.onend = function() {
+                resetButtons();
+                document.getElementById('audioStatus').textContent = '✅ Finished playing!';
+                isPlaying = false;
+            };
+
+            currentUtterance.onerror = function(e) {
+                resetButtons();
+                document.getElementById('audioStatus').textContent = '❌ Playback error: ' + (e.error || 'unknown');
+                isPlaying = false;
+            };
+
+            currentUtterance.onpause = function() {
+                document.getElementById('playBtn').style.display = 'none';
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                document.getElementById('audioStatus').textContent = '⏸️ Paused';
+                isPaused = true;
+            };
+
+            currentUtterance.onresume = function() {
+                document.getElementById('playBtn').style.display = 'none';
+                document.getElementById('pauseBtn').style.display = 'inline-block';
+                document.getElementById('resumeBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                document.getElementById('audioStatus').textContent = '🔊 Playing...';
+                isPaused = false;
+            };
+
+            speechSynth.speak(currentUtterance);
+        }
+
+        function pausePodcast() {
+            if (isPlaying) {
+                speechSynth.pause();
+            }
+        }
+
+        function resumePodcast() {
+            if (isPaused) {
+                speechSynth.resume();
+            }
+        }
+
+        function stopPodcast() {
+            speechSynth.cancel();
+            isPlaying = false;
+            isPaused = false;
+            resetButtons();
+            document.getElementById('audioStatus').textContent = '⏹️ Stopped';
+        }
+
+        function resetButtons() {
+            document.getElementById('playBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+
+        function changeVoice() {
+            if (isPlaying) {
+                speechSynth.cancel();
+                playPodcast();
+            }
+        }
+
+        function changeSpeed() {
+            if (isPlaying) {
+                speechSynth.cancel();
+                playPodcast();
+            }
+        }
+
+        speechSynth.onvoiceschanged = loadVoices;
+
+        function loadPodcast(id) {
+            $.get('@Url.Action("GetPodcast", "Podcast")', { id: id }, function(r) {
                 if (r.success) {
                     currentPodcastId = r.podcastId;
                     currentScript = r.script;
                     document.getElementById('scriptBox').textContent = r.script;
-                    document.getElementById('resultTitle').textContent = '🎙️ ' + (r.title || 'Your Podcast');
+                    document.getElementById('resultTitle').textContent = '🎙️ ' + r.title;
                     document.getElementById('resultSection').style.display = 'block';
                     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
                     updateAudioControls();
-                } else {
-                    alert('Error: ' + (r.message || 'Failed'));
+                    switchTab('upload');
                 }
-            },
-            error: function() {
-                document.getElementById('loadingSection').classList.remove('active');
-                alert('An error occurred');
-            }
-        });
-    }
-
-    function updateAudioControls() {
-        var player = document.getElementById('audioPlayer');
-        player.style.display = 'block';
-        player.innerHTML = `
-            <p style="font-weight:600;margin-bottom:12px;">🔊 Listen to Your Podcast</p>
-            <div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;">
-                <button id="playBtn" class="btn-primary" onclick="playPodcast()" style="width:auto;background:#10b981;">
-                    ▶️ Play
-                </button>
-                <button id="pauseBtn" class="btn-primary" onclick="pausePodcast()" style="width:auto;display:none;background:#f59e0b;">
-                    ⏸️ Pause
-                </button>
-                <button id="resumeBtn" class="btn-primary" onclick="resumePodcast()" style="width:auto;display:none;background:#3b82f6;">
-                    ▶️ Resume
-                </button>
-                <button id="stopBtn" class="btn-primary" onclick="stopPodcast()" style="width:auto;display:none;background:#ef4444;">
-                    ⏹️ Stop
-                </button>
-            </div>
-            <div style="margin-top:12px;display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <label style="font-size:12px;color:#64748b;">Voice:</label>
-                <select id="voiceSelect" onchange="changeVoice()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
-                    <option value="">Loading voices...</option>
-                </select>
-                <label style="font-size:12px;color:#64748b;margin-left:8px;">Speed:</label>
-                <select id="speedSelect" onchange="changeSpeed()" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;">
-                    <option value="0.75">0.75x</option>
-                    <option value="0.9">0.9x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.25">1.25x</option>
-                    <option value="1.5">1.5x</option>
-                </select>
-            </div>
-            <div id="audioStatus" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
-        `;
-        loadVoices();
-    }
-
-    function loadVoices() {
-        var voices = speechSynth.getVoices();
-        var select = document.getElementById('voiceSelect');
-        if (!select) return;
-
-        select.innerHTML = '';
-
-        // Filter English voices
-        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
-        if (englishVoices.length === 0) englishVoices = voices;
-
-        englishVoices.forEach(function(voice, index) {
-            var option = document.createElement('option');
-            option.value = index;
-            option.textContent = voice.name + ' (' + voice.lang + ')';
-            // Pre-select a good voice
-            if (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Karen') || voice.name.includes('Google UK Female')) {
-                option.selected = true;
-            }
-            select.appendChild(option);
-        });
-
-        if (englishVoices.length === 0) {
-            select.innerHTML = '<option>No voices available</option>';
+            });
         }
-    }
 
-    function getSelectedVoice() {
-        var voices = speechSynth.getVoices();
-        var englishVoices = voices.filter(v => v.lang.startsWith('en'));
-        if (englishVoices.length === 0) englishVoices = voices;
-        if (englishVoices.length === 0) return null;
-
-        var select = document.getElementById('voiceSelect');
-        var index = select ? parseInt(select.value) : 0;
-        return englishVoices[index] || englishVoices[0];
-    }
-
-    function playPodcast() {
-        if (!currentScript) return;
-
-        // Stop any current speech
-        speechSynth.cancel();
-        isPlaying = true;
-        isPaused = false;
-
-        // Clean the script
-        var cleanScript = currentScript
-            .replace(/\[PAUSE\]/g, '\n')
-            .replace(/\[EMPHASIS\]/g, '')
-            .replace(/\[END EMPHASIS\]/g, '')
-            .replace(/\[PODCAST INTRO\]/g, '')
-            .replace(/\[PODCAST OUTRO\]/g, '')
-            .replace(/\*\*(.+?)\*\*/g, '$1')
-            .replace(/\*(.+?)\*/g, '$1')
-            .replace(/\(.*?(music|fade|intro|outro).*?\)/gi, '')
-            .replace(/---+/g, '')
-            .substring(0, 5000);
-
-        currentUtterance = new SpeechSynthesisUtterance(cleanScript);
-
-        var voice = getSelectedVoice();
-        if (voice) currentUtterance.voice = voice;
-
-        var speed = document.getElementById('speedSelect').value;
-        currentUtterance.rate = parseFloat(speed);
-        currentUtterance.pitch = 1;
-        currentUtterance.volume = 1;
-
-        currentUtterance.onstart = function() {
-            document.getElementById('playBtn').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'inline-block';
-            document.getElementById('resumeBtn').style.display = 'none';
-            document.getElementById('stopBtn').style.display = 'inline-block';
-            document.getElementById('audioStatus').textContent = '🔊 Playing...';
-        };
-
-        currentUtterance.onend = function() {
-            resetButtons();
-            document.getElementById('audioStatus').textContent = '✅ Finished playing!';
-            isPlaying = false;
-        };
-
-        currentUtterance.onerror = function(e) {
-            resetButtons();
-            document.getElementById('audioStatus').textContent = '❌ Playback error: ' + (e.error || 'unknown');
-            isPlaying = false;
-        };
-
-        currentUtterance.onpause = function() {
-            document.getElementById('playBtn').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'none';
-            document.getElementById('resumeBtn').style.display = 'inline-block';
-            document.getElementById('stopBtn').style.display = 'inline-block';
-            document.getElementById('audioStatus').textContent = '⏸️ Paused';
-            isPaused = true;
-        };
-
-        currentUtterance.onresume = function() {
-            document.getElementById('playBtn').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'inline-block';
-            document.getElementById('resumeBtn').style.display = 'none';
-            document.getElementById('stopBtn').style.display = 'inline-block';
-            document.getElementById('audioStatus').textContent = '🔊 Playing...';
-            isPaused = false;
-        };
-
-        speechSynth.speak(currentUtterance);
-    }
-
-    function pausePodcast() {
-        if (isPlaying) {
-            speechSynth.pause();
+        function deletePodcast(id) {
+            if (!confirm('Delete this podcast?')) return;
+            $.post('@Url.Action("DeletePodcast", "Podcast")', { id: id }, function(r) {
+                if (r.success) location.reload();
+            });
         }
-    }
-
-    function resumePodcast() {
-        if (isPaused) {
-            speechSynth.resume();
-        }
-    }
-
-    function stopPodcast() {
-        speechSynth.cancel();
-        isPlaying = false;
-        isPaused = false;
-        resetButtons();
-        document.getElementById('audioStatus').textContent = '⏹️ Stopped';
-    }
-
-    function resetButtons() {
-        document.getElementById('playBtn').style.display = 'inline-block';
-        document.getElementById('pauseBtn').style.display = 'none';
-        document.getElementById('resumeBtn').style.display = 'none';
-        document.getElementById('stopBtn').style.display = 'none';
-    }
-
-    function changeVoice() {
-        // Restart with new voice if currently playing
-        if (isPlaying) {
-            speechSynth.cancel();
-            playPodcast();
-        }
-    }
-
-    function changeSpeed() {
-        // Restart with new speed if currently playing
-        if (isPlaying) {
-            speechSynth.cancel();
-            playPodcast();
-        }
-    }
-
-    // Load voices when available
-    speechSynth.onvoiceschanged = loadVoices;
-
-    function loadPodcast(id) {
-        $.get('@Url.Action("GetPodcast", "Podcast")', { id: id }, function(r) {
-            if (r.success) {
-                currentPodcastId = r.podcastId;
-                currentScript = r.script;
-                document.getElementById('scriptBox').textContent = r.script;
-                document.getElementById('resultTitle').textContent = '🎙️ ' + r.title;
-                document.getElementById('resultSection').style.display = 'block';
-                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
-                updateAudioControls();
-                switchTab('upload');
-            }
-        });
-    }
-
-    function deletePodcast(id) {
-        if (!confirm('Delete this podcast?')) return;
-        $.post('@Url.Action("DeletePodcast", "Podcast")', { id: id }, function(r) {
-            if (r.success) location.reload();
-        });
-    }
     </script>
 }

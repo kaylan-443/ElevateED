@@ -297,8 +297,7 @@ namespace ElevateED.Models
                 .WithMany()
                 .HasForeignKey(r => r.SubjectId)
                 .WillCascadeOnDelete(false);
-                .WillCascadeOnDelete(false);
-
+              
             base.OnModelCreating(modelBuilder);
         }
     }

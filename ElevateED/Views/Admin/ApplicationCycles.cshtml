@@ -1,839 +1,773 @@
 ﻿@model List<ElevateED.Models.ApplicationCycle>
 
 @{
-    ViewBag.Title = "Application Cycles - Admin";
+    ViewBag.Title = "Application Cycles";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+@section SidebarNav {
+    <div class="nav-section">Main</div>
+    <a href="@Url.Action("Dashboard", "Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="@Url.Action("PendingApplications", "Admin")" class="nav-item"><i class="fas fa-file-alt"></i><span>Applications</span></a>
+    <a href="@Url.Action("ManageUsers", "Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+    <a href="@Url.Action("ClassStructure", "Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
+    <a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
 
-    :root {
-        --primary: #4f46e5;
-        --primary-light: #6366f1;
-        --primary-dark: #4338ca;
-        --primary-bg: #f5f3ff;
-        --primary-soft: #ede9fe;
-        --primary-hover: #e0e7ff;
-        --accent: #fbbf24;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --info: #3b82f6;
-        --purple: #8b5cf6;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        --sidebar-width: 280px;
-        --header-height: 70px;
-    }
+    <div class="nav-section">Management</div>
+    <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+    <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
+    <a href="@Url.Action("ClassRegister", "Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
+    <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
 
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: var(--gray-50);
-        overflow-x: hidden;
-    }
+    <div class="nav-section">Extra</div>
+    <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
+    <a href="@Url.Action("EmergencyAlerts", "AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
+    <a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item active"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
+    <a href="@Url.Action("Index", "Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+}
 
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    /* ============ SIDEBAR ============ */
-    .sidebar {
-        width: var(--sidebar-width);
-        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        transition: all 0.3s ease;
-        z-index: 100;
-        overflow-y: auto;
-    }
-
-    .sidebar-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .logo-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--accent), #f59e0b);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #1e1b4b;
-        font-size: 20px;
-    }
-
-    .logo-text {
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-    }
-
-        .logo-text span {
-            color: var(--accent);
+@section Styles {
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-    .sidebar-nav {
-        flex: 1;
-        padding: 24px 16px;
-    }
+            .page-header h1 {
+                font-size: 26px;
+                font-weight: 700;
+                color: var(--gray-900);
+            }
 
-    .nav-section {
-        margin-top: 24px;
-        margin-bottom: 12px;
-        padding: 0 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 12px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
+        .btn-primary-custom {
+            background: var(--primary);
             color: white;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--accent), #f59e0b);
-            color: #1e1b4b;
-        }
-
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
-        .nav-item span {
-            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
         }
 
-    /* ============ MAIN CONTENT ============ */
-    .main-content {
-        flex: 1;
-        margin-left: var(--sidebar-width);
-        min-height: 100vh;
-    }
+            .btn-primary-custom:hover {
+                background: var(--primary-dark);
+                color: white;
+                text-decoration: none;
+            }
 
-    .top-header {
-        height: var(--header-height);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 0 32px;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .notification-btn {
-        position: relative;
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--gray-500);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-
-        .notification-btn:hover {
-            background: var(--gray-100);
+        .btn-back {
+            background: white;
+            color: var(--gray-700);
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 500;
+            border: 1px solid var(--gray-200);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
         }
 
-    .notification-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 8px;
-        height: 8px;
-        background: var(--danger);
-        border-radius: 50%;
-    }
+            .btn-back:hover {
+                background: var(--gray-100);
+                text-decoration: none;
+            }
 
-    .profile-container {
-        position: relative;
-    }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        transition: all 0.2s;
-        background: none;
-        border: none;
-    }
-
-        .profile-trigger:hover {
-            background: var(--gray-100);
+        .cycle-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--gray-200);
+            transition: all 0.3s;
+            border-left: 4px solid var(--gray-300);
         }
 
-    .avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-        text-transform: uppercase;
-    }
+            .cycle-card:hover {
+                box-shadow: var(--shadow-lg);
+            }
 
-    .profile-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
+            .cycle-card.active {
+                border-left-color: var(--success);
+                background: #f0fdf4;
+            }
 
-    .dropdown-icon {
-        font-size: 12px;
-        color: var(--gray-400);
-    }
+            .cycle-card.inactive {
+                border-left-color: var(--gray-400);
+                opacity: 0.92;
+            }
 
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        width: 240px;
-        overflow: hidden;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-            animation: fadeInDown 0.2s ease;
+        .cycle-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-    @@keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 16px;
-        border-bottom: 1px solid var(--gray-200);
-        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
-    }
-
-        .dropdown-header .user-name {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 4px;
-        }
-
-        .dropdown-header .user-email {
-            font-size: 12px;
-            color: var(--gray-500);
-        }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        text-decoration: none;
-        color: var(--gray-700);
-        transition: all 0.2s;
-        cursor: pointer;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-    }
-
-        .dropdown-item:hover {
-            background: var(--primary-hover);
-            color: var(--primary);
-        }
-
-        .dropdown-item i {
-            width: 20px;
-            font-size: 16px;
-            color: var(--gray-500);
-        }
-
-    .dropdown-divider {
-        height: 1px;
-        background: var(--gray-200);
-        margin: 8px 0;
-    }
-
-    .dashboard-content {
-        padding: 32px;
-    }
-
-    /* ============ PAGE CONTENT ============ */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-        .page-header h1 {
-            font-size: 26px;
+        .cycle-title {
+            font-size: 20px;
             font-weight: 700;
             color: var(--gray-900);
         }
 
-    .btn-primary {
-        background: var(--primary);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        border: none;
-    }
-
-        .btn-primary:hover {
-            background: #4338ca;
-            color: white;
-            text-decoration: none;
+        .cycle-year {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 4px;
         }
 
-    .btn-back {
-        background: white;
-        color: var(--gray-700);
-        padding: 10px 20px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 500;
-        border: 1px solid var(--gray-200);
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-        .btn-back:hover {
-            background: var(--gray-100);
-            text-decoration: none;
-        }
-
-    .cycle-card {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 16px;
-        border: 1px solid var(--gray-200);
-        transition: all 0.3s;
-        border-left: 4px solid var(--gray-300);
-    }
-
-        .cycle-card:hover {
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-        }
-
-        .cycle-card.active {
-            border-left-color: var(--success);
-            background: #f0fdf4;
-        }
-
-        .cycle-card.inactive {
-            border-left-color: var(--gray-400);
-            opacity: 0.8;
-        }
-
-    .cycle-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .cycle-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--gray-900);
-    }
-
-    .cycle-year {
-        font-size: 13px;
-        color: var(--gray-500);
-    }
-
-    .status-badge {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-active {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-inactive {
-        background: var(--gray-200);
-        color: var(--gray-600);
-    }
-
-    .cycle-dates {
-        display: flex;
-        gap: 24px;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        font-size: 14px;
-        color: var(--gray-600);
-    }
-
-        .cycle-dates span {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .cycle-dates i {
-            color: var(--primary);
-        }
-
-    .cycle-limits {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-        padding: 14px;
-        background: var(--gray-50);
-        border-radius: 10px;
-    }
-
-    .limit-item {
-        text-align: center;
-        min-width: 60px;
-    }
-
-    .limit-num {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .limit-lbl {
-        font-size: 10px;
-        color: var(--gray-500);
-        text-transform: uppercase;
-    }
-
-    .btn-action {
-        padding: 7px 16px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 500;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-    }
-
-    .btn-success {
-        background: var(--success);
-        color: white;
-    }
-
-        .btn-success:hover {
-            background: #059669;
-            color: white;
-            text-decoration: none;
-        }
-
-    .btn-warning {
-        background: var(--warning);
-        color: #1e1b4b;
-    }
-
-    .btn-danger {
-        background: var(--danger);
-        color: white;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px;
-        background: white;
-        border-radius: 16px;
-        border: 1px solid var(--gray-200);
-    }
-
-        .empty-state i {
-            font-size: 48px;
-            color: var(--gray-400);
-            margin-bottom: 15px;
-        }
-
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1050;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-    .modal-box {
-        background: white;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 700px;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    .modal-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: var(--primary);
-        color: white;
-        border-radius: 16px 16px 0 0;
-    }
-
-        .modal-header h3 {
-            font-size: 18px;
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 600;
         }
 
-    .modal-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-    }
-
-    .modal-body {
-        padding: 24px;
-    }
-
-    .form-group {
-        margin-bottom: 16px;
-    }
-
-    .form-label {
-        font-weight: 600;
-        font-size: 13px;
-        color: var(--gray-700);
-        margin-bottom: 5px;
-        display: block;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 9px 14px;
-        border: 2px solid var(--gray-200);
-        border-radius: 10px;
-        font-size: 14px;
-    }
-
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
         }
 
-    .required::after {
-        content: " *";
-        color: var(--danger);
-    }
-
-    @@media (max-width: 1024px) {
-        .sidebar {
-            transform: translateX(-100%);
+        .status-inactive {
+            background: var(--gray-200);
+            color: var(--gray-600);
         }
 
-        .main-content {
-            margin-left: 0;
+        .cycle-dates {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: var(--gray-600);
         }
-    }
 
-    @@media (max-width: 768px) {
-        .dashboard-content {
-            padding: 20px;
-        }
-    }
-</style>
-
-<div class="app-container">
-    <!-- ============ SIDEBAR ============ -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-                <div class="logo-text">Elevate<span>ED</span></div>
-            </div>
-        </div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <a href="@Url.Action("Dashboard", "Admin")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-            <a href="@Url.Action("PendingApplications", "Admin")" class="nav-item"><i class="fas fa-file-alt"></i><span>Applications</span></a>
-            <a href="@Url.Action("ManageUsers", "Admin")" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
-            <a href="@Url.Action("ClassStructure", "Admin")" class="nav-item"><i class="fas fa-school"></i><span>Classes</span></a>
-            <a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
-            <div class="nav-section">Management</div>
-            <a href="@Url.Action("TimeTable", "Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
-            <a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item"><i class="fas fa-calendar-check"></i><span>Exam Management</span></a>
-            <a href="@Url.Action("ClassRegister", "Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
-            <a href="@Url.Action("SendAnnouncement", "Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
-            <a href="@Url.Action("Issues", "Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
-            <div class="nav-section">Extra</div>
-            <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
-            <a href="@Url.Action("EmergencyAlerts", "AdminExtraClass")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Emergency Alerts</span></a>
-            <a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item active"><i class="fas fa-calendar-alt"></i><span>App Cycles</span></a>
-            <a href="@Url.Action("Index", "Analytics")" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
-        </nav>
-    </aside>
-
-    <!-- ============ MAIN CONTENT ============ -->
-    <main class="main-content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-right">
-                <button class="notification-btn">
-                    <i class="far fa-bell"></i>
-                    <span class="notification-badge"></span>
-                </button>
-                <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleDropdown()">
-                        <div class="avatar">A</div>
-                        <span class="profile-name">Admin</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </button>
-                    <div class="dropdown-menu" id="profileDropdown">
-                        <div class="dropdown-header">
-                            <div class="user-name">Administrator</div>
-                            <div class="user-email">admin@mpiyakhehs.co.za</div>
-                        </div>
-                        <a href="@Url.Action("ManageUsers", "Admin")" class="dropdown-item"><i class="fas fa-users"></i><span>Manage Users</span></a>
-                        <div class="dropdown-divider"></div>
-                        <form action="@Url.Action("LogOff", "Account")" method="post" id="logoutForm">
-                            @Html.AntiForgeryToken()
-                            <button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Content -->
-        <div class="dashboard-content">
-            <div class="page-header">
-                <div>
-                    <h1><i class="fas fa-calendar-alt" style="color:var(--purple);"></i> Application Cycles</h1>
-                    <p style="color:var(--gray-500);">Manage application periods and intake limits</p>
-                </div>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn-primary" onclick="openCreateModal()"><i class="fas fa-plus"></i> Create New Cycle</button>
-                    <a href="@Url.Action("Dashboard", "Admin")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
-                </div>
-            </div>
-
-            @if (!Model.Any())
-            {
-                <div class="empty-state">
-                    <i class="fas fa-calendar-plus"></i>
-                    <h4>No Application Cycles</h4>
-                    <p style="color:var(--gray-500);">Create your first application cycle to start accepting student applications.</p>
-                    <button class="btn-primary mt-3" onclick="openCreateModal()" style="display:inline-flex;"><i class="fas fa-plus"></i> Create First Cycle</button>
-                </div>
+            .cycle-dates span {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
             }
-            else
-            {
-                foreach (var cycle in Model)
-                {
-                    <div class="cycle-card @(cycle.IsActive ? "active" : "inactive")" id="cycle-@cycle.Id">
-                        <div class="cycle-top">
-                            <div>
-                                <div class="cycle-title">@cycle.Name</div>
-                                <div class="cycle-year"><i class="fas fa-graduation-cap"></i> Academic Year @cycle.AcademicYear</div>
-                            </div>
-                            <span class="status-badge @(cycle.IsActive ? "status-active" : "status-inactive")">
-                                <i class="fas fa-@(cycle.IsActive ? "check-circle" : "times-circle")"></i>
-                                @(cycle.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </div>
-                        <div class="cycle-dates">
-                            <span><i class="fas fa-play"></i> <strong>Start:</strong> @cycle.StartDate.ToString("dd MMM yyyy")</span>
-                            <span><i class="fas fa-flag-checkered"></i> <strong>Deadline:</strong> @cycle.DeadlineDate.ToString("dd MMM yyyy")</span>
-                            <span>
-                                <i class="fas fa-hourglass-half"></i> <strong>Status:</strong>
-                                @if (DateTime.Now < cycle.StartDate)
-                                {<span style="color:var(--info);">Upcoming</span> }
-                                else if (DateTime.Now > cycle.DeadlineDate)
-                                { <span style="color:var(--danger);">Closed</span> }
-                                else
-                                { <span style="color:var(--success);">Open for Applications</span>}
-                            </span>
-                        </div>
-                        <div class="cycle-limits">
-                            @if (cycle.Grade8Limit.HasValue)
-                            {<div class="limit-item"><div class="limit-num">@cycle.Grade8Limit</div><div class="limit-lbl">Grade 8</div></div>}
-                            @if (cycle.Grade9Limit.HasValue)
-                            {<div class="limit-item"><div class="limit-num">@cycle.Grade9Limit</div><div class="limit-lbl">Grade 9</div></div>}
-                            @if (cycle.Grade10Limit.HasValue)
-                            {<div class="limit-item"><div class="limit-num">@cycle.Grade10Limit</div><div class="limit-lbl">Grade 10</div></div>}
-                            @if (cycle.Grade11Limit.HasValue)
-                            {<div class="limit-item"><div class="limit-num">@cycle.Grade11Limit</div><div class="limit-lbl">Grade 11</div></div>}
-                            @if (cycle.Grade12Limit.HasValue)
-                            {<div class="limit-item"><div class="limit-num">@cycle.Grade12Limit</div><div class="limit-lbl">Grade 12</div></div>}
-                            @if (!cycle.Grade8Limit.HasValue && !cycle.Grade9Limit.HasValue && !cycle.Grade10Limit.HasValue && !cycle.Grade11Limit.HasValue && !cycle.Grade12Limit.HasValue)
-                            {<span style="color:var(--gray-500);"><i class="fas fa-infinity"></i> No intake limits set</span>}
-                        </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <a href="@Url.Action("EvaluateApplications", new { cycleId = cycle.Id })" class="btn-action btn-success"><i class="fas fa-users"></i> View Applications</a>
-                            @if (!cycle.IsActive)
-                            {<button class="btn-action btn-success" onclick="toggleCycle(@cycle.Id)"><i class="fas fa-check"></i> Activate</button> }
-                            else
-                            { <button class="btn-action btn-warning" onclick="toggleCycle(@cycle.Id)"><i class="fas fa-pause"></i> Deactivate</button>}
-                            <button class="btn-action btn-danger" onclick="deleteCycle(@cycle.Id, '@cycle.Name')"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
-                    </div>
-                }
+
+            .cycle-dates i {
+                color: var(--primary);
             }
-        </div>
-    </main>
+
+        .cycle-limits {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            padding: 14px;
+            background: var(--gray-50);
+            border-radius: 10px;
+        }
+
+        .limit-item {
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .limit-num {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .limit-lbl {
+            font-size: 10px;
+            color: var(--gray-500);
+            text-transform: uppercase;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+            .btn-success:hover {
+                background: #059669;
+                color: white;
+                text-decoration: none;
+            }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #1e1b4b;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+        }
+
+            .empty-state i {
+                font-size: 48px;
+                color: var(--gray-400);
+                margin-bottom: 15px;
+            }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--gray-700);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+            .form-control:focus {
+                border-color: var(--primary);
+                outline: none;
+            }
+
+        .required::after {
+            content: " *";
+            color: var(--danger);
+        }
+
+        @@media (max-width:768px) {
+            .cycle-dates {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div>
+        <h1>
+            <i class="fas fa-calendar-alt" style="color:var(--purple);"></i>
+            Application Cycles
+        </h1>
+        <p style="color:var(--gray-500);margin-top:5px;">
+            Manage application periods and intake limits
+        </p>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-primary-custom" onclick="openCreateModal()">
+            <i class="fas fa-plus"></i> Create New Cycle
+        </button>
+
+        <a href="@Url.Action("Dashboard", "Admin")" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
 </div>
 
-<!-- Create Modal -->
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-calendar-plus"></i>
+        <h3>No Application Cycles</h3>
+
+        <p style="color:var(--gray-500);margin:12px 0 20px;">
+            Create your first application cycle to start accepting student applications.
+        </p>
+
+        <button class="btn-primary-custom" onclick="openCreateModal()">
+            <i class="fas fa-plus"></i> Create First Cycle
+        </button>
+    </div>
+}
+else
+{
+    foreach (var cycle in Model)
+    {
+        <div class="cycle-card @(cycle.IsActive ? "active" : "inactive")" id="cycle-@cycle.Id">
+
+            <div class="cycle-top">
+                <div>
+                    <div class="cycle-title">@cycle.Name</div>
+
+                    <div class="cycle-year">
+                        <i class="fas fa-graduation-cap"></i>
+                        Academic Year @cycle.AcademicYear
+                    </div>
+                </div>
+
+                <span class="status-badge @(cycle.IsActive ? "status-active" : "status-inactive")">
+                    <i class="fas fa-@(cycle.IsActive ? "check-circle" : "times-circle")"></i>
+                    @(cycle.IsActive ? "Active" : "Inactive")
+                </span>
+            </div>
+
+            <div class="cycle-dates">
+                <span>
+                    <i class="fas fa-play"></i>
+                    <strong>Start:</strong>
+                    @cycle.StartDate.ToString("dd MMM yyyy")
+                </span>
+
+                <span>
+                    <i class="fas fa-flag-checkered"></i>
+                    <strong>Deadline:</strong>
+                    @cycle.DeadlineDate.ToString("dd MMM yyyy")
+                </span>
+
+                <span>
+                    <i class="fas fa-hourglass-half"></i>
+
+                    <strong>Status:</strong>
+
+                    @if (DateTime.Now < cycle.StartDate)
+                    {
+                        <span style="color:var(--info);">Upcoming</span>
+                    }
+                    else if (DateTime.Now > cycle.DeadlineDate)
+                    {
+                        <span style="color:var(--danger);">Closed</span>
+                    }
+                    else
+                    {
+                        <span style="color:var(--success);">Open for Applications</span>
+                    }
+                </span>
+            </div>
+
+            <div class="cycle-limits">
+
+                @if (cycle.Grade8Limit.HasValue)
+                {
+                    <div class="limit-item">
+                        <div class="limit-num">@cycle.Grade8Limit</div>
+                        <div class="limit-lbl">Grade 8</div>
+                    </div>
+                }
+
+                @if (cycle.Grade9Limit.HasValue)
+                {
+                    <div class="limit-item">
+                        <div class="limit-num">@cycle.Grade9Limit</div>
+                        <div class="limit-lbl">Grade 9</div>
+                    </div>
+                }
+
+                @if (cycle.Grade10Limit.HasValue)
+                {
+                    <div class="limit-item">
+                        <div class="limit-num">@cycle.Grade10Limit</div>
+                        <div class="limit-lbl">Grade 10</div>
+                    </div>
+                }
+
+                @if (cycle.Grade11Limit.HasValue)
+                {
+                    <div class="limit-item">
+                        <div class="limit-num">@cycle.Grade11Limit</div>
+                        <div class="limit-lbl">Grade 11</div>
+                    </div>
+                }
+
+                @if (cycle.Grade12Limit.HasValue)
+                {
+                    <div class="limit-item">
+                        <div class="limit-num">@cycle.Grade12Limit</div>
+                        <div class="limit-lbl">Grade 12</div>
+                    </div>
+                }
+
+                @if (!cycle.Grade8Limit.HasValue &&
+                    !cycle.Grade9Limit.HasValue &&
+                    !cycle.Grade10Limit.HasValue &&
+                    !cycle.Grade11Limit.HasValue &&
+                    !cycle.Grade12Limit.HasValue)
+                {
+                    <span style="color:var(--gray-500);">
+                        <i class="fas fa-infinity"></i>
+                        No intake limits set
+                    </span>
+                }
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+
+                <a href="@Url.Action("EvaluateApplications", new { cycleId = cycle.Id })"
+                   class="btn-action btn-success">
+                    <i class="fas fa-users"></i>
+                    View Applications
+                </a>
+
+                @if (!cycle.IsActive)
+                {
+                    <button class="btn-action btn-success"
+                            onclick="toggleCycle(@cycle.Id)">
+                        <i class="fas fa-check"></i>
+                        Activate
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-action btn-warning"
+                            onclick="toggleCycle(@cycle.Id)">
+                        <i class="fas fa-pause"></i>
+                        Deactivate
+                    </button>
+                }
+
+                <button class="btn-action btn-danger"
+                        onclick="deleteCycle(@cycle.Id, '@cycle.Name')">
+                    <i class="fas fa-trash"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    }
+}
+
+<!-- Modal -->
 <div class="modal-overlay" id="createModal">
     <div class="modal-box">
+
         <div class="modal-header">
-            <h3><i class="fas fa-calendar-plus"></i> Create Application Cycle</h3>
-            <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            <h3>
+                <i class="fas fa-calendar-plus"></i>
+                Create Application Cycle
+            </h3>
+
+            <button class="modal-close" onclick="closeCreateModal()">
+                &times;
+            </button>
         </div>
+
         <div class="modal-body">
+
             <form id="createCycleForm">
+
                 @Html.AntiForgeryToken()
+
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div class="form-group"><label class="form-label required">Cycle Name</label><input type="text" name="Name" id="cycleName" class="form-control" required placeholder="e.g., 2026 Intake" /></div>
-                    <div class="form-group"><label class="form-label required">Academic Year</label><input type="number" name="AcademicYear" id="academicYear" class="form-control" required value="@DateTime.Now.Year" /></div>
-                    <div class="form-group"><label class="form-label required">Start Date</label><input type="date" name="StartDate" id="startDate" class="form-control" required value="@DateTime.Now.ToString("yyyy-MM-dd")" /></div>
-                    <div class="form-group"><label class="form-label required">Deadline Date</label><input type="date" name="DeadlineDate" id="deadlineDate" class="form-control" required value="@DateTime.Now.AddMonths(3).ToString("yyyy-MM-dd")" /></div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Cycle Name</label>
+
+                        <input type="text"
+                               name="Name"
+                               id="cycleName"
+                               class="form-control"
+                               required
+                               placeholder="e.g., 2026 Intake" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Academic Year</label>
+
+                        <input type="number"
+                               name="AcademicYear"
+                               id="academicYear"
+                               class="form-control"
+                               required
+                               value="@DateTime.Now.Year" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Start Date</label>
+
+                        <input type="date"
+                               name="StartDate"
+                               id="startDate"
+                               class="form-control"
+                               required
+                               value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Deadline Date</label>
+
+                        <input type="date"
+                               name="DeadlineDate"
+                               id="deadlineDate"
+                               class="form-control"
+                               required
+                               value="@DateTime.Now.AddMonths(3).ToString("yyyy-MM-dd")" />
+                    </div>
                 </div>
-                <h6 style="margin-top:16px;margin-bottom:10px;color:var(--gray-700);"><i class="fas fa-users"></i> Intake Limits (Optional)</h6>
-                <p style="color:var(--gray-500);font-size:12px;margin-bottom:10px;">Leave blank for unlimited</p>
+
+                <h6 style="margin-top:16px;margin-bottom:10px;color:var(--gray-700);">
+                    <i class="fas fa-users"></i>
+                    Intake Limits (Optional)
+                </h6>
+
+                <p style="color:var(--gray-500);font-size:12px;margin-bottom:10px;">
+                    Leave blank for unlimited
+                </p>
+
                 <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
-                    <div class="form-group"><label class="form-label">Grade 8</label><input type="number" name="Grade8Limit" class="form-control" placeholder="Unlimited" /></div>
-                    <div class="form-group"><label class="form-label">Grade 9</label><input type="number" name="Grade9Limit" class="form-control" placeholder="Unlimited" /></div>
-                    <div class="form-group"><label class="form-label">Grade 10</label><input type="number" name="Grade10Limit" class="form-control" placeholder="Unlimited" /></div>
-                    <div class="form-group"><label class="form-label">Grade 11</label><input type="number" name="Grade11Limit" class="form-control" placeholder="Unlimited" /></div>
-                    <div class="form-group"><label class="form-label">Grade 12</label><input type="number" name="Grade12Limit" class="form-control" placeholder="Unlimited" /></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Grade 8</label>
+                        <input type="number" name="Grade8Limit" class="form-control" placeholder="Unlimited" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Grade 9</label>
+                        <input type="number" name="Grade9Limit" class="form-control" placeholder="Unlimited" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Grade 10</label>
+                        <input type="number" name="Grade10Limit" class="form-control" placeholder="Unlimited" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Grade 11</label>
+                        <input type="number" name="Grade11Limit" class="form-control" placeholder="Unlimited" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Grade 12</label>
+                        <input type="number" name="Grade12Limit" class="form-control" placeholder="Unlimited" />
+                    </div>
                 </div>
+
                 <div class="form-group" style="margin-top:12px;">
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="IsActive" id="IsActive" value="true" checked />
-                        <strong>Set as Active</strong> (Deactivates other cycles)
+                        <input type="checkbox"
+                               name="IsActive"
+                               id="IsActive"
+                               value="true"
+                               checked />
+
+                        <strong>Set as Active</strong>
+                        (Deactivates other cycles)
                     </label>
                 </div>
-                <div id="modalMessage" style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;display:none;margin-top:10px;"></div>
+
+                <div id="modalMessage"
+                     style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;display:none;margin-top:10px;">
+                </div>
+
             </form>
         </div>
+
         <div style="padding:16px 24px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:10px;">
             <button class="btn-back" onclick="closeCreateModal()">Cancel</button>
-            <button class="btn-primary" onclick="submitCreateCycle()">Create Cycle</button>
+
+            <button class="btn-primary-custom" onclick="submitCreateCycle()">
+                Create Cycle
+            </button>
         </div>
     </div>
 </div>
 
-<script>
-    function toggleDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
-    document.addEventListener('click', function (e) { var c = document.querySelector('.profile-container'); var d = document.getElementById('profileDropdown'); if (c && !c.contains(e.target)) d.classList.remove('show'); });
-    function confirmLogout(e) { e.preventDefault(); if (confirm('Are you sure you want to logout?')) { document.getElementById('logoutForm').submit(); } }
+@section Scripts {
+    <script>
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+            document.getElementById('createCycleForm').reset();
+            document.getElementById('modalMessage').style.display = 'none';
+        }
 
-    function openCreateModal() { document.getElementById('createModal').classList.add('show'); document.getElementById('createCycleForm').reset(); document.getElementById('modalMessage').style.display = 'none'; }
-    function closeCreateModal() { document.getElementById('createModal').classList.remove('show'); }
-    document.getElementById('createModal').addEventListener('click', function (e) { if (e.target === this) closeCreateModal(); });
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
 
-    function submitCreateCycle() {
-        var n = document.getElementById('cycleName').value, s = document.getElementById('startDate').value, d = document.getElementById('deadlineDate').value;
-        if (!n || !s || !d) { showMsg('Please fill all required fields'); return; }
-        if (new Date(d) <= new Date(s)) { showMsg('Deadline must be after start date'); return; }
-        var data = { __RequestVerificationToken: document.querySelector('input[name="__RequestVerificationToken"]').value, Name: n, AcademicYear: document.getElementById('academicYear').value, StartDate: s, DeadlineDate: d, Grade8Limit: document.querySelector('[name="Grade8Limit"]').value || null, Grade9Limit: document.querySelector('[name="Grade9Limit"]').value || null, Grade10Limit: document.querySelector('[name="Grade10Limit"]').value || null, Grade11Limit: document.querySelector('[name="Grade11Limit"]').value || null, Grade12Limit: document.querySelector('[name="Grade12Limit"]').value || null, IsActive: document.getElementById('IsActive').checked };
-        fetch('@Url.Action("CreateApplicationCycle","Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data) }).then(r => r.json()).then(r => { if (r.success) location.reload(); else showMsg(r.message); });
-    }
-    function showMsg(m) { var d = document.getElementById('modalMessage'); d.textContent = m; d.style.display = 'block'; }
-    function toggleCycle(id) { fetch('@Url.Action("ToggleCycleStatus","Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'id=' + id }).then(r => r.json()).then(r => { if (r.success) location.reload(); else alert(r.message); }); }
-    function deleteCycle(id, name) { if (confirm('Delete "' + name + '"?')) { fetch('@Url.Action("DeleteApplicationCycle","Admin")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'id=' + id }).then(r => r.json()).then(r => { if (r.success) { document.getElementById('cycle-' + id).style.display = 'none'; if (!document.querySelector('.cycle-card:not([style*="display:none"])')) location.reload(); } else alert(r.message); }); } }
-</script>
+        document.getElementById('createModal').addEventListener('click', function (e) {
+            if (e.target === this) closeCreateModal();
+        });
+
+        function submitCreateCycle() {
+
+            var n = document.getElementById('cycleName').value;
+            var s = document.getElementById('startDate').value;
+            var d = document.getElementById('deadlineDate').value;
+
+            if (!n || !s || !d) {
+                showMsg('Please fill all required fields');
+                return;
+            }
+
+            if (new Date(d) <= new Date(s)) {
+                showMsg('Deadline must be after start date');
+                return;
+            }
+
+            var data = {
+                __RequestVerificationToken: document.querySelector('input[name="__RequestVerificationToken"]').value,
+                Name: n,
+                AcademicYear: document.getElementById('academicYear').value,
+                StartDate: s,
+                DeadlineDate: d,
+                Grade8Limit: document.querySelector('[name="Grade8Limit"]').value || null,
+                Grade9Limit: document.querySelector('[name="Grade9Limit"]').value || null,
+                Grade10Limit: document.querySelector('[name="Grade10Limit"]').value || null,
+                Grade11Limit: document.querySelector('[name="Grade11Limit"]').value || null,
+                Grade12Limit: document.querySelector('[name="Grade12Limit"]').value || null,
+                IsActive: document.getElementById('IsActive').checked
+            };
+
+            fetch('@Url.Action("CreateApplicationCycle","Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams(data)
+            })
+            .then(r => r.json())
+            .then(r => {
+                if (r.success) {
+                    location.reload();
+                } else {
+                    showMsg(r.message);
+                }
+            });
+        }
+
+        function showMsg(m) {
+            var d = document.getElementById('modalMessage');
+            d.textContent = m;
+            d.style.display = 'block';
+        }
+
+        function toggleCycle(id) {
+
+            fetch('@Url.Action("ToggleCycleStatus","Admin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'id=' + id
+            })
+            .then(r => r.json())
+            .then(r => {
+                if (r.success) {
+                    location.reload();
+                } else {
+                    alert(r.message);
+                }
+            });
+        }
+
+        function deleteCycle(id, name) {
+
+            if (confirm('Delete "' + name + '"?')) {
+
+                fetch('@Url.Action("DeleteApplicationCycle","Admin")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'id=' + id
+                })
+                .then(r => r.json())
+                .then(r => {
+
+                    if (r.success) {
+
+                        document.getElementById('cycle-' + id).style.display = 'none';
+
+                        if (!document.querySelector('.cycle-card:not([style*="display:none"])')) {
+                            location.reload();
+                        }
+
+                    } else {
+                        alert(r.message);
+                    }
+                });
+            }
+        }
+    </script>
+}
