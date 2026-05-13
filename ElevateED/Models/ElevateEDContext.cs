@@ -6,7 +6,10 @@ namespace ElevateED.Models
     {
         public ElevateEDContext() : base("ElevateEDConnection")
         {
-            Database.SetInitializer<ElevateEDContext>(null);
+            // Initializer is configured once in DatabaseConfig.Initialize() to apply
+            // MigrateDatabaseToLatestVersion. Setting it to null here used to wipe that
+            // out on every context construction, which is why new schema (Assessments,
+            // ExamSessionClasses, new ExamSession columns) never reached the database.
             this.Configuration.ProxyCreationEnabled = false;
             this.Configuration.LazyLoadingEnabled = false;
         }
@@ -248,6 +251,12 @@ namespace ElevateED.Models
                 .HasRequired(r => r.Class)
                 .WithMany()
                 .HasForeignKey(r => r.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasOptional(r => r.ClassTeacher)
+                .WithMany()
+                .HasForeignKey(r => r.ClassTeacherId)
                 .WillCascadeOnDelete(false);
 
             modelBuilder.Entity<StudentReportCardSubject>()

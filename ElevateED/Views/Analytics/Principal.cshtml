@@ -11,7 +11,8 @@
             <p class="text-muted">Whole-school academic, assessment, report, teacher, and exam overview.</p>
         </div>
         <div>
-            @Html.ActionLink("Approve Marks", "PendingApproval", "Marks", null, new { @class = "btn btn-outline-primary" })
+            @Html.ActionLink("Pending Reports", "PendingReports", "Marks", null, new { @class = "btn btn-outline-primary" })
+            @Html.ActionLink("All Report Cards", "ReportCards", "Marks", null, new { @class = "btn btn-outline-primary ms-2" })
             @Html.ActionLink("Promotion Rules", "PromotionRules", "Marks", null, new { @class = "btn btn-primary ms-2" })
         </div>
     </div>

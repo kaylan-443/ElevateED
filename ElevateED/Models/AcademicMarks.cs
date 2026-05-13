@@ -154,17 +154,32 @@ namespace ElevateED.Models
         public string ImprovementComment { get; set; }
         public DateTime GeneratedAt { get; set; }
 
+        // Class-teacher comment — written by the homeroom (class) teacher before publication.
+        public string ClassTeacherComment { get; set; }
+        public int? ClassTeacherId { get; set; }
+        public DateTime? ClassTeacherCommentedAt { get; set; }
+
+        // Publication — Principal publishes a finalised report so students may view it.
+        public bool IsPublished { get; set; }
+        public DateTime? PublishedAt { get; set; }
+        public int? PublishedById { get; set; }
+
         [ForeignKey("StudentId")]
         public virtual Student Student { get; set; }
 
         [ForeignKey("ClassId")]
         public virtual Class Class { get; set; }
+
+        [ForeignKey("ClassTeacherId")]
+        public virtual Teacher ClassTeacher { get; set; }
+
         public virtual ICollection<StudentReportCardSubject> Subjects { get; set; }
 
         public StudentReportCard()
         {
             GeneratedAt = DateTime.Now;
             PromotionDecision = PromotionDecision.Pending;
+            IsPublished = false;
             Subjects = new HashSet<StudentReportCardSubject>();
         }
     }

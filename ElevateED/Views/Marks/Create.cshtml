@@ -4,61 +4,170 @@
     ViewBag.Title = "Create Assessment";
 }
 
-<div class="container mt-4">
-    <h2>Create Assessment</h2>
-    <p class="text-muted">Choose the class and subject, then define what learners are being marked for.</p>
+<style>
+    .form-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 28px 30px;
+        max-width: 900px;
+    }
+    .form-card h3 {
+        font-size: 18px;
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .form-card .sub {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+    .form-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; margin-bottom: 16px; }
+    .col-12 { grid-column: span 12; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
 
-    @using (Html.BeginForm())
-    {
-        @Html.AntiForgeryToken()
-        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+    label.lbl {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #444;
+    }
+    .ctrl {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d8dde3;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+    }
+    .ctrl:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
+    }
+    .text-danger { font-size: 12px; color: #c62828; }
 
-        <div class="card">
-            <div class="card-body">
-                <div class="mb-3">
-                    @Html.LabelFor(m => m.AssignmentId, "Class and Subject", new { @class = "form-label" })
-                    @Html.DropDownListFor(m => m.AssignmentId, Model.AssignmentOptions, "Select class and subject", new { @class = "form-control" })
-                    @Html.ValidationMessageFor(m => m.AssignmentId, "", new { @class = "text-danger" })
+    .form-actions {
+        margin-top: 22px;
+        display: flex;
+        gap: 12px;
+    }
+    .btn-primary-pill {
+        background: var(--primary-blue);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .btn-primary-pill:hover { background: var(--secondary-blue); }
+    .btn-cancel {
+        background: white;
+        color: #555;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: 1.5px solid #d8dde3;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    .btn-cancel:hover { color: #333; text-decoration: none; }
+
+    .err-summary {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+    .err-summary ul { margin: 0; padding-left: 20px; }
+
+    @@media (max-width: 768px) {
+        .col-6, .col-4, .col-3 { grid-column: span 12; }
+    }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "marks")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-plus-circle" style="color:#6366f1;margin-right:10px;"></i>New Assessment</h1>
+                <p>Set up an assessment, then capture learner marks against it.</p>
+            </div>
+            <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> All Assessments</a>
+        </div>
+
+        <div class="form-card">
+            <h3>Assessment details</h3>
+            <p class="sub">Choose the class and subject, then define what learners are being marked for.</p>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+
+                if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="err-summary">@Html.ValidationSummary(false)</div>
+                }
+
+                <div class="form-row">
+                    <div class="col-12">
+                        <label class="lbl">Class and subject</label>
+                        @Html.DropDownListFor(m => m.AssignmentId, Model.AssignmentOptions, "Select class and subject", new { @class = "ctrl" })
+                        @Html.ValidationMessageFor(m => m.AssignmentId, "", new { @class = "text-danger" })
+                    </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        @Html.LabelFor(m => m.Name, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Example: Maths Investigation" })
+                <div class="form-row">
+                    <div class="col-6">
+                        <label class="lbl">Assessment name</label>
+                        @Html.TextBoxFor(m => m.Name, new { @class = "ctrl", placeholder = "Example: Maths Investigation" })
                         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
                     </div>
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.Term, new { @class = "form-label" })
-                        @Html.DropDownListFor(m => m.Term, Model.TermOptions, new { @class = "form-control" })
+                    <div class="col-3">
+                        <label class="lbl">Term</label>
+                        @Html.DropDownListFor(m => m.Term, Model.TermOptions, new { @class = "ctrl" })
                     </div>
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.AcademicYear, "Year", new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.AcademicYear, new { @class = "form-control", type = "number" })
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.AssessmentType, "Type", new { @class = "form-label" })
-                        @Html.DropDownListFor(m => m.AssessmentType, Model.AssessmentTypeOptions, new { @class = "form-control" })
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.MaxMark, "Max mark", new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.MaxMark, new { @class = "form-control", type = "number", step = "0.1" })
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.Weight, "Weight", new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.Weight, new { @class = "form-control", type = "number", step = "0.1" })
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        @Html.LabelFor(m => m.AssessmentDate, "Date", new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.AssessmentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    <div class="col-3">
+                        <label class="lbl">Year</label>
+                        @Html.TextBoxFor(m => m.AcademicYear, new { @class = "ctrl", type = "number" })
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Create and Capture Marks</button>
-                @Html.ActionLink("Cancel", "Index", "Marks", null, new { @class = "btn btn-outline-secondary ms-2" })
-            </div>
+                <div class="form-row">
+                    <div class="col-3">
+                        <label class="lbl">Type</label>
+                        @Html.DropDownListFor(m => m.AssessmentType, Model.AssessmentTypeOptions, new { @class = "ctrl" })
+                    </div>
+                    <div class="col-3">
+                        <label class="lbl">Max mark</label>
+                        @Html.TextBoxFor(m => m.MaxMark, new { @class = "ctrl", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-3">
+                        <label class="lbl">Weight</label>
+                        @Html.TextBoxFor(m => m.Weight, new { @class = "ctrl", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-3">
+                        <label class="lbl">Date</label>
+                        @Html.TextBoxFor(m => m.AssessmentDate, "{0:yyyy-MM-dd}", new { @class = "ctrl", type = "date" })
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-pill"><i class="fas fa-check"></i> Create and Capture Marks</button>
+                    <a href="@Url.Action("Index")" class="btn-cancel">Cancel</a>
+                </div>
+            }
         </div>
-    }
+    </main>
 </div>

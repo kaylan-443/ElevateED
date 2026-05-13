@@ -5,62 +5,204 @@
     ViewBag.Title = "Assessment Marks";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h2>Assessment Marks</h2>
-            <p class="text-muted">Capture class tests, assignments, projects, practicals, and exam marks.</p>
-        </div>
-        @Html.ActionLink("New Assessment", "Create", "Marks", null, new { @class = "btn btn-primary" })
-    </div>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+<style>
+    .marks-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
     }
 
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Assessment</th>
-                            <th>Class</th>
-                            <th>Subject</th>
-                            <th>Term</th>
-                            <th>Type</th>
-                            <th>Captured</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            var badge = item.Status == MarkApprovalStatus.Approved ? "success" :
-                                item.Status == MarkApprovalStatus.Submitted ? "warning" :
-                                item.Status == MarkApprovalStatus.Rejected ? "danger" : "secondary";
-                            <tr>
-                                <td>@item.Name</td>
-                                <td>@item.ClassName</td>
-                                <td>@item.SubjectName</td>
-                                <td>@item.Term @item.AcademicYear</td>
-                                <td>@item.AssessmentType</td>
-                                <td>@item.CapturedCount / @item.LearnerCount</td>
-                                <td><span class="badge bg-@badge">@item.Status</span></td>
-                                <td class="text-end">
-                                    @Html.ActionLink("Open", "Capture", "Marks", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-primary" })
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+    .btn-primary-pill {
+        background: var(--primary-blue);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        transition: all .25s;
+    }
+    .btn-primary-pill:hover {
+        background: var(--secondary-blue);
+        color: white;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .marks-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+
+    .marks-card .table { margin: 0; }
+
+    .marks-card thead th {
+        background: #f7f8fb;
+        color: #555;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        border-bottom: 1px solid #eee;
+        padding: 14px 18px;
+    }
+
+    .marks-card tbody td {
+        padding: 16px 18px;
+        font-size: 14px;
+        vertical-align: middle;
+        border-top: 1px solid #f1f1f1;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .3px;
+    }
+    .status-draft { background: #eef0f3; color: #6c757d; }
+    .status-submitted { background: #e3f2fd; color: #1565c0; }
+    .status-approved { background: #e8f5e9; color: #2e7d32; }
+    .status-rejected { background: #ffebee; color: #c62828; }
+
+    .captured-bar {
+        display: inline-block;
+        min-width: 90px;
+        background: #f1f3f5;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 18px;
+        position: relative;
+    }
+    .captured-bar > div { background: #28a745; height: 100%; }
+    .captured-bar span {
+        position: absolute;
+        inset: 0;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #333;
+        line-height: 18px;
+    }
+
+    .btn-open {
+        background: var(--primary-blue);
+        color: white;
+        padding: 7px 18px;
+        border-radius: 18px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .btn-open:hover { background: var(--secondary-blue); color: white; text-decoration: none; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 14px;
+    }
+    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
+    .empty-state h4 { color: #333; margin-bottom: 6px; }
+    .empty-state p { color: #888; }
+
+    .alert-flash {
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+    }
+    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "marks")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-clipboard-check" style="color:#6366f1;margin-right:10px;"></i>Assessment Marks</h1>
+                <p>Capture class tests, assignments, projects, practicals, and exam marks.</p>
             </div>
+            <a href="@Url.Action("Dashboard","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
         </div>
-    </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-error"><i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]</div>
+        }
+
+        <div class="marks-toolbar">
+            <div style="color:#555;font-size:14px;">
+                Showing assessments you created, plus any assessments for classes where you are the class teacher.
+            </div>
+            <a href="@Url.Action("Create")" class="btn-primary-pill"><i class="fas fa-plus"></i> New Assessment</a>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-clipboard"></i>
+                <h4>No assessments yet</h4>
+                <p>Click <strong>New Assessment</strong> above to capture marks for a class test, assignment, project, practical, or exam.</p>
+            </div>
+        }
+        else
+        {
+            <div class="marks-card">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Assessment</th>
+                                <th>Class</th>
+                                <th>Subject</th>
+                                <th>Term</th>
+                                <th>Type</th>
+                                <th>Captured</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                var pct = item.LearnerCount > 0 ? (int)Math.Round((double)item.CapturedCount * 100 / item.LearnerCount) : 0;
+                                var statusClass = "status-" + item.Status.ToString().ToLower();
+                                <tr>
+                                    <td><strong>@item.Name</strong></td>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.SubjectName</td>
+                                    <td>@item.Term @item.AcademicYear</td>
+                                    <td>@item.AssessmentType</td>
+                                    <td>
+                                        <div class="captured-bar">
+                                            <div style="width:@(pct)%;"></div>
+                                            <span>@item.CapturedCount / @item.LearnerCount</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="status-badge @statusClass">@item.Status</span></td>
+                                    <td><a href="@Url.Action("Capture", new { id = item.Id })" class="btn-open">Open</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </main>
 </div>

@@ -19,11 +19,15 @@ namespace ElevateED.Controllers
             var teacher = GetCurrentTeacher();
             if (teacher == null) return RedirectToAction("Login", "Account");
 
+            // Show assessments the teacher owns, plus assessments belonging to any class
+            // where this teacher is the homeroom (class) teacher — Option A fallback.
             var assessments = _context.Assessments
                 .Include(a => a.Class)
                 .Include(a => a.Subject)
+                .Include(a => a.Teacher)
                 .Include(a => a.Marks)
-                .Where(a => a.TeacherId == teacher.Id)
+                .Where(a => a.TeacherId == teacher.Id
+                    || (a.Class != null && a.Class.ClassTeacherId == teacher.Id))
                 .OrderByDescending(a => a.CreatedAt)
                 .ToList();
 
@@ -122,13 +126,13 @@ namespace ElevateED.Controllers
             var assessment = GetAssessmentForTeacher(id, teacher.Id);
             if (assessment == null) return HttpNotFound();
 
-            return View(BuildCaptureModel(assessment));
+            return View(BuildCaptureModel(assessment, teacher.Id));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Teacher")]
-        public ActionResult Capture(MarkCaptureViewModel model, string submitForApproval)
+        public ActionResult Capture(MarkCaptureViewModel model, string finalizeMarks)
         {
             var teacher = GetCurrentTeacher();
             if (teacher == null) return RedirectToAction("Login", "Account");
@@ -137,7 +141,7 @@ namespace ElevateED.Controllers
             if (assessment == null) return HttpNotFound();
             if (assessment.Status == MarkApprovalStatus.Approved)
             {
-                TempData["ErrorMessage"] = "Approved marks cannot be changed.";
+                TempData["ErrorMessage"] = "Finalized marks cannot be changed.";
                 return RedirectToAction("Capture", new { id = assessment.Id });
             }
 
@@ -151,7 +155,7 @@ namespace ElevateED.Controllers
                 if (entry.Mark.HasValue && (entry.Mark.Value < 0 || entry.Mark.Value > assessment.MaxMark))
                 {
                     ModelState.AddModelError("", "Marks must be between 0 and the assessment max mark.");
-                    return View(BuildCaptureModel(assessment));
+                    return View(BuildCaptureModel(assessment, teacher.Id));
                 }
 
                 var mark = assessment.Marks.FirstOrDefault(m => m.StudentId == entry.StudentId);
@@ -166,150 +170,186 @@ namespace ElevateED.Controllers
                 mark.CapturedAt = DateTime.Now;
             }
 
-            if (!string.IsNullOrEmpty(submitForApproval))
+            var isFinalize = !string.IsNullOrEmpty(finalizeMarks);
+            if (isFinalize)
             {
-                assessment.Status = MarkApprovalStatus.Submitted;
+                // Teachers own marks — finalizing approves the assessment directly and
+                // triggers automatic report-card regeneration. No principal mark-approval step.
+                assessment.Status = MarkApprovalStatus.Approved;
                 assessment.SubmittedAt = DateTime.Now;
-            }
-            else if (assessment.Status == MarkApprovalStatus.Rejected)
-            {
-                assessment.Status = MarkApprovalStatus.Draft;
+                assessment.ApprovedAt = DateTime.Now;
             }
 
             _context.SaveChanges();
-            TempData["SuccessMessage"] = string.IsNullOrEmpty(submitForApproval)
-                ? "Marks saved."
-                : "Marks submitted for admin approval.";
+
+            if (isFinalize)
+            {
+                GenerateReportCards(assessment.ClassId, assessment.Term, assessment.AcademicYear);
+                TempData["SuccessMessage"] = "Marks finalized. Report cards have been regenerated for this class and term.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "Marks saved as draft.";
+            }
 
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Admin,Principal")]
-        public ActionResult PendingApproval()
+        // ============================================================
+        // CLASS TEACHER — adds report-card comments before publication
+        // ============================================================
+        [Authorize(Roles = "Teacher")]
+        public ActionResult ClassTeacherReports()
         {
-            var model = _context.Assessments
-                .Include(a => a.Teacher)
-                .Include(a => a.Class)
-                .Include(a => a.Subject)
-                .Include(a => a.Marks)
-                .Where(a => a.Status == MarkApprovalStatus.Submitted)
-                .OrderBy(a => a.SubmittedAt)
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
+
+            var classIds = _context.Classes
+                .Where(c => c.ClassTeacherId == teacher.Id)
+                .Select(c => c.Id)
+                .ToList();
+
+            if (!classIds.Any())
+            {
+                return View(new List<ClassTeacherReportListItemViewModel>());
+            }
+
+            var model = _context.StudentReportCards
+                .Include(r => r.Student)
+                .Include(r => r.Class)
+                .Where(r => classIds.Contains(r.ClassId))
+                .OrderByDescending(r => r.AcademicYear)
+                .ThenByDescending(r => r.Term)
+                .ThenBy(r => r.Class.FullName)
+                .ThenBy(r => r.Student.LastName)
                 .ToList()
-                .Select(a =>
+                .Select(r => new ClassTeacherReportListItemViewModel
                 {
-                    var learnerCount = _context.Students.Count(s => s.ClassId == a.ClassId && s.IsActive);
-                    return new AssessmentListItemViewModel
-                    {
-                        Id = a.Id,
-                        Name = a.Name,
-                        Term = a.Term,
-                        AcademicYear = a.AcademicYear,
-                        ClassName = a.Class?.FullName,
-                        SubjectName = a.Subject?.Name,
-                        AssessmentType = a.AssessmentType.ToString(),
-                        MaxMark = a.MaxMark,
-                        Status = a.Status,
-                        CapturedCount = a.Marks.Count(m => m.Mark.HasValue),
-                        LearnerCount = learnerCount
-                    };
+                    ReportId = r.Id,
+                    StudentName = r.Student?.FullName,
+                    ClassName = r.Class?.FullName,
+                    Term = r.Term,
+                    AcademicYear = r.AcademicYear,
+                    FinalMark = r.FinalMark,
+                    PassFailStatus = r.PassFailStatus,
+                    PromotionDecision = r.PromotionDecision,
+                    HasClassTeacherComment = !string.IsNullOrWhiteSpace(r.ClassTeacherComment),
+                    IsPublished = r.IsPublished
                 })
                 .ToList();
 
             return View(model);
         }
 
-        [Authorize(Roles = "Admin,Principal")]
-        public ActionResult Review(int id)
+        [Authorize(Roles = "Teacher")]
+        public ActionResult EditReportComment(int id)
         {
-            var assessment = _context.Assessments
-                .Include(a => a.Teacher)
-                .Include(a => a.Class)
-                .Include(a => a.Subject)
-                .Include(a => a.Marks)
-                .FirstOrDefault(a => a.Id == id);
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
 
-            if (assessment == null) return HttpNotFound();
+            var report = _context.StudentReportCards
+                .Include(r => r.Student)
+                .Include(r => r.Class)
+                .FirstOrDefault(r => r.Id == id);
+            if (report == null) return HttpNotFound();
+            if (report.Class?.ClassTeacherId != teacher.Id) return new HttpUnauthorizedResult();
 
-            var students = _context.Students
-                .Where(s => s.ClassId == assessment.ClassId && s.IsActive)
-                .OrderBy(s => s.LastName)
-                .ThenBy(s => s.FirstName)
-                .ToList();
+            return View(ToCommentViewModel(report));
+        }
 
-            var capturedMarks = assessment.Marks
-                .Where(m => m.Mark.HasValue)
-                .Select(m => m.Mark.Value)
-                .ToList();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Teacher")]
+        public ActionResult EditReportComment(ClassTeacherReportCommentViewModel model)
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
 
-            var model = new AssessmentReviewViewModel
+            var report = _context.StudentReportCards
+                .Include(r => r.Student)
+                .Include(r => r.Class)
+                .FirstOrDefault(r => r.Id == model.ReportId);
+            if (report == null) return HttpNotFound();
+            if (report.Class?.ClassTeacherId != teacher.Id) return new HttpUnauthorizedResult();
+            if (report.IsPublished)
             {
-                AssessmentId = assessment.Id,
-                AssessmentName = assessment.Name,
-                TeacherName = assessment.Teacher?.FullName,
-                ClassName = assessment.Class?.FullName,
-                SubjectName = assessment.Subject?.Name,
-                Term = assessment.Term,
-                AcademicYear = assessment.AcademicYear,
-                AssessmentType = assessment.AssessmentType.ToString(),
-                MaxMark = assessment.MaxMark,
-                Status = assessment.Status,
-                LearnerCount = students.Count,
-                CapturedCount = capturedMarks.Count,
-                MissingCount = students.Count - capturedMarks.Count,
-                ClassAverage = capturedMarks.Any() ? Math.Round(capturedMarks.Average(), 1) : 0,
-                HighestMark = capturedMarks.Any() ? capturedMarks.Max() : 0,
-                LowestMark = capturedMarks.Any() ? capturedMarks.Min() : 0,
-                Marks = students.Select(s =>
+                TempData["ErrorMessage"] = "This report has already been published. Comments are locked.";
+                return RedirectToAction("ClassTeacherReports");
+            }
+
+            report.ClassTeacherComment = model.ClassTeacherComment;
+            report.ClassTeacherId = teacher.Id;
+            report.ClassTeacherCommentedAt = DateTime.Now;
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = "Class-teacher comment saved.";
+            return RedirectToAction("ClassTeacherReports");
+        }
+
+        // ============================================================
+        // PRINCIPAL — approves and publishes reports (not individual marks)
+        // ============================================================
+        [Authorize(Roles = "Admin,Principal")]
+        public ActionResult PendingReports()
+        {
+            var model = _context.StudentReportCards
+                .Include(r => r.Student)
+                .Include(r => r.Class)
+                .Include(r => r.ClassTeacher)
+                .Where(r => !r.IsPublished)
+                .OrderBy(r => r.Class.FullName)
+                .ThenBy(r => r.Student.LastName)
+                .ToList()
+                .Select(r => new PendingReportListItemViewModel
                 {
-                    var mark = assessment.Marks.FirstOrDefault(m => m.StudentId == s.Id);
-                    return new StudentMarkEntryViewModel
-                    {
-                        StudentId = s.Id,
-                        StudentName = s.FullName,
-                        Mark = mark?.Mark,
-                        Percentage = mark?.Mark == null || assessment.MaxMark <= 0
-                            ? (decimal?)null
-                            : Math.Round((mark.Mark.Value / assessment.MaxMark) * 100, 1),
-                        Comment = mark?.Comment
-                    };
-                }).ToList()
-            };
+                    ReportId = r.Id,
+                    StudentName = r.Student?.FullName,
+                    ClassName = r.Class?.FullName,
+                    Term = r.Term,
+                    AcademicYear = r.AcademicYear,
+                    FinalMark = r.FinalMark,
+                    PassFailStatus = r.PassFailStatus,
+                    PromotionDecision = r.PromotionDecision,
+                    ClassTeacherName = r.ClassTeacher?.FullName,
+                    HasClassTeacherComment = !string.IsNullOrWhiteSpace(r.ClassTeacherComment),
+                    IsPublished = r.IsPublished,
+                    GeneratedAt = r.GeneratedAt
+                })
+                .ToList();
 
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Principal")]
-        public ActionResult Approve(int id)
+        [Authorize(Roles = "Principal")]
+        public ActionResult PublishReport(int id)
         {
-            var assessment = _context.Assessments.Find(id);
-            if (assessment == null) return HttpNotFound();
+            var report = _context.StudentReportCards.Find(id);
+            if (report == null) return HttpNotFound();
 
-            assessment.Status = MarkApprovalStatus.Approved;
-            assessment.ApprovedAt = DateTime.Now;
+            report.IsPublished = true;
+            report.PublishedAt = DateTime.Now;
             _context.SaveChanges();
 
-            GenerateReportCards(assessment.ClassId, assessment.Term, assessment.AcademicYear);
-            TempData["SuccessMessage"] = "Marks approved and report cards regenerated automatically.";
-
-            return RedirectToAction("PendingApproval");
+            TempData["SuccessMessage"] = "Report published — the student can now view it.";
+            return RedirectToAction("PendingReports");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Principal")]
-        public ActionResult Reject(int id, string comment)
+        [Authorize(Roles = "Principal")]
+        public ActionResult UnpublishReport(int id)
         {
-            var assessment = _context.Assessments.Find(id);
-            if (assessment == null) return HttpNotFound();
+            var report = _context.StudentReportCards.Find(id);
+            if (report == null) return HttpNotFound();
 
-            assessment.Status = MarkApprovalStatus.Rejected;
-            assessment.AdminComment = comment;
+            report.IsPublished = false;
+            report.PublishedAt = null;
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = "Assessment returned to the teacher.";
-            return RedirectToAction("PendingApproval");
+            TempData["SuccessMessage"] = "Report unpublished — it is hidden from the student.";
+            return RedirectToAction("ReportCards");
         }
 
         [Authorize(Roles = "Admin,Principal")]
@@ -318,6 +358,7 @@ namespace ElevateED.Controllers
             var model = _context.StudentReportCards
                 .Include(r => r.Student)
                 .Include(r => r.Class)
+                .Include(r => r.ClassTeacher)
                 .Include(r => r.Subjects.Select(s => s.Subject))
                 .OrderByDescending(r => r.AcademicYear)
                 .ThenByDescending(r => r.Term)
@@ -404,6 +445,7 @@ namespace ElevateED.Controllers
             var report = _context.StudentReportCards
                 .Include(r => r.Student)
                 .Include(r => r.Class)
+                .Include(r => r.ClassTeacher)
                 .Include(r => r.Subjects.Select(s => s.Subject))
                 .FirstOrDefault(r => r.Id == id);
 
@@ -413,6 +455,7 @@ namespace ElevateED.Controllers
             {
                 var student = GetCurrentStudent();
                 if (student == null || report.StudentId != student.Id) return new HttpUnauthorizedResult();
+                if (!report.IsPublished) return new HttpUnauthorizedResult();
             }
 
             return View(ToReportCardViewModel(report));
@@ -424,11 +467,13 @@ namespace ElevateED.Controllers
             var student = GetCurrentStudent();
             if (student == null) return RedirectToAction("Login", "Account");
 
+            // Students only ever see published reports.
             var model = _context.StudentReportCards
                 .Include(r => r.Student)
                 .Include(r => r.Class)
+                .Include(r => r.ClassTeacher)
                 .Include(r => r.Subjects.Select(s => s.Subject))
-                .Where(r => r.StudentId == student.Id)
+                .Where(r => r.StudentId == student.Id && r.IsPublished)
                 .OrderByDescending(r => r.AcademicYear)
                 .ThenByDescending(r => r.Term)
                 .ToList()
@@ -438,16 +483,22 @@ namespace ElevateED.Controllers
             return View(model);
         }
 
+        // The teacher who created the assessment can capture marks. The class teacher of
+        // the assessment's class is also allowed as a fallback (Option A) — useful when
+        // the subject teacher is absent.
         private Assessment GetAssessmentForTeacher(int assessmentId, int teacherId)
         {
             return _context.Assessments
                 .Include(a => a.Class)
                 .Include(a => a.Subject)
+                .Include(a => a.Teacher)
                 .Include(a => a.Marks)
-                .FirstOrDefault(a => a.Id == assessmentId && a.TeacherId == teacherId);
+                .FirstOrDefault(a => a.Id == assessmentId
+                    && (a.TeacherId == teacherId
+                        || (a.Class != null && a.Class.ClassTeacherId == teacherId)));
         }
 
-        private MarkCaptureViewModel BuildCaptureModel(Assessment assessment)
+        private MarkCaptureViewModel BuildCaptureModel(Assessment assessment, int currentTeacherId)
         {
             var students = _context.Students
                 .Where(s => s.ClassId == assessment.ClassId && s.IsActive)
@@ -463,8 +514,11 @@ namespace ElevateED.Controllers
                 AcademicYear = assessment.AcademicYear,
                 ClassName = assessment.Class?.FullName,
                 SubjectName = assessment.Subject?.Name,
+                AssessmentType = assessment.AssessmentType.ToString(),
                 MaxMark = assessment.MaxMark,
                 Status = assessment.Status,
+                OwningTeacherName = assessment.Teacher?.FullName,
+                IsActingAsClassTeacher = assessment.TeacherId != currentTeacherId,
                 Marks = students.Select(s =>
                 {
                     var mark = assessment.Marks.FirstOrDefault(m => m.StudentId == s.Id);
@@ -512,10 +566,17 @@ namespace ElevateED.Controllers
                         StudentId = student.Id,
                         ClassId = classId,
                         Term = term,
-                        AcademicYear = academicYear
+                        AcademicYear = academicYear,
+                        // Seed the class teacher from the class so the homeroom teacher
+                        // shows up immediately on the pending-reports list.
+                        ClassTeacherId = schoolClass?.ClassTeacherId
                     };
                     _context.StudentReportCards.Add(report);
                     _context.SaveChanges();
+                }
+                else if (!report.ClassTeacherId.HasValue && schoolClass?.ClassTeacherId.HasValue == true)
+                {
+                    report.ClassTeacherId = schoolClass.ClassTeacherId;
                 }
 
                 foreach (var subjectId in subjectIds)
@@ -803,6 +864,11 @@ namespace ElevateED.Controllers
                 PromotionDecision = report.PromotionDecision,
                 ImprovementComment = report.ImprovementComment,
                 GeneratedAt = report.GeneratedAt,
+                ClassTeacherComment = report.ClassTeacherComment,
+                ClassTeacherName = report.ClassTeacher?.FullName,
+                ClassTeacherCommentedAt = report.ClassTeacherCommentedAt,
+                IsPublished = report.IsPublished,
+                PublishedAt = report.PublishedAt,
                 Subjects = report.Subjects
                     .OrderBy(s => s.Subject.Name)
                     .Select(s => new ReportCardSubjectViewModel
@@ -819,6 +885,23 @@ namespace ElevateED.Controllers
                         ImprovementComment = s.ImprovementComment
                     })
                     .ToList()
+            };
+        }
+
+        private ClassTeacherReportCommentViewModel ToCommentViewModel(StudentReportCard report)
+        {
+            return new ClassTeacherReportCommentViewModel
+            {
+                ReportId = report.Id,
+                StudentName = report.Student?.FullName,
+                ClassName = report.Class?.FullName,
+                Term = report.Term,
+                AcademicYear = report.AcademicYear,
+                FinalMark = report.FinalMark,
+                PassFailStatus = report.PassFailStatus,
+                PromotionDecision = report.PromotionDecision,
+                IsPublished = report.IsPublished,
+                ClassTeacherComment = report.ClassTeacherComment
             };
         }
 

@@ -617,11 +617,13 @@
     <Content Include="Views\Marks\Create.cshtml" />
     <Content Include="Views\Marks\Index.cshtml" />
     <Content Include="Views\Marks\MyReportCards.cshtml" />
-    <Content Include="Views\Marks\PendingApproval.cshtml" />
     <Content Include="Views\Marks\PrintReportCard.cshtml" />
     <Content Include="Views\Marks\PromotionRules.cshtml" />
     <Content Include="Views\Marks\ReportCards.cshtml" />
-    <Content Include="Views\Marks\Review.cshtml" />
+    <Content Include="Views\Marks\ClassTeacherReports.cshtml" />
+    <Content Include="Views\Marks\EditReportComment.cshtml" />
+    <Content Include="Views\Marks\PendingReports.cshtml" />
+    <Content Include="Views\Shared\_TeacherSidebar.cshtml" />
     <Content Include="Views\Admin\CreateExamTimetable.cshtml" />
     <Content Include="Views\Admin\EditExamSession.cshtml" />
     <Content Include="Views\Admin\ExamTimetables.cshtml" />
