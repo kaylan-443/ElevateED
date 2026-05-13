@@ -3,7 +3,7 @@
       @Html.Partial("_TeacherSidebar", "marks")
     Recognised keys: dashboard, timetable, classregister, attendance, active,
     homework, classwork, marks, marks-comments, pastpapers, studymaterials,
-    quiz, announcements, examtimetable.
+    quiz, announcements, examtimetable, extraclasses, extraclass-session
 *@
 @model string
 @{
@@ -24,7 +24,11 @@
         --sidebar-collapsed: 70px;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -32,7 +36,10 @@
         min-height: 100vh;
     }
 
-    .dashboard-layout { display: flex; min-height: 100vh; }
+    .dashboard-layout {
+        display: flex;
+        min-height: 100vh;
+    }
 
     .sidebar {
         width: var(--sidebar-width);
@@ -56,12 +63,31 @@
         align-items: center;
         gap: 12px;
     }
-    .sidebar-brand i { font-size: 28px; color: var(--accent-gold); }
-    .sidebar-brand h4 { font-size: 18px; font-weight: 700; margin: 0; }
-    .sidebar-brand span { color: var(--accent-gold); }
 
-    .sidebar-nav { flex: 1; padding: 15px 0; }
-    .nav-section { margin-bottom: 15px; }
+        .sidebar-brand i {
+            font-size: 28px;
+            color: var(--accent-gold);
+        }
+
+        .sidebar-brand h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .sidebar-brand span {
+            color: var(--accent-gold);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 15px 0;
+    }
+
+    .nav-section {
+        margin-bottom: 15px;
+    }
+
     .nav-section-title {
         padding: 10px 20px;
         font-size: 10px;
@@ -83,33 +109,67 @@
         border-left: 3px solid transparent;
         cursor: pointer;
     }
-    .nav-item:hover, .nav-item.active {
-        background: rgba(255,255,255,0.08);
-        color: white;
-        border-left-color: var(--accent-gold);
-        text-decoration: none;
-    }
-    .nav-item i { width: 20px; text-align: center; font-size: 16px; }
 
-    .sidebar-footer { padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .user-info { display: flex; align-items: center; gap: 12px; }
-    .user-avatar {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: var(--accent-gold); color: var(--primary-blue);
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 16px;
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border-left-color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+    .sidebar-footer {
+        padding: 15px 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
     }
-    .user-details { flex: 1; }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--accent-gold);
+        color: var(--primary-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .user-details {
+        flex: 1;
+    }
+
     .btn-logout {
         background: rgba(255,255,255,0.1);
-        color: white; border: none;
-        padding: 8px 16px; border-radius: 20px;
-        cursor: pointer; font-size: 12px;
-        display: flex; align-items: center; gap: 5px;
-        width: 100%; justify-content: center;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        justify-content: center;
         margin-top: 10px;
     }
-    .btn-logout:hover { background: var(--danger-red); }
+
+        .btn-logout:hover {
+            background: var(--danger-red);
+        }
 
     .main-content {
         margin-left: var(--sidebar-width);
@@ -126,17 +186,20 @@
         flex-wrap: wrap;
         gap: 15px;
     }
+
     .greeting h1 {
         font-size: 26px;
         font-weight: 700;
         color: var(--primary-blue);
         margin: 0;
     }
+
     .greeting p {
         color: #888;
         margin: 5px 0 0 0;
         font-size: 14px;
     }
+
     .btn-back {
         background: #6c757d;
         color: white;
@@ -148,15 +211,32 @@
         align-items: center;
         gap: 8px;
     }
-    .btn-back:hover { background: #5a6268; color: white; text-decoration: none; }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
 
     @@media (max-width: 992px) {
-        .sidebar { width: var(--sidebar-collapsed); }
-        .sidebar-brand h4, .nav-section-title, .nav-item span, .user-details { display: none; }
-        .main-content { margin-left: var(--sidebar-collapsed); }
+        .sidebar {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-brand h4, .nav-section-title, .nav-item span, .user-details {
+            display: none;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-collapsed);
+        }
     }
+
     @@media (max-width: 768px) {
-        .main-content { margin-left: 0; padding: 15px; }
+        .main-content {
+            margin-left: 0;
+            padding: 15px;
+        }
     }
 </style>
 
@@ -179,6 +259,11 @@
             <a href="@Url.Action("Classwork","Teacher")" class="@cls("classwork")"><i class="fas fa-chalkboard"></i><span>Classwork</span></a>
             <a href="@Url.Action("Index","Marks")" class="@cls("marks")"><i class="fas fa-clipboard-check"></i><span>Marks</span></a>
             <a href="@Url.Action("ClassTeacherReports","Marks")" class="@cls("marks-comments")"><i class="fas fa-comment-dots"></i><span>Class Reports</span></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Extra Classes</div>
+            <a href="@Url.Action("Index","TeacherExtraClass")" class="@cls("extraclasses")"><i class="fas fa-chalkboard-teacher"></i><span>My Extra Classes</span></a>
+            <a href="@Url.Action("SessionHistory","TeacherExtraClass")" class="@cls("extraclass-history")"><i class="fas fa-history"></i><span>Session History</span></a>
         </div>
         <div class="nav-section">
             <div class="nav-section-title">Exams</div>

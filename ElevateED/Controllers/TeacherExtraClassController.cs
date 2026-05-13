@@ -1,6 +1,7 @@
 ﻿using ElevateED.Models;
 using ElevateED.Services;
 using ElevateED.ViewModels;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -34,10 +35,14 @@ namespace ElevateED.Controllers
                 .OrderBy(c => c.StartDate)
                 .ToList();
 
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
             var activeSessions = _context.ExtraClassAttendanceSessions
                 .Include(s => s.ExtraClass)
                 .Where(s => s.TeacherId == teacher.Id
-                    && s.SessionDate.Date == DateTime.Today
+                    && s.SessionDate >= today
+                    && s.SessionDate < tomorrow
                     && s.QRCodeExpiry > DateTime.Now)
                 .ToList();
 
@@ -120,10 +125,10 @@ namespace ElevateED.Controllers
             {
                 try
                 {
-                    var easyTopics = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(aiRecommendation.EasyWinTopics ?? "[]");
-                    var difficultTopics = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(aiRecommendation.DifficultTopics ?? "[]");
-                    var suggestedOrder = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(aiRecommendation.SuggestedTeachingOrder ?? "[]");
-                    var commonMistakes = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(aiRecommendation.CommonMistakes ?? "[]");
+                    var easyTopics = JsonConvert.DeserializeObject<List<string>>(aiRecommendation.EasyWinTopics ?? "[]");
+                    var difficultTopics = JsonConvert.DeserializeObject<List<string>>(aiRecommendation.DifficultTopics ?? "[]");
+                    var suggestedOrder = JsonConvert.DeserializeObject<List<string>>(aiRecommendation.SuggestedTeachingOrder ?? "[]");
+                    var commonMistakes = JsonConvert.DeserializeObject<List<string>>(aiRecommendation.CommonMistakes ?? "[]");
 
                     ViewBag.EasyTopics = easyTopics;
                     ViewBag.DifficultTopics = difficultTopics;
@@ -150,10 +155,14 @@ namespace ElevateED.Controllers
 
             if (extraClass == null) return HttpNotFound();
 
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
             // Check if there's already an active session for today
             var existingSession = _context.ExtraClassAttendanceSessions
                 .FirstOrDefault(s => s.ExtraClassId == classId
-                    && s.SessionDate.Date == DateTime.Today
+                    && s.SessionDate >= today
+                    && s.SessionDate < tomorrow
                     && s.QRCodeExpiry > DateTime.Now);
 
             if (existingSession != null)
@@ -244,7 +253,6 @@ namespace ElevateED.Controllers
 
             if (session == null) return HttpNotFound();
 
-            // Load student data separately (no ThenInclude in EF6)
             var studentIds = session.AttendanceRecords?.Select(r => r.StudentId).ToList() ?? new List<int>();
             var students = _context.Students
                 .Include(s => s.User)
@@ -287,7 +295,6 @@ namespace ElevateED.Controllers
 
             if (session == null) return HttpNotFound();
 
-            // Load student data separately
             var studentIds = session.AttendanceRecords?.Select(r => r.StudentId).ToList() ?? new List<int>();
             var students = _context.Students
                 .Include(s => s.User)
@@ -369,6 +376,58 @@ namespace ElevateED.Controllers
         }
 
         // ============================================
+        // END CLASS (Complete the entire class)
+        // ============================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult EndClass(int classId)
+        {
+            try
+            {
+                var teacher = GetCurrentTeacher();
+                if (teacher == null)
+                    return Json(new { success = false, message = "Teacher not found" });
+
+                var extraClass = _context.ExtraClasses
+                    .FirstOrDefault(c => c.Id == classId && c.TeacherId == teacher.Id);
+
+                if (extraClass == null)
+                    return Json(new { success = false, message = "Class not found or not assigned to you" });
+
+                if (extraClass.Status == ExtraClassStatus.Completed)
+                    return Json(new { success = false, message = "This class is already completed" });
+
+                if (extraClass.Status == ExtraClassStatus.Cancelled)
+                    return Json(new { success = false, message = "This class is cancelled" });
+
+                // Check if there are any active attendance sessions (QR code still valid)
+                var activeSessions = _context.ExtraClassAttendanceSessions
+                    .Any(s => s.ExtraClassId == classId && s.QRCodeExpiry > DateTime.Now);
+
+                if (activeSessions)
+                    return Json(new { success = false, message = "Please end all active sessions before ending the class" });
+
+                // Mark the class as completed
+                extraClass.Status = ExtraClassStatus.Completed;
+                extraClass.EndDate = DateTime.Now;
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Class has been completed successfully! Students can now rate the class." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EndClass Error: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                return Json(new { success = false, message = "Error: " + (ex.InnerException?.Message ?? ex.Message) });
+            }
+        }
+
+        // ============================================
         // APPLY AI RECOMMENDATIONS
         // ============================================
 
@@ -426,23 +485,36 @@ namespace ElevateED.Controllers
         // SESSION HISTORY
         // ============================================
 
-        public ActionResult SessionHistory(int classId)
+        public ActionResult SessionHistory(int? classId)
         {
             var teacher = GetCurrentTeacher();
             if (teacher == null) return RedirectToAction("Login", "Account");
 
+            if (!classId.HasValue)
+            {
+                var myClasses = _context.ExtraClasses
+                    .Include(c => c.Subject)
+                    .Include(c => c.Grade)
+                    .Where(c => c.TeacherId == teacher.Id && c.IsActive)
+                    .OrderBy(c => c.StartDate)
+                    .ToList();
+
+                ViewBag.ShowClassSelection = true;
+                return View("SessionHistory", myClasses);
+            }
+
             var extraClass = _context.ExtraClasses
-                .FirstOrDefault(c => c.Id == classId && c.TeacherId == teacher.Id);
+                .FirstOrDefault(c => c.Id == classId.Value && c.TeacherId == teacher.Id);
 
             if (extraClass == null) return HttpNotFound();
 
             var sessions = _context.ExtraClassAttendanceSessions
                 .Include(s => s.AttendanceRecords)
-                .Where(s => s.ExtraClassId == classId)
+                .Where(s => s.ExtraClassId == classId.Value)
                 .OrderByDescending(s => s.SessionDate)
                 .ToList();
 
-            var viewModel = sessions.Select(s => new SessionHistoryViewModel
+            var sessionViewModels = sessions.Select(s => new SessionHistoryViewModel
             {
                 SessionId = s.Id,
                 SessionNumber = s.SessionNumber,
@@ -458,7 +530,9 @@ namespace ElevateED.Controllers
             }).ToList();
 
             ViewBag.ExtraClass = extraClass;
-            return View(viewModel);
+            ViewBag.ShowClassSelection = false;
+
+            return View("SessionHistory", sessionViewModels);
         }
 
         // ============================================
@@ -497,13 +571,24 @@ namespace ElevateED.Controllers
 
         private Teacher GetCurrentTeacher()
         {
-            var staffNumber = User.Identity.Name;
-            var user = _context.Users.FirstOrDefault(u => u.StudentNumber == staffNumber);
+            var userName = User.Identity.Name;
+
+            // Try to find the user by StudentNumber (teachers might use the same field)
+            var user = _context.Users.FirstOrDefault(u => u.StudentNumber == userName);
             if (user == null) return null;
 
             return _context.Teachers
                 .Include(t => t.User)
                 .FirstOrDefault(t => t.UserId == user.Id);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _context?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

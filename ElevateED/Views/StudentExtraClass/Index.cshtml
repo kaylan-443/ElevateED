@@ -61,6 +61,11 @@
             opacity: 0.8;
         }
 
+        .class-card.ended {
+            border-left-color: #8b5cf6;
+            background: linear-gradient(to right, white, #f5f3ff);
+        }
+
     .class-title {
         font-size: 20px;
         font-weight: 700;
@@ -118,6 +123,30 @@
         font-weight: 600;
     }
 
+    .status-completed {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .status-ended {
+        background: #ede9fe;
+        color: #5b21b6;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
     .btn-enroll {
         background: var(--success);
         color: white;
@@ -152,6 +181,40 @@
             color: #1e3c72;
         }
 
+    .btn-rate {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-rate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245,158,11,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-rated {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: default;
+    }
+
     .btn-full {
         background: #e5e7eb;
         color: #6b7280;
@@ -182,6 +245,8 @@
 </style>
 
 <div class="container py-4">
+    @Html.AntiForgeryToken()
+
     <div class="page-header">
         <div>
             <h2 class="page-title">
@@ -223,10 +288,19 @@
         {
             bool isEnrolled = myEnrollments.Contains(extraClass.Id);
             bool isFull = extraClass.CurrentEnrollment >= extraClass.Capacity;
+            bool isEnded = extraClass.Status == ExtraClassStatus.Completed;
             string priceClass = extraClass.Price == 0 ? "free-badge" : "";
 
-            <div class="class-card @(isEnrolled ? "enrolled" : "") @(isFull ? "full" : "")">
-                <div class="class-title">@extraClass.Name</div>
+            <div class="class-card @(isEnrolled ? "enrolled" : "") @(isFull && !isEnrolled ? "full" : "") @(isEnded ? "ended" : "")">
+                <div class="class-title">
+                    @extraClass.Name
+                    @if (isEnded)
+                    {
+                        <span class="status-ended ml-2">
+                            <i class="fas fa-flag-checkered"></i> Class Ended
+                        </span>
+                    }
+                </div>
                 <div class="class-meta">
                     <span><i class="fas fa-book"></i> @(extraClass.Subject?.Name ?? "N/A")</span>
                     <span><i class="fas fa-graduation-cap"></i> @(extraClass.Grade?.Name ?? "N/A")</span>
@@ -257,7 +331,13 @@
                         }
                     </div>
                     <div>
-                        @if (isEnrolled)
+                        @if (isEnrolled && isEnded)
+                        {
+                            <a href="@Url.Action("Details", "StudentExtraClass", new { id = extraClass.Id })" class="btn-rate">
+                                <i class="fas fa-star"></i> Rate This Class
+                            </a>
+                        }
+                        else if (isEnrolled)
                         {
                             <a href="@Url.Action("Details", "StudentExtraClass", new { id = extraClass.Id })" class="btn-enrolled">
                                 <i class="fas fa-check-circle"></i> Enrolled - View Details
@@ -293,28 +373,66 @@
 
         if (!confirm(message)) return;
 
+        var btn = event.target;
+        if (btn.tagName !== 'BUTTON') {
+            btn = btn.closest('button');
+        }
+        var originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enrolling...';
+
+        var token = $('input[name="__RequestVerificationToken"]').val();
+
+        if (!token) {
+            alert('Security token missing. Please refresh the page and try again.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            return;
+        }
+
         $.ajax({
             url: '@Url.Action("Join", "StudentExtraClass")',
             type: 'POST',
             data: {
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                __RequestVerificationToken: token,
                 classId: classId
             },
             success: function(response) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+
                 if (response.success) {
                     if (response.requiresPayment && price > 0) {
-                        alert(response.message + '\n\nYou will be redirected to payment.');
+                        alert(response.message + '\n\nYou will be redirected to your enrollments to complete payment.');
                         window.location.href = '@Url.Action("MyEnrollments", "StudentExtraClass")';
                     } else {
                         alert(response.message);
                         location.reload();
                     }
                 } else {
-                    alert(response.message);
+                    alert('Enrollment failed: ' + (response.message || 'Unknown error'));
                 }
             },
-            error: function() {
-                alert('An error occurred. Please try again.');
+            error: function(xhr, status, error) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+
+                var errorMsg = 'An error occurred. Please try again.';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.message) {
+                        errorMsg = response.message;
+                    }
+                } catch(e) {
+                    if (xhr.status === 500) {
+                        errorMsg = 'Server error. Please try again later.';
+                    } else if (xhr.status === 401) {
+                        errorMsg = 'Please log in again.';
+                        window.location.href = '@Url.Action("Login", "Account")';
+                        return;
+                    }
+                }
+                alert(errorMsg);
             }
         });
     }

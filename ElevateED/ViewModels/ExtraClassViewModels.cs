@@ -330,7 +330,7 @@ namespace ElevateED.ViewModels
         public int PresentCount { get; set; }
         public double AttendancePercentage { get; set; }
     }
-
+   
     // ============================================
     // STRUGGLING TOPICS RESULT (Internal use)
     // ============================================

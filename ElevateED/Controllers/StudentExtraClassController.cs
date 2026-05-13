@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 
 namespace ElevateED.Controllers
@@ -36,13 +35,11 @@ namespace ElevateED.Controllers
                 .Include(c => c.Subject)
                 .Include(c => c.Grade)
                 .Include(c => c.Teacher)
-                .Include(c => c.Enrollments)
                 .Where(c => c.IsActive
                     && c.GradeId == studentGradeId.Value
                     && c.StartDate >= DateTime.Today
                     && c.CurrentEnrollment < c.Capacity)
                 .OrderBy(c => c.StartDate)
-                .ThenBy(c => c.Schedule)
                 .ToList();
 
             var myEnrollments = _context.ExtraClassEnrollments
@@ -50,19 +47,14 @@ namespace ElevateED.Controllers
                 .Select(e => e.ExtraClassId)
                 .ToList();
 
-            var attendanceRecords = _context.ExtraClassAttendanceRecords
-                .Where(r => r.StudentId == student.Id)
-                .ToList();
-
             ViewBag.MyEnrollments = myEnrollments;
             ViewBag.StudentId = student.Id;
-            ViewBag.AttendanceRecords = attendanceRecords;
 
             return View(availableClasses);
         }
 
         // ============================================
-        // MY ENROLLMENTS (Current Classes)
+        // MY ENROLLMENTS
         // ============================================
 
         public ActionResult MyEnrollments()
@@ -74,75 +66,12 @@ namespace ElevateED.Controllers
                 .Include(e => e.ExtraClass)
                 .Include(e => e.ExtraClass.Subject)
                 .Include(e => e.ExtraClass.Grade)
-                .Include(e => e.ExtraClass.Teacher)
                 .Where(e => e.StudentId == student.Id && e.IsActive)
                 .OrderByDescending(e => e.EnrollmentDate)
                 .ToList();
 
             return View(enrollments);
         }
-
-        // ============================================
-        // JOIN CLASS (Enroll)
-        // ============================================
-
-        [HttpPost]
-        public ActionResult Join(int classId)
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return Json(new { success = false, message = "Student not found" });
-
-            var extraClass = _context.ExtraClasses
-                .Include(c => c.Enrollments)
-                .FirstOrDefault(c => c.Id == classId);
-
-            if (extraClass == null)
-                return Json(new { success = false, message = "Class not found" });
-
-            var existingEnrollment = _context.ExtraClassEnrollments
-                .FirstOrDefault(e => e.ExtraClassId == classId && e.StudentId == student.Id && e.IsActive);
-
-            if (existingEnrollment != null)
-                return Json(new { success = false, message = "You have already joined this class" });
-
-            var currentCount = extraClass.Enrollments?.Count(e => e.IsActive) ?? 0;
-            if (currentCount >= extraClass.Capacity)
-                return Json(new { success = false, message = "This class is full" });
-
-            if (extraClass.StartDate < DateTime.Today)
-                return Json(new { success = false, message = "This class has already started" });
-
-            var enrollment = new ExtraClassEnrollment
-            {
-                ExtraClassId = classId,
-                StudentId = student.Id,
-                IsPaid = false,
-                EnrollmentDate = DateTime.Now,
-                IsActive = true
-            };
-
-            _context.ExtraClassEnrollments.Add(enrollment);
-            extraClass.CurrentEnrollment = (extraClass.Enrollments?.Count(e => e.IsActive) ?? 0) + 1;
-
-            _context.SaveChanges();
-
-            try
-            {
-                _emailService.SendCustomEmail(student.User.Email, "Extra Class Enrollment - ElevateED",
-                    $@"<h3>Enrollment Successful!</h3>
-                       <p>Dear {student.FullName},</p>
-                       <p>You have successfully enrolled in:</p>
-                       <p><strong>{extraClass.Name}</strong></p>
-                       <p>Schedule: {extraClass.Schedule}</p>
-                       <p>Venue: {extraClass.Venue ?? "To be confirmed"}</p>
-                       <p>Start Date: {extraClass.StartDate:dd MMM yyyy}</p>
-                       <p>Please complete payment to confirm your spot.</p>");
-            }
-            catch { }
-
-            return Json(new { success = true, message = "Successfully enrolled! Please complete payment to confirm your spot.", requiresPayment = extraClass.Price > 0 });
-        }
-
         // ============================================
         // CLASS DETAILS
         // ============================================
@@ -156,9 +85,6 @@ namespace ElevateED.Controllers
                 .Include(c => c.Subject)
                 .Include(c => c.Grade)
                 .Include(c => c.Teacher)
-                .Include(c => c.Enrollments)
-                .Include(c => c.AttendanceSessions)
-                .Include(c => c.Feedbacks)
                 .FirstOrDefault(c => c.Id == id);
 
             if (extraClass == null) return HttpNotFound();
@@ -167,13 +93,14 @@ namespace ElevateED.Controllers
                 .FirstOrDefault(e => e.ExtraClassId == id && e.StudentId == student.Id && e.IsActive);
 
             var attendanceRecords = _context.ExtraClassAttendanceRecords
+                .Include(r => r.AttendanceSession)  // ADD THIS LINE
                 .Where(r => r.StudentId == student.Id && r.AttendanceSession.ExtraClassId == id)
                 .ToList();
 
             var myFeedback = _context.ExtraClassFeedbacks
                 .FirstOrDefault(f => f.ExtraClassId == id && f.StudentId == student.Id);
 
-            var totalSessions = extraClass.AttendanceSessions?.Count ?? 0;
+            var totalSessions = _context.ExtraClassAttendanceSessions.Count(s => s.ExtraClassId == id);
             double attendancePercentage = 0;
             if (totalSessions > 0)
             {
@@ -196,12 +123,143 @@ namespace ElevateED.Controllers
 
             return View(viewModel);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Join(int classId)
+        {
+            try
+            {
+                var student = GetCurrentStudent();
+                if (student == null)
+                    return Json(new { success = false, message = "Student not found. Please log in again." });
+
+                var extraClass = _context.ExtraClasses.Find(classId);
+                if (extraClass == null)
+                    return Json(new { success = false, message = "Class not found." });
+
+                // Check if already enrolled
+                var existingEnrollment = _context.ExtraClassEnrollments
+                    .FirstOrDefault(e => e.ExtraClassId == classId && e.StudentId == student.Id && e.IsActive);
+
+                if (existingEnrollment != null)
+                    return Json(new { success = false, message = "You have already joined this class." });
+
+                // Check capacity
+                var currentCount = _context.ExtraClassEnrollments.Count(e => e.ExtraClassId == classId && e.IsActive);
+                if (currentCount >= extraClass.Capacity)
+                    return Json(new { success = false, message = "This class is full. Maximum capacity reached." });
+
+                // Check if class has already started
+                if (extraClass.StartDate < DateTime.Today)
+                    return Json(new { success = false, message = "This class has already started. Enrollment is closed." });
+
+                // Check if class is active
+                if (!extraClass.IsActive)
+                    return Json(new { success = false, message = "This class is no longer available." });
+
+                // Create enrollment
+                var enrollment = new ExtraClassEnrollment
+                {
+                    ExtraClassId = classId,
+                    StudentId = student.Id,
+                    IsPaid = false,
+                    PaymentDate = DateTime.Now, // Changed from DateTime.MinValue
+                    PaymentReference = null,
+                    EnrollmentDate = DateTime.Now,
+                    IsActive = true
+                };
+
+                _context.ExtraClassEnrollments.Add(enrollment);
+
+                // Update current enrollment count
+                extraClass.CurrentEnrollment = currentCount + 1;
+
+                _context.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    message = extraClass.Price > 0
+                        ? "Successfully enrolled! Please complete payment to confirm your spot."
+                        : "Successfully enrolled! This is a FREE class.",
+                    requiresPayment = extraClass.Price > 0
+                });
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException ex)
+            {
+                var errorMessages = ex.EntityValidationErrors
+                    .SelectMany(x => x.ValidationErrors)
+                    .Select(x => $"Property: {x.PropertyName}, Error: {x.ErrorMessage}");
+
+                var fullErrorMessage = string.Join("; ", errorMessages);
+
+                System.Diagnostics.Debug.WriteLine($"VALIDATION ERROR: {fullErrorMessage}");
+
+                return Json(new { success = false, message = "Validation error: " + fullErrorMessage });
+            }
+            catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
+            {
+                // This catches database update errors
+                var innerException = ex.InnerException;
+                while (innerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"DB UPDATE ERROR: {innerException.Message}");
+
+                    // Check for SQL Server specific errors
+                    if (innerException is System.Data.SqlClient.SqlException sqlEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"SQL ERROR NUMBER: {sqlEx.Number}");
+                        System.Diagnostics.Debug.WriteLine($"SQL ERROR: {sqlEx.Message}");
+
+                        // Foreign key violation
+                        if (sqlEx.Number == 547)
+                        {
+                            return Json(new { success = false, message = "Cannot enroll: Invalid student or class reference." });
+                        }
+
+                        // Primary key violation
+                        if (sqlEx.Number == 2627 || sqlEx.Number == 2601)
+                        {
+                            return Json(new { success = false, message = "You are already enrolled in this class." });
+                        }
+                    }
+
+                    innerException = innerException.InnerException;
+                }
+
+                var fullErrorMessage = ex.InnerException?.Message ?? ex.Message;
+
+                // Get the full stack trace
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"STACK TRACE: {ex.InnerException.StackTrace}");
+                }
+
+                return Json(new { success = false, message = "Database error: " + fullErrorMessage });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GENERAL ERROR: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"INNER ERROR: {ex.InnerException.Message}");
+                    System.Diagnostics.Debug.WriteLine($"STACK TRACE: {ex.InnerException.StackTrace}");
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = "An error occurred while enrolling. Error: " +
+                              (ex.InnerException?.Message ?? ex.Message)
+                });
+            }
+        }
 
         // ============================================
-        // PAYMENT - PAYFAST INTEGRATION
+        // PAY WITH CARD - GET
         // ============================================
 
-        public ActionResult PayNow(int enrollmentId)
+        public ActionResult PayWithCard(int enrollmentId)
         {
             var student = GetCurrentStudent();
             if (student == null) return RedirectToAction("Login", "Account");
@@ -209,9 +267,14 @@ namespace ElevateED.Controllers
             var enrollment = _context.ExtraClassEnrollments
                 .Include(e => e.ExtraClass)
                 .Include(e => e.ExtraClass.Subject)
+                .Include(e => e.ExtraClass.Grade)
                 .FirstOrDefault(e => e.Id == enrollmentId && e.StudentId == student.Id);
 
-            if (enrollment == null) return HttpNotFound();
+            if (enrollment == null)
+            {
+                TempData["ErrorMessage"] = "Enrollment not found.";
+                return RedirectToAction("MyEnrollments");
+            }
 
             if (enrollment.IsPaid)
             {
@@ -219,211 +282,73 @@ namespace ElevateED.Controllers
                 return RedirectToAction("MyEnrollments");
             }
 
-            var extraClass = enrollment.ExtraClass;
-
-            if (extraClass.Price == 0)
-            {
-                enrollment.IsPaid = true;
-                enrollment.PaymentDate = DateTime.Now;
-                enrollment.PaymentReference = "FREE_CLASS";
-                _context.SaveChanges();
-                TempData["SuccessMessage"] = "This is a free class! You are confirmed.";
-                return RedirectToAction("MyEnrollments");
-            }
-
-            var paymentRef = "EC-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + enrollment.Id;
-
-            var payment = new Payment
-            {
-                BookingId = enrollment.Id,
-                PaymentReference = paymentRef,
-                Amount = extraClass.Price,
-                PaymentDate = DateTime.Now,
-                PaymentMethod = "PayFast",
-                Status = "Pending"
-            };
-            _context.Payments.Add(payment);
-            _context.SaveChanges();
-
-            var merchantId = System.Configuration.ConfigurationManager.AppSettings["PayFastMerchantId"] ?? "10000100";
-            var merchantKey = System.Configuration.ConfigurationManager.AppSettings["PayFastMerchantKey"] ?? "46f0cd694581a";
-            var site = System.Configuration.ConfigurationManager.AppSettings["PayFastSite"] ?? "https://sandbox.payfast.co.za/eng/process";
-            var returnUrl = Url.Action("PaymentReturn", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
-            var cancelUrl = Url.Action("PaymentCancel", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
-            var notifyUrl = Url.Action("PaymentNotify", "StudentExtraClass", null, Request.Url?.Scheme ?? "https");
-
-            var payFastUrl = $"{site}?" +
-                $"merchant_id={merchantId}" +
-                $"&merchant_key={merchantKey}" +
-                $"&return_url={System.Web.HttpUtility.UrlEncode(returnUrl)}" +
-                $"&cancel_url={System.Web.HttpUtility.UrlEncode(cancelUrl)}" +
-                $"&notify_url={System.Web.HttpUtility.UrlEncode(notifyUrl)}" +
-                $"&m_payment_id={System.Web.HttpUtility.UrlEncode(paymentRef)}" +
-                $"&amount={extraClass.Price.ToString("0.00")}" +
-                $"&item_name={System.Web.HttpUtility.UrlEncode(extraClass.Name)}" +
-                $"&item_description={System.Web.HttpUtility.UrlEncode("Extra Class Payment")}" +
-                $"&name_first={System.Web.HttpUtility.UrlEncode(student.FirstName)}" +
-                $"&name_last={System.Web.HttpUtility.UrlEncode(student.LastName)}" +
-                $"&email_address={System.Web.HttpUtility.UrlEncode(student.User?.Email ?? "")}";
-
-            Session["PaymentEnrollmentId"] = enrollment.Id;
-
-            return Redirect(payFastUrl);
+            // Return the enrollment directly to the view
+            return View(enrollment);
         }
 
         // ============================================
-        // PAYMENT RETURN (SUCCESS)
-        // ============================================
-
-        public ActionResult PaymentReturn()
-        {
-            var enrollmentId = Session["PaymentEnrollmentId"] as int?;
-            if (!enrollmentId.HasValue)
-            {
-                TempData["ErrorMessage"] = "Payment session expired. Please try again.";
-                return RedirectToAction("MyEnrollments");
-            }
-
-            var enrollment = _context.ExtraClassEnrollments
-                .Include(e => e.ExtraClass)
-                .FirstOrDefault(e => e.Id == enrollmentId.Value);
-
-            if (enrollment != null && !enrollment.IsPaid)
-            {
-                enrollment.IsPaid = true;
-                enrollment.PaymentDate = DateTime.Now;
-
-                var payment = _context.Payments.FirstOrDefault(p => p.BookingId == enrollmentId);
-                if (payment != null)
-                {
-                    payment.Status = "Success";
-                    payment.PaymentDate = DateTime.Now;
-                }
-
-                _context.SaveChanges();
-
-                try
-                {
-                    var student = GetCurrentStudent();
-                    _emailService.SendCustomEmail(student.User.Email, "Payment Confirmed - ElevateED",
-                        $@"<h3>Payment Successful!</h3>
-                           <p>Dear {student.FullName},</p>
-                           <p>Your payment for <strong>{enrollment.ExtraClass.Name}</strong> has been confirmed.</p>
-                           <p>You are now fully enrolled in the class.</p>
-                           <p>Please check the class schedule and arrive on time.</p>");
-                }
-                catch { }
-            }
-
-            Session.Remove("PaymentEnrollmentId");
-            TempData["SuccessMessage"] = "Payment successful! You are now confirmed for this class.";
-            return RedirectToAction("MyEnrollments");
-        }
-
-        // ============================================
-        // PAYMENT CANCEL
-        // ============================================
-
-        public ActionResult PaymentCancel()
-        {
-            Session.Remove("PaymentEnrollmentId");
-            TempData["ErrorMessage"] = "Payment was cancelled. Your enrollment is still pending payment.";
-            return RedirectToAction("MyEnrollments");
-        }
-
-        // ============================================
-        // PAYMENT NOTIFY (PAYFAST IPN)
+        // PROCESS CARD PAYMENT - POST (FIXED)
         // ============================================
 
         [HttpPost]
-        public ActionResult PaymentNotify()
+        [ValidateAntiForgeryToken]
+        public ActionResult ProcessCardPayment(int enrollmentId, string cardNumber, string cardHolder, string expiryMonth, string expiryYear, string cvv)
         {
-            var paymentStatus = Request.Form["payment_status"];
-            var paymentId = Request.Form["m_payment_id"];
-
-            System.Diagnostics.Debug.WriteLine($"PayFast IPN: {paymentId} - {paymentStatus}");
-
-            if (paymentStatus == "COMPLETE")
+            try
             {
-                var payment = _context.Payments.FirstOrDefault(p => p.PaymentReference == paymentId);
-                if (payment != null)
+                var student = GetCurrentStudent();
+                if (student == null)
+                    return Json(new { success = false, message = "Student not found" });
+
+                var enrollment = _context.ExtraClassEnrollments
+                    .Include(e => e.ExtraClass)
+                    .FirstOrDefault(e => e.Id == enrollmentId && e.StudentId == student.Id);
+
+                if (enrollment == null)
+                    return Json(new { success = false, message = "Enrollment not found" });
+
+                if (enrollment.IsPaid)
+                    return Json(new { success = false, message = "Payment already completed" });
+
+                // Basic validation
+                if (string.IsNullOrEmpty(cardNumber) || cardNumber.Replace(" ", "").Length < 13)
+                    return Json(new { success = false, message = "Please enter a valid card number" });
+
+                if (string.IsNullOrEmpty(cardHolder))
+                    return Json(new { success = false, message = "Please enter card holder name" });
+
+                if (string.IsNullOrEmpty(expiryMonth) || string.IsNullOrEmpty(expiryYear))
+                    return Json(new { success = false, message = "Please select expiry date" });
+
+                if (string.IsNullOrEmpty(cvv) || cvv.Length < 3)
+                    return Json(new { success = false, message = "Please enter a valid CVV" });
+
+                // Generate payment reference
+                var paymentRef = "PAY-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + enrollment.Id;
+
+                // Update enrollment payment details (no need for separate Payment record)
+                enrollment.IsPaid = true;
+                enrollment.PaymentDate = DateTime.Now;
+                enrollment.PaymentReference = paymentRef;
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Payment successful! Your enrollment is now confirmed." });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Payment Error: {ex.Message}");
+                if (ex.InnerException != null)
                 {
-                    payment.Status = "Success";
-                    payment.PaymentDate = DateTime.Now;
-
-                    var enrollment = _context.ExtraClassEnrollments.Find(payment.BookingId);
-                    if (enrollment != null && !enrollment.IsPaid)
-                    {
-                        enrollment.IsPaid = true;
-                        enrollment.PaymentDate = DateTime.Now;
-                        enrollment.PaymentReference = paymentId;
-
-                        var extraClass = _context.ExtraClasses.Find(enrollment.ExtraClassId);
-                        if (extraClass != null)
-                        {
-                            extraClass.CurrentEnrollment = _context.ExtraClassEnrollments
-                                .Count(e => e.ExtraClassId == extraClass.Id && e.IsPaid && e.IsActive);
-                        }
-
-                        _context.SaveChanges();
-                    }
+                    System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.InnerException.StackTrace}");
                 }
-            }
-
-            return new EmptyResult();
-        }
-
-        // ============================================
-        // ATTENDANCE - SCAN QR CODE
-        // ============================================
-
-        [HttpPost]
-        public ActionResult ScanAttendance(string qrCode)
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return Json(new { success = false, message = "Student not found" });
-
-            var session = _context.ExtraClassAttendanceSessions
-                .Include(s => s.ExtraClass)
-                .FirstOrDefault(s => s.QRCode == qrCode && s.QRCodeExpiry > DateTime.Now);
-
-            if (session == null)
-                return Json(new { success = false, message = "Invalid or expired QR code" });
-
-            var enrollment = _context.ExtraClassEnrollments
-                .FirstOrDefault(e => e.ExtraClassId == session.ExtraClassId && e.StudentId == student.Id && e.IsActive);
-
-            if (enrollment == null)
-                return Json(new { success = false, message = "You are not enrolled in this class" });
-
-            var existingRecord = _context.ExtraClassAttendanceRecords
-                .FirstOrDefault(r => r.AttendanceSessionId == session.Id && r.StudentId == student.Id);
-
-            if (existingRecord != null && existingRecord.IsPresent)
-                return Json(new { success = false, message = "You have already been marked present for this session" });
-
-            if (existingRecord == null)
-            {
-                var record = new ExtraClassAttendanceRecord
+                return Json(new
                 {
-                    AttendanceSessionId = session.Id,
-                    StudentId = student.Id,
-                    ScanTime = DateTime.Now,
-                    IsPresent = true,
-                    Status = Models.AttendanceStatus.Present
-                };
-                _context.ExtraClassAttendanceRecords.Add(record);
+                    success = false,
+                    message = "Payment failed: " + (ex.InnerException?.Message ?? ex.Message)
+                });
             }
-            else
-            {
-                existingRecord.IsPresent = true;
-                existingRecord.ScanTime = DateTime.Now;
-                existingRecord.Status = Models.AttendanceStatus.Present;
-            }
-
-            _context.SaveChanges();
-
-            return Json(new { success = true, message = $"Attendance marked for {session.ExtraClass.Name}" });
         }
 
         // ============================================
@@ -450,71 +375,130 @@ namespace ElevateED.Controllers
         // ============================================
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult SubmitFeedback(int classId, int rating, string comment)
         {
-            var student = GetCurrentStudent();
-            if (student == null) return Json(new { success = false, message = "Student not found" });
-
-            var extraClass = _context.ExtraClasses.Find(classId);
-            if (extraClass == null)
-                return Json(new { success = false, message = "Class not found" });
-
-            var enrollment = _context.ExtraClassEnrollments
-                .FirstOrDefault(e => e.ExtraClassId == classId && e.StudentId == student.Id && e.IsActive);
-
-            if (enrollment == null)
-                return Json(new { success = false, message = "You are not enrolled in this class" });
-
-            if (extraClass.Status != ExtraClassStatus.Completed)
-                return Json(new { success = false, message = "Feedback can only be submitted after the class is completed" });
-
-            var existingFeedback = _context.ExtraClassFeedbacks
-                .FirstOrDefault(f => f.ExtraClassId == classId && f.StudentId == student.Id);
-
-            if (existingFeedback != null)
-                return Json(new { success = false, message = "You have already submitted feedback for this class" });
-
-            var feedback = new ExtraClassFeedback
+            try
             {
-                ExtraClassId = classId,
-                StudentId = student.Id,
-                Rating = rating,
-                Comment = comment,
-                DateSubmitted = DateTime.Now
-            };
+                var student = GetCurrentStudent();
+                if (student == null)
+                    return Json(new { success = false, message = "Student not found" });
 
-            _context.ExtraClassFeedbacks.Add(feedback);
-            _context.SaveChanges();
+                var extraClass = _context.ExtraClasses.Find(classId);
+                if (extraClass == null)
+                    return Json(new { success = false, message = "Class not found" });
 
-            return Json(new { success = true, message = "Thank you for your feedback!" });
+                var enrollment = _context.ExtraClassEnrollments
+                    .FirstOrDefault(e => e.ExtraClassId == classId && e.StudentId == student.Id && e.IsActive);
+
+                if (enrollment == null)
+                    return Json(new { success = false, message = "You are not enrolled in this class" });
+
+                if (extraClass.Status != ExtraClassStatus.Completed)
+                    return Json(new { success = false, message = "Feedback can only be submitted after the class is completed" });
+
+                var existingFeedback = _context.ExtraClassFeedbacks
+                    .FirstOrDefault(f => f.ExtraClassId == classId && f.StudentId == student.Id);
+
+                if (existingFeedback != null)
+                    return Json(new { success = false, message = "You have already submitted feedback" });
+
+                var feedback = new ExtraClassFeedback
+                {
+                    ExtraClassId = classId,
+                    StudentId = student.Id,
+                    Rating = rating,
+                    Comment = comment ?? "",
+                    DateSubmitted = DateTime.Now
+                };
+
+                _context.ExtraClassFeedbacks.Add(feedback);
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = "Thank you for your feedback!" });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Feedback Error: {ex.Message}");
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
         }
-
         // ============================================
-        // DOWNLOAD RECEIPT
+        // SCAN ATTENDANCE PAGE - GET (DISPLAY THE PAGE)
         // ============================================
 
         [HttpGet]
-        public ActionResult DownloadReceipt(string paymentReference)
+        public ActionResult ScanAttendance()
         {
             var student = GetCurrentStudent();
             if (student == null) return RedirectToAction("Login", "Account");
 
-            var payment = _context.Payments
-                .Include(p => p.Booking)
-                .Include(p => p.Booking.ExtraClass)
-                .Include(p => p.Booking.ExtraClass.Subject)
-                .FirstOrDefault(p => p.PaymentReference == paymentReference);
+            return View(new ScanQRCodeViewModel());
+        }
+        // ============================================
+        // SCAN ATTENDANCE (QR CODE)
+        // ============================================
 
-            if (payment == null) return HttpNotFound();
+        [HttpPost]
+        public ActionResult ScanAttendance(string qrCode)
+        {
+            try
+            {
+                var student = GetCurrentStudent();
+                if (student == null)
+                    return Json(new { success = false, message = "Student not found" });
 
-            ViewBag.Payment = payment;
-            ViewBag.Student = student;
+                var session = _context.ExtraClassAttendanceSessions
+                    .Include(s => s.ExtraClass)
+                    .FirstOrDefault(s => s.QRCode == qrCode && s.QRCodeExpiry > DateTime.Now);
 
-            return View();
+                if (session == null)
+                    return Json(new { success = false, message = "Invalid or expired QR code" });
+
+                var enrollment = _context.ExtraClassEnrollments
+                    .FirstOrDefault(e => e.ExtraClassId == session.ExtraClassId && e.StudentId == student.Id && e.IsActive);
+
+                if (enrollment == null)
+                    return Json(new { success = false, message = "You are not enrolled in this class" });
+
+                var existingRecord = _context.ExtraClassAttendanceRecords
+                    .FirstOrDefault(r => r.AttendanceSessionId == session.Id && r.StudentId == student.Id);
+
+                if (existingRecord != null && existingRecord.IsPresent)
+                    return Json(new { success = false, message = "Attendance already marked" });
+
+                if (existingRecord == null)
+                {
+                    var record = new ExtraClassAttendanceRecord
+                    {
+                        AttendanceSessionId = session.Id,
+                        StudentId = student.Id,
+                        ScanTime = DateTime.Now,
+                        IsPresent = true,
+                        Status = Models.AttendanceStatus.Present
+                    };
+                    _context.ExtraClassAttendanceRecords.Add(record);
+                }
+                else
+                {
+                    existingRecord.IsPresent = true;
+                    existingRecord.ScanTime = DateTime.Now;
+                    existingRecord.Status = Models.AttendanceStatus.Present;
+                }
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = $"Attendance marked for {session.ExtraClass?.Name}" });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Attendance Error: {ex.Message}");
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
         }
 
-        // ============================================
-        // HELPER METHODS
+        /// ============================================
+        // HELPER METHOD
         // ============================================
 
         private Student GetCurrentStudent()
@@ -528,6 +512,15 @@ namespace ElevateED.Controllers
                 .Include(s => s.Class)
                 .Include(s => s.Class.Grade)
                 .FirstOrDefault(s => s.UserId == user.Id);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _context?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

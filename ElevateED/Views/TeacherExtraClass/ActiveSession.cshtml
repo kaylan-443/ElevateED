@@ -26,21 +26,25 @@
         .qr-code img {
             width: 250px;
             height: 250px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
         }
 
     .qr-code-simple {
-        font-size: 32px;
+        font-size: 20px;
         font-family: monospace;
         background: #f8f9fa;
-        padding: 20px;
+        padding: 15px;
         border-radius: 12px;
         letter-spacing: 2px;
+        word-break: break-all;
     }
 
     .expiry-timer {
         font-size: 24px;
         font-weight: 700;
-        color: var(--warning);
+        color: #f59e0b;
+        margin: 15px 0;
     }
 
     .stats {
@@ -63,12 +67,24 @@
     }
 
     .btn-refresh {
-        background: var(--primary);
+        background: #4f46e5;
         color: white;
         padding: 10px 25px;
         border-radius: 25px;
         border: none;
         margin-top: 20px;
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .alert-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
     }
 </style>
 
@@ -80,14 +96,50 @@
         @if (!Model.IsExpired)
         {
             <div class="qr-code">
-                <div class="qr-code-simple">
-                    <strong>@Model.QRCode</strong>
-                </div>
-                <p class="mt-2 small text-muted">QR Code Text: @Model.QRCode</p>
+                <img src="https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=@Model.QRCode&choe=UTF-8"
+                     alt="QR Code"
+                     onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=@Model.QRCode';" />
+            </div>
+
+            <div class="qr-code-simple mt-3">
+                <strong>QR Code Text: @Model.QRCode</strong>
             </div>
 
             <div class="expiry-timer" id="timer">
-                Time Remaining: @Model.TimeRemaining
+                <i class="fas fa-hourglass-half"></i> Time Remaining: <span id="timeRemaining">@Model.TimeRemaining</span>
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i>
+                <strong>Instructions for students:</strong><br />
+                1. Open your Student Portal<br />
+                2. Go to Extra Classes → My Enrollments<br />
+                3. Click on this class and select "Mark Attendance"<br />
+                4. Scan this QR code using your device's camera
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">@Model.TotalStudents</div>
+                    <div>Total Students</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" style="color: #10b981;">@Model.PresentCount</div>
+                    <div>Present</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" style="color: #ef4444;">@Model.AbsentCount</div>
+                    <div>Absent</div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a href="@Url.Action("MarkAttendance", new { sessionId = Model.SessionId })" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Mark Attendance Manually
+                </a>
+                <button class="btn btn-secondary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
         }
         else
@@ -95,42 +147,34 @@
             <div class="alert alert-warning">
                 <i class="fas fa-clock"></i> This session has expired.
             </div>
-        }
-
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-number">@Model.TotalStudents</div>
-                <div>Total Students</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" style="color: #10b981;">@Model.PresentCount</div>
-                <div>Present</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" style="color: #ef4444;">@Model.AbsentCount</div>
-                <div>Absent</div>
-            </div>
-        </div>
-
-        <div class="mt-3">
-            <a href="@Url.Action("MarkAttendance", new { sessionId = Model.SessionId })" class="btn btn-primary">
-                <i class="fas fa-edit"></i> Mark Attendance Manually
+            <a href="@Url.Action("Index", "TeacherExtraClass")" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Classes
             </a>
-            <button class="btn btn-secondary" onclick="location.reload()">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-        </div>
+        }
     </div>
 </div>
 
 <script>
     @if (!Model.IsExpired)
     {
-        <text>
-        function updateTimer() {
-            location.reload();
-        }
-        setTimeout(updateTimer, 30000);
-        </text>
+        @:var expiryTime = new Date('@Model.QRCodeExpiry.ToString("yyyy-MM-ddTHH:mm:ss")');
+        @:
+        @:function updateTimer() {
+        @:    var now = new Date();
+        @:    var diff = expiryTime - now;
+        @:
+        @:    if (diff <= 0) {
+        @:        document.getElementById('timer').innerHTML = '<i class="fas fa-clock"></i> Session Expired';
+        @:        location.reload();
+        @:        return;
+        @:    }
+        @:
+        @:    var minutes = Math.floor(diff / 60000);
+        @:    var seconds = Math.floor((diff % 60000) / 1000);
+        @:
+        @:    document.getElementById('timeRemaining').innerHTML = minutes + 'm ' + seconds + 's remaining';
+        @:}
+        @:
+        @:setInterval(updateTimer, 1000);
     }
 </script>

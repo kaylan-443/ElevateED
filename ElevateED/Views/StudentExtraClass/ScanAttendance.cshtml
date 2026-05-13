@@ -1,0 +1,282 @@
+﻿@model ElevateED.ViewModels.ScanQRCodeViewModel
+
+@{
+    ViewBag.Title = "Scan Attendance";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Attendance - ElevateED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .scanner-card {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .scanner-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+            .scanner-header h2 {
+                color: #1e3c72;
+                font-size: 30px;
+                margin-bottom: 10px;
+            }
+
+            .scanner-header p {
+                color: #666;
+                font-size: 15px;
+            }
+
+        #reader {
+            width: 100%;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 3px solid #e5e7eb;
+        }
+
+        .manual-input {
+            margin-top: 20px;
+        }
+
+            .manual-input input {
+                width: 100%;
+                padding: 14px;
+                border-radius: 12px;
+                border: 2px solid #ddd;
+                font-size: 16px;
+            }
+
+                .manual-input input:focus {
+                    border-color: #1e3c72;
+                    outline: none;
+                }
+
+        .btn-submit {
+            width: 100%;
+            margin-top: 15px;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .btn-submit:hover {
+                transform: translateY(-2px);
+            }
+
+        .alert {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 12px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .scan-status {
+            margin-top: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .scanner-icon {
+            width: 80px;
+            height: 80px;
+            background: #eff6ff;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e3c72;
+            font-size: 32px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanner-card">
+
+        <div class="scanner-header">
+            <div class="scanner-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+
+            <h2>Scan Attendance</h2>
+            <p>Point your camera at the teacher's QR code</p>
+        </div>
+
+        @Html.AntiForgeryToken()
+
+        <!-- CAMERA SCANNER -->
+        <div id="reader"></div>
+
+        <div class="scan-status">
+            Waiting for QR code...
+        </div>
+
+        <!-- OPTIONAL MANUAL INPUT -->
+        <div class="manual-input">
+            <input type="text"
+                   id="qrCodeInput"
+                   placeholder="Or enter QR code manually" />
+        </div>
+
+        <button class="btn-submit" onclick="submitAttendance()">
+            <i class="fas fa-check-circle"></i>
+            Mark Attendance
+        </button>
+
+        <div id="message" class="alert"></div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+
+        function showMessage(msg, type) {
+            var msgDiv = $('#message');
+
+            msgDiv.removeClass('alert-success alert-danger');
+            msgDiv.addClass('alert-' + type);
+            msgDiv.html(msg);
+            msgDiv.fadeIn();
+
+            setTimeout(function () {
+                msgDiv.fadeOut();
+            }, 4000);
+        }
+
+        // ===============================
+        // QR CAMERA SCANNER
+        // ===============================
+
+        function onScanSuccess(decodedText) {
+
+            $('#qrCodeInput').val(decodedText);
+
+            showMessage("QR Code scanned successfully!", "success");
+
+            // Auto submit after scan
+            submitAttendance();
+        }
+
+        function onScanFailure(error) {
+            // silent
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader",
+            {
+                fps: 10,
+                qrbox: 250
+            },
+            false
+        );
+
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+        // ===============================
+        // SUBMIT ATTENDANCE
+        // ===============================
+
+        function submitAttendance() {
+
+            var qrCode = $('#qrCodeInput').val().trim();
+
+            if (!qrCode) {
+                showMessage("Please scan a QR code first.", "danger");
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("ScanAttendance", "StudentExtraClass")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken:
+                        $('input[name="__RequestVerificationToken"]').val(),
+
+                    qrCode: qrCode
+                },
+
+                success: function (response) {
+
+                    if (response.success) {
+
+                        showMessage(response.message, 'success');
+
+                        setTimeout(function () {
+
+                            window.location.href =
+                                '@Url.Action("MyEnrollments", "StudentExtraClass")';
+
+                        }, 2000);
+
+                    } else {
+
+                        showMessage(response.message, 'danger');
+                    }
+                },
+
+                error: function (xhr) {
+
+                    var errorMsg = xhr.responseJSON
+                        ? xhr.responseJSON.message
+                        : 'An error occurred';
+
+                    showMessage(errorMsg, 'danger');
+                }
+            });
+        }
+
+    </script>
+
+</body>
+</html>

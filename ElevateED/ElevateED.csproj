@@ -706,6 +706,7 @@
     <Content Include="Views\StudentExtraClass\Details.cshtml" />
     <Content Include="Views\StudentExtraClass\MyAttendance.cshtml" />
     <Content Include="Views\AdminExtraClass\Analytics.cshtml" />
+    <Content Include="Views\StudentExtraClass\ScanAttendance.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

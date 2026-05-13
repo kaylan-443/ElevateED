@@ -34,7 +34,6 @@
             margin-right: 10px;
         }
 
-    /* Stats Cards */
     .stats-row {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -68,7 +67,6 @@
         text-transform: uppercase;
     }
 
-    /* Active Sessions */
     .active-session-card {
         background: linear-gradient(135deg, #10b981, #059669);
         color: white;
@@ -79,11 +77,15 @@
     }
 
     @@keyframes pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-        50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+        }
     }
 
-    /* Class Cards */
     .class-card {
         background: white;
         border-radius: 16px;
@@ -109,6 +111,12 @@
 
         .class-card.completed {
             border-left-color: var(--success);
+            opacity: 0.85;
+        }
+
+        .class-card.cancelled {
+            border-left-color: var(--danger);
+            opacity: 0.7;
         }
 
     .class-title {
@@ -142,7 +150,16 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
     }
+
+        .btn-sm:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
 
     .empty-state {
         text-align: center;
@@ -172,6 +189,8 @@
             </a>
         </div>
     </div>
+
+    @Html.AntiForgeryToken()
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -249,9 +268,21 @@
         {
             var enrolledCount = cls.Enrollments?.Count(e => e.IsActive) ?? 0;
             var statusClass = cls.Status.ToString().ToLower();
+            var isCompleted = cls.Status == ExtraClassStatus.Completed;
+            var isCancelled = cls.Status == ExtraClassStatus.Cancelled;
 
             <div class="class-card @statusClass">
-                <div class="class-title">@cls.Name</div>
+                <div class="class-title">
+                    @cls.Name
+                    @if (isCompleted)
+                    {
+                        <span class="badge bg-success ml-2">Completed</span>
+                    }
+                    else if (isCancelled)
+                    {
+                        <span class="badge bg-danger ml-2">Cancelled</span>
+                    }
+                </div>
                 <div class="class-meta">
                     <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
                     <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
@@ -259,26 +290,49 @@
                     <span><i class="fas fa-clock"></i> @cls.Schedule</span>
                     <span><i class="fas fa-map-marker-alt"></i> @(cls.Venue ?? "TBA")</span>
                     <span><i class="fas fa-users"></i> @enrolledCount/@cls.Capacity enrolled</span>
+                    @if (isCompleted)
+                    {
+                        <span><i class="fas fa-flag-checkered"></i> Ended: @(cls.EndDate.ToString("dd MMM yyyy") ?? "N/A")</span>
+                    }
                 </div>
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <span class="badge @(statusClass == "upcoming" ? "bg-info" : statusClass == "inprogress" ? "bg-warning" : statusClass == "completed" ? "bg-success" : "bg-secondary")">
                             @cls.Status
                         </span>
+                        @if (isCompleted)
+                        {
+                            var avgRating = cls.Feedbacks?.Any() == true ? cls.Feedbacks.Average(f => f.Rating) : 0;
+                            <span class="badge bg-warning ml-2">
+                                <i class="fas fa-star"></i> @avgRating.ToString("0.0") / 5
+                            </span>
+                        }
                     </div>
                     <div>
                         <a href="@Url.Action("ClassDetails", new { id = cls.Id })" class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Details
                         </a>
-                        <a href="@Url.Action("EnrolledStudents", new { classId = cls.Id })" class="btn btn-sm btn-primary">
-                            <i class="fas fa-users"></i> Students
-                        </a>
-                        <a href="@Url.Action("SessionHistory", new { classId = cls.Id })" class="btn btn-sm btn-secondary">
-                            <i class="fas fa-history"></i> Sessions
-                        </a>
-                        <a href="@Url.Action("StartSession", new { classId = cls.Id })" class="btn btn-sm btn-success">
-                            <i class="fas fa-play"></i> Start Session
-                        </a>
+                        @if (!isCompleted && !isCancelled)
+                        {
+                            <a href="@Url.Action("EnrolledStudents", new { classId = cls.Id })" class="btn btn-sm btn-primary">
+                                <i class="fas fa-users"></i> Students
+                            </a>
+                            <a href="@Url.Action("SessionHistory", new { classId = cls.Id })" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-history"></i> Sessions
+                            </a>
+                            <a href="@Url.Action("StartSession", new { classId = cls.Id })" class="btn btn-sm btn-success">
+                                <i class="fas fa-play"></i> Start Session
+                            </a>
+                            <a href="javascript:void(0)" onclick="endClass(@cls.Id, '@cls.Name.Replace("'", "\\'")')" class="btn btn-sm btn-danger">
+                                <i class="fas fa-flag-checkered"></i> End Class
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("SessionHistory", new { classId = cls.Id })" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-history"></i> View Sessions
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -306,6 +360,39 @@
                 } else {
                     alert(response.message);
                 }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
+
+    function endClass(classId, className) {
+        if (!confirm('Are you sure you want to end "' + className + '"?\n\nThis will:\n• Mark the class as completed\n• Allow students to rate the class\n• Close enrollment\n\nThis action cannot be undone.')) {
+            return;
+        }
+
+        if (!confirm('FINAL CONFIRMATION: End this class permanently?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("EndClass", "TeacherExtraClass")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                classId: classId
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred. Please try again.');
             }
         });
     }

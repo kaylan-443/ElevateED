@@ -441,6 +441,10 @@
             border-top-color: var(--info-blue);
         }
 
+        .quick-action-card.extraclasses {
+            border-top-color: #8b5cf6;
+        }
+
     .quick-action-icon {
         width: 55px;
         height: 55px;
@@ -469,6 +473,10 @@
         background: var(--info-blue);
     }
 
+    .quick-action-card.extraclasses .quick-action-icon {
+        background: #8b5cf6;
+    }
+
     .quick-action-card h5 {
         font-size: 15px;
         font-weight: 600;
@@ -482,12 +490,13 @@
         margin: 0;
     }
 
-    /* ============ ATTENDANCE CHART SECTION ============ */
+    /* ============ CHART SECTION ============ */
     .chart-section {
         background: white;
         border-radius: 15px;
         padding: 25px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        margin-bottom: 25px;
     }
 
     .chart-header {
@@ -505,85 +514,26 @@
             margin: 0;
         }
 
-        .chart-header select {
-            padding: 8px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-    .chart-container {
-        position: relative;
-        height: 300px;
+    .table-responsive {
+        overflow-x: auto;
     }
 
-    .bar-chart {
-        display: flex;
-        align-items: flex-end;
-        gap: 20px;
-        height: 250px;
-        padding: 0 10px;
-    }
-
-    .bar-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        justify-content: flex-end;
-    }
-
-    .bar {
+    .table {
         width: 100%;
-        max-width: 60px;
-        border-radius: 8px 8px 0 0;
-        transition: all 0.3s ease;
-        position: relative;
-        cursor: pointer;
-        min-height: 10px;
+        border-collapse: collapse;
     }
 
-        .bar:hover {
-            opacity: 0.8;
-            transform: scaleY(1.02);
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-    .bar-value {
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 5px;
-        color: #333;
-    }
-
-    .bar-label {
-        font-size: 11px;
-        color: #888;
-        margin-top: 8px;
-        text-align: center;
-    }
-
-    .chart-legend {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        margin-top: 15px;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: #666;
-    }
-
-    .legend-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
-    }
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
 
     /* ============ RESPONSIVE ============ */
     @@media (max-width: 992px) {
@@ -605,54 +555,9 @@
         .quick-actions {
             grid-template-columns: repeat(2, 1fr);
         }
-
-        .info-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
     }
 
     @@media (max-width: 768px) {
-        .sidebar {
-            width: 100%;
-            height: auto;
-            position: relative;
-            bottom: auto;
-            flex-direction: row;
-            padding: 10px;
-            overflow-x: auto;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            gap: 5px;
-            padding: 0;
-        }
-
-        .nav-section-title {
-            display: none;
-        }
-
-        .nav-item {
-            padding: 8px 12px;
-            font-size: 12px;
-            white-space: nowrap;
-            border-left: none;
-            border-bottom: 3px solid transparent;
-        }
-
-            .nav-item:hover, .nav-item.active {
-                border-left: none;
-                border-bottom-color: var(--accent-gold);
-            }
-
-        .sidebar-footer {
-            display: none;
-        }
-
-        .sidebar-brand {
-            padding: 10px;
-        }
-
         .main-content {
             margin-left: 0;
             padding: 15px;
@@ -710,6 +615,16 @@
                 </a>
                 <a href="@Url.Action("Index", "Marks")" class="nav-item">
                     <i class="fas fa-clipboard-check"></i> <span>Marks</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Extra Classes</div>
+                <a href="@Url.Action("Index", "TeacherExtraClass")" class="nav-item">
+                    <i class="fas fa-chalkboard-teacher"></i> <span>My Extra Classes</span>
+                </a>
+                <a href="@Url.Action("SessionHistory", "TeacherExtraClass")" class="nav-item">
+                    <i class="fas fa-history"></i> <span>Session History</span>
                 </a>
             </div>
 
@@ -782,7 +697,7 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="greeting">
-                <h1>Good @GetTimeOfDay(), @Model.FullName.Split(' ')[0] 👋</h1>
+                <h1>Good @GetTimeOfDay(), @(Model.FullName?.Split(' ')[0] ?? "Teacher") 👋</h1>
                 <p>Here's what's happening with your classes today</p>
             </div>
             <div class="top-actions">
@@ -853,7 +768,7 @@
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
                 <div class="number">@Model.LearnerPassRate%</div>
-                <div class="label">Learner Pass Rate</div>
+                <div class="label">Pass Rate</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
@@ -884,6 +799,11 @@
                 <h5>Upload Classwork</h5>
                 <p>In-class activities</p>
             </a>
+            <a href="@Url.Action("Index", "TeacherExtraClass")" class="quick-action-card extraclasses">
+                <div class="quick-action-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <h5>Extra Classes</h5>
+                <p>Manage interventions</p>
+            </a>
             <a href="@Url.Action("Index", "Marks")" class="quick-action-card" style="border-top-color: #6366f1;">
                 <div class="quick-action-icon" style="background: #6366f1;"><i class="fas fa-clipboard-check"></i></div>
                 <h5>Capture Marks</h5>
@@ -894,12 +814,10 @@
                 <h5>My Timetable</h5>
                 <p>View schedule</p>
             </a>
-
-            <!-- Exam proposals (new flow) -->
             <a href="@Url.Action("MyExamProposals", "Teacher")" class="quick-action-card" style="border-top-color: #10b981;">
                 <div class="quick-action-icon" style="background: #10b981;"><i class="fas fa-calendar-check"></i></div>
                 <h5>Exam Proposals</h5>
-                <p>Propose & track your exam sessions</p>
+                <p>Propose exam sessions</p>
             </a>
             <a href="@Url.Action("Index", "Analytics")" class="quick-action-card" style="border-top-color: #f59e0b;">
                 <div class="quick-action-icon" style="background: #f59e0b;"><i class="fas fa-chart-bar"></i></div>
@@ -908,114 +826,70 @@
             </a>
         </div>
 
+        <!-- Assessment Status -->
         <div class="chart-section">
             <div class="chart-header">
-                <h4><i class="fas fa-clipboard-check" style="color: var(--accent-gold); margin-right: 10px;"></i>Marks & Assessment Status</h4>
+                <h4><i class="fas fa-clipboard-check" style="color: var(--accent-gold); margin-right: 10px;"></i>Assessment Status</h4>
             </div>
-            <div class="chart-container">
-                <div class="stats-row" style="margin-bottom: 0;">
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
-                        <div class="number">@Model.DraftAssessments</div>
-                        <div class="label">Draft</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon blue"><i class="fas fa-paper-plane"></i></div>
-                        <div class="number">@Model.SubmittedAssessments</div>
-                        <div class="label">Submitted</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green"><i class="fas fa-check"></i></div>
-                        <div class="number">@Model.ApprovedAssessments</div>
-                        <div class="label">Approved</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red"><i class="fas fa-undo"></i></div>
-                        <div class="number">@Model.ReturnedAssessments</div>
-                        <div class="label">Returned</div>
-                    </div>
+            <div class="stats-row" style="margin-bottom: 0;">
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
+                    <div class="number">@Model.DraftAssessments</div>
+                    <div class="label">Draft</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-paper-plane"></i></div>
+                    <div class="number">@Model.SubmittedAssessments</div>
+                    <div class="label">Submitted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-check"></i></div>
+                    <div class="number">@Model.ApprovedAssessments</div>
+                    <div class="label">Approved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fas fa-undo"></i></div>
+                    <div class="number">@Model.ReturnedAssessments</div>
+                    <div class="label">Returned</div>
                 </div>
             </div>
         </div>
 
+        <!-- Subject Performance -->
         @if (Model.SubjectPerformance != null && Model.SubjectPerformance.Any())
         {
             <div class="chart-section">
                 <div class="chart-header">
                     <h4><i class="fas fa-chart-line" style="color: var(--accent-gold); margin-right: 10px;"></i>Subject Performance</h4>
                 </div>
-                <div class="chart-container">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Assessments</th>
+                                <th>Average</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SubjectPerformance)
+                            {
                                 <tr>
-                                    <th>Subject</th>
-                                    <th>Class</th>
-                                    <th>Assessments</th>
-                                    <th>Average</th>
-                                    <th>Pass Rate</th>
+                                    <td>@item.SubjectName</td>
+                                    <td>@item.ClassName</td>
+                                    <td>@item.AssessmentCount</td>
+                                    <td>@item.AverageMark%</td>
+                                    <td>@item.PassRate%</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in Model.SubjectPerformance)
-                                {
-                                    <tr>
-                                        <td>@item.SubjectName</td>
-                                        <td>@item.ClassName</td>
-                                        <td>@item.AssessmentCount</td>
-                                        <td>@item.AverageMark%</td>
-                                        <td>@item.PassRate%</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         }
-
-        <!-- Attendance Analytics Chart -->
-        <div class="chart-section">
-            <div class="chart-header">
-                <h4><i class="fas fa-chart-bar" style="color: var(--accent-gold); margin-right: 10px;"></i>Attendance Overview</h4>
-                <select id="chartFilter" onchange="loadChartData(this.value)">
-                    <option value="weekly">This Week</option>
-                    <option value="monthly">This Month</option>
-                </select>
-            </div>
-            <div class="chart-container" id="chartContainer">
-                <div class="bar-chart">
-                    @{
-                        // Sample data - replace with actual analytics data
-                        var chartData = new[] {
-                            new { Label = "Mon", Present = 32, Absent = 3 },
-                            new { Label = "Tue", Present = 30, Absent = 5 },
-                            new { Label = "Wed", Present = 33, Absent = 2 },
-                            new { Label = "Thu", Present = 28, Absent = 7 },
-                            new { Label = "Fri", Present = 31, Absent = 4 }
-                        };
-                        int maxValue = chartData.Max(d => d.Present + d.Absent);
-                    }
-                    @foreach (var day in chartData)
-                    {
-                        int totalHeight = maxValue > 0 ? ((day.Present + day.Absent) * 250 / maxValue) : 0;
-                        int presentHeight = totalHeight > 0 ? (day.Present * totalHeight / (day.Present + day.Absent)) : 0;
-
-                        <div class="bar-item">
-                            <div class="bar-value">@day.Present/@(day.Present + day.Absent)</div>
-                            <div class="bar" style="height: @totalHeight px; background: linear-gradient(to top, #dc3545 @(presentHeight) px, #28a745 @(presentHeight) px, #28a745 100%);" title="Present: @day.Present | Absent: @day.Absent"></div>
-                            <div class="bar-label">@day.Label</div>
-                        </div>
-                    }
-                </div>
-                <div class="chart-legend">
-                    <div class="legend-item"><div class="legend-color" style="background: #28a745;"></div> Present</div>
-                    <div class="legend-item"><div class="legend-color" style="background: #dc3545;"></div> Absent</div>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
+     
 
 @functions {
     string GetTimeOfDay()
@@ -1028,14 +902,12 @@
 }
 
 <script>
-    function loadChartData(filter) {
-        // In the future, this will load real data via AJAX
-        console.log('Loading chart data for: ' + filter);
-    }
-
     // Active nav highlighting
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function() {
+        if (item.href === window.location.href) {
+            item.classList.add('active');
+        }
+        item.addEventListener('click', function () {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             this.classList.add('active');
         });
