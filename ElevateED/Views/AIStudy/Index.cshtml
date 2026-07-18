@@ -1,0 +1,251 @@
+﻿@model List<ElevateED.Models.AIStudySession>
+@{
+    ViewBag.Title = "AI Study Assistant";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body {
+        background: #f1f5f9;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .container-custom {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+
+    .hero {
+        text-align: center;
+        margin-bottom: 36px;
+    }
+
+        .hero h1 {
+            font-size: 30px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+        .card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1e293b;
+        }
+
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+
+        .upload-zone:hover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+
+        .upload-zone i {
+            font-size: 36px;
+            color: #94a3b8;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+        .form-control:focus {
+            border-color: #6366f1;
+            outline: none;
+        }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #6366f1;
+        color: white;
+        width: 100%;
+    }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 16px 0;
+        color: #94a3b8;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+    .session-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .session-card:hover {
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+
+    .session-icon {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .session-info {
+        flex: 1;
+    }
+
+        .session-info .s-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .session-info .s-meta {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .badge-purple {
+        background: #ede9fe;
+        color: #6d28d9;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 50px;
+        color: #94a3b8;
+    }
+</style>
+
+<div class="container-custom">
+    <div class="hero">
+        <h1>🧠 AI Study Assistant</h1>
+        <p>Upload your notes once and generate flashcards, quizzes, exam notes, and more</p>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card">
+        <h3>📤 Create New Study Session</h3>
+        <form action="@Url.Action("CreateSession", "AIStudy")" method="post" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom:12px;">
+                <input type="text" name="sessionTitle" class="form-control" placeholder="Session name (optional)">
+            </div>
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p style="font-weight:600;margin-top:8px;">Click to upload or drag & drop</p>
+                <p style="font-size:12px;color:#94a3b8;">PDF, TXT (max 20MB)</p>
+                <p id="fileNameDisplay" style="color:#6366f1;font-weight:500;margin-top:8px;"></p>
+            </div>
+            <input type="file" name="file" id="fileInput" accept=".pdf,.txt" style="display:none;" onchange="document.getElementById('fileNameDisplay').textContent='📎 '+this.files[0].name">
+            <div class="divider">or paste text</div>
+            <textarea name="pasteText" class="form-control" placeholder="Paste your study notes here..."></textarea>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;">📤 Create Session</button>
+        </form>
+    </div>
+
+    <!-- Existing Sessions -->
+    <div class="card">
+        <h3>📚 Your Study Sessions</h3>
+        @if (Model.Any())
+        {
+            foreach (var s in Model)
+            {
+                <a href="@Url.Action("Workspace", new { id = s.Id })" class="session-card">
+                    <div class="session-icon">📄</div>
+                    <div class="session-info">
+                        <div class="s-title">@(s.SessionTitle ?? "Untitled")</div>
+                        <div class="s-meta">@s.OutputCount outputs | @s.CreatedDate.ToString("dd MMM yyyy") | @s.TextPreview</div>
+                    </div>
+                    <span class="badge badge-purple">@s.OutputCount items</span>
+                    <span style="color:#94a3b8;">→</span>
+                </a>
+            }
+        }
+        else
+        {
+            <div class="empty">
+                <p>No study sessions yet. Upload notes to get started!</p>
+            </div>
+        }
+    </div>
+</div>
+<script>
+    var dz = document.getElementById('dropZone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#6366f1'; dz.style.background = '#eef2ff'; });
+    dz.addEventListener('dragleave', () => { dz.style.borderColor = '#cbd5e1'; dz.style.background = '#f8fafc'; });
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#cbd5e1'; dz.style.background = '#f8fafc'; document.getElementById('fileInput').files = e.dataTransfer.files; document.getElementById('fileNameDisplay').textContent = '📎 ' + e.dataTransfer.files[0].name; });
+</script>

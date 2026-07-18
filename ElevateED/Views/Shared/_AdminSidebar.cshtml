@@ -1,0 +1,45 @@
+﻿
+@{
+    ViewBag.Title = "_AdminSidebar";
+}
+<div class="nav-section">Main</div>
+<a href="@Url.Action("Dashboard", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Controller"].ToString() == "Admin" ? "active" : "")">
+    <i class="fas fa-home"></i><span>Dashboard</span>
+</a>
+<a href="@Url.Action("PendingApplications", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "PendingApplications" ? "active" : "")">
+    <i class="fas fa-file-alt"></i><span>Applications</span>
+</a>
+<a href="@Url.Action("ManageUsers", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "ManageUsers" ? "active" : "")">
+    <i class="fas fa-users"></i><span>Users</span>
+</a>
+<a href="@Url.Action("ClassStructure", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "ClassStructure" ? "active" : "")">
+    <i class="fas fa-school"></i><span>Classes</span>
+</a>
+<a href="@Url.Action("RegisterTeacher", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "RegisterTeacher" ? "active" : "")">
+    <i class="fas fa-chalkboard-teacher"></i><span>Teachers</span>
+</a>
+
+<div class="nav-section">Management</div>
+<a href="@Url.Action("TimeTable", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "TimeTable" ? "active" : "")">
+    <i class="fas fa-calendar-alt"></i><span>Timetable</span>
+</a>
+<a href="@Url.Action("ExamTimetables", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "ExamTimetables" ? "active" : "")">
+    <i class="fas fa-calendar-check"></i><span>Exam Management</span>
+</a>
+<a href="@Url.Action("CreateWizard", "AdminAnnouncement")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminAnnouncement" ? "active" : "")">
+    <i class="fas fa-bullhorn"></i><span>Announcements</span>
+</a>
+<a href="@Url.Action("Issues", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "Issues" ? "active" : "")">
+    <i class="fas fa-exclamation-triangle"></i><span>Issues</span>
+</a>
+
+<div class="nav-section">Extra</div>
+<a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminExtraClass" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")">
+    <i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span>
+</a>
+<a href="@Url.Action("ApplicationCycles", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "ApplicationCycles" ? "active" : "")">
+    <i class="fas fa-calendar-alt"></i><span>App Cycles</span>
+</a>
+<a href="@Url.Action("Dashboard", "AdminAnnouncement")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminAnnouncement" && ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
+    <i class="fas fa-robot"></i><span>AI Announcements</span>
+</a>

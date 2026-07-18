@@ -14,11 +14,7 @@
 
     :root {
         --primary: #4f46e5;
-        --primary-light: #6366f1;
         --primary-dark: #4338ca;
-        --primary-bg: #f5f3ff;
-        --primary-soft: #ede9fe;
-        --primary-hover: #e0e7ff;
         --accent: #fbbf24;
         --success: #10b981;
         --warning: #f59e0b;
@@ -28,21 +24,17 @@
         --gray-50: #f9fafb;
         --gray-100: #f3f4f6;
         --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
         --gray-500: #6b7280;
         --gray-600: #4b5563;
         --gray-700: #374151;
-        --gray-800: #1f2937;
         --gray-900: #111827;
         --sidebar-width: 280px;
         --header-height: 70px;
     }
 
     body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Inter', -apple-system, sans-serif;
         background: var(--gray-50);
-        overflow-x: hidden;
     }
 
     .app-container {
@@ -127,11 +119,6 @@
             font-size: 18px;
         }
 
-        .nav-item span {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
     .nav-section {
         margin-top: 24px;
         margin-bottom: 12px;
@@ -162,127 +149,6 @@
         z-index: 99;
     }
 
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-    }
-
-    .notification-btn {
-        position: relative;
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--gray-500);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 8px;
-        height: 8px;
-        background: var(--danger);
-        border-radius: 50%;
-    }
-
-    .profile-container {
-        position: relative;
-    }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        background: none;
-        border: none;
-    }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .profile-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        width: 240px;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-            animation: fadeInDown 0.2s ease;
-        }
-
-    @@keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 16px;
-        border-bottom: 1px solid var(--gray-200);
-        background: linear-gradient(135deg, var(--primary-bg), var(--primary-soft));
-    }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        text-decoration: none;
-        color: var(--gray-700);
-        cursor: pointer;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-    }
-
-        .dropdown-item:hover {
-            background: var(--primary-hover);
-            color: var(--primary);
-        }
-
-    .dropdown-divider {
-        height: 1px;
-        background: var(--gray-200);
-        margin: 8px 0;
-    }
-
     .content-area {
         padding: 32px;
     }
@@ -300,28 +166,7 @@
             font-size: 24px;
             font-weight: 700;
             color: var(--gray-900);
-            margin: 0;
         }
-
-        .page-header p {
-            margin: 5px 0 0 0;
-            color: var(--gray-500);
-            font-size: 14px;
-        }
-
-    .btn-primary {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        cursor: pointer;
-    }
 
     .btn-success {
         background: linear-gradient(135deg, var(--success), #059669);
@@ -341,59 +186,26 @@
         padding: 10px 20px;
         border-radius: 10px;
         text-decoration: none;
-        font-weight: 500;
         border: 1px solid var(--gray-200);
         display: inline-flex;
         align-items: center;
         gap: 8px;
     }
 
-    /* Card Status Styles */
     .class-card {
         background: white;
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 16px;
         border: 1px solid var(--gray-200);
-        transition: all 0.3s;
         border-left: 4px solid var(--primary);
+        transition: all 0.3s;
     }
 
         .class-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         }
-
-        .class-card.has-route {
-            border-left-color: var(--success);
-        }
-
-        .class-card.route-active {
-            border-left-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .class-card.route-outbound-complete {
-            border-left-color: #6366f1;
-            background: #f5f3ff;
-        }
-
-        .class-card.route-return-active {
-            border-left-color: #8b5cf6;
-            background: #faf5ff;
-        }
-
-        .class-card.route-completed {
-            border-left-color: var(--gray-400);
-            opacity: 0.75;
-            background: var(--gray-50);
-        }
-
-            .class-card.route-completed:hover {
-                transform: none;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                cursor: default;
-            }
 
     .class-title {
         font-size: 17px;
@@ -426,80 +238,18 @@
     }
 
     .badge-count {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        background: var(--primary);
         color: white;
     }
 
     .badge-paid {
-        background: linear-gradient(135deg, var(--success), #059669);
+        background: var(--success);
         color: white;
     }
 
     .badge-fee {
-        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        background: var(--accent);
         color: #1e1b4b;
-    }
-
-    .badge-route {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-    }
-
-    .badge-route-pending {
-        background: linear-gradient(135deg, var(--warning), #d97706);
-        color: white;
-    }
-
-    .badge-route-completed {
-        background: var(--gray-300);
-        color: var(--gray-600);
-    }
-
-    .route-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 50px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .route-status-active {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .route-status-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .route-status-return {
-        background: #ede9fe;
-        color: #6d28d9;
-    }
-
-    .route-status-completed {
-        background: var(--gray-200);
-        color: var(--gray-600);
-    }
-
-    .route-status-outbound-done {
-        background: #e0e7ff;
-        color: #4338ca;
-    }
-
-    .trip-completed-stamp {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        background: #d1fae5;
-        color: #065f46;
-        border-radius: 50px;
-        font-size: 11px;
-        font-weight: 600;
     }
 
     .btn-sm {
@@ -513,54 +263,16 @@
         align-items: center;
         gap: 6px;
         text-decoration: none;
-        transition: all 0.2s;
     }
-
-        .btn-sm:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-sm:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
 
     .btn-book {
-        background: linear-gradient(135deg, var(--info), #2563eb);
+        background: var(--info);
         color: white;
     }
 
-    .btn-trans {
-        background: linear-gradient(135deg, var(--success), #059669);
+    .btn-delete {
+        background: var(--danger);
         color: white;
-    }
-
-    .btn-assign {
-        background: linear-gradient(135deg, var(--purple), #7c3aed);
-        color: white;
-    }
-
-    .btn-history {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-    }
-
-    .btn-delete-card {
-        background: linear-gradient(135deg, var(--danger), #dc2626);
-        color: white;
-    }
-
-    .driver-assigned-info {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        background: #ede9fe;
-        color: #6d28d9;
-        border-radius: 50px;
-        font-size: 11px;
-        font-weight: 500;
     }
 
     .empty-state {
@@ -568,122 +280,81 @@
         padding: 60px 20px;
         background: white;
         border-radius: 20px;
-        border: 2px dashed var(--gray-300);
+        border: 2px dashed var(--gray-200);
     }
 
         .empty-state i {
             font-size: 64px;
-            color: var(--gray-400);
+            color: var(--gray-200);
             margin-bottom: 20px;
         }
 
-    /* Modal Styles */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1050;
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        background: none;
+        border: none;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: var(--primary);
+        border-radius: 50%;
+        display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-    .modal-box {
-        background: white;
-        border-radius: 20px;
-        width: 90%;
-        max-width: 550px;
-        animation: modalSlideIn 0.3s ease;
-        max-height: 80vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    @@keyframes modalSlideIn {
-        from {
-            transform: translateY(-50px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    .modal-header {
-        padding: 18px 24px;
-        background: linear-gradient(135deg, var(--purple), #7c3aed);
         color: white;
-        border-radius: 20px 20px 0 0;
+        font-weight: 600;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        width: 240px;
+        display: none;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+    .dropdown-item {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        flex-shrink: 0;
-    }
-
-        .modal-header button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-    .modal-body {
-        padding: 24px;
-        overflow-y: auto;
-        flex: 1;
-    }
-
-        .modal-body select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            font-size: 14px;
-        }
-
-    .modal-footer {
-        padding: 16px 24px;
-        border-top: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
         gap: 12px;
-        flex-shrink: 0;
-    }
-
-    .btn-cancel {
-        padding: 8px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--gray-200);
-        background: white;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--gray-700);
         cursor: pointer;
-        font-weight: 500;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
     }
 
-    /* History Card */
-    .history-card {
-        background: white;
-        border-radius: 10px;
-        padding: 16px;
-        margin-bottom: 12px;
+        .dropdown-item:hover {
+            background: var(--gray-100);
+        }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 8px 0;
     }
-
-        .history-card.outbound {
-            border-left: 4px solid #6366f1;
-        }
-
-        .history-card.return {
-            border-left: 4px solid #8b5cf6;
-        }
 
     @@media (max-width: 768px) {
         .content-area {
@@ -711,8 +382,7 @@
             <a href="@Url.Action("RegisterTeacher","Admin")" class="nav-item"><i class="fas fa-chalkboard-teacher"></i><span>Teachers</span></a>
             <div class="nav-section">Management</div>
             <a href="@Url.Action("TimeTable","Admin")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
-            <a href="@Url.Action("ClassRegister","Admin")" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Class Register</span></a>
-            <a href="@Url.Action("SendAnnouncement","Admin")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+            <a href="@Url.Action("CreateWizard","AdminAnnouncement")" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
             <a href="@Url.Action("Issues","Admin")" class="nav-item"><i class="fas fa-exclamation-triangle"></i><span>Issues</span></a>
             <div class="nav-section">Extra</div>
             <a href="@Url.Action("Index","AdminExtraClass")" class="nav-item active"><i class="fas fa-chalkboard-teacher"></i><span>Extra Classes</span></a>
@@ -723,14 +393,12 @@
     <main class="main-content">
         <header class="top-header">
             <div class="header-right">
-                <button class="notification-btn"><i class="far fa-bell"></i><span class="notification-badge"></span></button>
                 <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">A</div><span class="profile-name">Admin</span><i class="fas fa-chevron-down"></i></button>
+                    <button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">A</div><span>Admin</span></button>
                     <div class="dropdown-menu" id="profileDropdown">
-                        <div class="dropdown-header"><div class="user-name">Administrator</div><div class="user-email">admin@mpiyakhehs.co.za</div></div>
-                        <a href="@Url.Action("ManageUsers","Admin")" class="dropdown-item"><i class="fas fa-users"></i>Manage Users</a>
+                        <div class="dropdown-header" style="padding:16px;"><strong>Administrator</strong></div>
                         <div class="dropdown-divider"></div>
-                        <form action="@Url.Action("LogOff","Account")" method="post" id="logoutForm">@Html.AntiForgeryToken()<button type="button" class="dropdown-item" onclick="confirmLogout(event)" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
+                        <form action="@Url.Action("LogOff","Account")" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
                     </div>
                 </div>
             </div>
@@ -738,9 +406,8 @@
 
         <div class="content-area">
             <div class="page-header">
-                <div><h1><i class="fas fa-chalkboard-teacher" style="color:var(--purple);"></i> Extra Classes</h1><p>Manage extra classes, bookings, drivers and transport routes</p></div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <a href="@Url.Action("Drivers","AdminExtraClass")" class="btn-primary"><i class="fas fa-id-card"></i> Drivers</a>
+                <div><h1>📚 Extra Classes</h1><p style="color:var(--gray-500);">Manage extra classes and student bookings</p></div>
+                <div style="display:flex;gap:10px;">
                     <a href="@Url.Action("Create","AdminExtraClass")" class="btn-success"><i class="fas fa-plus"></i> Create Class</a>
                     <a href="@Url.Action("Dashboard","Admin")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
                 </div>
@@ -748,7 +415,12 @@
 
             @if (!Model.Any())
             {
-                <div class="empty-state"><i class="fas fa-calendar-plus"></i><h4>No Extra Classes</h4><a href="@Url.Action("Create","AdminExtraClass")" class="btn-success" style="display:inline-flex;"><i class="fas fa-plus"></i> Create Your First Class</a></div>
+                <div class="empty-state">
+                    <i class="fas fa-calendar-plus"></i>
+                    <h4>No Extra Classes</h4>
+                    <p style="color:var(--gray-500);">Get started by creating your first extra class</p>
+                    <a href="@Url.Action("Create","AdminExtraClass")" class="btn-success" style="display:inline-flex;margin-top:15px;"><i class="fas fa-plus"></i> Create Your First Class</a>
+                </div>
             }
             else
             {
@@ -757,43 +429,8 @@
                     var bookedCount = cls.Bookings?.Count(b => b.Status != BookingStatus.Cancelled) ?? 0;
                     var paidCount = cls.Bookings?.Count(b => b.Status == BookingStatus.Paid) ?? 0;
 
-                    var transportRoute = ViewBag.TransportRoutes != null
-                        ? ((List<TransportRoute>)ViewBag.TransportRoutes).FirstOrDefault(r => r.ExtraClassId == cls.Id)
-                        : null;
-
-                    var hasRoute = transportRoute != null;
-                    var routeStatus = transportRoute?.Status ?? "";
-                    var isRouteActive = routeStatus == "Active";
-                    var isRoutePending = routeStatus == "Pending";
-                    var isOutboundComplete = routeStatus == "Outbound_Complete";
-                    var isReturnActive = routeStatus == "Return_Active";
-                    var isFullyCompleted = routeStatus == "Completed";
-                    var hasDriver = transportRoute?.DriverId != null;
-
-                    string cardClass = "";
-                    if (isRouteActive) { cardClass = "route-active"; }
-                    else if (isReturnActive) { cardClass = "route-return-active"; }
-                    else if (isOutboundComplete) { cardClass = "route-outbound-complete"; }
-                    else if (isFullyCompleted) { cardClass = "route-completed"; }
-                    else if (hasRoute) { cardClass = "has-route"; }
-
-                    <div class="class-card @cardClass" id="class-@cls.Id">
-                        <div class="class-title">
-                            <i class="fas fa-book-open"></i> @cls.Title
-                            @if (hasRoute)
-                            {
-                                if (isRouteActive)
-                                {<span class="route-status route-status-active">🚐 Outbound Trip</span>}
-                                else if (isReturnActive)
-                                {<span class="route-status route-status-return">🔄 Return Trip</span>}
-                                else if (isOutboundComplete)
-                                {<span class="route-status route-status-outbound-done">✅ Outbound Done</span>}
-                                else if (isRoutePending)
-                                {<span class="route-status route-status-pending"><i class="fas fa-clock"></i> Pending</span>}
-                                else if (isFullyCompleted)
-                                {<span class="trip-completed-stamp"><i class="fas fa-check-double"></i> Completed</span>}
-                            }
-                        </div>
+                    <div class="class-card" id="class-@cls.Id">
+                        <div class="class-title"><i class="fas fa-book-open"></i> @cls.Title</div>
                         <div class="class-meta">
                             <span><i class="fas fa-book"></i> @(cls.Subject?.Name ?? "N/A")</span>
                             <span><i class="fas fa-graduation-cap"></i> @(cls.Grade?.Name ?? "N/A")</span>
@@ -801,48 +438,15 @@
                             <span><i class="fas fa-clock"></i> @(cls.StartTime.ToString(@"hh\:mm")) - @(cls.EndTime.ToString(@"hh\:mm"))</span>
                             <span><i class="fas fa-map-marker-alt"></i> @(cls.Location ?? "TBA")</span>
                             <span class="badge badge-fee">R @cls.Fee.ToString("0.00")</span>
-                            @if (hasDriver && transportRoute?.Driver != null)
-                            {<span class="driver-assigned-info"><i class="fas fa-user-check"></i> @transportRoute.Driver.FullName</span>}
                         </div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
                             <div>
-                                <span class="badge badge-count"><i class="fas fa-users"></i> @bookedCount/@cls.MaxStudents Booked</span>
-                                <span class="badge badge-paid"><i class="fas fa-rand"></i> @paidCount Paid</span>
-                                @if (hasRoute && !isFullyCompleted)
-                                {<span class="badge @(isRouteActive||isReturnActive?"badge-route":"badge-route-pending")"><i class="fas fa-bus"></i> @routeStatus</span>}
-                                @if (isFullyCompleted)
-                                {<span class="badge badge-route-completed"><i class="fas fa-check-circle"></i> Completed</span>}
+                                <span class="badge badge-count">@bookedCount/@cls.MaxStudents Booked</span>
+                                <span class="badge badge-paid">@paidCount Paid</span>
                             </div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div style="display:flex;gap:8px;">
                                 <a href="@Url.Action("Bookings",new{classId=cls.Id})" class="btn-sm btn-book"><i class="fas fa-list"></i> Bookings</a>
-                                <a href="@Url.Action("TransportList",new{classId=cls.Id})" class="btn-sm btn-trans"><i class="fas fa-bus"></i> Transport List</a>
-
-                                @* ===== COMPLETED - View History & Delete Only ===== *@
-                                @if (isFullyCompleted)
-                                {
-                                    <button class="btn-sm btn-history" onclick="viewTripHistory(@cls.Id)"><i class="fas fa-history"></i> View Roll Call History</button>
-                                    <button class="btn-sm btn-delete-card" onclick="deleteCompletedClass(@cls.Id)"><i class="fas fa-trash"></i> Remove</button>
-                                }
-                                @* ===== NO DRIVER ASSIGNED ===== *@
-                                else if (!hasDriver)
-                                {
-                                    <button class="btn-sm btn-assign" onclick="openAssign(@cls.Id, '@cls.Title.Replace("'","\\'")')"><i class="fas fa-user-plus"></i> Assign Driver</button>
-                                }
-                                @* ===== DRIVER ASSIGNED, NOT STARTED ===== *@
-                                else if (!isRouteActive && !isReturnActive && !isOutboundComplete)
-                                {
-                                    <button class="btn-sm" disabled style="opacity:0.5;cursor:not-allowed;background:var(--gray-200);color:var(--gray-500);"><i class="fas fa-clock"></i> Awaiting Driver</button>
-                                }
-                                @* ===== ACTIVE / RETURN ACTIVE ===== *@
-                                else if (isRouteActive || isReturnActive)
-                                {
-                                    <span class="btn-sm" style="background:#d1fae5;color:#065f46;cursor:default;"><i class="fas fa-bus"></i> Driver En Route</span>
-                                }
-                                @* ===== OUTBOUND COMPLETE ===== *@
-                                else if (isOutboundComplete)
-                                {
-                                    <span class="btn-sm" style="background:#e0e7ff;color:#4338ca;cursor:default;"><i class="fas fa-clock"></i> Waiting for Return</span>
-                                }
+                                <button class="btn-sm btn-delete" onclick="deleteClass(@cls.Id)"><i class="fas fa-trash"></i> Delete</button>
                             </div>
                         </div>
                     </div>
@@ -852,66 +456,8 @@
     </main>
 </div>
 
-<!-- Assign Driver Modal -->
-<div class="modal-overlay" id="assignDriverModal">
-    <div class="modal-box">
-        <div class="modal-header"><h4><i class="fas fa-user-plus"></i> Assign Driver</h4><button onclick="closeAssign()">&times;</button></div>
-        <div class="modal-body">
-            <input type="hidden" id="assignClassId" />
-            <p style="margin-bottom:16px;color:var(--gray-600);"><i class="fas fa-chalkboard"></i> Assigning: <strong id="assignClassName"></strong></p>
-            <select id="driverSelect"><option value="">Loading drivers...</option></select>
-            <div id="assignMessage" style="display:none;padding:12px;border-radius:10px;margin-top:16px;"></div>
-        </div>
-        <div class="modal-footer"><button class="btn-cancel" onclick="closeAssign()">Cancel</button><button class="btn-primary" onclick="assignDriver()">Assign Driver</button></div>
-    </div>
-</div>
-
-<!-- Trip History Modal -->
-<div class="modal-overlay" id="historyModal">
-    <div class="modal-box">
-        <div class="modal-header" style="background:linear-gradient(135deg,#1e3c72,#2a5298);"><h4><i class="fas fa-history"></i> Trip Roll Call History</h4><button onclick="closeHistory()">&times;</button></div>
-        <div class="modal-body" id="historyBody"><p class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading trip history...</p></div>
-        <div class="modal-footer"><button class="btn-cancel" onclick="closeHistory()">Close</button></div>
-    </div>
-</div>
-
 <script>
     function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
     document.addEventListener('click',function(e){var c=document.querySelector('.profile-container'),d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});
-    function confirmLogout(e){e.preventDefault();if(confirm('Logout?'))document.getElementById('logoutForm').submit();}
-
-    function deleteCompletedClass(id){if(!confirm('Remove this completed class and all its records?'))return;fetch('@Url.Action("Delete","AdminExtraClass")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id='+id}).then(r=>r.json()).then(r=>{if(r.success){document.getElementById('class-'+id).style.display='none';alert('Class removed!')}else alert(r.message)})}
-
-    function openAssign(id,name){document.getElementById('assignClassId').value=id;document.getElementById('assignClassName').textContent=name;document.getElementById('assignMessage').style.display='none';document.getElementById('driverSelect').innerHTML='<option value="">Loading...</option>';document.getElementById('assignDriverModal').classList.add('show');fetch('@Url.Action("GetActiveDrivers","AdminExtraClass")').then(r=>r.json()).then(r=>{var o='<option value="">-- Select Driver --</option>';if(r.success&&r.drivers.length)r.drivers.forEach(d=>{o+='<option value="'+d.id+'">'+d.fullName+' ('+d.username+')</option>'});else o+='<option disabled>No active drivers</option>';document.getElementById('driverSelect').innerHTML=o})}
-    function closeAssign(){document.getElementById('assignDriverModal').classList.remove('show')}
-    document.getElementById('assignDriverModal').addEventListener('click',function(e){if(e.target===this)closeAssign()})
-    function assignDriver(){var cid=document.getElementById('assignClassId').value,did=document.getElementById('driverSelect').value;if(!did){var m=document.getElementById('assignMessage');m.style.display='block';m.style.background='#fee2e2';m.style.color='#991b1b';m.innerHTML='<i class="fas fa-exclamation-circle"></i> Select a driver';return}fetch('@Url.Action("AssignDriver","AdminExtraClass")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'classId='+cid+'&driverId='+did}).then(r=>r.json()).then(r=>{if(r.success){var m=document.getElementById('assignMessage');m.style.display='block';m.style.background='#d1fae5';m.style.color='#065f46';m.innerHTML='<i class="fas fa-check-circle"></i> '+r.message;setTimeout(function(){location.reload()},2000)}else alert(r.message)})}
-
-    // Trip History
-    function viewTripHistory(classId){
-        document.getElementById('historyModal').classList.add('show');
-        document.getElementById('historyBody').innerHTML='<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-        fetch('@Url.Action("GetTripHistory","AdminExtraClass")?classId='+classId)
-        .then(r=>r.json())
-        .then(data=>{
-            if(data.success && data.trips && data.trips.length){
-                var h='<h6 class="mb-3">'+data.trips.length+' trip(s) found</h6>';
-                data.trips.forEach(function(t,i){
-                    h+='<div class="history-card '+(t.tripType==='Outbound'?'outbound':'return')+'">'+
-                        '<h6><span class="badge" style="background:'+(t.tripType==='Outbound'?'#e0e7ff':'#ede9fe')+';color:'+(t.tripType==='Outbound'?'#4338ca':'#6d28d9')+'">'+
-                        (t.tripType==='Outbound'?'🚐 Outbound (School → Venue)':'🏫 Return (Venue → School)')+'</span>'+
-                        ' <span class="badge" style="background:#d1fae5;color:#065f46;">'+t.status+'</span></h6>'+
-                        '<p class="mb-1"><strong>Students Present:</strong> '+t.passengerCount+' students</p>'+
-                        '<p class="mb-1"><strong>Started:</strong> '+(t.startedAt||'N/A')+'</p>'+
-                        '<p class="mb-1"><strong>Ended:</strong> '+(t.endedAt||'N/A')+'</p>'+
-                        '</div>';
-                });
-                document.getElementById('historyBody').innerHTML=h;
-            }else{
-                document.getElementById('historyBody').innerHTML='<p class="text-center text-muted">No trip history found.</p>';
-            }
-        });
-    }
-    function closeHistory(){document.getElementById('historyModal').classList.remove('show')}
-    document.getElementById('historyModal').addEventListener('click',function(e){if(e.target===this)closeHistory()})
+    function deleteClass(id){if(!confirm('Delete this extra class?'))return;fetch('@Url.Action("Delete","AdminExtraClass")',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id='+id}).then(r=>r.json()).then(r=>{if(r.success){document.getElementById('class-'+id).style.display='none';alert('Class deleted!')}else alert(r.message)})}
 </script>

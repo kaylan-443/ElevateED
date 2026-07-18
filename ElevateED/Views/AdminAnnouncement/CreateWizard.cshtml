@@ -1,0 +1,595 @@
+﻿@model ElevateED.ViewModels.AnnouncementWizardViewModel
+@{
+    ViewBag.Title = "AI Announcement Generator";
+}
+
+<style>
+    :root {
+        --ai-primary: #6366f1;
+        --ai-secondary: #8b5cf6;
+        --ai-accent: #a78bfa;
+        --ai-dark: #1e1b4b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0f0a1e 0%, #1a1030 30%, #1e1b4b 60%, #0f0a1e 100%);
+        min-height: 100vh;
+    }
+
+    .ai-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .ai-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.3);
+        padding: 10px 24px;
+        border-radius: 50px;
+        margin-bottom: 20px;
+    }
+
+    .ai-badge-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: white;
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse-glow {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(99,102,241,0.7);
+        }
+
+        50% {
+            box-shadow: 0 0 0 12px rgba(99,102,241,0);
+        }
+    }
+
+    .ai-badge-text {
+        color: #a78bfa;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .ai-header h1 {
+        font-size: 36px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #c4b5fd, #818cf8, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 12px;
+    }
+
+    .ai-header p {
+        color: #94a3b8;
+        font-size: 16px;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 40px;
+    }
+
+    .step-dot {
+        width: 40px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(99,102,241,0.2);
+        transition: all 0.5s;
+    }
+
+        .step-dot.active {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            width: 60px;
+            box-shadow: 0 0 15px rgba(99,102,241,0.5);
+        }
+
+        .step-dot.completed {
+            background: #10b981;
+        }
+
+    .wizard-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(99,102,241,0.15);
+        border-radius: 24px;
+        padding: 40px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+
+    .wizard-step {
+        display: none;
+        animation: fadeSlideIn 0.4s ease;
+    }
+
+        .wizard-step.active {
+            display: block;
+        }
+
+    @@keyframes fadeSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .step-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .step-title i {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+
+    .step-subtitle {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 30px;
+        margin-left: 48px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        color: #cbd5e1;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .required::after {
+        content: " *";
+        color: #ef4444;
+    }
+
+    .ai-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 12px;
+        padding: 14px 18px;
+        color: #e2e8f0;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .ai-input:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .ai-input::placeholder {
+            color: #475569;
+        }
+
+    .ai-textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .option-card {
+        background: rgba(255,255,255,0.03);
+        border: 2px solid rgba(99,102,241,0.15);
+        border-radius: 16px;
+        padding: 20px 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .option-card:hover {
+            border-color: rgba(99,102,241,0.4);
+            background: rgba(99,102,241,0.08);
+            transform: translateY(-2px);
+        }
+
+        .option-card.selected {
+            border-color: #818cf8;
+            background: rgba(99,102,241,0.15);
+            box-shadow: 0 0 20px rgba(99,102,241,0.2);
+        }
+
+            .option-card.selected::after {
+                content: '✓';
+                position: absolute;
+                top: 10px;
+                right: 14px;
+                color: #818cf8;
+                font-weight: 700;
+                font-size: 14px;
+            }
+
+    .option-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .option-card h6 {
+        color: #cbd5e1;
+        font-size: 13px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .btn-group {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 32px;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-back {
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+    }
+
+    .btn-generate {
+        background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        color: white;
+        padding: 18px 40px;
+        font-size: 16px;
+        border-radius: 16px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-send {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: white;
+    }
+
+    .btn-draft {
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .ai-loading {
+        text-align: center;
+        padding: 50px;
+        display: none;
+    }
+
+        .ai-loading.active {
+            display: block;
+        }
+
+    .ai-spinner {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 20px;
+        position: relative;
+    }
+
+        .ai-spinner::before, .ai-spinner::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .ai-spinner::before {
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(99,102,241,0.2);
+            border-top-color: #818cf8;
+            animation: spin 1s linear infinite;
+        }
+
+        .ai-spinner::after {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border: 3px solid rgba(139,92,246,0.2);
+            border-bottom-color: #a78bfa;
+            animation: spin 1.5s linear infinite reverse;
+        }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .ai-loading-text {
+        color: #a78bfa;
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .preview-section {
+        display: none;
+        margin-top: 30px;
+    }
+
+        .preview-section.active {
+            display: block;
+            animation: fadeSlideIn 0.5s ease;
+        }
+
+    .preview-label {
+        color: #a78bfa;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+    .modal-content {
+        background: linear-gradient(135deg, #1e1b4b, #2e1065);
+        border-radius: 24px;
+        padding: 50px 40px;
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        border: 1px solid rgba(16,185,129,0.3);
+        box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.show .modal-content {
+        transform: scale(1);
+    }
+
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+
+<div class="ai-container content-wrapper">
+    <div class="ai-header">
+        <div class="ai-badge"><div class="ai-badge-icon"><i class="fas fa-robot"></i></div><span class="ai-badge-text">AI-Powered Communication</span></div>
+        <h1>Generate School Announcement</h1>
+        <p>Describe what you need and let AI craft the perfect announcement for you</p>
+    </div>
+
+    <div class="step-indicator">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-dot" id="dot3"></div>
+        <div class="step-dot" id="dot4"></div>
+    </div>
+
+    <div class="wizard-card">
+        <form id="wizardForm">
+            @Html.AntiForgeryToken()
+
+            <!-- STEP 1 -->
+            <div class="wizard-step active" id="step1">
+                <div class="step-title"><i class="fas fa-bullseye"></i> What's the announcement about?</div>
+                <div class="step-subtitle">Tell me the topic and who needs to see it</div>
+                <div class="form-group">
+                    <label class="form-label required">Topic / Subject</label>
+                    <input type="text" name="Topic" id="topic" class="ai-input" placeholder="e.g., Upcoming exams, Sports day, Parent meeting..." />
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Audience</label>
+                    <div class="options-grid">
+                        <div class="option-card audience-option selected" data-value="All Users"><span class="option-icon">🌐</span><h6>All Users</h6></div>
+                        <div class="option-card audience-option" data-value="Students Only"><span class="option-icon">🎓</span><h6>Learners Only</h6></div>
+                        <div class="option-card audience-option" data-value="Teachers Only"><span class="option-icon">👨‍🏫</span><h6>Teachers Only</h6></div>
+                    </div>
+                    <input type="hidden" name="TargetAudience" id="targetAudience" value="All Users" />
+                </div>
+                <div class="btn-group"><div></div><button type="button" class="btn btn-next" onclick="nextStep(2)">Continue <i class="fas fa-arrow-right"></i></button></div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="wizard-step" id="step2">
+                <div class="step-title"><i class="fas fa-calendar-check"></i> Is this time-sensitive?</div>
+                <div class="step-subtitle">Let me know if there are important dates</div>
+                <div class="form-group">
+                    <label class="form-label">Urgency</label>
+                    <div class="options-grid" style="grid-template-columns:1fr 1fr;">
+                        <div class="option-card urgency-option selected" data-urgent="false" onclick="setUrgency(false)"><span class="option-icon">📋</span><h6>Standard</h6></div>
+                        <div class="option-card urgency-option" data-urgent="true" onclick="setUrgency(true)"><span class="option-icon">🚨</span><h6>Urgent</h6></div>
+                    </div>
+                    <input type="hidden" name="IsUrgent" id="urgentInput" value="false" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Event Date (if applicable)</label>
+                    <input type="date" name="ImportantDate" class="ai-input" />
+                    <input type="text" name="ImportantDateDescription" class="ai-input" placeholder="e.g., Sports Day" style="margin-top:8px;" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Deadline (if applicable)</label>
+                    <input type="date" name="DeadlineDate" class="ai-input" />
+                </div>
+                <div class="btn-group"><button type="button" class="btn btn-back" onclick="prevStep(1)">Back</button><button type="button" class="btn btn-next" onclick="nextStep(3)">Continue</button></div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="wizard-step" id="step3">
+                <div class="step-title"><i class="fas fa-palette"></i> How should this sound?</div>
+                <div class="step-subtitle">Choose the tone and add details</div>
+                <div class="form-group">
+                    <label class="form-label required">Tone</label>
+                    <div class="options-grid">
+                        <div class="option-card tone-option selected" data-value="Formal"><span class="option-icon">📝</span><h6>Formal</h6></div>
+                        <div class="option-card tone-option" data-value="Friendly"><span class="option-icon">😊</span><h6>Friendly</h6></div>
+                        <div class="option-card tone-option" data-value="Warning"><span class="option-icon">⚠️</span><h6>Warning</h6></div>
+                        <div class="option-card tone-option" data-value="Reminder"><span class="option-icon">🔔</span><h6>Reminder</h6></div>
+                        <div class="option-card tone-option" data-value="Celebratory"><span class="option-icon">🎉</span><h6>Celebratory</h6></div>
+                    </div>
+                    <input type="hidden" name="Tone" id="tone" value="Formal" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Instructions (optional)</label>
+                    <textarea name="AdditionalNotes" class="ai-input ai-textarea" placeholder="Any specific details you want included?"></textarea>
+                </div>
+                <div class="btn-group"><button type="button" class="btn btn-back" onclick="prevStep(2)">Back</button><button type="button" class="btn btn-next" onclick="nextStep(4)">Review & Generate</button></div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="wizard-step" id="step4">
+                <div class="step-title"><i class="fas fa-magic"></i> Ready to Generate</div>
+                <div class="step-subtitle">Review your choices</div>
+                <div style="background:rgba(99,102,241,0.08);border-radius:16px;padding:24px;margin-bottom:24px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:14px;">
+                        <div><span style="color:#64748b;">Topic:</span> <strong style="color:#e2e8f0;" id="summaryTopic">-</strong></div>
+                        <div><span style="color:#64748b;">Audience:</span> <strong style="color:#e2e8f0;" id="summaryAudience">-</strong></div>
+                        <div><span style="color:#64748b;">Urgency:</span> <strong style="color:#e2e8f0;" id="summaryUrgency">-</strong></div>
+                        <div><span style="color:#64748b;">Tone:</span> <strong style="color:#e2e8f0;" id="summaryTone">-</strong></div>
+                    </div>
+                </div>
+                <div class="text-center" id="generateBtnSection">
+                    <button type="button" class="btn btn-generate" onclick="generateAnnouncement()"><i class="fas fa-robot"></i> Generate</button>
+                </div>
+                <div class="ai-loading" id="loadingSection"><div class="ai-spinner"></div><div class="ai-loading-text">AI is crafting your announcement...</div></div>
+                <div class="preview-section" id="previewSection">
+                    <div style="background:white;border-radius:16px;overflow:hidden;margin-bottom:24px;">
+                        <div style="background:#f8f9fa;padding:16px 20px;"><span style="color:#888;">Subject: <strong id="previewSubject">-</strong></span></div>
+                        <div style="padding:30px;">
+                            <div style="background:#1e3c72;color:white;padding:20px;border-radius:8px;margin-bottom:24px;"><h2 style="margin:0;font-size:18px;" id="previewTitle">-</h2></div>
+                            <div style="font-size:14px;line-height:1.8;white-space:pre-wrap;" id="previewContent">-</div>
+                        </div>
+                    </div>
+                    <input type="text" id="emailSubject" class="ai-input" placeholder="Email Subject" style="margin-bottom:8px;" />
+                    <input type="text" id="genTitle" class="ai-input" placeholder="Title" style="margin-bottom:8px;" />
+                    <input type="text" id="genSummary" class="ai-input" placeholder="Summary" style="margin-bottom:8px;" />
+                    <textarea id="genContent" class="ai-input ai-textarea" rows="10" oninput="updatePreview()"></textarea>
+                    <div class="form-group" style="margin-top:16px;">
+                        <input type="text" id="feedbackInput" class="ai-input" placeholder="Not quite right? Tell AI what to change..." />
+                        <button type="button" class="btn btn-next" onclick="regenerateWithFeedback()" style="margin-top:8px;">🔄 Regenerate</button>
+                    </div>
+                    <div class="btn-group" id="sendBtnSection">
+                        <button type="button" class="btn btn-draft" onclick="submitAnnouncement(false)">💾 Save Draft</button>
+                        <button type="button" class="btn btn-send" onclick="submitAnnouncement(true)">📨 Send Now</button>
+                    </div>
+                    <div class="ai-loading" id="sendingSection"><div class="ai-spinner"></div><div class="ai-loading-text">Sending...</div></div>
+                </div>
+                <div class="btn-group"><button type="button" class="btn btn-back" onclick="prevStep(3)">Back</button><div></div></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="successModal">
+    <div class="modal-content">
+        <div style="font-size:64px;">✅</div>
+        <h2 style="color:white;">Success!</h2>
+        <p style="color:#a78bfa;margin:15px 0;" id="successMessage"></p>
+        <button onclick="location.href='@Url.Action("Dashboard", "AdminAnnouncement")'" style="background:#10b981;color:white;border:none;padding:14px 36px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;">Go to Dashboard</button>
+    </div>
+</div>
+
+<script>
+var sessionId = null;
+function nextStep(s){if(s===4)updateSummary();document.querySelectorAll('.wizard-step').forEach(e=>e.classList.remove('active'));document.getElementById('step'+s).classList.add('active');updateDots(s);}
+function prevStep(s){nextStep(s);}
+function updateDots(a){for(var i=1;i<=4;i++){var d=document.getElementById('dot'+i);d.classList.remove('active','completed');if(i<a)d.classList.add('completed');if(i===a)d.classList.add('active');}}
+function updateSummary(){document.getElementById('summaryTopic').textContent=document.getElementById('topic').value||'-';document.getElementById('summaryAudience').textContent=document.getElementById('targetAudience').value;document.getElementById('summaryUrgency').textContent=document.getElementById('urgentInput').value==='true'?'🚨 Urgent':'📋 Standard';document.getElementById('summaryTone').textContent=document.getElementById('tone').value;}
+document.querySelectorAll('.audience-option').forEach(c=>c.addEventListener('click',function(){document.querySelectorAll('.audience-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');document.getElementById('targetAudience').value=this.dataset.value;}));
+document.querySelectorAll('.tone-option').forEach(c=>c.addEventListener('click',function(){document.querySelectorAll('.tone-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');document.getElementById('tone').value=this.dataset.value;}));
+function setUrgency(u){document.querySelectorAll('.urgency-option').forEach(c=>c.classList.toggle('selected',c.dataset.urgent===String(u)));document.getElementById('urgentInput').value=u;}
+function updatePreview(){document.getElementById('previewSubject').textContent=document.getElementById('emailSubject').value||'-';document.getElementById('previewTitle').textContent=document.getElementById('genTitle').value||'-';document.getElementById('previewContent').textContent=document.getElementById('genContent').value||'-';}
+function generateAnnouncement(){if(!document.getElementById('topic').value){alert('Enter topic');return;}document.getElementById('generateBtnSection').style.display='none';document.getElementById('loadingSection').classList.add('active');var fd=new FormData(document.getElementById('wizardForm'));$.ajax({url:'@Url.Action("StartWizard","AdminAnnouncement")',type:'POST',data:fd,processData:false,contentType:false,success:function(r){document.getElementById('loadingSection').classList.remove('active');if(r.success){sessionId=r.sessionId;document.getElementById('emailSubject').value=r.result.emailSubject||'';document.getElementById('genTitle').value=r.result.title||'';document.getElementById('genSummary').value=r.result.summary||'';document.getElementById('genContent').value=r.result.content||'';updatePreview();document.getElementById('previewSection').classList.add('active');}else{alert('Failed');document.getElementById('generateBtnSection').style.display='block';}},error:function(){document.getElementById('loadingSection').classList.remove('active');document.getElementById('generateBtnSection').style.display='block';}});}
+function regenerateWithFeedback(){if(!sessionId)return;document.getElementById('loadingSection').classList.add('active');document.getElementById('previewSection').classList.remove('active');$.ajax({url:'@Url.Action("RegenerateContent","AdminAnnouncement")',type:'POST',data:{sessionId:sessionId,feedback:document.getElementById('feedbackInput').value},success:function(r){document.getElementById('loadingSection').classList.remove('active');if(r.success){document.getElementById('emailSubject').value=r.result.emailSubject||'';document.getElementById('genTitle').value=r.result.title||'';document.getElementById('genSummary').value=r.result.summary||'';document.getElementById('genContent').value=r.result.content||'';updatePreview();document.getElementById('previewSection').classList.add('active');document.getElementById('feedbackInput').value='';}}});}
+function submitAnnouncement(send){if(!sessionId){alert('Generate first');return;}document.getElementById('sendBtnSection').style.display='none';document.getElementById('sendingSection').classList.add('active');$.ajax({url:'@Url.Action("PreviewAndSave","AdminAnnouncement")',type:'POST',data:{sessionId:sessionId,title:document.getElementById('genTitle').value,content:document.getElementById('genContent').value,summary:document.getElementById('genSummary').value,emailSubject:document.getElementById('emailSubject').value,sendNow:send},success:function(r){document.getElementById('sendingSection').classList.remove('active');if(r.success){document.getElementById('successMessage').textContent=r.message;document.getElementById('successModal').classList.add('show');}else{alert('Error: '+r.message);document.getElementById('sendBtnSection').style.display='flex';}},error:function(){document.getElementById('sendingSection').classList.remove('active');document.getElementById('sendBtnSection').style.display='flex';}});}
+</script>
