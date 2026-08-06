@@ -1,0 +1,181 @@
+@using ElevateED.Models
+@using ElevateED.Services
+@model ElevateED.ViewModels.LearnerReadinessDetailViewModel
+@{
+    ViewBag.Title = "Learner Readiness - ElevateED";
+    var r = Model.Result;
+    var subjectId = (int)ViewBag.SubjectId;
+
+    var bandCls = r.Band == ReadinessBand.OnTrack ? "ok"
+        : r.Band == ReadinessBand.AtRisk ? "risk"
+        : r.Band == ReadinessBand.Urgent ? "urgent" : "noplan";
+    var bandColour = r.Band == ReadinessBand.OnTrack ? "#28a745"
+        : r.Band == ReadinessBand.AtRisk ? "#f0932b"
+        : r.Band == ReadinessBand.Urgent ? "#dc3545" : "#adb5bd";
+}
+
+<style>
+    .hero {
+        background: white; border-radius: 12px; padding: 26px 28px; margin-bottom: 22px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+    }
+    .gauge { text-align: center; min-width: 130px; }
+    .gauge .num { font-size: 42px; font-weight: 800; line-height: 1; }
+    .gauge .out { font-size: 12px; color: #999; margin-top: 3px; }
+    .hero-info { flex: 1; min-width: 240px; }
+    .hero-info h2 { font-size: 21px; color: var(--primary-blue); margin-bottom: 5px; }
+    .hero-info .meta { font-size: 13px; color: #777; margin-bottom: 10px; }
+    .band-tag { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; }
+    .band-tag.ok { background: #e8f6ef; color: #1e7e5a; }
+    .band-tag.risk { background: #fef3e2; color: #a55a06; }
+    .band-tag.urgent { background: #fdecea; color: #922b21; }
+    .band-tag.noplan { background: #f1f3f5; color: #6c757d; }
+
+    .why { background: #f8f9fa; border-radius: 10px; padding: 14px 18px; font-size: 13.5px; color: #555; line-height: 1.65; }
+
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 22px; }
+    .factor { background: white; border-radius: 12px; padding: 20px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .factor .lab { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: #999; margin-bottom: 7px; }
+    .factor .val { font-size: 27px; font-weight: 800; color: var(--primary-blue); }
+    .factor .note { font-size: 12.5px; color: #888; margin-top: 5px; }
+
+    .panel { background: white; border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .panel h3 { font-size: 16px; color: var(--primary-blue); margin-bottom: 14px; display: flex; align-items: center; gap: 9px; }
+
+    table.sessions { width: 100%; border-collapse: collapse; }
+    table.sessions th {
+        text-align: left; padding: 9px 12px; font-size: 11px; text-transform: uppercase;
+        letter-spacing: 0.6px; color: #888; border-bottom: 2px solid #eef1f3;
+    }
+    table.sessions td { padding: 11px 12px; font-size: 13.5px; border-bottom: 1px solid #f1f3f5; }
+    table.sessions tr:last-child td { border-bottom: none; }
+    .st { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .st-done { background: #e8f6ef; color: #1e7e5a; }
+    .st-missed { background: #fdecea; color: #922b21; }
+    .st-planned { background: #eef2f7; color: #46617f; }
+    .none-note { color: #999; font-size: 13px; font-style: italic; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "readiness")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-user-graduate"></i> @r.StudentName</h1>
+                <p>@Model.ClassName · @r.SubjectName</p>
+            </div>
+            <a href="@Url.Action("Class", new { classId = Model.ClassId, subjectId = subjectId, examId = Model.ExamSessionId })"
+               class="btn-back"><i class="fas fa-arrow-left"></i> Back to class</a>
+        </div>
+
+        <div class="hero">
+            <div class="gauge">
+                <div class="num" style="color:@bandColour;">@r.Score</div>
+                <div class="out">out of 100</div>
+            </div>
+            <div class="hero-info">
+                <h2>@r.BandLabel</h2>
+                <div class="meta">
+                    Exam on @r.ExamDate.ToString("dddd dd MMMM yyyy")
+                    @if (r.DaysUntilExam >= 0)
+                    {
+                        <text>· @(r.DaysUntilExam == 0 ? "today" : r.DaysUntilExam == 1 ? "tomorrow" : "in " + r.DaysUntilExam + " days")</text>
+                    }
+                </div>
+                <span class="band-tag @bandCls">@r.BandLabel</span>
+            </div>
+        </div>
+
+        <div class="why">
+            @if (!r.HasPlan)
+            {
+                <text>
+                    <strong>@r.StudentName has no study plan covering @r.SubjectName.</strong>
+                    This is not the same as being behind — there is simply nothing scheduled to measure against.
+                    The readiness figure above reflects their last recorded mark only. The useful intervention here is
+                    helping them set up a plan, rather than telling them to revise more.
+                </text>
+            }
+            else if (!r.HasMark)
+            {
+                <text>
+                    No mark has been published for @r.SubjectName yet, so this readiness figure is based purely on how
+                    much of the planned revision @r.StudentName has completed. It will become more meaningful once a
+                    mark is recorded.
+                </text>
+            }
+            else if (r.Band == ReadinessBand.OnTrack)
+            {
+                <text>
+                    @r.StudentName is keeping up. Their last mark of @r.LatestMark.ToString("0")% and the revision
+                    they have completed both point the same way, so no intervention appears necessary at this stage.
+                </text>
+            }
+            else if (r.SessionsMissed > r.SessionsCompleted)
+            {
+                <text>
+                    The concern here is revision rather than ability: @r.StudentName has missed more sessions
+                    (@r.SessionsMissed) than they have completed (@r.SessionsCompleted). Their last mark was
+                    @r.LatestMark.ToString("0")%. Getting them back onto their existing plan is likely to matter more
+                    than extra content.
+                </text>
+            }
+            else
+            {
+                <text>
+                    @r.StudentName has completed @r.SessionsCompleted of their planned sessions, but their last mark of
+                    @r.LatestMark.ToString("0")% is still pulling the readiness figure down. The revision is happening —
+                    the difficulty appears to be with the subject content itself.
+                </text>
+            }
+        </div>
+
+        <div class="split" style="margin-top:22px;">
+            <div class="factor">
+                <div class="lab">Latest mark</div>
+                <div class="val">@(r.HasMark ? r.LatestMark.ToString("0") + "%" : "—")</div>
+                <div class="note">@(r.HasMark ? "From the most recent published report" : "No published mark for this subject yet")</div>
+            </div>
+            <div class="factor">
+                <div class="lab">Sessions completed</div>
+                <div class="val">@r.SessionsCompleted</div>
+                <div class="note">@r.SessionsMissed missed · @r.SessionsRemaining still to come</div>
+            </div>
+            <div class="factor">
+                <div class="lab">Days until exam</div>
+                <div class="val">@(r.DaysUntilExam >= 0 ? r.DaysUntilExam.ToString() : "—")</div>
+                <div class="note">@(r.DaysUntilExam <= 7 && r.DaysUntilExam >= 0 ? "Inside the final week — banding is stricter" : "Standard banding applies")</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3><i class="fas fa-list-check"></i> Study sessions for this subject</h3>
+            @if (!Model.Sessions.Any())
+            {
+                <div class="none-note">No study sessions scheduled for @r.SubjectName before this exam.</div>
+            }
+            else
+            {
+                <table class="sessions">
+                    <thead>
+                        <tr><th>Date</th><th>Time</th><th>Status</th><th>Focus</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Sessions)
+                        {
+                            var stCls = s.Status == StudySessionStatus.Completed ? "st-done"
+                                : s.Status == StudySessionStatus.Missed ? "st-missed" : "st-planned";
+                            <tr>
+                                <td>@s.SessionDate.ToString("ddd dd MMM")</td>
+                                <td>@DateTime.Today.Add(s.StartTime).ToString("HH:mm") – @DateTime.Today.Add(s.EndTime).ToString("HH:mm")</td>
+                                <td><span class="st @stCls">@s.Status</span></td>
+                                <td style="color:#777;">@s.FocusNote</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </main>
+</div>

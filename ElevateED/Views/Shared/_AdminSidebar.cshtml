@@ -32,6 +32,9 @@
 <a href="@Url.Action("Issues", "Admin")" class="nav-item @(ViewContext.RouteData.Values["Action"].ToString() == "Issues" ? "active" : "")">
     <i class="fas fa-exclamation-triangle"></i><span>Issues</span>
 </a>
+<a href="@Url.Action("Index", "AdminCareer")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminCareer" ? "active" : "")">
+    <i class="fas fa-compass"></i><span>Career Guidance</span>
+</a>
 
 <div class="nav-section">Extra</div>
 <a href="@Url.Action("Index", "AdminExtraClass")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminExtraClass" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")">

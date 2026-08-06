@@ -1,0 +1,179 @@
+@{
+    // Set ViewBag.ActivePage in each page to highlight the matching nav item.
+    var active = (ViewBag.ActivePage as string) ?? "";
+    var studentFirstName = (ViewBag.StudentFirstName as string) ?? "Student";
+    var studentFullName = (ViewBag.StudentFullName as string) ?? "Student";
+    var studentNumber = (ViewBag.StudentNumber as string) ?? "";
+    Func<string, string> navClass = key => active == key ? "nav-item active" : "nav-item";
+}
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+        --primary: #4f46e5;
+        --primary-light: #6366f1;
+        --primary-dark: #4338ca;
+        --primary-bg: #f5f3ff;
+        --primary-soft: #ede9fe;
+        --primary-hover: #e0e7ff;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+        overflow-x: hidden;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0; top: 0; bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+        width: 40px; height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        color: #1e1b4b; font-size: 20px;
+    }
+    .logo-text { font-size: 20px; font-weight: 700; color: white; }
+    .logo-text span { color: var(--accent); }
+
+    .sidebar-nav { flex: 1; padding: 24px 16px; }
+    .nav-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px; margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: linear-gradient(135deg, var(--accent), #f59e0b); color: #1e1b4b; }
+    .nav-item i { width: 20px; font-size: 18px; }
+    .nav-item span { font-size: 14px; font-weight: 500; }
+    .nav-section {
+        margin-top: 24px; margin-bottom: 12px; padding: 0 16px;
+        font-size: 11px; font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .main-content { flex: 1; margin-left: var(--sidebar-width); min-height: 100vh; }
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex; justify-content: flex-end; align-items: center;
+        padding: 0 32px; position: sticky; top: 0; z-index: 99;
+    }
+    .header-right { display: flex; align-items: center; gap: 24px; }
+    .profile-container { position: relative; }
+    .profile-trigger {
+        display: flex; align-items: center; gap: 12px;
+        cursor: pointer; padding: 6px 12px; border-radius: 50px;
+        transition: all 0.2s; background: none; border: none;
+    }
+    .profile-trigger:hover { background: var(--gray-100); }
+    .avatar {
+        width: 40px; height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 600; font-size: 16px; text-transform: uppercase;
+    }
+    .profile-name { font-size: 14px; font-weight: 500; color: var(--gray-700); }
+    .dropdown-icon { font-size: 12px; color: var(--gray-400); }
+    .dropdown-menu {
+        position: absolute; top: calc(100% + 8px); right: 0;
+        background: white; border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        width: 240px; overflow: hidden; display: none; z-index: 1000;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-header { padding: 16px; border-bottom: 1px solid var(--gray-200); }
+    .dropdown-header .user-name { font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+    .dropdown-header .user-email { font-size: 12px; color: var(--gray-500); }
+    .dropdown-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px; text-decoration: none;
+        color: var(--gray-700); transition: all 0.2s;
+        cursor: pointer; background: none; border: none; width: 100%; text-align: left;
+    }
+    .dropdown-item:hover { background: var(--gray-100); }
+    .dropdown-item i { width: 20px; font-size: 16px; color: var(--gray-500); }
+    .dropdown-divider { height: 1px; background: var(--gray-200); margin: 8px 0; }
+
+    @@media (max-width: 900px) {
+        .sidebar { transform: translateX(-100%); }
+        .main-content { margin-left: 0; }
+    }
+</style>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="logo-text">Elevate<span>ED</span></div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a href="@Url.Action("Dashboard", "Student")" class="@navClass("dashboard")">
+            <i class="fas fa-home"></i><span>Dashboard</span>
+        </a>
+        <a href="@Url.Action("Timetable", "Student")" class="@navClass("timetable")">
+            <i class="fas fa-calendar-alt"></i><span>Timetable</span>
+        </a>
+
+        <div class="nav-section">Learning</div>
+        <a href="@Url.Action("MyReportCards", "Marks")" class="@navClass("reports")">
+            <i class="fas fa-file-alt"></i><span>Report Cards</span>
+        </a>
+        <a href="@Url.Action("Index", "StudentQuiz")" class="@navClass("quiz")">
+            <i class="fas fa-question-circle"></i><span>Quizzes</span>
+        </a>
+        <a href="@Url.Action("Index", "StudentCareer")" class="@navClass("career")">
+            <i class="fas fa-compass"></i><span>Career Guidance</span>
+        </a>
+        <a href="@Url.Action("Index", "StudentPlanner")" class="@navClass("planner")">
+            <i class="fas fa-calendar-day"></i><span>Study Planner</span>
+        </a>
+
+        <div class="nav-section">Other</div>
+        <a href="@Url.Action("ViewAnnouncements", "Student")" class="@navClass("announcements")">
+            <i class="fas fa-bullhorn"></i><span>Announcements</span>
+        </a>
+    </nav>
+</aside>
+
+<div id="student-topbar-template" style="display:none"></div>

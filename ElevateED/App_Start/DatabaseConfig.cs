@@ -10,6 +10,10 @@ namespace ElevateED
 {
     public class DatabaseConfig
     {
+        // Set when startup database initialisation fails, so the cause is
+        // available rather than lost. Null when startup succeeded.
+        public static Exception LastStartupError { get; private set; }
+
         public static void Initialize()
         {
             Database.SetInitializer(new MigrateDatabaseToLatestVersion<ElevateEDContext, Migrations.Configuration>());
@@ -149,10 +153,21 @@ namespace ElevateED
                         context.Streams.AddRange(streams);
                         context.SaveChanges();
                     }
+
+                    // Seed Career Guidance (fields, careers, requirements, quiz)
+                    CareerGuidanceSeeder.Seed(context);
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Database seed error: {ex.Message}");
+                    // Trace, not Debug: Debug.WriteLine is compiled out of Release
+                    // builds, so a migration failure here left no trace at all and
+                    // the app would start looking healthy while every table added
+                    // by a pending migration was silently missing. Log the full
+                    // exception (inner exceptions carry the real EF cause) and
+                    // record it so startup problems are discoverable rather than
+                    // surfacing later as "invalid object name" on random pages.
+                    LastStartupError = ex;
+                    System.Diagnostics.Trace.TraceError("ElevateED database initialisation FAILED: " + ex);
                 }
             }
         }

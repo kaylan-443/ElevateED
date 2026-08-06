@@ -1,0 +1,218 @@
+@model ElevateED.ViewModels.CareerDashboardViewModel
+@{
+    ViewBag.Title = "Career Guidance - ElevateED";
+    var aps = Model.Aps;
+}
+
+<style>
+    .content { padding: 32px; }
+    .page-head { margin-bottom: 24px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+
+    .alert-soft {
+        padding: 14px 18px; border-radius: 12px; margin-bottom: 20px;
+        font-size: 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+    .aps-hero {
+        background: linear-gradient(135deg, #1e1b4b, #4338ca);
+        border-radius: 20px; padding: 32px; color: white;
+        display: flex; align-items: center; gap: 32px; flex-wrap: wrap;
+        margin-bottom: 28px;
+    }
+    .aps-score { text-align: center; }
+    .aps-score .num { font-size: 64px; font-weight: 800; line-height: 1; }
+    .aps-score .max { font-size: 16px; opacity: 0.7; }
+    .aps-score .label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-top: 8px; }
+    .aps-hero-info { flex: 1; min-width: 240px; }
+    .aps-hero-info h2 { font-size: 22px; margin-bottom: 6px; }
+    .aps-hero-info p { opacity: 0.85; font-size: 14px; line-height: 1.5; }
+    .provisional-tag {
+        display: inline-block; margin-top: 10px; padding: 4px 12px;
+        background: rgba(251,191,36,0.25); border: 1px solid var(--accent);
+        border-radius: 50px; font-size: 12px; font-weight: 600;
+    }
+
+    .quick-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+    .qcard {
+        background: white; border-radius: 16px; padding: 22px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100);
+        text-decoration: none; color: inherit; transition: all 0.2s;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .qcard:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .qcard .icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; margin-bottom: 6px; }
+    .qcard .big { font-size: 28px; font-weight: 800; color: var(--gray-900); }
+    .qcard .cap { font-size: 14px; font-weight: 600; color: var(--gray-700); }
+    .qcard .sub { font-size: 12px; color: var(--gray-500); }
+
+    .panel { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin-bottom: 24px; }
+    .panel h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 16px; }
+
+    table.subjects { width: 100%; border-collapse: collapse; }
+    table.subjects th, table.subjects td { text-align: left; padding: 10px 12px; font-size: 14px; border-bottom: 1px solid var(--gray-100); }
+    table.subjects th { color: var(--gray-500); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .level-badge { display: inline-block; min-width: 30px; text-align: center; padding: 3px 8px; border-radius: 8px; font-weight: 700; font-size: 13px; color: white; }
+    .lv7, .lv6 { background: #10b981; }
+    .lv5, .lv4 { background: #3b82f6; }
+    .lv3 { background: #f59e0b; }
+    .lv2, .lv1 { background: #ef4444; }
+    .counted { color: var(--success); font-weight: 600; }
+    .excluded { color: var(--gray-400); font-style: italic; }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-light { background: var(--gray-100); color: var(--gray-700); }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleCareerDropdown()">
+                        <div class="avatar">@(Model.StudentName?.Substring(0,1) ?? "S")</div>
+                        <span class="profile-name">@Model.StudentName</span>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div class="dropdown-menu" id="careerProfileDropdown">
+                        <div class="dropdown-header">
+                            <div class="user-name">@Model.StudentName</div>
+                            <div class="user-email">@Model.Grade</div>
+                        </div>
+                        <form action="@Url.Action("LogOff", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-compass" style="color: var(--accent);"></i> Career Guidance</h1>
+                <p>Discover careers that match your marks and interests.</p>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+            }
+
+            @if (aps.HasReportCard)
+            {
+                <div class="aps-hero">
+                    <div class="aps-score">
+                        <div><span class="num">@aps.Aps</span><span class="max">/42</span></div>
+                        <div class="label">Your APS</div>
+                    </div>
+                    <div class="aps-hero-info">
+                        <h2>Admission Point Score</h2>
+                        <p>
+                            Calculated from your <strong>@aps.Term @aps.AcademicYear</strong> report card — the sum of your best six
+                            subject levels (Life Orientation is excluded, as universities do).
+                        </p>
+                        @if (aps.IsProvisional)
+                        {
+                            <span class="provisional-tag"><i class="fas fa-info-circle"></i> Provisional — based on fewer than 6 subjects</span>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert-soft alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Your APS will appear here once your first report card is published. You can still take the interest quiz and explore careers below.</span>
+                </div>
+            }
+
+            <div class="quick-cards">
+                <a href="@Url.Action("Explore")" class="qcard">
+                    <div class="icon" style="background: linear-gradient(135deg,#10b981,#34d399);"><i class="fas fa-check-circle"></i></div>
+                    <div class="big">@Model.QualifyingCount</div>
+                    <div class="cap">Careers you qualify for</div>
+                    <div class="sub">Based on your current APS &amp; subjects</div>
+                </a>
+                <a href="@Url.Action("Explore", new { verdict = "close" })" class="qcard">
+                    <div class="icon" style="background: linear-gradient(135deg,#f59e0b,#fbbf24);"><i class="fas fa-arrow-trend-up"></i></div>
+                    <div class="big">@Model.CloseCount</div>
+                    <div class="cap">Within reach</div>
+                    <div class="sub">Close — improve a mark or two</div>
+                </a>
+                <a href="@Url.Action("Bookmarks")" class="qcard">
+                    <div class="icon" style="background: linear-gradient(135deg,#4f46e5,#6366f1);"><i class="fas fa-bookmark"></i></div>
+                    <div class="big">@Model.BookmarkCount</div>
+                    <div class="cap">My shortlist</div>
+                    <div class="sub">Careers you've saved</div>
+                </a>
+                <a href="@Url.Action("Quiz")" class="qcard">
+                    <div class="icon" style="background: linear-gradient(135deg,#ec4899,#f472b6);"><i class="fas fa-clipboard-question"></i></div>
+                    <div class="cap" style="margin-top:6px;">@(Model.HasTakenQuiz ? "Retake interest quiz" : "Take the interest quiz")</div>
+                    <div class="sub">@(Model.HasTakenQuiz && Model.TopFieldNames.Any() ? "Top: " + string.Join(", ", Model.TopFieldNames) : "Find fields that suit you")</div>
+                </a>
+                <a href="@Url.Action("Simulate")" class="qcard">
+                    <div class="icon" style="background: linear-gradient(135deg,#0ea5e9,#38bdf8);"><i class="fas fa-sliders"></i></div>
+                    <div class="cap" style="margin-top:6px;">What-if simulator</div>
+                    <div class="sub">See what a mark change would unlock</div>
+                </a>
+            </div>
+
+            @if (aps.HasReportCard)
+            {
+                <div class="panel">
+                    <h3>Your subject levels</h3>
+                    <table class="subjects">
+                        <thead>
+                            <tr><th>Subject</th><th>Final Mark</th><th>Level</th><th>APS</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in aps.Subjects.OrderByDescending(x => x.Level))
+                            {
+                                <tr>
+                                    <td>@s.SubjectName</td>
+                                    <td>@s.FinalMark.ToString("0.#")%</td>
+                                    <td><span class="level-badge lv@(s.Level)">@s.Level</span></td>
+                                    <td>
+                                        @if (s.IsLifeOrientation)
+                                        {
+                                            <span class="excluded">Excluded (LO)</span>
+                                        }
+                                        else if (s.CountedInAps)
+                                        {
+                                            <span class="counted">Counted</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="excluded">Not in best 6</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <a href="@Url.Action("Explore")" class="btn btn-primary"><i class="fas fa-compass"></i> Explore all careers</a>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleCareerDropdown() {
+        document.getElementById('careerProfileDropdown').classList.toggle('show');
+    }
+    document.addEventListener('click', function (e) {
+        var c = document.querySelector('.profile-container');
+        var d = document.getElementById('careerProfileDropdown');
+        if (c && d && !c.contains(e.target)) d.classList.remove('show');
+    });
+</script>

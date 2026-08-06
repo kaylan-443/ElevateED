@@ -1,0 +1,141 @@
+@using ElevateED.Services
+@model ElevateED.ViewModels.StudentReadinessViewModel
+@{
+    ViewBag.Title = "Exam Readiness - ElevateED";
+
+    Func<ReadinessBand, string> bandClass = b =>
+        b == ReadinessBand.OnTrack ? "ok" :
+        b == ReadinessBand.AtRisk ? "risk" :
+        b == ReadinessBand.Urgent ? "urgent" : "noplan";
+
+    Func<ReadinessBand, string> fillColour = b =>
+        b == ReadinessBand.OnTrack ? "var(--success)" :
+        b == ReadinessBand.AtRisk ? "#f59e0b" :
+        b == ReadinessBand.Urgent ? "var(--danger)" : "var(--gray-300)";
+}
+
+<style>
+    .content { padding: 32px; max-width: 900px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .page-head { margin-bottom: 8px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+
+    .empty { text-align: center; padding: 60px 20px; background: white; border-radius: 20px; border: 1px solid var(--gray-100); margin-top: 20px; }
+    .empty p { color: var(--gray-500); max-width: 440px; margin: 10px auto; line-height: 1.6; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: none; cursor: pointer; background: var(--primary); color: white; }
+
+    .attention-banner {
+        background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid var(--danger);
+        border-radius: 12px; padding: 16px 20px; margin: 20px 0;
+    }
+    .attention-banner h4 { color: #991b1b; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .attention-banner p { color: #b91c1c; font-size: 13px; margin: 0; }
+
+    .exam-card { background: white; border-radius: 16px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin: 16px 0; }
+    .exam-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .exam-name { font-size: 17px; font-weight: 700; color: var(--gray-900); }
+    .exam-when { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+
+    .band-tag { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .band-tag.ok { background: #ecfdf5; color: #065f46; }
+    .band-tag.risk { background: #fffbeb; color: #92400e; }
+    .band-tag.urgent { background: #fef2f2; color: #991b1b; }
+    .band-tag.noplan { background: var(--gray-100); color: var(--gray-500); }
+
+    .score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .score-track { flex: 1; height: 10px; background: var(--gray-100); border-radius: 50px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 50px; }
+    .score-num { font-size: 15px; font-weight: 800; color: var(--gray-800); width: 46px; text-align: right; }
+
+    .exam-facts { display: flex; gap: 22px; flex-wrap: wrap; font-size: 13px; color: var(--gray-600); }
+    .exam-facts strong { color: var(--gray-800); }
+
+    .noplan-note { background: var(--gray-50); border-radius: 10px; padding: 12px 16px; margin-top: 14px; font-size: 13px; color: var(--gray-600); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .noplan-note a { color: var(--primary); font-weight: 600; text-decoration: none; white-space: nowrap; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to planner</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-heart-pulse" style="color: var(--accent);"></i> Exam Readiness</h1>
+                <p>How ready you actually are for each upcoming exam — your latest mark combined with the revision you've done since.</p>
+            </div>
+
+            @if (!Model.HasActiveTimetable)
+            {
+                <div class="empty">
+                    <p>There's no active exam timetable to check your readiness against yet. Once one is published, your exams will show up here.</p>
+                    <a href="@Url.Action("Index")" class="btn"><i class="fas fa-arrow-left"></i> Back to planner</a>
+                </div>
+            }
+            else if (!Model.Exams.Any())
+            {
+                <div class="empty">
+                    <p>No upcoming exams found for you on the current timetable.</p>
+                    <a href="@Url.Action("Index")" class="btn"><i class="fas fa-arrow-left"></i> Back to planner</a>
+                </div>
+            }
+            else
+            {
+                if (Model.ImmediateAttention.Any())
+                {
+                    <div class="attention-banner">
+                        <h4><i class="fas fa-triangle-exclamation"></i> Needs urgent attention</h4>
+                        <p>
+                            @(Model.ImmediateAttention.Count == 1 ? "One exam is" : Model.ImmediateAttention.Count + " exams are")
+                            within a week and still in the urgent band — these need revision time first.
+                        </p>
+                    </div>
+                }
+
+                foreach (var r in Model.Exams)
+                {
+                    var cls = bandClass(r.Band);
+                    <div class="exam-card">
+                        <div class="exam-top">
+                            <div>
+                                <div class="exam-name">@r.SubjectName</div>
+                                <div class="exam-when">
+                                    @r.ExamDate.ToString("dddd dd MMMM yyyy")
+                                    @if (r.DaysUntilExam >= 0)
+                                    {
+                                        <text>· @(r.DaysUntilExam == 0 ? "today" : r.DaysUntilExam == 1 ? "tomorrow" : "in " + r.DaysUntilExam + " days")</text>
+                                    }
+                                </div>
+                            </div>
+                            <span class="band-tag @cls">@r.BandLabel</span>
+                        </div>
+
+                        @if (r.HasPlan)
+                        {
+                            <div class="score-row">
+                                <div class="score-track"><div class="score-fill" style="width:@r.Score%; background:@fillColour(r.Band);"></div></div>
+                                <span class="score-num">@r.Score</span>
+                            </div>
+                            <div class="exam-facts">
+                                <span>Latest mark: <strong>@(r.HasMark ? r.LatestMark.ToString("0") + "%" : "Not published yet")</strong></span>
+                                <span>Sessions: <strong>@r.SessionsCompleted done</strong> · @r.SessionsMissed missed @(r.SessionsRemaining > 0 ? "· " + r.SessionsRemaining + " left" : "")</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="noplan-note">
+                                <span><i class="fas fa-circle-info"></i> No study plan covers this subject yet, so this reflects your latest mark alone.</span>
+                                <a href="@Url.Action("Setup")">Set up a study plan &rarr;</a>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </main>
+</div>

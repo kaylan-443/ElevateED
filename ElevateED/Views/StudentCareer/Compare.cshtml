@@ -1,0 +1,153 @@
+@model ElevateED.ViewModels.CareerCompareViewModel
+@using ElevateED.Services
+@{
+    ViewBag.Title = "Compare Careers - ElevateED";
+    var entries = Model.Comparison.Entries;
+
+    Func<CareerMatchVerdict, string> verdictClass = v =>
+        v == CareerMatchVerdict.Qualifies ? "v-qualify" :
+        v == CareerMatchVerdict.Close ? "v-close" :
+        v == CareerMatchVerdict.MissingSubjects ? "v-missing" : "v-nodata";
+
+    Func<CareerMatchVerdict, string> verdictText = v =>
+        v == CareerMatchVerdict.Qualifies ? "You qualify" :
+        v == CareerMatchVerdict.Close ? "Within reach" :
+        v == CareerMatchVerdict.MissingSubjects ? "Missing a subject" : "No data yet";
+
+    Func<int, string> levelClass = lv => "lv" + Math.Max(1, Math.Min(7, lv));
+}
+
+<style>
+    .content { padding: 32px; max-width: 1100px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .page-head { margin-bottom: 8px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+
+    .compare-scroll { overflow-x: auto; margin-top: 20px; border-radius: 16px; border: 1px solid var(--gray-100); box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+    table.compare { width: 100%; border-collapse: collapse; background: white; min-width: 560px; }
+    table.compare th, table.compare td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--gray-100); }
+    table.compare th.subj-col, table.compare td.subj-col { position: sticky; left: 0; background: white; z-index: 1; border-right: 1px solid var(--gray-100); min-width: 160px; }
+
+    .career-head { display: flex; flex-direction: column; gap: 6px; }
+    .career-head a { font-size: 15px; font-weight: 700; color: var(--gray-900); text-decoration: none; }
+    .career-head a:hover { color: var(--primary); }
+    .verdict-pill { display: inline-flex; align-self: flex-start; padding: 4px 11px; border-radius: 50px; font-size: 11px; font-weight: 700; }
+    .verdict-pill.v-qualify { background: #ecfdf5; color: #065f46; }
+    .verdict-pill.v-close { background: #fffbeb; color: #92400e; }
+    .verdict-pill.v-missing { background: #fef2f2; color: #991b1b; }
+    .verdict-pill.v-nodata { background: var(--gray-100); color: var(--gray-500); }
+    .aps-line { font-size: 12px; color: var(--gray-500); }
+    .aps-line .met { color: var(--success); font-weight: 700; }
+    .aps-line .short { color: var(--danger); font-weight: 700; }
+
+    .subj-name { font-weight: 600; color: var(--gray-800); font-size: 13px; }
+    .subj-your-level { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+    .req-cell { display: flex; align-items: center; gap: 8px; }
+    .level-badge { display: inline-block; min-width: 26px; text-align: center; padding: 2px 7px; border-radius: 8px; font-weight: 700; font-size: 12px; color: white; }
+    .lv7, .lv6 { background: #10b981; }
+    .lv5, .lv4 { background: #3b82f6; }
+    .lv3 { background: #f59e0b; }
+    .lv2, .lv1 { background: #ef4444; }
+    .req-met { color: var(--success); font-size: 12px; font-weight: 600; }
+    .req-miss { color: var(--danger); font-size: 12px; font-weight: 600; }
+    .not-required { color: var(--gray-300); font-size: 13px; }
+    .compulsory-tag { font-size: 10px; color: var(--gray-400); text-transform: uppercase; }
+
+    .empty { text-align: center; padding: 60px 20px; background: white; border-radius: 20px; border: 1px solid var(--gray-100); margin-top: 20px; }
+    .empty p { color: var(--gray-500); max-width: 440px; margin: 10px auto; line-height: 1.6; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: none; cursor: pointer; background: var(--primary); color: white; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Bookmarks")" class="back-link"><i class="fas fa-arrow-left"></i> Back to shortlist</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-scale-balanced" style="color: var(--accent);"></i> Compare Careers</h1>
+                <p>Your standing against each career's requirements, side by side.</p>
+            </div>
+
+            @if (!Model.Aps.HasReportCard)
+            {
+                <div class="empty">
+                    <p>You'll need a published report card before careers can be compared against your marks.</p>
+                    <a href="@Url.Action("Bookmarks")" class="btn"><i class="fas fa-arrow-left"></i> Back to shortlist</a>
+                </div>
+            }
+            else
+            {
+                <div class="compare-scroll">
+                    <table class="compare">
+                        <thead>
+                            <tr>
+                                <th class="subj-col">Subject</th>
+                                @foreach (var e in entries)
+                                {
+                                    <th>
+                                        <div class="career-head">
+                                            <a href="@Url.Action("Detail", new { id = e.Career.Id })">@e.Career.Name</a>
+                                            <span class="verdict-pill @verdictClass(e.Match.Verdict)">@verdictText(e.Match.Verdict)</span>
+                                            <span class="aps-line">
+                                                APS needed <strong>@e.Career.MinimumAps</strong> ·
+                                                you <span class="@(e.Match.ApsMet ? "met" : "short")">@e.Match.StudentAps</span>
+                                            </span>
+                                        </div>
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Comparison.SubjectRows)
+                            {
+                                <tr>
+                                    <td class="subj-col">
+                                        <div class="subj-name">@row.SubjectName</div>
+                                        <div class="subj-your-level">
+                                            @(row.StudentLevel >= 0 ? "You: level " + row.StudentLevel : "Not one of your subjects")
+                                        </div>
+                                    </td>
+                                    @for (int i = 0; i < entries.Count; i++)
+                                    {
+                                        var cell = row.Cells[i];
+                                        <td>
+                                            @if (!cell.Required)
+                                            {
+                                                <span class="not-required">—</span>
+                                            }
+                                            else
+                                            {
+                                                <div class="req-cell">
+                                                    <span class="level-badge @levelClass(cell.MinimumLevel)">L@(cell.MinimumLevel)</span>
+                                                    @if (cell.Met)
+                                                    {
+                                                        <span class="req-met"><i class="fas fa-check"></i> Met</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="req-miss"><i class="fas fa-xmark"></i> Short</span>
+                                                    }
+                                                </div>
+                                                if (cell.IsCompulsory)
+                                                {
+                                                    <div class="compulsory-tag">Compulsory</div>
+                                                }
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </main>
+</div>

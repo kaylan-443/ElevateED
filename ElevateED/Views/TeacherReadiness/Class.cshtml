@@ -1,0 +1,278 @@
+@using ElevateED.Services
+@model ElevateED.ViewModels.ClassReadinessViewModel
+@{
+    ViewBag.Title = "Class Readiness - ElevateED";
+    var subjectId = (int)ViewBag.SubjectId;
+
+    Func<ReadinessBand, string> bandClass = b =>
+        b == ReadinessBand.OnTrack ? "ok" :
+        b == ReadinessBand.AtRisk ? "risk" :
+        b == ReadinessBand.Urgent ? "urgent" : "noplan";
+}
+
+<style>
+    .exam-switch { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+    .exam-pill {
+        padding: 9px 16px; border-radius: 22px; font-size: 13px; font-weight: 600;
+        background: white; color: #555; border: 1px solid #dde2e6; text-decoration: none;
+    }
+    .exam-pill.sel { background: var(--secondary-blue); color: white; border-color: var(--secondary-blue); }
+    .exam-pill:hover { text-decoration: none; }
+
+    .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .sum-card { background: white; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .sum-card .v { font-size: 26px; font-weight: 800; color: var(--primary-blue); }
+    .sum-card .l { font-size: 12px; color: #777; margin-top: 2px; }
+    .sum-card.urgent .v { color: var(--danger-red); }
+    .sum-card.risk .v { color: #e8890c; }
+    .sum-card.ok .v { color: var(--success-green); }
+
+    .panel { background: white; border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 22px; }
+    .panel h3 { font-size: 16px; color: var(--primary-blue); margin-bottom: 4px; display: flex; align-items: center; gap: 9px; }
+    .panel .sub { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+    .dist-bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #f1f3f5; }
+    .dist-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+    .seg-urgent { background: var(--danger-red); }
+    .seg-risk { background: #f0932b; }
+    .seg-ok { background: var(--success-green); }
+    .seg-noplan { background: #adb5bd; }
+    .dist-key { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: #666; }
+    .dist-key span { display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+    table.learners { width: 100%; border-collapse: collapse; }
+    table.learners th {
+        text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase;
+        letter-spacing: 0.6px; color: #888; border-bottom: 2px solid #eef1f3;
+    }
+    table.learners td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f1f3f5; }
+    table.learners tr:last-child td { border-bottom: none; }
+    .name-cell { font-weight: 600; color: var(--primary-blue); }
+
+    .band-tag { padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .band-tag.ok { background: #e8f6ef; color: #1e7e5a; }
+    .band-tag.risk { background: #fef3e2; color: #a55a06; }
+    .band-tag.urgent { background: #fdecea; color: #922b21; }
+    .band-tag.noplan { background: #f1f3f5; color: #6c757d; }
+
+    .score-wrap { display: flex; align-items: center; gap: 9px; min-width: 130px; }
+    .score-track { flex: 1; height: 7px; background: #eef1f3; border-radius: 20px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 20px; }
+    .score-num { font-size: 12px; font-weight: 700; color: #555; width: 34px; text-align: right; }
+
+    .mini { font-size: 12px; color: #888; }
+    .btn-view { color: var(--secondary-blue); font-weight: 600; font-size: 13px; text-decoration: none; }
+    .btn-view:hover { text-decoration: underline; }
+
+    .attention-banner {
+        background: #fdecea; border: 1px solid #f5c6cb; border-left: 4px solid var(--danger-red);
+        border-radius: 10px; padding: 16px 20px; margin-bottom: 22px;
+    }
+    .attention-banner h4 { color: #922b21; font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .attention-banner p { color: #7b241c; font-size: 13px; margin: 0 0 10px 0; }
+    .attention-names { display: flex; gap: 8px; flex-wrap: wrap; }
+    .attention-names a {
+        background: white; color: #922b21; padding: 5px 12px; border-radius: 20px;
+        font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #f5c6cb;
+    }
+
+    .none-note { color: #999; font-size: 13px; font-style: italic; padding: 6px 0; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "readiness")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-heart-pulse"></i> @Model.ClassName — @Model.Exam.SubjectName</h1>
+                <p>
+                    Exam on @Model.Exam.ExamDate.ToString("dddd dd MMMM yyyy")
+                    @if (Model.Exam.DaysUntil >= 0)
+                    {
+                        <text>· @(Model.Exam.DaysUntil == 0 ? "today" : Model.Exam.DaysUntil == 1 ? "tomorrow" : "in " + Model.Exam.DaysUntil + " days")</text>
+                    }
+                </p>
+            </div>
+            <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> All classes</a>
+        </div>
+
+        @if (Model.OtherExams.Count > 1)
+        {
+            <div class="exam-switch">
+                @foreach (var e in Model.OtherExams)
+                {
+                    <a class="exam-pill @(e.ExamSessionId == Model.Exam.ExamSessionId ? "sel" : "")"
+                       href="@Url.Action("Class", new { classId = Model.ClassId, subjectId = subjectId, examId = e.ExamSessionId })">
+                        @e.Label
+                    </a>
+                }
+            </div>
+        }
+
+        @if (Model.ImmediateAttention.Any())
+        {
+            <div class="attention-banner">
+                <h4><i class="fas fa-triangle-exclamation"></i> Needs immediate attention</h4>
+                <p>
+                    The exam is within a week and @Model.ImmediateAttention.Count learner@(Model.ImmediateAttention.Count == 1 ? " is" : "s are")
+                    still in the urgent band. These are the ones to speak to first.
+                </p>
+                <div class="attention-names">
+                    @foreach (var r in Model.ImmediateAttention)
+                    {
+                        <a href="@Url.Action("Learner", new { studentId = r.StudentId, examId = Model.Exam.ExamSessionId, classId = Model.ClassId, subjectId = subjectId })">
+                            @r.StudentName
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="summary-row">
+            <div class="sum-card"><div class="v">@Model.TotalLearners</div><div class="l">Learners in class</div></div>
+            <div class="sum-card urgent"><div class="v">@Model.Urgent.Count</div><div class="l">Urgent</div></div>
+            <div class="sum-card risk"><div class="v">@Model.AtRisk.Count</div><div class="l">At risk</div></div>
+            <div class="sum-card ok"><div class="v">@Model.OnTrack.Count</div><div class="l">On track</div></div>
+            <div class="sum-card"><div class="v">@Model.NotPlanning.Count</div><div class="l">Not planning</div></div>
+        </div>
+
+        <div class="panel">
+            <h3><i class="fas fa-chart-simple"></i> How the class is spread</h3>
+            <div class="sub">Average readiness among learners with a study plan: <strong>@Model.AverageScore</strong> out of 100.</div>
+
+            <div class="dist-bar">
+                @if (Model.Urgent.Any())
+                {
+                    <div class="dist-seg seg-urgent" style="width:@Model.Percent(Model.Urgent.Count)%;">@Model.Urgent.Count</div>
+                }
+                @if (Model.AtRisk.Any())
+                {
+                    <div class="dist-seg seg-risk" style="width:@Model.Percent(Model.AtRisk.Count)%;">@Model.AtRisk.Count</div>
+                }
+                @if (Model.OnTrack.Any())
+                {
+                    <div class="dist-seg seg-ok" style="width:@Model.Percent(Model.OnTrack.Count)%;">@Model.OnTrack.Count</div>
+                }
+                @if (Model.NotPlanning.Any())
+                {
+                    <div class="dist-seg seg-noplan" style="width:@Model.Percent(Model.NotPlanning.Count)%;">@Model.NotPlanning.Count</div>
+                }
+            </div>
+            <div class="dist-key">
+                <span><i class="dot seg-urgent"></i> Urgent</span>
+                <span><i class="dot seg-risk"></i> At risk</span>
+                <span><i class="dot seg-ok"></i> On track</span>
+                <span><i class="dot seg-noplan"></i> Not planning</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3><i class="fas fa-list-ol"></i> Learners with a study plan</h3>
+            <div class="sub">Ordered by who needs attention most. Readiness blends the latest mark with revision actually completed.</div>
+
+            @{ var planned = Model.Results.Where(r => r.HasPlan).ToList(); }
+            @if (!planned.Any())
+            {
+                <div class="none-note">No learner in this class has a study plan covering this subject yet.</div>
+            }
+            else
+            {
+                <table class="learners">
+                    <thead>
+                        <tr>
+                            <th>Learner</th>
+                            <th>Readiness</th>
+                            <th>Band</th>
+                            <th>Latest mark</th>
+                            <th>Revision done</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in planned)
+                        {
+                            var cls = bandClass(r.Band);
+                            var fillColour = r.Band == ReadinessBand.OnTrack ? "#28a745"
+                                : r.Band == ReadinessBand.AtRisk ? "#f0932b" : "#dc3545";
+                            <tr>
+                                <td class="name-cell">@r.StudentName</td>
+                                <td>
+                                    <div class="score-wrap">
+                                        <div class="score-track"><div class="score-fill" style="width:@r.Score%; background:@fillColour;"></div></div>
+                                        <span class="score-num">@r.Score</span>
+                                    </div>
+                                </td>
+                                <td><span class="band-tag @cls">@r.BandLabel</span></td>
+                                <td>
+                                    @if (r.HasMark)
+                                    {
+                                        <text>@r.LatestMark.ToString("0")%</text>
+                                    }
+                                    else
+                                    {
+                                        <span class="mini">No mark yet</span>
+                                    }
+                                </td>
+                                <td class="mini">
+                                    @r.SessionsCompleted done · @r.SessionsMissed missed
+                                    @if (r.SessionsRemaining > 0)
+                                    {
+                                        <text>· @r.SessionsRemaining left</text>
+                                    }
+                                </td>
+                                <td>
+                                    <a class="btn-view"
+                                       href="@Url.Action("Learner", new { studentId = r.StudentId, examId = Model.Exam.ExamSessionId, classId = Model.ClassId, subjectId = subjectId })">
+                                        View detail
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (Model.NotPlanning.Any())
+        {
+            <div class="panel">
+                <h3><i class="fas fa-calendar-xmark"></i> Not planning yet</h3>
+                <div class="sub">
+                    These learners have no study plan covering this subject. That is a different problem from being
+                    behind despite one — they need to be set up with a plan rather than pushed to revise harder.
+                </div>
+                <table class="learners">
+                    <thead>
+                        <tr><th>Learner</th><th>Latest mark</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.NotPlanning)
+                        {
+                            <tr>
+                                <td class="name-cell">@r.StudentName</td>
+                                <td>
+                                    @if (r.HasMark)
+                                    {
+                                        <text>@r.LatestMark.ToString("0")%</text>
+                                    }
+                                    else
+                                    {
+                                        <span class="mini">No mark yet</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a class="btn-view"
+                                       href="@Url.Action("Learner", new { studentId = r.StudentId, examId = Model.Exam.ExamSessionId, classId = Model.ClassId, subjectId = subjectId })">
+                                        View detail
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </main>
+</div>

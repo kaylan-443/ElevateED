@@ -1,0 +1,119 @@
+@model ElevateED.ViewModels.CareerBookmarksViewModel
+@{
+    ViewBag.Title = "My Shortlist - ElevateED";
+}
+
+@Html.Partial("_CareerCardStyles")
+
+<style>
+    .content { padding: 32px; }
+    .page-head { margin-bottom: 20px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .empty { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+    .empty i { font-size: 48px; margin-bottom: 16px; }
+    .empty a { color: var(--primary); font-weight: 600; text-decoration: none; }
+
+    .compare-cb-wrap { display: inline-flex; align-items: center; margin-right: 4px; }
+    .compare-cb { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+    .compare-bar {
+        position: sticky; bottom: 20px; margin-top: 24px; background: var(--gray-900); color: white;
+        border-radius: 14px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .compare-bar .msg { font-size: 13px; color: var(--gray-300); }
+    .compare-bar button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .compare-bar button:disabled { background: var(--gray-600); cursor: not-allowed; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-bookmark" style="color: var(--accent);"></i> My Career Shortlist</h1>
+                <p>Careers you've saved to revisit later.</p>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+            }
+
+            @if (Model.Matches.Any())
+            {
+                using (Html.BeginForm("Compare", "StudentCareer", FormMethod.Get, new { id = "compareForm" }))
+                {
+                    <div class="cards-grid">
+                        @foreach (var match in Model.Matches)
+                        {
+                            @Html.Partial("_CareerCard", match, new ViewDataDictionary
+                            {
+                                { "Bookmarked", true },
+                                { "ReturnUrl", Request.Url.PathAndQuery },
+                                { "ShowCompareCheckbox", Model.Matches.Count >= 2 }
+                            })
+                        }
+                    </div>
+
+                    if (Model.Matches.Count >= 2)
+                    {
+                        <div class="compare-bar">
+                            <span class="msg" id="compareMsg">Pick 2 or 3 careers to compare them side by side.</span>
+                            <button type="submit" id="compareBtn" disabled>
+                                <i class="fas fa-scale-balanced"></i> Compare selected
+                            </button>
+                        </div>
+                    }
+                }
+            }
+            else
+            {
+                <div class="empty">
+                    <div><i class="far fa-bookmark"></i></div>
+                    <p>You haven't saved any careers yet.</p>
+                    <p><a href="@Url.Action("Explore")">Explore careers →</a></p>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+@if (Model.Matches.Count >= 2)
+{
+    <script>
+        function updateCompareBar() {
+            var checked = document.querySelectorAll('.compare-cb:checked');
+            var count = checked.length;
+            var btn = document.getElementById('compareBtn');
+            var msg = document.getElementById('compareMsg');
+
+            // Compare up to three at a time — a fourth selection is blocked
+            // client-side, but the server enforces this limit regardless.
+            if (count > 3) {
+                checked[checked.length - 1].checked = false;
+                count = 3;
+            }
+
+            if (count < 2) {
+                btn.disabled = true;
+                msg.textContent = count === 0
+                    ? 'Pick 2 or 3 careers to compare them side by side.'
+                    : 'Pick at least one more to compare.';
+            } else {
+                btn.disabled = false;
+                msg.textContent = count + ' of 3 selected.';
+            }
+        }
+    </script>
+}

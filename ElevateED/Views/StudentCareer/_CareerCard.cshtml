@@ -1,0 +1,83 @@
+@model ElevateED.Services.CareerMatchResult
+@{
+    var bookmarked = ViewData["Bookmarked"] as bool? ?? false;
+    var returnUrl = ViewData["ReturnUrl"] as string ?? "";
+    var showCompare = ViewData["ShowCompareCheckbox"] as bool? ?? false;
+    var career = Model.Career;
+
+    string verdictClass, verdictText, verdictIcon;
+    switch (Model.Verdict)
+    {
+        case ElevateED.Services.CareerMatchVerdict.Qualifies:
+            verdictClass = "v-qualify"; verdictText = "You qualify"; verdictIcon = "fa-check-circle"; break;
+        case ElevateED.Services.CareerMatchVerdict.Close:
+            verdictClass = "v-close"; verdictText = "Within reach"; verdictIcon = "fa-arrow-trend-up"; break;
+        case ElevateED.Services.CareerMatchVerdict.MissingSubjects:
+            verdictClass = "v-missing"; verdictText = "Missing subject"; verdictIcon = "fa-circle-xmark"; break;
+        default:
+            verdictClass = "v-nodata"; verdictText = "Take a report card first"; verdictIcon = "fa-circle-question"; break;
+    }
+}
+
+<div class="career-card @verdictClass">
+    <div class="cc-top">
+        <div class="cc-field">
+            @if (showCompare)
+            {
+                <label class="compare-cb-wrap">
+                    <input type="checkbox" name="ids" value="@career.Id" class="compare-cb" onchange="updateCompareBar && updateCompareBar()" />
+                </label>
+            }
+            <i class="fas fa-@(career.CareerField?.IconClass ?? "briefcase")"></i> @(career.CareerField?.Name)
+        </div>
+        <form action="@Url.Action("ToggleBookmark", "StudentCareer")" method="post" class="bookmark-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="careerId" value="@career.Id" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="bookmark-btn @(bookmarked ? "active" : "")" title="@(bookmarked ? "Remove from shortlist" : "Add to shortlist")">
+                <i class="@(bookmarked ? "fas" : "far") fa-bookmark"></i>
+            </button>
+        </form>
+    </div>
+
+    <a href="@Url.Action("Detail", "StudentCareer", new { id = career.Id })" class="cc-title">@career.Name</a>
+    <div class="cc-qual">@career.TypicalQualification</div>
+
+    <div class="cc-verdict @verdictClass">
+        <i class="fas @verdictIcon"></i>
+        <span>@verdictText</span>
+    </div>
+
+    <div class="cc-meta">
+        <div class="cc-aps">
+            <span class="cc-aps-label">APS needed</span>
+            <span class="cc-aps-val">@career.MinimumAps</span>
+            @if (Model.Verdict != ElevateED.Services.CareerMatchVerdict.NoData)
+            {
+                <span class="cc-aps-you @(Model.ApsMet ? "ok" : "under")">you: @Model.StudentAps</span>
+            }
+        </div>
+    </div>
+
+    @if (Model.Gaps != null && Model.Gaps.Any())
+    {
+        <div class="cc-gaps">
+            @foreach (var gap in Model.Gaps.Take(3))
+            {
+                <div class="cc-gap">
+                    <i class="fas fa-circle-exclamation"></i>
+                    @if (gap.NotTaken)
+                    {
+                        <span>Take <strong>@gap.SubjectName</strong> (need level @gap.RequiredLevel)</span>
+                    }
+                    else
+                    {
+                        <span><strong>@gap.SubjectName</strong>: level @gap.CurrentLevel → need @gap.RequiredLevel</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <a href="@Url.Action("Detail", "StudentCareer", new { id = career.Id })" class="cc-link">View details <i class="fas fa-arrow-right"></i></a>
+</div>

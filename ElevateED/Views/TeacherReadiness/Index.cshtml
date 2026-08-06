@@ -1,0 +1,127 @@
+@model ElevateED.ViewModels.ReadinessIndexViewModel
+@{
+    ViewBag.Title = "Class Readiness - ElevateED";
+}
+
+<style>
+    .alert-soft { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .alert-error { background: #fdecea; color: #922b21; border: 1px solid #f5c6cb; }
+    .alert-info { background: #e8f4fd; color: #1b4f72; border: 1px solid #bee5eb; }
+
+    .intro-card {
+        background: white; border-radius: 12px; padding: 22px 26px; margin-bottom: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); border-left: 4px solid var(--secondary-blue);
+    }
+    .intro-card h3 { font-size: 17px; color: var(--primary-blue); margin-bottom: 6px; }
+    .intro-card p { color: #666; font-size: 14px; line-height: 1.6; margin: 0; }
+
+    .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+    .class-card {
+        background: white; border-radius: 12px; padding: 22px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #e8ecef;
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .class-card .cls-name { font-size: 19px; font-weight: 700; color: var(--primary-blue); }
+    .class-card .subj { font-size: 14px; color: #666; display: flex; align-items: center; gap: 7px; }
+    .exam-badge {
+        display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+        padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .exam-badge.has { background: #e8f6ef; color: #1e7e5a; }
+    .exam-badge.none { background: #f1f3f5; color: #868e96; }
+
+    .btn-review {
+        background: var(--secondary-blue); color: white; border: none;
+        padding: 11px 18px; border-radius: 8px; font-weight: 600; font-size: 14px;
+        text-decoration: none; text-align: center; display: block;
+    }
+    .btn-review:hover { background: var(--primary-blue); color: white; text-decoration: none; }
+    .btn-review.disabled { background: #ced4da; pointer-events: none; }
+
+    .empty-state {
+        background: white; border-radius: 12px; padding: 60px 30px; text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .empty-state i { font-size: 52px; color: #ced4da; margin-bottom: 16px; }
+    .empty-state h3 { color: var(--primary-blue); margin-bottom: 8px; }
+    .empty-state p { color: #888; max-width: 460px; margin: 0 auto; line-height: 1.6; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "readiness")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-heart-pulse"></i> Class Readiness</h1>
+                <p>See which learners are at risk of being unprepared, before the exam arrives.</p>
+            </div>
+            <a href="@Url.Action("Dashboard", "Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert-soft alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+        }
+
+        @if (!Model.HasActiveTimetable)
+        {
+            <div class="alert-soft alert-info">
+                <i class="fas fa-info-circle"></i>
+                There is no active exam timetable at the moment, so there are no upcoming exams to review readiness against.
+            </div>
+        }
+        else
+        {
+            <div class="intro-card">
+                <h3>Reviewing against: @Model.TimetableName</h3>
+                <p>
+                    Readiness combines each learner's most recent mark in the subject with how much of their planned
+                    revision they have actually completed. A learner who studied hard after a weak mark is treated
+                    differently from one who has not opened their plan.
+                </p>
+            </div>
+        }
+
+        @if (!Model.Classes.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h3>No classes assigned</h3>
+                <p>
+                    You are not currently assigned to teach any class for a subject, so there is nothing to review.
+                    Once a class and subject are assigned to you, they will appear here.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="class-grid">
+                @foreach (var c in Model.Classes)
+                {
+                    <div class="class-card">
+                        <div class="cls-name">@c.ClassName</div>
+                        <div class="subj"><i class="fas fa-book"></i> @c.SubjectName</div>
+
+                        @if (c.UpcomingExamCount > 0)
+                        {
+                            <span class="exam-badge has">
+                                <i class="fas fa-calendar-check"></i>
+                                @c.UpcomingExamCount upcoming exam@(c.UpcomingExamCount == 1 ? "" : "s")
+                            </span>
+                            <a class="btn-review"
+                               href="@Url.Action("Class", new { classId = c.ClassId, subjectId = c.SubjectId })">
+                                <i class="fas fa-chart-simple"></i> Review readiness
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="exam-badge none"><i class="fas fa-calendar-xmark"></i> No upcoming exams</span>
+                            <span class="btn-review disabled">Nothing to review</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>

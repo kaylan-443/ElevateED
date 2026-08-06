@@ -1,0 +1,161 @@
+@model ElevateED.ViewModels.AdminCareerFormViewModel
+@{
+    ViewBag.Title = Model.Id == 0 ? "Add Career" : "Edit Career";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section SidebarNav { @Html.Partial("_AdminSidebar") }
+
+@section Styles {
+    <style>
+        .page-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+        .crumb { color: var(--gray-500); font-size: 13px; margin-bottom: 20px; }
+        .crumb a { color: var(--primary); text-decoration: none; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); max-width: 820px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin: 14px 0 6px; }
+        input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; font-family: inherit; }
+        textarea { min-height: 70px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .check { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+        .check input { width: auto; }
+        .section-h { font-size: 15px; font-weight: 700; color: var(--gray-800); margin: 26px 0 6px; }
+        .section-note { font-size: 13px; color: var(--gray-500); margin-bottom: 12px; }
+        .req-row { display: grid; grid-template-columns: 1fr 130px 150px 40px; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .req-row .comp { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-600); }
+        .req-row .comp input { width: auto; }
+        .icon-btn { background: #fef2f2; color: #991b1b; border: none; border-radius: 8px; padding: 9px; cursor: pointer; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-light { background: var(--gray-100); color: var(--gray-700); }
+        .btn-add { background: var(--primary-soft, #ede9fe); color: var(--primary-dark, #4338ca); margin-top: 4px; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; }
+    </style>
+}
+
+<div class="page-title">@(Model.Id == 0 ? "Add Career" : "Edit Career")</div>
+<div class="crumb"><a href="@Url.Action("Index")">Career Guidance</a> / <a href="@Url.Action("Careers")">Careers</a> / @(Model.Id == 0 ? "New" : Model.Name)</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+}
+
+<div class="card">
+    <form action="@Url.Action("SaveCareer")" method="post" id="careerForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <div class="row2">
+            <div>
+                <label>Career name</label>
+                <input type="text" name="Name" value="@Model.Name" required />
+            </div>
+            <div>
+                <label>Career field</label>
+                <select name="CareerFieldId" required>
+                    <option value="">— Select field —</option>
+                    @foreach (var f in Model.Fields)
+                    {
+                        <option value="@f.Id" @(f.Id == Model.CareerFieldId ? "selected" : "")>@f.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <label>Description</label>
+        <textarea name="Description">@Model.Description</textarea>
+
+        <div class="row2">
+            <div>
+                <label>Typical qualification</label>
+                <input type="text" name="TypicalQualification" value="@Model.TypicalQualification" placeholder="e.g. BEng Civil Engineering" />
+            </div>
+            <div>
+                <label>Minimum APS</label>
+                <input type="number" name="MinimumAps" value="@Model.MinimumAps" min="0" max="42" />
+            </div>
+        </div>
+
+        <label>Where to study</label>
+        <input type="text" name="WhereToStudy" value="@Model.WhereToStudy" placeholder="e.g. UCT, Wits, UKZN" />
+
+        <div class="check">
+            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") id="isActive" />
+            <label for="isActive" style="margin:0;">Active (visible to students)</label>
+        </div>
+
+        <div class="section-h">Subject requirements</div>
+        <div class="section-note">Add the subjects and minimum NSC levels (1–7) this career needs. Uncheck "compulsory" for recommended-but-optional subjects.</div>
+
+        <div id="reqRows">
+            @for (int i = 0; i < Model.Requirements.Count; i++)
+            {
+                var r = Model.Requirements[i];
+                <div class="req-row">
+                    <select name="Requirements[@i].SubjectId">
+                        <option value="0">— Subject —</option>
+                        @foreach (var s in Model.Subjects)
+                        {
+                            <option value="@s.Id" @(s.Id == r.SubjectId ? "selected" : "")>@s.Name</option>
+                        }
+                    </select>
+                    <select name="Requirements[@i].MinimumLevel">
+                        @for (int lvl = 1; lvl <= 7; lvl++)
+                        {
+                            <option value="@lvl" @(lvl == r.MinimumLevel ? "selected" : "")>Level @lvl</option>
+                        }
+                    </select>
+                    <label class="comp"><input type="checkbox" name="Requirements[@i].IsCompulsory" value="true" @(r.IsCompulsory ? "checked" : "") /> Compulsory</label>
+                    <button type="button" class="icon-btn" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+                </div>
+            }
+        </div>
+
+        <button type="button" class="btn btn-add" onclick="addReqRow()"><i class="fas fa-plus"></i> Add subject requirement</button>
+
+        <div style="margin-top:24px; display:flex; gap:10px;">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save career</button>
+            <a href="@Url.Action("Careers")" class="btn btn-light">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        var reqIndex = @Model.Requirements.Count;
+        var subjectOptions = `@Html.Raw(string.Join("", Model.Subjects.Select(s => "<option value='" + s.Id + "'>" + System.Web.HttpUtility.HtmlEncode(s.Name) + "</option>")))`;
+
+        function addReqRow() {
+            var levelOptions = '';
+            for (var l = 1; l <= 7; l++) {
+                levelOptions += '<option value="' + l + '"' + (l === 4 ? ' selected' : '') + '>Level ' + l + '</option>';
+            }
+            var row = document.createElement('div');
+            row.className = 'req-row';
+            row.innerHTML =
+                '<select name="Requirements[' + reqIndex + '].SubjectId"><option value="0">— Subject —</option>' + subjectOptions + '</select>' +
+                '<select name="Requirements[' + reqIndex + '].MinimumLevel">' + levelOptions + '</select>' +
+                '<label class="comp"><input type="checkbox" name="Requirements[' + reqIndex + '].IsCompulsory" value="true" checked> Compulsory</label>' +
+                '<button type="button" class="icon-btn" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>';
+            document.getElementById('reqRows').appendChild(row);
+            reqIndex++;
+        }
+
+        // Start with one empty row when creating a brand-new career.
+        if (reqIndex === 0) { addReqRow(); }
+
+        // Renumber rows sequentially before submit so removed rows don't leave
+        // gaps that stop the MVC list binder.
+        document.getElementById('careerForm').addEventListener('submit', function () {
+            var rows = document.querySelectorAll('#reqRows .req-row');
+            rows.forEach(function (row, i) {
+                var subject = row.querySelector('select[name*="SubjectId"]');
+                var level = row.querySelector('select[name*="MinimumLevel"]');
+                var comp = row.querySelector('input[name*="IsCompulsory"]');
+                if (subject) subject.name = 'Requirements[' + i + '].SubjectId';
+                if (level) level.name = 'Requirements[' + i + '].MinimumLevel';
+                if (comp) comp.name = 'Requirements[' + i + '].IsCompulsory';
+            });
+        });
+    </script>
+}

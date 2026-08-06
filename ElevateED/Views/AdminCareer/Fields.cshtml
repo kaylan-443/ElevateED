@@ -1,0 +1,134 @@
+@model List<ElevateED.Models.CareerField>
+@{
+    ViewBag.Title = "Career Fields";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var careerCounts = ViewBag.CareerCountByField as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+@section SidebarNav { @Html.Partial("_AdminSidebar") }
+
+@section Styles {
+    <style>
+        .page-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+        .crumb { color: var(--gray-500); font-size: 13px; margin-bottom: 20px; }
+        .crumb a { color: var(--primary); text-decoration: none; }
+        .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+        .card { background: white; border-radius: 16px; padding: 22px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
+        .card h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin: 12px 0 6px; }
+        input[type=text], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; font-family: inherit; }
+        textarea { min-height: 70px; resize: vertical; }
+        .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+        .check input { width: auto; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-light { background: var(--gray-100); color: var(--gray-700); }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .btn-danger { background: #fef2f2; color: #991b1b; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--gray-100); }
+        th { color: var(--gray-500); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge { padding: 3px 10px; border-radius: 50px; font-size: 12px; font-weight: 600; }
+        .badge-on { background: #ecfdf5; color: #065f46; }
+        .badge-off { background: var(--gray-100); color: var(--gray-500); }
+        .actions { display: flex; gap: 6px; }
+        .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        @@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+}
+
+<div class="page-title">Career Fields</div>
+<div class="crumb"><a href="@Url.Action("Index")">Career Guidance</a> / Fields</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert-soft alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+}
+
+<div class="layout">
+    <div class="card">
+        <h3 id="formTitle">Add a field</h3>
+        <form action="@Url.Action("SaveField")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="f_id" value="0" />
+            <label>Name</label>
+            <input type="text" name="name" id="f_name" required />
+            <label>Icon (Font Awesome name, e.g. cogs)</label>
+            <input type="text" name="iconClass" id="f_icon" placeholder="briefcase" />
+            <label>Description</label>
+            <textarea name="description" id="f_desc"></textarea>
+            <div class="check">
+                <input type="checkbox" name="isActive" id="f_active" value="true" checked />
+                <label for="f_active" style="margin:0;">Active (visible to students)</label>
+            </div>
+            <div style="margin-top:18px; display:flex; gap:8px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="btn btn-light" onclick="resetForm()">Clear</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All fields (@Model.Count)</h3>
+        <table>
+            <thead>
+                <tr><th>Field</th><th>Careers</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    var count = careerCounts.ContainsKey(f.Id) ? careerCounts[f.Id] : 0;
+                    <tr>
+                        <td><i class="fas fa-@f.IconClass" style="color:var(--primary); width:20px;"></i> <strong>@f.Name</strong></td>
+                        <td>@count</td>
+                        <td>
+                            @if (f.IsActive)
+                            { <span class="badge badge-on">Active</span> }
+                            else
+                            { <span class="badge badge-off">Hidden</span> }
+                        </td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="editField(@f.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(f.Name))', '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(f.IconClass))', '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(f.Description))', @(f.IsActive ? "true" : "false"))">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form action="@Url.Action("DeleteField")" method="post" onsubmit="return confirm('Delete this field?');" style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@f.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function editField(id, name, icon, desc, active) {
+            document.getElementById('f_id').value = id;
+            document.getElementById('f_name').value = name;
+            document.getElementById('f_icon').value = icon;
+            document.getElementById('f_desc').value = desc;
+            document.getElementById('f_active').checked = active;
+            document.getElementById('formTitle').textContent = 'Edit field';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function resetForm() {
+            document.getElementById('f_id').value = 0;
+            document.getElementById('f_name').value = '';
+            document.getElementById('f_icon').value = '';
+            document.getElementById('f_desc').value = '';
+            document.getElementById('f_active').checked = true;
+            document.getElementById('formTitle').textContent = 'Add a field';
+        }
+    </script>
+}
