@@ -4,6 +4,7 @@ using ElevateED.ViewModels;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Core;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -58,13 +59,150 @@ namespace ElevateED.Controllers
                 YearsOfExperience = teacher?.YearsOfExperience ?? 0,
                 TotalStudents = CalculateTotalStudents(teacher?.Id ?? 0),
                 TotalClasses = CalculateTotalClasses(teacher?.Id ?? 0),
-                PendingTasks = 3,
-                UnreadMessages = 2,
+                DraftAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Draft),
+                SubmittedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Submitted),
+                ApprovedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Approved),
+                ReturnedAssessments = CalculateAssessmentCount(teacher?.Id ?? 0, MarkApprovalStatus.Rejected),
+                PendingExamInputs = CalculatePendingExamInputs(teacher?.Id ?? 0),
+                UpcomingExamSessions = CalculateUpcomingExamSessions(teacher?.Id ?? 0),
+                AverageLearnerMark = CalculateAverageLearnerMark(teacher?.Id ?? 0),
+                LearnerPassRate = CalculateLearnerPassRate(teacher?.Id ?? 0),
                 RecentAnnouncements = GetRecentAnnouncements(),
-                TodaySchedule = GetSampleSchedule()
+                TodaySchedule = GetSampleSchedule(),
+                SubjectPerformance = GetSubjectPerformance(teacher?.Id ?? 0)
             };
+            viewModel.PendingTasks = viewModel.DraftAssessments + viewModel.ReturnedAssessments + viewModel.PendingExamInputs;
+            viewModel.UnreadMessages = viewModel.SubmittedAssessments;
 
             return View(viewModel);
+        }
+
+        private int CalculateAssessmentCount(int teacherId, MarkApprovalStatus status)
+        {
+            if (teacherId == 0) return 0;
+            try
+            {
+                return _context.Assessments.Count(a => a.TeacherId == teacherId && a.Status == status);
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private int CalculatePendingExamInputs(int teacherId)
+        {
+            if (teacherId == 0) return 0;
+            try
+            {
+                return _context.TeacherExamNotifications.Count(n => n.TeacherId == teacherId && !n.IsSubmitted);
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private int CalculateUpcomingExamSessions(int teacherId)
+        {
+            if (teacherId == 0) return 0;
+
+            try
+            {
+                var assignments = _context.TeacherSubjectAssignments
+                    .Where(a => a.TeacherId == teacherId && a.IsActive && a.SubjectId > 0)
+                    .Select(a => new { a.SubjectId, a.ClassId })
+                    .ToList();
+
+                var subjectIds = assignments.Select(a => a.SubjectId).Distinct().ToList();
+                var classIds = assignments.Select(a => a.ClassId).Distinct().ToList();
+
+                return _context.ExamSessions
+                    .Include(e => e.ExamSessionClasses)
+                    .Count(e => e.IsActive
+                        && e.ExamDate >= DateTime.Today
+                        && (e.CreatedByTeacherId == teacherId
+                            || (subjectIds.Contains(e.SubjectId)
+                                && (!e.ExamSessionClasses.Any()
+                                    || e.ExamSessionClasses.Any(c => classIds.Contains(c.ClassId))))));
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return 0;
+            }
+        }
+
+        private decimal CalculateAverageLearnerMark(int teacherId)
+        {
+            var marks = GetTeacherMarkPercentages(teacherId);
+            return marks.Any() ? Math.Round(marks.Average(), 1) : 0;
+        }
+
+        private decimal CalculateLearnerPassRate(int teacherId)
+        {
+            var marks = GetTeacherMarkPercentages(teacherId);
+            return marks.Any() ? Math.Round((decimal)marks.Count(m => m >= 50) * 100 / marks.Count, 1) : 0;
+        }
+
+        private List<decimal> GetTeacherMarkPercentages(int teacherId)
+        {
+            if (teacherId == 0) return new List<decimal>();
+
+            try
+            {
+                return _context.Assessments
+                    .Include(a => a.Marks)
+                    .Where(a => a.TeacherId == teacherId
+                        && a.Status == MarkApprovalStatus.Approved
+                        && a.MaxMark > 0)
+                    .ToList()
+                    .SelectMany(a => a.Marks
+                        .Where(m => m.Mark.HasValue)
+                        .Select(m => (m.Mark.Value / a.MaxMark) * 100))
+                    .ToList();
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return new List<decimal>();
+            }
+        }
+
+        private List<TeacherSubjectPerformanceViewModel> GetSubjectPerformance(int teacherId)
+        {
+            if (teacherId == 0) return new List<TeacherSubjectPerformanceViewModel>();
+
+            try
+            {
+                return _context.Assessments
+                    .Include(a => a.Subject)
+                    .Include(a => a.Class)
+                    .Include(a => a.Marks)
+                    .Where(a => a.TeacherId == teacherId && a.Status == MarkApprovalStatus.Approved && a.MaxMark > 0)
+                    .ToList()
+                    .GroupBy(a => new { Subject = a.Subject?.Name, ClassName = a.Class?.FullName })
+                    .Select(g =>
+                    {
+                        var marks = g.SelectMany(a => a.Marks
+                            .Where(m => m.Mark.HasValue)
+                            .Select(m => (m.Mark.Value / a.MaxMark) * 100))
+                            .ToList();
+
+                        return new TeacherSubjectPerformanceViewModel
+                        {
+                            SubjectName = g.Key.Subject,
+                            ClassName = g.Key.ClassName,
+                            AssessmentCount = g.Count(),
+                            AverageMark = marks.Any() ? Math.Round(marks.Average(), 1) : 0,
+                            PassRate = marks.Any() ? Math.Round((decimal)marks.Count(m => m >= 50) * 100 / marks.Count, 1) : 0
+                        };
+                    })
+                    .OrderBy(x => x.AverageMark)
+                    .ToList();
+            }
+            catch (EntityCommandExecutionException)
+            {
+                return new List<TeacherSubjectPerformanceViewModel>();
+            }
         }
 
         private int CalculateTotalStudents(int teacherId)
@@ -1560,53 +1698,12 @@ namespace ElevateED.Controllers
             return distribution;
         }
         // ============================================
-        // EXAM TIMETABLE DURATION REQUESTS
+        // EXAM TIMETABLE — teacher's published-sessions view.
+        // The old admin-driven duration-request flow has been removed. Teachers now
+        // propose individual exam sessions via /Teacher/ProposeExam, and the principal
+        // approves and publishes them via /ExamApproval/Index.
         // ============================================
 
-        /// <summary>
-        /// Display all pending exam duration requests for the teacher
-        /// </summary>
-        public ActionResult ExamDurationRequests()
-        {
-            var teacher = GetCurrentTeacher();
-            if (teacher == null) return RedirectToAction("Login", "Account");
-
-            var pendingTimetables = _context.ExamTimetables
-                .Where(t => t.Status == ExamTimetableStatus.AwaitingTeacherInput && t.IsActive)
-                .ToList();
-
-            var viewModels = new List<TeacherExamNotificationViewModel>();
-
-            foreach (var timetable in pendingTimetables)
-            {
-                var pendingNotifications = _examTimetableService.GetPendingNotificationsForTeacher(teacher.Id, timetable.Id);
-
-                if (pendingNotifications.Any())
-                {
-                    var viewModel = new TeacherExamNotificationViewModel
-                    {
-                        PendingNotifications = pendingNotifications.Select(n => new TeacherPaperDurationViewModel
-                        {
-                            NotificationId = n.Id,
-                            SubjectName = n.Subject?.Name ?? "Unknown",
-                            GradeName = n.Grade?.Name ?? "Unknown",
-                            HasPaper1 = n.HasPaper1,
-                            Paper1Duration = n.Paper1Duration,
-                            HasPaper2 = n.HasPaper2,
-                            Paper2Duration = n.Paper2Duration,
-                            HasPaper3 = n.HasPaper3,
-                            Paper3Duration = n.Paper3Duration
-                        }).ToList(),
-                        ExamTimetableId = timetable.Id,
-                        TimetableName = timetable.Name,
-                        ResponseDeadline = timetable.CreatedAt.AddDays(7)
-                    };
-                    viewModels.Add(viewModel);
-                }
-            }
-
-            return View(viewModels);
-        }
         public ActionResult ViewTeacherExamTimetable(int? id)
         {
             var teacher = GetCurrentTeacher();
@@ -1623,7 +1720,7 @@ namespace ElevateED.Controllers
                 if (latestTimetable == null)
                 {
                     TempData["ErrorMessage"] = "No exam timetable available yet.";
-                    return RedirectToAction("ExamDurationRequests");
+                    return RedirectToAction("MyExamProposals");
                 }
 
                 id = latestTimetable.Id;
@@ -1633,13 +1730,13 @@ namespace ElevateED.Controllers
             if (timetable == null)
             {
                 TempData["ErrorMessage"] = "Timetable not found.";
-                return RedirectToAction("ExamDurationRequests");
+                return RedirectToAction("MyExamProposals");
             }
 
             if (timetable.Status < ExamTimetableStatus.Generated)
             {
                 TempData["ErrorMessage"] = "Timetable has not been generated yet.";
-                return RedirectToAction("ExamDurationRequests");
+                return RedirectToAction("MyExamProposals");
             }
 
             // Get subjects taught by this teacher
@@ -1648,12 +1745,16 @@ namespace ElevateED.Controllers
                 .Select(t => t.SubjectId)
                 .ToList();
 
+            // Only show published exam sessions to teachers (plus their own approved ones).
             var sessions = _context.ExamSessions
                 .Include(s => s.Subject)
                 .Include(s => s.Grade)
+                .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                 .Where(s => s.ExamTimetableId == id.Value
-                    && teacherSubjects.Contains(s.SubjectId)
-                    && s.IsActive)
+                    && s.IsActive
+                    && (s.Status == ExamSessionStatus.Published
+                        || (s.CreatedByTeacherId == teacher.Id && s.Status == ExamSessionStatus.Approved))
+                    && (teacherSubjects.Contains(s.SubjectId) || s.CreatedByTeacherId == teacher.Id))
                 .OrderBy(s => s.ExamDate)
                 .ThenBy(s => s.StartTime)
                 .ToList();
@@ -1672,6 +1773,9 @@ namespace ElevateED.Controllers
                     Id = s.Id,
                     SubjectName = s.Subject?.Name ?? "Unknown",
                     GradeName = s.Grade?.Name ?? "Unknown",
+                    ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                        ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                        : s.Grade?.Name ?? "Unknown",
                     PaperNumber = s.PaperNumber.ToString(),
                     ExamDate = s.ExamDate,
                     ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1695,6 +1799,9 @@ namespace ElevateED.Controllers
                         Id = s.Id,
                         SubjectName = s.Subject?.Name ?? "Unknown",
                         GradeName = s.Grade?.Name ?? "Unknown",
+                        ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                            ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                            : s.Grade?.Name ?? "Unknown",
                         PaperNumber = s.PaperNumber.ToString(),
                         ExamDate = s.ExamDate,
                         ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1711,165 +1818,418 @@ namespace ElevateED.Controllers
             return View(viewModel);
         }
 
-        /// <summary>
-        /// Submit exam durations for all pending notifications
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult SubmitExamDurations()
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("=== SubmitExamDurations Called ===");
+        // ============================================================
+        // EXAM PROPOSAL FLOW — teacher proposes individual exam sessions
+        // ============================================================
 
-                var teacher = GetCurrentTeacher();
-                if (teacher == null)
-                {
-                    return Json(new { success = false, message = "Teacher not found" });
-                }
-
-                // Get the notifications JSON from FormData
-                string notificationsJson = Request.Form["notifications"];
-
-                if (string.IsNullOrEmpty(notificationsJson))
-                {
-                    return Json(new { success = false, message = "No data submitted" });
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Notifications JSON: {notificationsJson}");
-
-                // Deserialize
-                var notifications = Newtonsoft.Json.JsonConvert.DeserializeObject<List<TeacherPaperDurationViewModel>>(notificationsJson);
-
-                if (notifications == null || !notifications.Any())
-                {
-                    return Json(new { success = false, message = "No valid data submitted" });
-                }
-
-                int successCount = 0;
-                var errors = new List<string>();
-
-                foreach (var notification in notifications)
-                {
-                    var submitted = _examTimetableService.SubmitTeacherDurations(
-                        notification.NotificationId,
-                        notification.HasPaper1, notification.Paper1Duration,
-                        notification.HasPaper2, notification.Paper2Duration,
-                        notification.HasPaper3, notification.Paper3Duration);
-
-                    if (submitted)
-                    {
-                        successCount++;
-                    }
-                    else
-                    {
-                        errors.Add($"{notification.SubjectName}: Failed to submit");
-                    }
-                }
-
-                return Json(new { success = true, message = $"Submitted {successCount} of {notifications.Count}", hasErrors = errors.Any(), errors = errors });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
-                return Json(new { success = false, message = "Error: " + ex.Message });
-            }
-        }
-
-        // Add this class inside TeacherController.cs (at the bottom)
-        public class ExamDurationRequest
-        {
-            public List<TeacherPaperDurationViewModel> notifications { get; set; }
-        }
-
-        /// <summary>
-        /// View the generated exam timetable for the teacher (only subjects they teach)
-        /// </summary>
-        public ActionResult ViewTeacherExamTimetable(int id)
+        public ActionResult ProposeExam(int? id)
         {
             var teacher = GetCurrentTeacher();
             if (teacher == null) return RedirectToAction("Login", "Account");
 
-            var timetable = _examTimetableService.GetTimetable(id);
-            if (timetable == null)
+            ProposeExamViewModel model;
+            if (id.HasValue)
             {
-                TempData["ErrorMessage"] = "Timetable not found.";
-                return RedirectToAction("ExamDurationRequests");
+                var existing = _context.ExamSessions
+                    .Include(s => s.ExamSessionClasses)
+                    .FirstOrDefault(s => s.Id == id.Value && s.CreatedByTeacherId == teacher.Id);
+                if (existing == null) return HttpNotFound();
+                if (existing.Status == ExamSessionStatus.Published)
+                {
+                    TempData["ErrorMessage"] = "This session is already published and cannot be edited.";
+                    return RedirectToAction("MyExamProposals");
+                }
+
+                model = new ProposeExamViewModel
+                {
+                    Id = existing.Id,
+                    ExamTimetableId = existing.ExamTimetableId,
+                    SubjectId = existing.SubjectId,
+                    PaperNumber = existing.PaperNumber,
+                    ExamDate = existing.ExamDate,
+                    StartTime = existing.StartTime,
+                    DurationHours = existing.DurationHours,
+                    Venue = existing.Venue,
+                    Invigilator = existing.Invigilator,
+                    Notes = existing.Notes,
+                    ClassIds = existing.ExamSessionClasses.Select(c => c.ClassId).ToList()
+                };
+            }
+            else
+            {
+                model = new ProposeExamViewModel
+                {
+                    ExamDate = DateTime.Today.AddDays(7),
+                    StartTime = new TimeSpan(8, 0, 0),
+                    DurationHours = 2
+                };
             }
 
-            if (timetable.Status < ExamTimetableStatus.Generated)
+            PopulateProposeExamOptions(model, teacher.Id);
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ProposeExam(ProposeExamViewModel model)
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
+
+            if (model.ClassIds == null || !model.ClassIds.Any())
             {
-                TempData["ErrorMessage"] = "Timetable has not been generated yet. Please wait for the admin to generate it.";
-                return RedirectToAction("ExamDurationRequests");
+                ModelState.AddModelError("ClassIds", "Select at least one class for this exam.");
             }
 
-            var sessions = _examTimetableService.GetExamSessionsForTeacher(id, teacher.Id);
-
-            var viewModel = new ExamTimetableDetailViewModel
+            // Sanity-check: the teacher should propose for a subject they teach.
+            var teachesSubject = _context.TeacherSubjectAssignments
+                .Any(a => a.TeacherId == teacher.Id && a.SubjectId == model.SubjectId && a.IsActive);
+            if (!teachesSubject)
             {
-                Id = timetable.Id,
-                Name = timetable.Name,
-                AcademicYear = timetable.AcademicYear,
-                NumberOfWeeks = timetable.NumberOfWeeks,
-                StartDate = timetable.StartDate,
-                EndDate = timetable.EndDate,
-                Status = timetable.Status,
-                ExamSessions = sessions.Select(s => new ExamSessionViewModel
+                ModelState.AddModelError("SubjectId", "You can only propose exams for subjects you teach.");
+            }
+
+            // Date must fall within the cycle's window.
+            var cycle = _context.ExamTimetables.Find(model.ExamTimetableId);
+            if (cycle != null && (model.ExamDate.Date < cycle.StartDate.Date || model.ExamDate.Date > cycle.EndDate.Date))
+            {
+                ModelState.AddModelError("ExamDate", $"Date must be between {cycle.StartDate:dd MMM yyyy} and {cycle.EndDate:dd MMM yyyy} (cycle window).");
+            }
+
+            // School-hours / break validation.
+            var proposedEnd = model.StartTime.Add(TimeSpan.FromHours((double)model.DurationHours));
+            var scheduleError = ElevateED.Services.SchoolSchedule.ValidateSlot(model.StartTime, proposedEnd);
+            if (scheduleError != null)
+            {
+                ModelState.AddModelError("StartTime", scheduleError);
+            }
+
+            // Class double-booking: same class can't have two exams overlapping the same time.
+            if (model.ClassIds != null && model.ClassIds.Any())
+            {
+                var classIdsArr = model.ClassIds.Distinct().ToArray();
+                var sameDay = _context.ExamSessions
+                    .Include(s => s.ExamSessionClasses)
+                    .Include(s => s.Subject)
+                    .Where(s => s.ExamTimetableId == model.ExamTimetableId
+                        && s.IsActive
+                        && s.Status != Models.ExamSessionStatus.Rejected
+                        && DbFunctions.TruncateTime(s.ExamDate) == model.ExamDate.Date
+                        && (model.Id == 0 || s.Id != model.Id))
+                    .ToList();
+
+                foreach (var other in sameDay)
+                {
+                    if (!ElevateED.Services.SchoolSchedule.Overlaps(model.StartTime, proposedEnd, other.StartTime, other.EndTime))
+                    {
+                        continue;
+                    }
+                    var otherClassIds = other.ExamSessionClasses.Select(c => c.ClassId).ToArray();
+                    var shared = classIdsArr.Intersect(otherClassIds).ToArray();
+                    if (shared.Any())
+                    {
+                        ModelState.AddModelError("ClassIds",
+                            $"A class is already writing {other.Subject?.Name} at this time. Pick a different time or day.");
+                        break;
+                    }
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                PopulateProposeExamOptions(model, teacher.Id);
+                return View(model);
+            }
+
+            var endTime = model.StartTime.Add(TimeSpan.FromHours((double)model.DurationHours));
+            var subject = _context.Subjects.Find(model.SubjectId);
+            // Pull .First() out of the EF lambda — EF6 can't translate List<T>.First()
+            // when it appears inside the SQL-bound expression tree.
+            var firstClassId = model.ClassIds.First();
+            var firstClass = _context.Classes.Include(c => c.Grade).FirstOrDefault(c => c.Id == firstClassId);
+            var weekNumber = CalculateWeekNumber(model.ExamTimetableId, model.ExamDate);
+
+            ExamSession session;
+            if (model.Id == 0)
+            {
+                session = new ExamSession
+                {
+                    ExamTimetableId = model.ExamTimetableId,
+                    CreatedByTeacherId = teacher.Id,
+                    Status = ExamSessionStatus.Proposed,
+                    ProposedAt = DateTime.Now,
+                    IsActive = true
+                };
+                _context.ExamSessions.Add(session);
+            }
+            else
+            {
+                session = _context.ExamSessions
+                    .Include(s => s.ExamSessionClasses)
+                    .FirstOrDefault(s => s.Id == model.Id && s.CreatedByTeacherId == teacher.Id);
+                if (session == null) return HttpNotFound();
+                if (session.Status == ExamSessionStatus.Published)
+                {
+                    TempData["ErrorMessage"] = "This session is already published and cannot be edited.";
+                    return RedirectToAction("MyExamProposals");
+                }
+                // Re-proposing resets approval state.
+                session.Status = ExamSessionStatus.Proposed;
+                session.ProposedAt = DateTime.Now;
+                session.ApprovedAt = null;
+
+                _context.ExamSessionClasses.RemoveRange(session.ExamSessionClasses.ToList());
+            }
+
+            session.ExamTimetableId = model.ExamTimetableId;
+            session.SubjectId = model.SubjectId;
+            session.GradeId = firstClass?.GradeId ?? 0;
+            session.StreamId = null;
+            session.PaperNumber = model.PaperNumber;
+            session.ExamDate = model.ExamDate;
+            session.StartTime = model.StartTime;
+            session.EndTime = endTime;
+            session.DurationHours = model.DurationHours;
+            session.WeekNumber = weekNumber;
+            session.Venue = model.Venue;
+            session.Invigilator = model.Invigilator;
+            session.Notes = model.Notes;
+
+            _context.SaveChanges();
+
+            // Replace class links.
+            foreach (var classId in model.ClassIds.Distinct())
+            {
+                _context.ExamSessionClasses.Add(new ExamSessionClass
+                {
+                    ExamSessionId = session.Id,
+                    ClassId = classId
+                });
+            }
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = "Exam session submitted to the principal for approval.";
+            return RedirectToAction("MyExamProposals");
+        }
+
+        public ActionResult MyExamProposals()
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
+
+            var model = _context.ExamSessions
+                .Include(s => s.Subject)
+                .Include(s => s.ExamTimetable)
+                .Include(s => s.ExamSessionClasses.Select(c => c.Class))
+                .Where(s => s.CreatedByTeacherId == teacher.Id && s.IsActive)
+                .OrderByDescending(s => s.ProposedAt)
+                .ToList()
+                .Select(s => new MyExamProposalListItemViewModel
                 {
                     Id = s.Id,
-                    SubjectName = s.Subject?.Name ?? "Unknown",
-                    GradeName = s.Grade?.Name ?? "Unknown",
-                    PaperNumber = s.PaperNumber.ToString(),
+                    ExamCycleName = s.ExamTimetable?.Name,
+                    SubjectName = s.Subject?.Name,
+                    PaperNumber = s.PaperNumber,
                     ExamDate = s.ExamDate,
-                    ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
-                    DayOfWeek = s.ExamDate.DayOfWeek.ToString(),
-                    StartTime = s.StartTime.ToString(@"hh\:mm"),
-                    EndTime = s.EndTime.ToString(@"hh\:mm"),
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
                     DurationHours = s.DurationHours,
-                    WeekNumber = s.WeekNumber,
                     Venue = s.Venue,
                     Invigilator = s.Invigilator,
-                    IsEditable = false
-                }).ToList()
-            };
+                    ClassNames = string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(n => !string.IsNullOrEmpty(n))),
+                    Status = s.Status,
+                    ProposedAt = s.ProposedAt,
+                    ApprovedAt = s.ApprovedAt
+                })
+                .ToList();
 
-            // Group by Week for better display
-            if (sessions.Any())
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteExamProposal(int id)
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return RedirectToAction("Login", "Account");
+
+            var session = _context.ExamSessions
+                .Include(s => s.ExamSessionClasses)
+                .FirstOrDefault(s => s.Id == id && s.CreatedByTeacherId == teacher.Id);
+            if (session == null) return HttpNotFound();
+            if (session.Status == ExamSessionStatus.Published)
             {
-                viewModel.SessionsByWeek = sessions
-                    .GroupBy(s => $"Week {s.WeekNumber}")
-                    .ToDictionary(g => g.Key, g => g.Select(s => new ExamSessionViewModel
-                    {
-                        Id = s.Id,
-                        SubjectName = s.Subject?.Name ?? "Unknown",
-                        GradeName = s.Grade?.Name ?? "Unknown",
-                        PaperNumber = s.PaperNumber.ToString(),
-                        ExamDate = s.ExamDate,
-                        ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
-                        DayOfWeek = s.ExamDate.DayOfWeek.ToString(),
-                        StartTime = s.StartTime.ToString(@"hh\:mm"),
-                        EndTime = s.EndTime.ToString(@"hh\:mm"),
-                        DurationHours = s.DurationHours,
-                        WeekNumber = s.WeekNumber,
-                        Venue = s.Venue,
-                        Invigilator = s.Invigilator,
-                        IsEditable = false
-                    }).ToList());
+                TempData["ErrorMessage"] = "Published sessions cannot be withdrawn — ask the principal to unpublish first.";
+                return RedirectToAction("MyExamProposals");
             }
 
-            ViewBag.TeacherName = teacher.FullName;
-            return View(viewModel);
+            _context.ExamSessionClasses.RemoveRange(session.ExamSessionClasses);
+            _context.ExamSessions.Remove(session);
+            _context.SaveChanges();
+            TempData["SuccessMessage"] = "Exam proposal withdrawn.";
+            return RedirectToAction("MyExamProposals");
         }
-        // Add this class INSIDE TeacherController.cs (at the bottom of the file, before the closing brace)
-        public class DurationSubmissionModel
+
+        // ============================================================
+        // EXAM CALENDAR — JSON endpoints powering the interactive picker
+        // ============================================================
+
+        // Returns a flat list of day descriptors for the cycle window.
+        public ActionResult ProposeExam_CalendarDays(int cycleId)
         {
-            public List<TeacherPaperDurationViewModel> Notifications { get; set; }
+            var cycle = _context.ExamTimetables.Find(cycleId);
+            if (cycle == null) return HttpNotFound();
+
+            // Count active (non-rejected) sessions per date for the cycle, so the calendar
+            // grid can show "n exams" badges without further round-trips.
+            var perDay = _context.ExamSessions
+                .Where(s => s.ExamTimetableId == cycleId
+                    && s.IsActive
+                    && s.Status != ExamSessionStatus.Rejected)
+                .GroupBy(s => DbFunctions.TruncateTime(s.ExamDate))
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToList();
+
+            var days = new List<object>();
+            for (var d = cycle.StartDate.Date; d <= cycle.EndDate.Date; d = d.AddDays(1))
+            {
+                var dt = d;
+                var match = perDay.FirstOrDefault(x => x.Date.HasValue && x.Date.Value.Date == dt);
+                days.Add(new
+                {
+                    iso = dt.ToString("yyyy-MM-dd"),
+                    label = dt.ToString("ddd"),
+                    dayNumber = dt.Day,
+                    month = dt.ToString("MMM"),
+                    isWeekend = dt.DayOfWeek == DayOfWeek.Saturday || dt.DayOfWeek == DayOfWeek.Sunday,
+                    examCount = match?.Count ?? 0
+                });
+            }
+
+            return Json(new
+            {
+                cycleId = cycle.Id,
+                cycleName = cycle.Name,
+                startDate = cycle.StartDate.ToString("yyyy-MM-dd"),
+                endDate = cycle.EndDate.ToString("yyyy-MM-dd"),
+                days = days
+            }, JsonRequestBehavior.AllowGet);
         }
-        [HttpGet]
-        public ActionResult TestApi()
+
+        // Returns the existing sessions on a given day in a cycle, plus the school's
+        // hard rules (school start, school end, break windows) for the timeline UI.
+        public ActionResult ProposeExam_DaySchedule(int cycleId, string date, int? excludeSessionId)
         {
-            return Json(new { success = true, message = "API is working" }, JsonRequestBehavior.AllowGet);
+            if (!DateTime.TryParse(date, out var day)) return new HttpStatusCodeResult(400, "Bad date");
+
+            var sessions = _context.ExamSessions
+                .Include(s => s.Subject)
+                .Include(s => s.CreatedByTeacher)
+                .Include(s => s.ExamSessionClasses.Select(c => c.Class))
+                .Where(s => s.ExamTimetableId == cycleId
+                    && s.IsActive
+                    && s.Status != ExamSessionStatus.Rejected
+                    && DbFunctions.TruncateTime(s.ExamDate) == day.Date
+                    && (!excludeSessionId.HasValue || s.Id != excludeSessionId.Value))
+                .OrderBy(s => s.StartTime)
+                .ToList();
+
+            return Json(new
+            {
+                date = day.ToString("yyyy-MM-dd"),
+                schoolStart = SchoolSchedule.SchoolStart.ToString(@"hh\:mm"),
+                schoolEnd = SchoolSchedule.SchoolEnd.ToString(@"hh\:mm"),
+                breaks = SchoolSchedule.Breaks.Select(b => new
+                {
+                    name = b.Name,
+                    start = b.Start.ToString(@"hh\:mm"),
+                    end = b.End.ToString(@"hh\:mm")
+                }),
+                sessions = sessions.Select(s => new
+                {
+                    id = s.Id,
+                    subject = s.Subject?.Name ?? "(unknown)",
+                    paper = s.PaperNumber,
+                    start = s.StartTime.ToString(@"hh\:mm"),
+                    end = s.EndTime.ToString(@"hh\:mm"),
+                    durationHours = s.DurationHours,
+                    venue = s.Venue,
+                    invigilator = s.Invigilator,
+                    proposedBy = s.CreatedByTeacher?.FullName,
+                    status = s.Status.ToString(),
+                    classNames = string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(n => !string.IsNullOrEmpty(n))),
+                    classIds = s.ExamSessionClasses.Select(c => c.ClassId).ToArray()
+                })
+            }, JsonRequestBehavior.AllowGet);
         }
+
+        private void PopulateProposeExamOptions(ProposeExamViewModel model, int teacherId)
+        {
+            // Open exam cycles: anything that's not archived. (Draft / AwaitingTeacherInput /
+            // Generated / Distributed are all acceptable proposal targets — Distributed cycles
+            // can still receive late corrections that the principal can re-publish.)
+            model.ExamCycleOptions = _context.ExamTimetables
+                .Where(t => t.IsActive && t.Status != ExamTimetableStatus.Archived)
+                .OrderByDescending(t => t.AcademicYear)
+                .ThenBy(t => t.Name)
+                .ToList()
+                .Select(t => new SelectListItem
+                {
+                    Value = t.Id.ToString(),
+                    Text = $"{t.Name} ({t.AcademicYear})",
+                    Selected = t.Id == model.ExamTimetableId
+                });
+
+            // Subjects the teacher is assigned to teach.
+            var subjectIds = _context.TeacherSubjectAssignments
+                .Where(a => a.TeacherId == teacherId && a.IsActive && a.SubjectId > 0)
+                .Select(a => a.SubjectId)
+                .Distinct()
+                .ToList();
+
+            model.SubjectOptions = _context.Subjects
+                .Where(s => subjectIds.Contains(s.Id))
+                .OrderBy(s => s.Name)
+                .ToList()
+                .Select(s => new SelectListItem
+                {
+                    Value = s.Id.ToString(),
+                    Text = s.Name,
+                    Selected = s.Id == model.SubjectId
+                });
+
+            // Classes the teacher is assigned to teach. Show grade so multi-class selection is obvious.
+            var classIds = _context.TeacherSubjectAssignments
+                .Where(a => a.TeacherId == teacherId && a.IsActive)
+                .Select(a => a.ClassId)
+                .Distinct()
+                .ToList();
+
+            var selectedIds = new HashSet<int>(model.ClassIds ?? new List<int>());
+            model.ClassOptions = _context.Classes
+                .Include(c => c.Grade)
+                .Where(c => classIds.Contains(c.Id))
+                .OrderBy(c => c.Grade.Level)
+                .ThenBy(c => c.Name)
+                .ToList()
+                .Select(c => new ClassCheckboxOption
+                {
+                    ClassId = c.Id,
+                    ClassName = c.FullName,
+                    GradeName = c.Grade?.Name,
+                    Selected = selectedIds.Contains(c.Id)
+                })
+                .ToList();
+        }
+
+        private int CalculateWeekNumber(int examTimetableId, DateTime examDate)
+        {
+            var timetable = _context.ExamTimetables.Find(examTimetableId);
+            if (timetable == null) return 1;
+            var diff = (examDate.Date - timetable.StartDate.Date).Days;
+            if (diff < 0) return 1;
+            return (diff / 7) + 1;
+        }
+
     }
 }

@@ -1,0 +1,320 @@
+@model ElevateED.ViewModels.SimulatorViewModel
+@{
+    ViewBag.Title = "What-If Simulator - ElevateED";
+}
+
+<style>
+    .content { padding: 32px; max-width: 1100px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .page-head { margin-bottom: 8px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+
+    .layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; margin-top: 20px; }
+    @@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    .panel { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin-bottom: 20px; }
+    .panel h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 4px; }
+    .panel .hint { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+
+    .aps-readout { text-align: center; padding: 18px 0 22px; }
+    .aps-readout .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); font-weight: 700; }
+    .aps-readout .value { font-size: 44px; font-weight: 800; color: var(--gray-900); line-height: 1.1; }
+    .aps-readout .delta { font-size: 15px; font-weight: 700; margin-top: 4px; }
+    .aps-readout .delta.up { color: var(--success); }
+    .aps-readout .delta.down { color: var(--danger); }
+    .aps-readout .delta.flat { color: var(--gray-400); }
+
+    .subj-row { padding: 14px 0; border-bottom: 1px solid var(--gray-100); }
+    .subj-row:last-child { border-bottom: none; }
+    .subj-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .subj-name { font-weight: 600; color: var(--gray-800); font-size: 14px; }
+    .subj-marks { font-size: 13px; color: var(--gray-500); }
+    .subj-marks .proj { font-weight: 700; color: var(--primary); }
+    .subj-marks .lvl { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; color: white; background: var(--gray-400); }
+    input[type=range] { width: 100%; accent-color: var(--primary); }
+    .target-note { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+    .target-note button { border: none; background: none; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 11px; padding: 0; }
+    .save-target-btn { border: none; background: var(--gray-100); color: var(--gray-600); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 7px; cursor: pointer; margin-left: 8px; }
+    .save-target-btn:hover { background: var(--primary-soft); color: var(--primary-dark); }
+    .save-target-btn.saved { background: #ecfdf5; color: #065f46; }
+
+    .career-list { display: flex; flex-direction: column; gap: 10px; }
+    .career-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 10px; font-size: 13px; }
+    .career-row.unlock { background: #ecfdf5; border: 1px solid #a7f3d0; }
+    .career-row.lose { background: #fef2f2; border: 1px solid #fecaca; }
+    .career-row.blocked { background: var(--gray-50); border: 1px solid var(--gray-100); }
+    .career-row .cname { font-weight: 600; color: var(--gray-800); }
+    .career-row .ctag { font-size: 11px; font-weight: 700; }
+    .career-row.unlock .ctag { color: #065f46; }
+    .career-row.lose .ctag { color: #991b1b; }
+    .career-row.blocked .ctag { color: var(--gray-500); }
+    .empty-note { font-size: 13px; color: var(--gray-400); padding: 10px 0; }
+
+    .verify-bar { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 12px; color: var(--gray-500); }
+    .verify-bar button { border: 1px solid var(--gray-200); background: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--gray-600); cursor: pointer; }
+    .verify-bar button:hover { border-color: var(--primary-light); color: var(--primary-dark); }
+    .verify-ok { color: var(--success); font-weight: 700; }
+    .verify-bad { color: var(--danger); font-weight: 700; }
+
+    .empty { text-align: center; padding: 60px 20px; background: white; border-radius: 20px; border: 1px solid var(--gray-100); }
+    .empty p { color: var(--gray-500); max-width: 440px; margin: 10px auto; line-height: 1.6; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: none; cursor: pointer; background: var(--primary); color: white; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-sliders" style="color: var(--accent);"></i> What-If Simulator</h1>
+                <p>Drag a projected mark and see which careers on your shortlist would open up.</p>
+            </div>
+
+            @Html.AntiForgeryToken()
+
+            @if (!Model.Payload.HasReportCard)
+            {
+                <div class="empty">
+                    <p>You'll need a published report card before you can simulate outcomes — once your marks are in, come back here.</p>
+                    <a href="@Url.Action("Index")" class="btn"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+                </div>
+            }
+            else if (!Model.HasBookmarks)
+            {
+                <div class="empty">
+                    <p>Bookmark a few careers from the explorer first — the simulator shows what your projected marks would mean for the careers you're actually considering.</p>
+                    <a href="@Url.Action("Explore")" class="btn"><i class="fas fa-compass"></i> Explore careers</a>
+                </div>
+            }
+            else
+            {
+                <div class="layout">
+                    <div>
+                        <div class="panel">
+                            <div class="aps-readout">
+                                <div class="label">Projected APS</div>
+                                <div class="value" id="apsValue">--</div>
+                                <div class="delta" id="apsDelta"></div>
+                            </div>
+                            <div id="subjectList"></div>
+                        </div>
+                        <div class="verify-bar">
+                            <button type="button" id="verifyBtn"><i class="fas fa-shield-halved"></i> Verify with server</button>
+                            <span id="verifyResult"></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="panel">
+                            <h3><i class="fas fa-lock-open" style="color: var(--success);"></i> Would unlock</h3>
+                            <div class="hint">Careers your projection would move to Qualifies.</div>
+                            <div class="career-list" id="unlockList"></div>
+                        </div>
+                        <div class="panel">
+                            <h3><i class="fas fa-lock" style="color: var(--danger);"></i> Would lose</h3>
+                            <div class="hint">Careers your projection would move away from Qualifies.</div>
+                            <div class="career-list" id="loseList"></div>
+                        </div>
+                        <div class="panel">
+                            <h3><i class="fas fa-triangle-exclamation" style="color: var(--gray-400);"></i> Needs a subject change</h3>
+                            <div class="hint">No mark improvement fixes these — a required subject isn't on your report at all.</div>
+                            <div class="career-list" id="blockedList"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+@if (Model.Payload.HasReportCard && Model.HasBookmarks)
+{
+    <script>
+        var payload = @Html.Raw(Model.PayloadJson);
+
+        // ---- Mirrors ApsCalculator + CareerGuidanceService.EvaluateCareer exactly.
+        // The server is still the only place anything is actually saved from —
+        // this is a preview so the sliders feel instant, nothing more.
+        function markToLevel(mark) {
+            for (var i = 0; i < payload.bands.length; i++) {
+                if (mark >= payload.bands[i].minMark) return payload.bands[i].level;
+            }
+            return 1;
+        }
+
+        function computeAps(marksBySubject) {
+            var levelBySubjectId = {};
+            var apsLevels = [];
+            payload.subjects.forEach(function (s) {
+                var mark = marksBySubject[s.subjectId];
+                var level = markToLevel(mark);
+                levelBySubjectId[s.subjectId] = level;
+                if (!s.isLifeOrientation) apsLevels.push(level);
+            });
+            apsLevels.sort(function (a, b) { return b - a; });
+            var best6 = apsLevels.slice(0, 6);
+            var aps = best6.reduce(function (sum, l) { return sum + l; }, 0);
+            return { aps: aps, levelBySubjectId: levelBySubjectId };
+        }
+
+        function evaluateCareer(career, aps, levelBySubjectId) {
+            var apsMet = aps >= career.minimumAps;
+            var missingSubject = false;
+            var gaps = [];
+            career.requirements.filter(function (r) { return r.isCompulsory; }).forEach(function (req) {
+                var level = levelBySubjectId[req.subjectId];
+                if (level === undefined) {
+                    missingSubject = true;
+                    gaps.push({ subjectName: req.subjectName, notTaken: true });
+                } else if (level < req.minimumLevel) {
+                    gaps.push({ subjectName: req.subjectName, notTaken: false });
+                }
+            });
+            var verdict;
+            if (missingSubject) verdict = 'MissingSubjects';
+            else if (apsMet && gaps.length === 0) verdict = 'Qualifies';
+            else verdict = 'Close';
+            return verdict;
+        }
+
+        // ---- State: current slider value per subject, seeded from actual marks.
+        var marksBySubject = {};
+        payload.subjects.forEach(function (s) { marksBySubject[s.subjectId] = s.actualMark; });
+
+        function levelBadgeColor(level) {
+            if (level >= 6) return '#10b981';
+            if (level >= 4) return '#3b82f6';
+            if (level >= 3) return '#f59e0b';
+            return '#ef4444';
+        }
+
+        function render() {
+            var result = computeAps(marksBySubject);
+
+            document.getElementById('apsValue').textContent = result.aps;
+            var delta = result.aps - payload.currentAps;
+            var deltaEl = document.getElementById('apsDelta');
+            if (delta > 0) { deltaEl.textContent = '+' + delta + ' vs your actual APS (' + payload.currentAps + ')'; deltaEl.className = 'delta up'; }
+            else if (delta < 0) { deltaEl.textContent = delta + ' vs your actual APS (' + payload.currentAps + ')'; deltaEl.className = 'delta down'; }
+            else { deltaEl.textContent = 'Same as your actual APS'; deltaEl.className = 'delta flat'; }
+
+            // Subject sliders.
+            var subjHtml = '';
+            payload.subjects.forEach(function (s) {
+                var mark = marksBySubject[s.subjectId];
+                var level = result.levelBySubjectId[s.subjectId];
+                var targetNote = '';
+                if (s.savedTarget !== null && s.savedTarget !== undefined) {
+                    targetNote = '<div class="target-note">Saved target: ' + s.savedTarget + '% ' +
+                        '<button type="button" onclick="jumpToTarget(' + s.subjectId + ')">Jump to it</button></div>';
+                }
+                subjHtml +=
+                    '<div class="subj-row">' +
+                    '<div class="subj-top">' +
+                    '<span class="subj-name">' + s.subjectName + '</span>' +
+                    '<span class="subj-marks">' +
+                    (mark !== s.actualMark ? ('actual ' + s.actualMark + '% &rarr; <span class="proj">' + mark + '%</span>') : (mark + '%')) +
+                    '<span class="lvl" style="background:' + levelBadgeColor(level) + '">L' + level + '</span>' +
+                    '<button type="button" class="save-target-btn" data-subject="' + s.subjectId + '" onclick="saveTarget(' + s.subjectId + ')">Save as target</button>' +
+                    '</span>' +
+                    '</div>' +
+                    '<input type="range" min="0" max="100" step="1" value="' + mark + '" ' +
+                    'oninput="onSlide(' + s.subjectId + ', this.value)" />' +
+                    targetNote +
+                    '</div>';
+            });
+            document.getElementById('subjectList').innerHTML = subjHtml;
+
+            // Careers, grouped.
+            var unlock = [], lose = [], blocked = [];
+            payload.careers.forEach(function (c) {
+                if (c.currentVerdict === 'MissingSubjects') {
+                    blocked.push(c);
+                    return;
+                }
+                var projectedVerdict = evaluateCareer(c, result.aps, result.levelBySubjectId);
+                if (projectedVerdict === 'Qualifies' && c.currentVerdict !== 'Qualifies') unlock.push(c);
+                else if (projectedVerdict !== 'Qualifies' && c.currentVerdict === 'Qualifies') lose.push(c);
+            });
+
+            function renderList(elId, list, cssClass, tag) {
+                var el = document.getElementById(elId);
+                if (list.length === 0) { el.innerHTML = '<div class="empty-note">Nothing here right now.</div>'; return; }
+                el.innerHTML = list.map(function (c) {
+                    return '<div class="career-row ' + cssClass + '"><span class="cname">' + c.careerName + '</span><span class="ctag">' + tag + '</span></div>';
+                }).join('');
+            }
+            renderList('unlockList', unlock, 'unlock', 'Would qualify');
+            renderList('loseList', lose, 'lose', 'Would lose it');
+            renderList('blockedList', blocked, 'blocked', 'Subject not taken');
+        }
+
+        function onSlide(subjectId, value) {
+            marksBySubject[subjectId] = parseInt(value, 10);
+            document.getElementById('verifyResult').textContent = '';
+            render();
+        }
+
+        function jumpToTarget(subjectId) {
+            var s = payload.subjects.find(function (x) { return x.subjectId === subjectId; });
+            if (!s || s.savedTarget === null || s.savedTarget === undefined) return;
+            marksBySubject[subjectId] = s.savedTarget;
+            render();
+        }
+
+        function getToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]').value;
+        }
+
+        function saveTarget(subjectId) {
+            var mark = marksBySubject[subjectId];
+            var btn = document.querySelector('.save-target-btn[data-subject="' + subjectId + '"]');
+            fetch('@Url.Action("SaveTarget", "StudentCareer")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: '__RequestVerificationToken=' + encodeURIComponent(getToken()) +
+                    '&subjectId=' + subjectId + '&targetMark=' + mark
+            }).then(function (r) { return r.json(); }).then(function (r) {
+                if (r.success) {
+                    var s = payload.subjects.find(function (x) { return x.subjectId === subjectId; });
+                    if (s) s.savedTarget = mark;
+                    btn.textContent = 'Saved';
+                    btn.classList.add('saved');
+                    render();
+                    setTimeout(function () { btn.textContent = 'Save as target'; btn.classList.remove('saved'); }, 1500);
+                }
+            });
+        }
+
+        // Sends the full projected state to the authoritative server recompute
+        // and compares it against this page's own numbers — a visible check
+        // that the instant preview and the real calculation actually agree.
+        document.getElementById('verifyBtn').addEventListener('click', function () {
+            var resultEl = document.getElementById('verifyResult');
+            resultEl.textContent = 'Checking…';
+            fetch('@Url.Action("RecomputeOutcomes", "StudentCareer")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: '__RequestVerificationToken=' + encodeURIComponent(getToken()) +
+                    '&marksJson=' + encodeURIComponent(JSON.stringify(marksBySubject))
+            }).then(function (r) { return r.json(); }).then(function (server) {
+                var client = computeAps(marksBySubject);
+                if (server.error) { resultEl.innerHTML = '<span class="verify-bad">' + server.error + '</span>'; return; }
+                if (server.aps === client.aps) {
+                    resultEl.innerHTML = '<span class="verify-ok">✓ Server agrees — APS ' + server.aps + '</span>';
+                } else {
+                    resultEl.innerHTML = '<span class="verify-bad">Mismatch — server says APS ' + server.aps + ', page showed ' + client.aps + '</span>';
+                }
+            });
+        });
+
+        render();
+    </script>
+}

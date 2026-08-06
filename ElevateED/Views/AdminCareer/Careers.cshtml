@@ -1,0 +1,98 @@
+@model List<ElevateED.Models.Career>
+@{
+    ViewBag.Title = "Careers";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var fields = ViewBag.Fields as List<ElevateED.Models.CareerField> ?? new List<ElevateED.Models.CareerField>();
+    var selectedFieldId = ViewBag.SelectedFieldId as int?;
+}
+
+@section SidebarNav { @Html.Partial("_AdminSidebar") }
+
+@section Styles {
+    <style>
+        .page-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+        .crumb { color: var(--gray-500); font-size: 13px; margin-bottom: 20px; }
+        .crumb a { color: var(--primary); text-decoration: none; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip { padding: 7px 14px; border-radius: 50px; font-size: 13px; font-weight: 600; text-decoration: none; background: white; color: var(--gray-600); border: 1px solid var(--gray-200); }
+        .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-light { background: var(--gray-100); color: var(--gray-700); }
+        .btn-danger { background: #fef2f2; color: #991b1b; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .card { background: white; border-radius: 16px; padding: 8px 22px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--gray-100); }
+        th { color: var(--gray-500); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge { padding: 3px 10px; border-radius: 50px; font-size: 12px; font-weight: 600; }
+        .badge-on { background: #ecfdf5; color: #065f46; }
+        .badge-off { background: var(--gray-100); color: var(--gray-500); }
+        .aps { font-weight: 700; color: var(--gray-800); }
+        .actions { display: flex; gap: 6px; }
+        .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+}
+
+<div class="page-title">Careers</div>
+<div class="crumb"><a href="@Url.Action("Index")">Career Guidance</a> / Careers</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert-soft alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+}
+
+<div class="toolbar">
+    <div class="filters">
+        <a href="@Url.Action("Careers")" class="chip @(selectedFieldId == null ? "active" : "")">All</a>
+        @foreach (var field in fields)
+        {
+            <a href="@Url.Action("Careers", new { fieldId = field.Id })" class="chip @(selectedFieldId == field.Id ? "active" : "")">@field.Name</a>
+        }
+    </div>
+    <a href="@Url.Action("CareerForm")" class="btn btn-primary"><i class="fas fa-plus"></i> Add career</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Career</th><th>Field</th><th>Min APS</th><th>Requirements</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">No careers found.</td></tr>
+            }
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td><strong>@c.Name</strong><br /><span style="font-size:12px;color:var(--gray-400);">@c.TypicalQualification</span></td>
+                    <td>@(c.CareerField?.Name)</td>
+                    <td><span class="aps">@c.MinimumAps</span></td>
+                    <td>@c.SubjectRequirements.Count subject(s)</td>
+                    <td>
+                        @if (c.IsActive)
+                        { <span class="badge badge-on">Active</span> }
+                        else
+                        { <span class="badge badge-off">Hidden</span> }
+                    </td>
+                    <td class="actions">
+                        <a href="@Url.Action("CareerForm", new { id = c.Id })" class="btn btn-light btn-sm"><i class="fas fa-pen"></i></a>
+                        <form action="@Url.Action("DeleteCareer")" method="post" onsubmit="return confirm('Delete this career? This also removes it from any student shortlists.');" style="margin:0;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

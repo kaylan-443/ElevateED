@@ -10,6 +10,10 @@ namespace ElevateED
 {
     public class DatabaseConfig
     {
+        // Set when startup database initialisation fails, so the cause is
+        // available rather than lost. Null when startup succeeded.
+        public static Exception LastStartupError { get; private set; }
+
         public static void Initialize()
         {
             Database.SetInitializer(new MigrateDatabaseToLatestVersion<ElevateEDContext, Migrations.Configuration>());
@@ -34,6 +38,24 @@ namespace ElevateED
                         context.Users.Add(admin);
                         context.SaveChanges();
                         System.Diagnostics.Debug.WriteLine("Admin created: ADMIN001 / Admin@123");
+                    }
+
+                    // Seed Principal
+                    if (!context.Users.Any(u => u.StudentNumber == "KHUZWAYO"))
+                    {
+                        var principal = new ApplicationUser
+                        {
+                            StudentNumber = "KHUZWAYO",
+                            Email = "khuzwayo@mpiyakhehs.co.za",
+                            PasswordHash = HashPassword("Hlupha123"),
+                            Role = UserRole.Principal,
+                            IsActive = true,
+                            CreatedAt = DateTime.Now,
+                            HasChangedPassword = true
+                        };
+                        context.Users.Add(principal);
+                        context.SaveChanges();
+                        System.Diagnostics.Debug.WriteLine("Principal created: KHUZWAYO / Hlupha123");
                     }
 
                     // Seed Grades
@@ -103,6 +125,22 @@ namespace ElevateED
                         context.SaveChanges();
                     }
 
+                    // One-time fixup: when the new ExamSession.Status column is added by
+                    // auto-migration, every pre-existing row defaults to 0 (Proposed). Older
+                    // rows came from the admin-driven flow and had no Status concept — they
+                    // were effectively "Published". Mark them as such so they keep appearing
+                    // for students/teachers. Identified by absent ProposedAt (new flow always
+                    // sets ProposedAt at proposal time).
+                    try
+                    {
+                        context.Database.ExecuteSqlCommand(
+                            "UPDATE dbo.ExamSessions SET Status = 2 WHERE Status = 0 AND ProposedAt IS NULL");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"ExamSessions status backfill skipped: {ex.Message}");
+                    }
+
                     // Seed Streams
                     if (!context.Streams.Any())
                     {
@@ -115,10 +153,21 @@ namespace ElevateED
                         context.Streams.AddRange(streams);
                         context.SaveChanges();
                     }
+
+                    // Seed Career Guidance (fields, careers, requirements, quiz)
+                    CareerGuidanceSeeder.Seed(context);
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Database seed error: {ex.Message}");
+                    // Trace, not Debug: Debug.WriteLine is compiled out of Release
+                    // builds, so a migration failure here left no trace at all and
+                    // the app would start looking healthy while every table added
+                    // by a pending migration was silently missing. Log the full
+                    // exception (inner exceptions carry the real EF cause) and
+                    // record it so startup problems are discoverable rather than
+                    // surfacing later as "invalid object name" on random pages.
+                    LastStartupError = ex;
+                    System.Diagnostics.Trace.TraceError("ElevateED database initialisation FAILED: " + ex);
                 }
             }
         }

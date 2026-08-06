@@ -1,0 +1,80 @@
+@model ElevateED.ViewModels.PromotionRuleViewModel
+
+@{
+    ViewBag.Title = "Promotion Rules";
+}
+
+<div class="container mt-4">
+    <h2>Promotion Rules</h2>
+    <p class="text-muted">Principal-only setup. Set the promotion rules per grade and choose subjects learners are not allowed to fail.</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.Name, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        @Html.LabelFor(m => m.GradeId, "Grade", new { @class = "form-label" })
+                        @Html.DropDownListFor(m => m.GradeId, Model.GradeOptions, "Select grade", new { @class = "form-control", required = "required", onchange = "window.location='?gradeId=' + this.value" })
+                        <small class="text-muted">Choose a grade, set its rules, save, then repeat for the next grade.</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.PromotionMinimumAverage, "Promoted minimum average", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.PromotionMinimumAverage, new { @class = "form-control", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.MaximumFailedSubjectsForPromotion, "Max failed subjects promoted", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.MaximumFailedSubjectsForPromotion, new { @class = "form-control", type = "number" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.ProgressionMinimumAverage, "Progressed minimum average", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.ProgressionMinimumAverage, new { @class = "form-control", type = "number", step = "0.1" })
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @Html.LabelFor(m => m.MaximumFailedSubjectsForProgression, "Max failed subjects progressed", new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.MaximumFailedSubjectsForProgression, new { @class = "form-control", type = "number" })
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Subjects learners are not allowed to fail</label>
+                    <div class="row">
+                        @foreach (var subject in Model.SubjectOptions)
+                        {
+                            var subjectId = int.Parse(subject.Value);
+                            <div class="col-md-4 mb-2">
+                                <label class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="RequiredSubjectIds"
+                                           value="@subject.Value"
+                                           @(Model.RequiredSubjectIds.Contains(subjectId) ? "checked" : "") />
+                                    <span class="form-check-label">@subject.Text</span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                    <small class="text-muted">Example: Home Language can be selected here so failing it blocks promotion/progression.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Rules</button>
+                @Html.ActionLink("Back to Reports", "ReportCards", "Marks", null, new { @class = "btn btn-outline-secondary ms-2" })
+            </div>
+        </div>
+    }
+</div>

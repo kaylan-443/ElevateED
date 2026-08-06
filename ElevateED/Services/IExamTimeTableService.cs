@@ -32,6 +32,7 @@ namespace ElevateED.Services
 
         // Student/Teacher views
         List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId);
+        List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId, int? classId);
         List<ExamSession> GetExamSessionsForTeacher(int timetableId, int teacherId);
     }
 

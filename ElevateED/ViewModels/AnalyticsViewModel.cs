@@ -28,6 +28,23 @@ namespace ElevateED.ViewModels
         public int AtRiskCount { get; set; }
 
         public List<ClassAttendanceStat> ClassStats { get; set; } = new List<ClassAttendanceStat>();
+
+        public int TotalAssessments { get; set; }
+        public int SubmittedAssessments { get; set; }
+        public int ApprovedAssessments { get; set; }
+        public int GeneratedReportCards { get; set; }
+        public decimal AcademicAverage { get; set; }
+        public decimal AcademicPassRate { get; set; }
+        public List<AnalyticsAcademicStat> SubjectPerformance { get; set; } = new List<AnalyticsAcademicStat>();
+        public List<AnalyticsAcademicStat> ClassPerformance { get; set; } = new List<AnalyticsAcademicStat>();
+    }
+
+    public class AnalyticsAcademicStat
+    {
+        public string Name { get; set; }
+        public decimal Average { get; set; }
+        public decimal PassRate { get; set; }
+        public int Count { get; set; }
     }
 
     /// <summary>
@@ -106,5 +123,71 @@ namespace ElevateED.ViewModels
         public string GradeApplyingFor { get; set; }
         public string Status { get; set; }
         public int DaysAgo { get; set; }
+    }
+
+    public class PrincipalAnalyticsViewModel
+    {
+        public int TotalStudents { get; set; }
+        public int TotalTeachers { get; set; }
+        public int TotalClasses { get; set; }
+        public int TotalAssessments { get; set; }
+        public int PendingMarkApprovals { get; set; }
+        public int GeneratedReportCards { get; set; }
+        public int PublishedExamSessions { get; set; }
+        public decimal SchoolAverage { get; set; }
+        public decimal PassRate { get; set; }
+        public decimal PromotionRate { get; set; }
+        public decimal ProgressionRate { get; set; }
+        public decimal NotPromotedRate { get; set; }
+        public List<PrincipalSubjectAnalyticsItem> SubjectPerformance { get; set; } = new List<PrincipalSubjectAnalyticsItem>();
+        public List<PrincipalClassAnalyticsItem> ClassPerformance { get; set; } = new List<PrincipalClassAnalyticsItem>();
+        public List<PrincipalTeacherAnalyticsItem> TeacherPerformance { get; set; } = new List<PrincipalTeacherAnalyticsItem>();
+        public List<PrincipalAtRiskLearnerItem> AtRiskLearners { get; set; } = new List<PrincipalAtRiskLearnerItem>();
+        public List<PrincipalExamAnalyticsItem> ExamTimetables { get; set; } = new List<PrincipalExamAnalyticsItem>();
+    }
+
+    public class PrincipalSubjectAnalyticsItem
+    {
+        public string SubjectName { get; set; }
+        public decimal Average { get; set; }
+        public decimal PassRate { get; set; }
+        public int LearnerCount { get; set; }
+    }
+
+    public class PrincipalClassAnalyticsItem
+    {
+        public string ClassName { get; set; }
+        public decimal Average { get; set; }
+        public decimal PassRate { get; set; }
+        public int PromotedCount { get; set; }
+        public int ProgressedCount { get; set; }
+        public int NotPromotedCount { get; set; }
+    }
+
+    public class PrincipalTeacherAnalyticsItem
+    {
+        public string TeacherName { get; set; }
+        public int AssessmentCount { get; set; }
+        public int ApprovedAssessmentCount { get; set; }
+        public decimal AverageLearnerMark { get; set; }
+        public decimal PassRate { get; set; }
+    }
+
+    public class PrincipalAtRiskLearnerItem
+    {
+        public string StudentName { get; set; }
+        public string ClassName { get; set; }
+        public decimal FinalMark { get; set; }
+        public string PromotionDecision { get; set; }
+        public string Reason { get; set; }
+    }
+
+    public class PrincipalExamAnalyticsItem
+    {
+        public string Name { get; set; }
+        public string Status { get; set; }
+        public int TotalSessions { get; set; }
+        public int ProposedSessions { get; set; }
+        public int PublishedSessions { get; set; }
     }
 }

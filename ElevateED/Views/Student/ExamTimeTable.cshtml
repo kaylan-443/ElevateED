@@ -207,6 +207,7 @@
                                 <th>Date</th>
                                 <th>Day</th>
                                 <th>Subject</th>
+                                <th>Class</th>
                                 <th>Paper</th>
                                 <th>Time</th>
                                 <th>Duration</th>
@@ -220,6 +221,7 @@
                                     <td>@session.ExamDateDisplay</td>
                                     <td>@session.DayOfWeek</td>
                                     <td><strong>@session.SubjectName</strong></td>
+                                    <td>@(string.IsNullOrEmpty(session.ClassNames) ? Model.GradeName : session.ClassNames)</td>
                                     <td>Paper @session.PaperNumber</td>
                                     <td>@session.StartTime - @session.EndTime</td>
                                     <td>@session.DurationHours h</td>

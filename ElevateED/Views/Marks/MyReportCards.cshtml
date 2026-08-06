@@ -1,0 +1,80 @@
+@model IEnumerable<ElevateED.ViewModels.ReportCardViewModel>
+
+@{
+    ViewBag.Title = "My Report Cards";
+}
+
+<div class="container mt-4">
+    <h2>My Report Cards</h2>
+    <p class="text-muted">Your report cards appear here after teachers submit marks and admin approves them.</p>
+
+    @foreach (var report in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <strong>@report.Term @report.AcademicYear</strong>
+                <span>@report.ClassName</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted">Term Mark</div>
+                        <h4>@report.TermMark%</h4>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted">Exam Mark</div>
+                        <h4>@report.ExamMark%</h4>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted">Final Mark</div>
+                        <h4>@report.FinalMark%</h4>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted">Decision</div>
+                        <h4>@report.PromotionDecision</h4>
+                    </div>
+                </div>
+                <hr />
+                <p><strong>Class average:</strong> @report.ClassAverage% | <strong>Highest:</strong> @report.HighestMark% | <strong>Lowest:</strong> @report.LowestMark%</p>
+                <p><strong>Trend:</strong> @report.PerformanceTrend</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <p class="mb-0">@report.ImprovementComment</p>
+                    @Html.ActionLink("Export PDF", "PrintReportCard", "Marks", new { id = report.Id }, new { @class = "btn btn-sm btn-outline-primary", target = "_blank" })
+                </div>
+
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Term</th>
+                                <th>Exam</th>
+                                <th>Final</th>
+                                <th>Status</th>
+                                <th>Class Avg</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var subject in report.Subjects)
+                            {
+                                <tr>
+                                    <td>@subject.SubjectName</td>
+                                    <td>@subject.TermMark%</td>
+                                    <td>@subject.ExamMark%</td>
+                                    <td><strong>@subject.FinalMark%</strong></td>
+                                    <td>@subject.PassFailStatus</td>
+                                    <td>@subject.ClassAverage%</td>
+                                    <td>@subject.PerformanceTrend</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="text-muted">@subject.ImprovementComment</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

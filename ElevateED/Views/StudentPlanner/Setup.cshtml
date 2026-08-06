@@ -1,0 +1,197 @@
+@model ElevateED.ViewModels.PlannerSetupViewModel
+@{
+    ViewBag.Title = "Set Up Study Plan - ElevateED";
+}
+
+<style>
+    .content { padding: 32px; max-width: 860px; }
+    .page-head { margin-bottom: 8px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .alert-soft { padding: 14px 18px; border-radius: 12px; margin: 16px 0; font-size: 14px; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+    .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin-bottom: 20px; }
+    .card h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 4px; }
+    .card .hint { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin: 12px 0 6px; }
+    input[type=text], input[type=date], input[type=time], select { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; font-family: inherit; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .subj-check { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 10px; cursor: pointer; font-size: 14px; }
+    .subj-check input { width: auto; }
+    .subj-check:hover { border-color: var(--primary-light); }
+
+    .day-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+    .day-row .dname { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--gray-700); font-size: 14px; }
+    .day-row .dname input { width: auto; }
+    .day-row.disabled { opacity: 0.45; }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 12px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-light { background: var(--gray-100); color: var(--gray-700); }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to planner</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-wand-magic-sparkles" style="color: var(--accent);"></i> Set up your study plan</h1>
+                <p>Tell us when you're free — we'll do the scheduling.</p>
+            </div>
+
+            @if (Model.HasTimetable)
+            {
+                <div class="alert-soft alert-info">
+                    <i class="fas fa-link"></i> This plan is linked to the <strong>@Model.TimetableName</strong> exam timetable, so revision will build up toward your exam dates.
+                </div>
+            }
+            else
+            {
+                <div class="alert-soft alert-info">
+                    <i class="fas fa-info-circle"></i> No published exam timetable found, so we'll weight your plan toward your weaker subjects over the date range you choose.
+                </div>
+            }
+
+            @if (!Model.Subjects.Any())
+            {
+                <div class="card">
+                    <h3>No subjects found</h3>
+                    <div class="hint">We couldn't find subjects for you yet. Once you have a report card or an exam timetable, come back and set up your plan.</div>
+                    <a href="@Url.Action("Index")" class="btn btn-light">Back</a>
+                </div>
+            }
+            else
+            {
+                using (Html.BeginForm("Create", "StudentPlanner", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="TargetExamTimetableId" value="@Model.TargetExamTimetableId" />
+
+                    <div class="card">
+                        <h3>1. Plan basics</h3>
+                        <div class="hint">Name your plan and set the period it covers.</div>
+                        <label>Plan name</label>
+                        <input type="text" name="Name" value="@Model.Name" required />
+                        <div class="row2">
+                            <div>
+                                <label>Start date</label>
+                                <input type="date" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div>
+                                <label>End date</label>
+                                <input type="date" name="EndDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>2. Subjects to study</h3>
+                        <div class="hint">Weaker subjects (lower marks) automatically get more time.</div>
+                        <div style="margin-bottom:12px;">
+                            <button type="button" class="btn btn-light" style="padding:6px 12px;font-size:13px;" onclick="toggleAll(true)">Select all</button>
+                            <button type="button" class="btn btn-light" style="padding:6px 12px;font-size:13px;" onclick="toggleAll(false)">Clear</button>
+                        </div>
+                        <div class="subjects-grid">
+                            @foreach (var s in Model.Subjects)
+                            {
+                                <label class="subj-check">
+                                    <input type="checkbox" class="subj-cb" name="SubjectIds" value="@s.Id" checked />
+                                    <span>@s.Name</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>3. Career goal <span style="font-weight:400;color:var(--gray-400);font-size:13px;">(optional)</span></h3>
+                        <div class="hint">
+                            Pick a career from your shortlist and we'll give extra study time to the subjects
+                            holding you back from it. Sessions working toward your goal are marked with 🎯.
+                        </div>
+                        @if (Model.GoalOptions.Any())
+                        {
+                            <select name="GoalCareerId" id="goalSelect" onchange="showGoalGap()">
+                                <option value="">— No goal, just balance my subjects —</option>
+                                @foreach (var g in Model.GoalOptions)
+                                {
+                                    <option value="@g.Id" data-gap="@g.GapSummary" @(Model.PreselectedGoalCareerId == g.Id ? "selected" : "")>@g.Name</option>
+                                }
+                            </select>
+                            <div id="goalGap" style="display:none; margin-top:10px; padding:10px 14px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; font-size:13px; color:#92400e;"></div>
+                        }
+                        else
+                        {
+                            <div style="font-size:14px; color:var(--gray-500);">
+                                Your career shortlist is empty.
+                                <a href="@Url.Action("Explore", "StudentCareer")" style="color:var(--primary); font-weight:600; text-decoration:none;">Explore careers</a>
+                                and bookmark one to set it as a study goal.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card">
+                        <h3>4. When can you study?</h3>
+                        <div class="hint">Tick the days you're free and set the time window. Sessions longer than 2 hours are split across subjects.</div>
+                        @for (int i = 0; i < Model.Availability.Count; i++)
+                        {
+                            var d = Model.Availability[i];
+                            <div class="day-row @(d.Enabled ? "" : "disabled")" id="dayrow_@i">
+                                <div class="dname">
+                                    <input type="checkbox" name="Availability[@i].Enabled" value="true" @(d.Enabled ? "checked" : "") onchange="toggleDay(@i, this.checked)" />
+                                    <input type="hidden" name="Availability[@i].DayOfWeek" value="@d.DayOfWeek" />
+                                    @d.DayName
+                                </div>
+                                <div>
+                                    <input type="time" name="Availability[@i].Start" value="@d.Start" />
+                                </div>
+                                <div>
+                                    <input type="time" name="Availability[@i].End" value="@d.End" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div style="display:flex; gap:12px;">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-bolt"></i> Generate my schedule</button>
+                        <a href="@Url.Action("Index")" class="btn btn-light">Cancel</a>
+                    </div>
+                }
+            }
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleDay(i, on) {
+        document.getElementById('dayrow_' + i).classList.toggle('disabled', !on);
+    }
+    function toggleAll(on) {
+        document.querySelectorAll('.subj-cb').forEach(function (cb) { cb.checked = on; });
+    }
+    function showGoalGap() {
+        var sel = document.getElementById('goalSelect');
+        var box = document.getElementById('goalGap');
+        if (!sel || !box) return;
+        var opt = sel.options[sel.selectedIndex];
+        var gap = opt ? opt.getAttribute('data-gap') : null;
+        if (sel.value && gap) {
+            box.innerHTML = '<i class="fas fa-bullseye"></i> Focus areas: <strong>' + gap + '</strong>';
+            box.style.display = 'block';
+        } else {
+            box.style.display = 'none';
+        }
+    }
+    showGoalGap();
+</script>

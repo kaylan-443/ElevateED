@@ -1,7 +1,7 @@
 @model ElevateED.ViewModels.AnalyticsViewModel
 
 @{
-    ViewBag.Title = "Attendance Analytics";
+    ViewBag.Title = "Analytics";
 }
 
 <div class="container-fluid mt-5">
@@ -10,7 +10,7 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-bar"></i> Attendance Analytics
+                        <i class="fas fa-chart-bar"></i> Attendance & Academic Analytics
                     </h5>
                 </div>
                 <div class="card-body">
@@ -42,6 +42,117 @@
             </div>
         </div>
     </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Assessments</h6>
+                    <h3 class="text-primary">@Model.TotalAssessments</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Awaiting Approval</h6>
+                    <h3 class="text-warning">@Model.SubmittedAssessments</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Academic Average</h6>
+                    <h3 class="text-success">@Model.AcademicAverage%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Academic Pass Rate</h6>
+                    <h3 class="text-info">@Model.AcademicPassRate%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if ((Model.SubjectPerformance != null && Model.SubjectPerformance.Any()) || (Model.ClassPerformance != null && Model.ClassPerformance.Any()))
+    {
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Academic Performance by Subject</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Average</th>
+                                        <th>Pass Rate</th>
+                                        <th>Marks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.SubjectPerformance)
+                                    {
+                                        <tr>
+                                            <td>@item.Name</td>
+                                            <td>@item.Average%</td>
+                                            <td>@item.PassRate%</td>
+                                            <td>@item.Count</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Academic Performance by Class</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Average</th>
+                                        <th>Pass Rate</th>
+                                        <th>Records</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.ClassPerformance)
+                                    {
+                                        <tr>
+                                            <td>@item.Name</td>
+                                            <td>@item.Average%</td>
+                                            <td>@item.PassRate%</td>
+                                            <td>@item.Count</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No academic marks or generated report cards are available yet. Once teachers capture and approve marks, this section will start showing subject and class performance.
+        </div>
+    }
 
     <div class="row mb-4">
         <div class="col-md-4">

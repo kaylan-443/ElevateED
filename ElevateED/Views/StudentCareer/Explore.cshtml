@@ -1,0 +1,147 @@
+@model ElevateED.ViewModels.CareerExplorerViewModel
+@{
+    ViewBag.Title = "Explore Careers - ElevateED";
+}
+
+<style>
+    .content { padding: 32px; }
+    .page-head { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .chip {
+        padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600;
+        text-decoration: none; background: white; color: var(--gray-600);
+        border: 1px solid var(--gray-200); transition: all 0.2s;
+    }
+    .chip:hover { border-color: var(--primary); color: var(--primary); }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+
+    /* Career card (shared partial) */
+    .career-card {
+        background: white; border-radius: 16px; padding: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100);
+        border-top: 4px solid var(--gray-300);
+        display: flex; flex-direction: column; gap: 10px; transition: all 0.2s;
+    }
+    .career-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.1); }
+    .career-card.v-qualify { border-top-color: var(--success); }
+    .career-card.v-close { border-top-color: var(--warning); }
+    .career-card.v-missing { border-top-color: var(--danger); }
+    .career-card.v-nodata { border-top-color: var(--gray-300); }
+
+    .cc-top { display: flex; justify-content: space-between; align-items: center; }
+    .cc-field { font-size: 12px; color: var(--gray-500); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .bookmark-form { margin: 0; }
+    .bookmark-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--gray-400); padding: 4px; }
+    .bookmark-btn.active { color: var(--primary); }
+    .bookmark-btn:hover { color: var(--primary); }
+
+    .cc-title { font-size: 18px; font-weight: 700; color: var(--gray-900); text-decoration: none; }
+    .cc-title:hover { color: var(--primary); }
+    .cc-qual { font-size: 13px; color: var(--gray-500); }
+
+    .cc-verdict { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 50px; font-size: 13px; font-weight: 600; align-self: flex-start; }
+    .cc-verdict.v-qualify { background: #ecfdf5; color: #065f46; }
+    .cc-verdict.v-close { background: #fffbeb; color: #92400e; }
+    .cc-verdict.v-missing { background: #fef2f2; color: #991b1b; }
+    .cc-verdict.v-nodata { background: var(--gray-100); color: var(--gray-500); }
+
+    .cc-meta { display: flex; gap: 16px; }
+    .cc-aps { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .cc-aps-label { color: var(--gray-500); }
+    .cc-aps-val { font-weight: 700; color: var(--gray-800); font-size: 15px; }
+    .cc-aps-you { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .cc-aps-you.ok { background: #ecfdf5; color: #065f46; }
+    .cc-aps-you.under { background: #fef2f2; color: #991b1b; }
+
+    .cc-gaps { display: flex; flex-direction: column; gap: 6px; background: var(--gray-50); border-radius: 10px; padding: 10px 12px; }
+    .cc-gap { font-size: 12px; color: var(--gray-600); display: flex; align-items: flex-start; gap: 6px; }
+    .cc-gap i { color: var(--warning); margin-top: 2px; }
+
+    .cc-link { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; margin-top: auto; }
+    .cc-link:hover { text-decoration: underline; }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+    .empty i { font-size: 48px; margin-bottom: 16px; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <div>
+                    <h1><i class="fas fa-compass" style="color: var(--accent);"></i> Explore Careers</h1>
+                    <p>Every career shows how well it matches your marks and subjects.</p>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+            }
+
+            @if (!Model.HasReportCard)
+            {
+                <div class="alert-soft alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Your report card isn't published yet, so we can't judge whether you qualify. You can still browse careers and their requirements.</span>
+                </div>
+            }
+
+            <div class="filters">
+                <a href="@Url.Action("Explore", new { verdict = Model.VerdictFilter })" class="chip @(Model.SelectedFieldId == null ? "active" : "")">All fields</a>
+                @foreach (var field in Model.Fields)
+                {
+                    <a href="@Url.Action("Explore", new { fieldId = field.Id, verdict = Model.VerdictFilter })"
+                       class="chip @(Model.SelectedFieldId == field.Id ? "active" : "")">
+                        <i class="fas fa-@field.IconClass"></i> @field.Name
+                    </a>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.VerdictFilter))
+            {
+                <div class="filters">
+                    <a href="@Url.Action("Explore", new { fieldId = Model.SelectedFieldId })" class="chip">✕ Clear "@(Model.VerdictFilter == "qualifies" ? "Qualifying" : "Within reach")" filter</a>
+                </div>
+            }
+
+            @if (Model.Matches.Any())
+            {
+                <div class="cards-grid">
+                    @foreach (var match in Model.Matches)
+                    {
+                        @Html.Partial("_CareerCard", match, new ViewDataDictionary
+                        {
+                            { "Bookmarked", Model.BookmarkedCareerIds.Contains(match.Career.Id) },
+                            { "ReturnUrl", Request.Url.PathAndQuery }
+                        })
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty">
+                    <div><i class="fas fa-folder-open"></i></div>
+                    <p>No careers match this filter.</p>
+                </div>
+            }
+        </div>
+    </main>
+</div>

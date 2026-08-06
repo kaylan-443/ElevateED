@@ -6,7 +6,10 @@ namespace ElevateED.Models
     {
         public ElevateEDContext() : base("ElevateEDConnection")
         {
-            Database.SetInitializer<ElevateEDContext>(null);
+            // Initializer is configured once in DatabaseConfig.Initialize() to apply
+            // MigrateDatabaseToLatestVersion. Setting it to null here used to wipe that
+            // out on every context construction, which is why new schema (Assessments,
+            // ExamSessionClasses, new ExamSession columns) never reached the database.
             this.Configuration.ProxyCreationEnabled = false;
             this.Configuration.LazyLoadingEnabled = false;
         }
@@ -52,7 +55,14 @@ namespace ElevateED.Models
         // Exam Timetable
         public DbSet<ExamTimetable> ExamTimetables { get; set; }
         public DbSet<ExamSession> ExamSessions { get; set; }
+        public DbSet<ExamSessionClass> ExamSessionClasses { get; set; }
         public DbSet<TeacherExamNotification> TeacherExamNotifications { get; set; }
+        public DbSet<Assessment> Assessments { get; set; }
+        public DbSet<AssessmentMark> AssessmentMarks { get; set; }
+        public DbSet<StudentReportCard> StudentReportCards { get; set; }
+        public DbSet<StudentReportCardSubject> StudentReportCardSubjects { get; set; }
+        public DbSet<PromotionRule> PromotionRules { get; set; }
+        public DbSet<PromotionRuleRequiredSubject> PromotionRuleRequiredSubjects { get; set; }
         public DbSet<Trip> Trips { get; set; }
 
         // Math Solver (from friend)
@@ -65,6 +75,21 @@ namespace ElevateED.Models
         public DbSet<AIStudySession> AIStudySessions { get; set; }
         
         public DbSet<AIStudyOutput> AIStudyOutputs { get; set; }
+
+        // Career Guidance
+        public DbSet<CareerField> CareerFields { get; set; }
+        public DbSet<Career> Careers { get; set; }
+        public DbSet<CareerSubjectRequirement> CareerSubjectRequirements { get; set; }
+        public DbSet<InterestQuestion> InterestQuestions { get; set; }
+        public DbSet<StudentInterestResult> StudentInterestResults { get; set; }
+        public DbSet<StudentCareerBookmark> StudentCareerBookmarks { get; set; }
+        public DbSet<StudentMarkTarget> StudentMarkTargets { get; set; }
+
+        // Smart Study Planner
+        public DbSet<StudyPlan> StudyPlans { get; set; }
+        public DbSet<StudyAvailabilitySlot> StudyAvailabilitySlots { get; set; }
+        public DbSet<StudySession> StudySessions { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             // Extra Classes configurations
@@ -199,6 +224,226 @@ namespace ElevateED.Models
                 .HasOptional(e => e.Stream)
                 .WithMany()
                 .HasForeignKey(e => e.StreamId)
+                .WillCascadeOnDelete(false); // NO cascade
+
+            modelBuilder.Entity<ExamSession>()
+                .HasOptional(e => e.CreatedByTeacher)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedByTeacherId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<ExamSessionClass>()
+                .HasRequired(e => e.ExamSession)
+                .WithMany(e => e.ExamSessionClasses)
+                .HasForeignKey(e => e.ExamSessionId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<ExamSessionClass>()
+                .HasRequired(e => e.Class)
+                .WithMany(c => c.ExamSessionClasses)
+                .HasForeignKey(e => e.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Teacher)
+                .WithMany()
+                .HasForeignKey(a => a.TeacherId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Class)
+                .WithMany()
+                .HasForeignKey(a => a.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<Assessment>()
+                .HasRequired(a => a.Subject)
+                .WithMany()
+                .HasForeignKey(a => a.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<AssessmentMark>()
+                .HasRequired(m => m.Assessment)
+                .WithMany(a => a.Marks)
+                .HasForeignKey(m => m.AssessmentId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<AssessmentMark>()
+                .HasRequired(m => m.Student)
+                .WithMany()
+                .HasForeignKey(m => m.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasRequired(r => r.Class)
+                .WithMany()
+                .HasForeignKey(r => r.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCard>()
+                .HasOptional(r => r.ClassTeacher)
+                .WithMany()
+                .HasForeignKey(r => r.ClassTeacherId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentReportCardSubject>()
+                .HasRequired(s => s.StudentReportCard)
+                .WithMany(r => r.Subjects)
+                .HasForeignKey(s => s.StudentReportCardId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<StudentReportCardSubject>()
+                .HasRequired(s => s.Subject)
+                .WithMany()
+                .HasForeignKey(s => s.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<PromotionRule>()
+                .HasOptional(r => r.Grade)
+                .WithMany()
+                .HasForeignKey(r => r.GradeId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<PromotionRuleRequiredSubject>()
+                .HasRequired(r => r.PromotionRule)
+                .WithMany(r => r.RequiredSubjects)
+                .HasForeignKey(r => r.PromotionRuleId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PromotionRuleRequiredSubject>()
+                .HasRequired(r => r.Subject)
+                .WithMany()
+                .HasForeignKey(r => r.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            // ============================================
+            // CAREER GUIDANCE CONFIGURATIONS
+            // ============================================
+
+            modelBuilder.Entity<Career>()
+                .HasRequired(c => c.CareerField)
+                .WithMany(f => f.Careers)
+                .HasForeignKey(c => c.CareerFieldId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<CareerSubjectRequirement>()
+                .HasRequired(r => r.Career)
+                .WithMany(c => c.SubjectRequirements)
+                .HasForeignKey(r => r.CareerId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<CareerSubjectRequirement>()
+                .HasRequired(r => r.Subject)
+                .WithMany()
+                .HasForeignKey(r => r.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<InterestQuestion>()
+                .HasRequired(q => q.CareerField)
+                .WithMany(f => f.InterestQuestions)
+                .HasForeignKey(q => q.CareerFieldId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentInterestResult>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // Three optional FKs to CareerField would create multiple cascade
+            // paths, so disable cascade on each.
+            modelBuilder.Entity<StudentInterestResult>()
+                .HasOptional(r => r.TopField1)
+                .WithMany()
+                .HasForeignKey(r => r.TopField1Id)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentInterestResult>()
+                .HasOptional(r => r.TopField2)
+                .WithMany()
+                .HasForeignKey(r => r.TopField2Id)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentInterestResult>()
+                .HasOptional(r => r.TopField3)
+                .WithMany()
+                .HasForeignKey(r => r.TopField3Id)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentCareerBookmark>()
+                .HasRequired(b => b.Student)
+                .WithMany()
+                .HasForeignKey(b => b.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentCareerBookmark>()
+                .HasRequired(b => b.Career)
+                .WithMany()
+                .HasForeignKey(b => b.CareerId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentMarkTarget>()
+                .HasRequired(t => t.Student)
+                .WithMany()
+                .HasForeignKey(t => t.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudentMarkTarget>()
+                .HasRequired(t => t.Subject)
+                .WithMany()
+                .HasForeignKey(t => t.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            // ============================================
+            // STUDY PLANNER CONFIGURATIONS
+            // ============================================
+
+            modelBuilder.Entity<StudyPlan>()
+                .HasRequired(p => p.Student)
+                .WithMany()
+                .HasForeignKey(p => p.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudyPlan>()
+                .HasOptional(p => p.TargetExamTimetable)
+                .WithMany()
+                .HasForeignKey(p => p.TargetExamTimetableId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudyPlan>()
+                .HasOptional(p => p.GoalCareer)
+                .WithMany()
+                .HasForeignKey(p => p.GoalCareerId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudyAvailabilitySlot>()
+                .HasRequired(s => s.StudyPlan)
+                .WithMany(p => p.AvailabilitySlots)
+                .HasForeignKey(s => s.StudyPlanId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<StudySession>()
+                .HasRequired(s => s.StudyPlan)
+                .WithMany(p => p.Sessions)
+                .HasForeignKey(s => s.StudyPlanId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<StudySession>()
+                .HasRequired(s => s.Subject)
+                .WithMany()
+                .HasForeignKey(s => s.SubjectId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<StudySession>()
+                .HasOptional(s => s.LinkedExamSession)
+                .WithMany()
+                .HasForeignKey(s => s.LinkedExamSessionId)
                 .WillCascadeOnDelete(false);
 
             base.OnModelCreating(modelBuilder);

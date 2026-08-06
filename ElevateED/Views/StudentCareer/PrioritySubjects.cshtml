@@ -1,0 +1,132 @@
+@model ElevateED.ViewModels.PrioritySubjectsViewModel
+@{
+    ViewBag.Title = "What to Work On First - ElevateED";
+    var career = Model.Career;
+    var match = Model.Match;
+}
+
+<style>
+    .content { padding: 32px; max-width: 860px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .page-head { margin-bottom: 8px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head .career-name { color: var(--primary); font-weight: 700; }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+
+    .panel { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin: 20px 0; }
+    .panel h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 4px; }
+    .panel .hint { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+
+    .top-pick { background: linear-gradient(135deg, #ecfdf5, #f0fdf4); border: 1px solid #a7f3d0; border-radius: 16px; padding: 22px 24px; margin: 20px 0; }
+    .top-pick .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #065f46; font-weight: 700; }
+    .top-pick .subject { font-size: 22px; font-weight: 800; color: var(--gray-900); margin: 4px 0; }
+    .top-pick .detail { font-size: 14px; color: #065f46; }
+    .top-pick .cta { margin-top: 14px; }
+
+    .rank-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--gray-100); }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-num { width: 28px; height: 28px; border-radius: 50%; background: var(--gray-100); color: var(--gray-600); font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .rank-row:first-child .rank-num { background: var(--primary); color: white; }
+    .rank-info { flex: 1; }
+    .rank-subj { font-weight: 700; color: var(--gray-800); font-size: 14px; }
+    .rank-reason { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+    .rank-effort { text-align: right; flex-shrink: 0; }
+    .rank-effort .marks { font-size: 18px; font-weight: 800; color: var(--primary-dark); }
+    .rank-effort .label { font-size: 10px; text-transform: uppercase; color: var(--gray-400); font-weight: 700; }
+
+    .blocked-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--gray-50); border-radius: 10px; margin-bottom: 8px; }
+    .blocked-row i { color: var(--gray-400); }
+    .blocked-name { font-weight: 700; color: var(--gray-700); font-size: 13px; }
+    .blocked-reason { font-size: 12px; color: var(--gray-500); }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: white; }
+    .empty-note { font-size: 13px; color: var(--gray-400); padding: 6px 0; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Detail", new { id = career.Id })" class="back-link"><i class="fas fa-arrow-left"></i> Back to @career.Name</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-list-ol" style="color: var(--accent);"></i> What to work on first</h1>
+                <p>For <span class="career-name">@career.Name</span> — ranked by how many marks it would actually take to close each gap.</p>
+            </div>
+
+            @if (Model.Breakdown.Ranked.Any())
+            {
+                var top = Model.Breakdown.Ranked.First();
+                <div class="top-pick">
+                    <div class="kicker">Start here</div>
+                    <div class="subject">@top.SubjectName</div>
+                    <div class="detail">
+                        @if (top.MarksNeeded > 0)
+                        {
+                            <text>About <strong>@top.MarksNeeded</strong> more mark@(top.MarksNeeded == 1 ? "" : "s") would get you to level @top.RequiredLevel. @top.Reason.</text>
+                        }
+                        else
+                        {
+                            <text>@top.Reason</text>
+                        }
+                    </div>
+                    <div class="cta">
+                        <a href="@Url.Action("Setup", "StudentPlanner", new { goalCareerId = career.Id })" class="btn btn-primary">
+                            <i class="fas fa-calendar-day"></i> Build a study plan around this
+                        </a>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Full ranking</h3>
+                    <div class="hint">Every gap subject, ordered from the least effort to the most.</div>
+                    @{ int i = 0; }
+                    @foreach (var r in Model.Breakdown.Ranked)
+                    {
+                        i++;
+                        <div class="rank-row">
+                            <div class="rank-num">@i</div>
+                            <div class="rank-info">
+                                <div class="rank-subj">@r.SubjectName</div>
+                                <div class="rank-reason">@r.Reason</div>
+                            </div>
+                            <div class="rank-effort">
+                                <div class="marks">@(r.MarksNeeded > 0 ? "+" + r.MarksNeeded : "—")</div>
+                                <div class="label">marks needed</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="panel">
+                    <div class="empty-note">Every subject you're registered for already meets its requirement here — the only thing outstanding is listed below.</div>
+                </div>
+            }
+
+            @if (Model.Breakdown.Blocked.Any())
+            {
+                <div class="panel">
+                    <h3><i class="fas fa-triangle-exclamation" style="color: var(--gray-400);"></i> Can't be fixed by a mark alone</h3>
+                    <div class="hint">These compulsory subjects aren't on your report at all — no amount of improvement in another subject substitutes for them.</div>
+                    @foreach (var b in Model.Breakdown.Blocked)
+                    {
+                        <div class="blocked-row">
+                            <i class="fas fa-circle-xmark"></i>
+                            <div>
+                                <div class="blocked-name">@b.SubjectName</div>
+                                <div class="blocked-reason">@b.Reason</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </main>
+</div>

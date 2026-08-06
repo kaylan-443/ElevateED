@@ -1,0 +1,97 @@
+@model ElevateED.ViewModels.InterestResultViewModel
+@{
+    ViewBag.Title = "Your Results - ElevateED";
+    var medals = new[] { "🥇", "🥈", "🥉" };
+}
+
+@Html.Partial("_CareerCardStyles")
+
+<style>
+    .content { padding: 32px; }
+    .page-head { margin-bottom: 20px; }
+    .page-head h1 { font-size: 26px; color: var(--gray-900); }
+    .page-head p { color: var(--gray-500); margin-top: 4px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .result-hero { background: linear-gradient(135deg,#1e1b4b,#4338ca); color: white; border-radius: 20px; padding: 28px 32px; margin-bottom: 28px; }
+    .result-hero h2 { font-size: 22px; margin-bottom: 6px; }
+    .result-hero p { opacity: 0.85; font-size: 14px; }
+
+    .field-podium { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 20px; }
+    .field-tile { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 18px; }
+    .field-tile .medal { font-size: 28px; }
+    .field-tile .fname { font-size: 17px; font-weight: 700; margin: 8px 0 4px; display: flex; align-items: center; gap: 8px; }
+    .field-tile .fdesc { font-size: 13px; opacity: 0.8; line-height: 1.4; }
+
+    .section-title { font-size: 18px; color: var(--gray-800); margin: 8px 0 18px; }
+    .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+    .actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-light { background: var(--gray-100); color: var(--gray-700); }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <h1><i class="fas fa-star" style="color: var(--accent);"></i> Your Interest Results</h1>
+                <p>Based on your answers, these career fields suit you best.</p>
+            </div>
+
+            <div class="result-hero">
+                <h2>Your top career fields</h2>
+                <p>These reflect what you enjoy — pair them with your marks to choose a career.</p>
+                <div class="field-podium">
+                    @for (int i = 0; i < Model.TopFields.Count; i++)
+                    {
+                        var f = Model.TopFields[i];
+                        <div class="field-tile">
+                            <div class="medal">@(i < medals.Length ? medals[i] : "⭐")</div>
+                            <div class="fname"><i class="fas fa-@f.IconClass"></i> @f.Name</div>
+                            <div class="fdesc">@f.Description</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <h2 class="section-title">Careers in your top fields</h2>
+
+            @if (!Model.HasReportCard)
+            {
+                <div class="alert-soft alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>We're showing careers from your top fields. Once your report card is published, each will show whether you qualify.</span>
+                </div>
+            }
+
+            @if (Model.RecommendedCareers.Any())
+            {
+                <div class="cards-grid">
+                    @foreach (var match in Model.RecommendedCareers)
+                    {
+                        @Html.Partial("_CareerCard", match, new ViewDataDictionary
+                        {
+                            { "Bookmarked", Model.BookmarkedCareerIds.Contains(match.Career.Id) },
+                            { "ReturnUrl", Request.Url.PathAndQuery }
+                        })
+                    }
+                </div>
+            }
+
+            <div class="actions">
+                <a href="@Url.Action("Explore")" class="btn btn-primary"><i class="fas fa-compass"></i> Explore all careers</a>
+                <a href="@Url.Action("Quiz")" class="btn btn-light"><i class="fas fa-rotate-right"></i> Retake quiz</a>
+            </div>
+        </div>
+    </main>
+</div>

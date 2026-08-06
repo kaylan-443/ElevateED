@@ -1,0 +1,238 @@
+@model ElevateED.ViewModels.PlannerCalendarViewModel
+@{
+    ViewBag.Title = "Study Calendar - ElevateED";
+    var weekParam = Model.WeekStart.ToString("yyyy-MM-dd");
+    var today = DateTime.Today;
+
+    // Stable colour per subject for visual grouping.
+    Func<string, string> subjectColor = name =>
+    {
+        var palette = new[] { "#4f46e5", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#3b82f6", "#f97316", "#06b6d4" };
+        int h = 0; foreach (var c in name ?? "") { h = (h * 31 + c) & 0x7fffffff; }
+        return palette[h % palette.Length];
+    };
+}
+
+<style>
+    .content { padding: 32px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+    .top-bar h1 { font-size: 24px; color: var(--gray-900); }
+    .top-bar .sub { color: var(--gray-500); font-size: 13px; margin-top: 2px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-light { background: var(--gray-100); color: var(--gray-700); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 18px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .mini-stats { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+    .mini { background: white; border: 1px solid var(--gray-100); border-radius: 12px; padding: 12px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .mini .v { font-size: 20px; font-weight: 800; color: var(--gray-900); }
+    .mini .l { font-size: 12px; color: var(--gray-500); }
+
+    .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .week-label { font-weight: 700; color: var(--gray-800); }
+    .toolbar { display: flex; gap: 10px; }
+
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+    .day-col { background: var(--gray-50); border-radius: 14px; padding: 10px; min-height: 140px; border: 1px solid var(--gray-100); }
+    .day-col.today { border-color: var(--primary); background: var(--primary-bg); }
+    .day-head { text-align: center; margin-bottom: 10px; }
+    .day-head .dow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); font-weight: 600; }
+    .day-head .dnum { font-size: 18px; font-weight: 700; color: var(--gray-800); }
+
+    .exam-chip { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+
+    .sess { background: white; border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; border-left: 4px solid var(--gray-300); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .sess .time { font-size: 11px; color: var(--gray-400); font-weight: 600; }
+    .sess .subj { font-size: 13px; font-weight: 700; color: var(--gray-800); margin: 2px 0; }
+    .sess .note { font-size: 11px; color: var(--gray-500); line-height: 1.3; margin-bottom: 6px; }
+    .sess.done { opacity: 0.7; }
+    .sess.done .subj { text-decoration: line-through; }
+    .sess.missed { border-left-color: var(--danger); background: #fff7f7; }
+
+    .sess-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+    .act { border: none; cursor: pointer; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .act-done { background: #ecfdf5; color: #065f46; }
+    .act-miss { background: #fef2f2; color: #991b1b; }
+    .act-undo { background: var(--gray-100); color: var(--gray-600); }
+    .act-resc { background: #eff6ff; color: #1e40af; }
+    .status-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-done { color: var(--success); }
+    .status-missed { color: var(--danger); }
+    .empty-day { text-align: center; color: var(--gray-300); font-size: 11px; padding: 14px 0; }
+
+    form.inline { margin: 0; display: inline; }
+
+    @@media (max-width: 1000px) {
+        .week-grid { grid-template-columns: 1fr; }
+        .day-col { min-height: auto; }
+    }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to planner</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="top-bar">
+                <div>
+                    <h1><i class="fas fa-calendar-week" style="color: var(--accent);"></i> @Model.Plan.Name</h1>
+                    <div class="sub">
+                        @Model.Plan.StartDate.ToString("dd MMM") – @Model.Plan.EndDate.ToString("dd MMM yyyy")
+                        @if (Model.Plan.GoalCareer != null)
+                        {
+                            <a href="@Url.Action("Detail", "StudentCareer", new { id = Model.Plan.GoalCareerId })"
+                               style="display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:50px;color:#92400e;font-weight:600;font-size:12px;text-decoration:none;">
+                                🎯 Goal: @Model.Plan.GoalCareer.Name
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <form action="@Url.Action("Regenerate")" method="post" class="inline" onsubmit="return confirm('Regenerate future sessions? Completed and missed sessions are kept.');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Plan.Id" />
+                        <button type="submit" class="btn btn-light"><i class="fas fa-rotate"></i> Regenerate</button>
+                    </form>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert-soft alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+            }
+
+            <div class="mini-stats">
+                <div class="mini"><div class="v">@Model.Progress.AdherencePercent%</div><div class="l">Adherence</div></div>
+                <div class="mini"><div class="v">@Model.Progress.Completed</div><div class="l">Completed</div></div>
+                <div class="mini"><div class="v">@Model.Progress.Planned</div><div class="l">To do</div></div>
+                <div class="mini"><div class="v">@Model.Progress.Missed</div><div class="l">Missed</div></div>
+                <div class="mini"><div class="v">@(Model.Progress.StreakDays) 🔥</div><div class="l">Day streak</div></div>
+            </div>
+
+            <div class="week-nav">
+                @if (Model.PrevWeek.HasValue)
+                {
+                    <a href="@Url.Action("Calendar", new { id = Model.Plan.Id, week = Model.PrevWeek.Value.ToString("yyyy-MM-dd") })" class="btn btn-light"><i class="fas fa-chevron-left"></i> Previous week</a>
+                }
+                else
+                {
+                    <span></span>
+                }
+
+                <span class="week-label">@Model.WeekStart.ToString("dd MMM") – @Model.WeekEnd.ToString("dd MMM yyyy")</span>
+
+                @if (Model.NextWeek.HasValue)
+                {
+                    <a href="@Url.Action("Calendar", new { id = Model.Plan.Id, week = Model.NextWeek.Value.ToString("yyyy-MM-dd") })" class="btn btn-light">Next week <i class="fas fa-chevron-right"></i></a>
+                }
+                else
+                {
+                    <span></span>
+                }
+            </div>
+
+            <div class="week-grid">
+                @foreach (var day in Model.Days)
+                {
+                    <div class="day-col @(day.Date.Date == today ? "today" : "")">
+                        <div class="day-head">
+                            <div class="dow">@day.Date.ToString("ddd")</div>
+                            <div class="dnum">@day.Date.Day</div>
+                        </div>
+
+                        @foreach (var exam in day.Exams)
+                        {
+                            <div class="exam-chip">
+                                <i class="fas fa-file-pen"></i>
+                                <span>EXAM: @(exam.Subject?.Name ?? "Exam")@(exam.PaperNumber > 0 ? " P" + exam.PaperNumber : "")</span>
+                            </div>
+                        }
+
+                        @if (!day.Sessions.Any() && !day.Exams.Any())
+                        {
+                            <div class="empty-day">—</div>
+                        }
+
+                        @foreach (var s in day.Sessions)
+                        {
+                            var color = subjectColor(s.Subject?.Name);
+                            var cls = s.Status == ElevateED.Models.StudySessionStatus.Completed ? "done"
+                                    : s.Status == ElevateED.Models.StudySessionStatus.Missed ? "missed" : "";
+                            <div class="sess @cls" style="border-left-color:@color;">
+                                <div class="time">@DateTime.Today.Add(s.StartTime).ToString("HH:mm") – @DateTime.Today.Add(s.EndTime).ToString("HH:mm")</div>
+                                <div class="subj">@(s.Subject?.Name)</div>
+                                <div class="note">@s.FocusNote</div>
+
+                                @if (s.Status == ElevateED.Models.StudySessionStatus.Completed)
+                                {
+                                    <div class="sess-actions">
+                                        <span class="status-tag status-done"><i class="fas fa-check"></i> Done</span>
+                                        <form action="@Url.Action("UpdateSession")" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sessionId" value="@s.Id" />
+                                            <input type="hidden" name="status" value="planned" />
+                                            <input type="hidden" name="returnWeek" value="@weekParam" />
+                                            <button type="submit" class="act act-undo"><i class="fas fa-undo"></i></button>
+                                        </form>
+                                    </div>
+                                }
+                                else if (s.Status == ElevateED.Models.StudySessionStatus.Missed)
+                                {
+                                    <div class="sess-actions">
+                                        <span class="status-tag status-missed">Missed</span>
+                                        <form action="@Url.Action("Reschedule")" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sessionId" value="@s.Id" />
+                                            <input type="hidden" name="returnWeek" value="@weekParam" />
+                                            <button type="submit" class="act act-resc"><i class="fas fa-calendar-plus"></i> Reschedule</button>
+                                        </form>
+                                        <form action="@Url.Action("UpdateSession")" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sessionId" value="@s.Id" />
+                                            <input type="hidden" name="status" value="planned" />
+                                            <input type="hidden" name="returnWeek" value="@weekParam" />
+                                            <button type="submit" class="act act-undo"><i class="fas fa-undo"></i></button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="sess-actions">
+                                        <form action="@Url.Action("UpdateSession")" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sessionId" value="@s.Id" />
+                                            <input type="hidden" name="status" value="completed" />
+                                            <input type="hidden" name="returnWeek" value="@weekParam" />
+                                            <button type="submit" class="act act-done"><i class="fas fa-check"></i> Done</button>
+                                        </form>
+                                        <form action="@Url.Action("UpdateSession")" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sessionId" value="@s.Id" />
+                                            <input type="hidden" name="status" value="missed" />
+                                            <input type="hidden" name="returnWeek" value="@weekParam" />
+                                            <button type="submit" class="act act-miss"><i class="fas fa-times"></i> Miss</button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+</div>

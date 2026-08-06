@@ -1,0 +1,162 @@
+@model IEnumerable<ElevateED.ViewModels.ClassTeacherReportListItemViewModel>
+
+@{
+    ViewBag.Title = "Class Reports — Comments";
+}
+
+<style>
+    .toolbar { color: #555; font-size: 14px; margin-bottom: 18px; }
+    .reports-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .reports-card table { width: 100%; border-collapse: collapse; }
+    .reports-card thead th {
+        background: #f7f8fb;
+        color: #555;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        padding: 14px 18px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .reports-card tbody td {
+        padding: 14px 18px;
+        font-size: 14px;
+        border-top: 1px solid #f1f1f1;
+        vertical-align: middle;
+    }
+    .reports-card tbody tr:hover { background: #fafbfd; }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .pill-pass { background: #e8f5e9; color: #2e7d32; }
+    .pill-fail { background: #ffebee; color: #c62828; }
+    .pill-promoted { background: #e3f2fd; color: #1565c0; }
+    .pill-progressed { background: #fff8e1; color: #b76e00; }
+    .pill-notpromoted { background: #ffebee; color: #c62828; }
+    .pill-pending { background: #eef0f3; color: #6c757d; }
+    .pill-published { background: #e0e7ff; color: #4338ca; }
+    .pill-draft { background: #fff8e1; color: #b76e00; }
+    .pill-yes { background: #e8f5e9; color: #2e7d32; }
+    .pill-no { background: #eef0f3; color: #6c757d; }
+
+    .btn-comment {
+        background: var(--primary-blue);
+        color: white;
+        padding: 7px 16px;
+        border-radius: 18px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .btn-comment:hover { background: var(--secondary-blue); color: white; text-decoration: none; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 14px;
+    }
+    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
+    .empty-state h4 { color: #333; margin-bottom: 6px; }
+    .empty-state p { color: #888; }
+
+    .alert-flash {
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+    }
+    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "marks-comments")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-comment-dots" style="color:#6366f1;margin-right:10px;"></i>Class Reports</h1>
+                <p>Add your class-teacher comment to each learner's report before the principal publishes it.</p>
+            </div>
+            <a href="@Url.Action("Dashboard","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert-flash alert-flash-error"><i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]</div>
+        }
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-user-friends"></i>
+                <h4>No class reports yet</h4>
+                <p>Report cards appear here once marks for your class have been finalized by the subject teachers.</p>
+            </div>
+        }
+        else
+        {
+            <div class="toolbar">@Model.Count() report card@(Model.Count() == 1 ? "" : "s") for classes where you are the class teacher.</div>
+
+            <div class="reports-card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Learner</th>
+                                <th>Class</th>
+                                <th>Term</th>
+                                <th>Final</th>
+                                <th>Result</th>
+                                <th>Decision</th>
+                                <th>Comment</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td><strong>@r.StudentName</strong></td>
+                                    <td>@r.ClassName</td>
+                                    <td>@r.Term @r.AcademicYear</td>
+                                    <td><strong>@r.FinalMark.ToString("0.0")%</strong></td>
+                                    <td><span class="pill @(r.PassFailStatus == "Pass" ? "pill-pass" : "pill-fail")">@r.PassFailStatus</span></td>
+                                    <td><span class="pill pill-@r.PromotionDecision.ToString().ToLower()">@r.PromotionDecision</span></td>
+                                    <td><span class="pill @(r.HasClassTeacherComment ? "pill-yes" : "pill-no")">@(r.HasClassTeacherComment ? "Added" : "Missing")</span></td>
+                                    <td><span class="pill @(r.IsPublished ? "pill-published" : "pill-draft")">@(r.IsPublished ? "Published" : "Draft")</span></td>
+                                    <td>
+                                        @if (r.IsPublished)
+                                        {
+                                            <span style="color:#aaa;font-size:13px;">Locked</span>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("EditReportComment", new { id = r.ReportId })" class="btn-comment">@(r.HasClassTeacherComment ? "Edit" : "Add") Comment</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </main>
+</div>

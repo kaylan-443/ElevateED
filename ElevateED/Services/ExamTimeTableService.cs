@@ -584,14 +584,31 @@ namespace ElevateED.Services
 
         public List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId)
         {
+            return GetExamSessionsForStudent(timetableId, gradeId, streamId, null);
+        }
+
+        public List<ExamSession> GetExamSessionsForStudent(int timetableId, int gradeId, int? streamId, int? classId)
+        {
             try
             {
-                return _context.ExamSessions
+                // Students only ever see published sessions.
+                var query = _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
+                    .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
                         && s.GradeId == gradeId
-                        && s.IsActive)
+                        && s.IsActive
+                        && s.Status == ExamSessionStatus.Published);
+
+                if (classId.HasValue)
+                {
+                    query = query.Where(s =>
+                        !s.ExamSessionClasses.Any()
+                        || s.ExamSessionClasses.Any(c => c.ClassId == classId.Value));
+                }
+
+                return query
                     .OrderBy(s => s.ExamDate)
                     .ThenBy(s => s.StartTime)
                     .ToList();
@@ -607,18 +624,36 @@ namespace ElevateED.Services
         {
             try
             {
-                var teacherSubjects = _context.TeacherSubjectAssignments
+                var teacherAssignments = _context.TeacherSubjectAssignments
                     .Where(t => t.TeacherId == teacherId && t.IsActive)
+                    .Select(t => new { t.SubjectId, t.ClassId })
+                    .ToList();
+
+                var teacherSubjects = teacherAssignments
                     .Select(t => t.SubjectId)
                     .Distinct()
                     .ToList();
 
+                var teacherClasses = teacherAssignments
+                    .Select(t => t.ClassId)
+                    .Distinct()
+                    .ToList();
+
+                // Teachers see published sessions for subjects/classes they teach, plus their
+                // own approved or published proposals (so they can prepare even before the
+                // principal publishes the whole cycle).
                 return _context.ExamSessions
                     .Include(s => s.Subject)
                     .Include(s => s.Grade)
+                    .Include(s => s.ExamSessionClasses.Select(c => c.Class))
                     .Where(s => s.ExamTimetableId == timetableId
-                        && teacherSubjects.Contains(s.SubjectId)
-                        && s.IsActive)
+                        && s.IsActive
+                        && ((s.CreatedByTeacherId == teacherId
+                                && (s.Status == ExamSessionStatus.Approved || s.Status == ExamSessionStatus.Published))
+                            || (s.Status == ExamSessionStatus.Published
+                                && teacherSubjects.Contains(s.SubjectId)
+                                && (!s.ExamSessionClasses.Any()
+                                    || s.ExamSessionClasses.Any(c => teacherClasses.Contains(c.ClassId))))))
                     .OrderBy(s => s.ExamDate)
                     .ThenBy(s => s.StartTime)
                     .ToList();

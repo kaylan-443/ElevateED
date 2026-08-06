@@ -66,6 +66,11 @@ namespace ElevateED.Controllers
                     return RedirectToAction("Dashboard", "Admin");
                 }
 
+                if (user.Role == UserRole.Principal)
+                {
+                    return RedirectToAction("Principal", "Analytics");
+                }
+
                 if (user.Role == UserRole.Teacher)
                 {
                     return RedirectToAction("Dashboard", "Teacher");
@@ -139,6 +144,10 @@ namespace ElevateED.Controllers
             if (user.Role == UserRole.Admin)
             {
                 return RedirectToAction("Dashboard", "Admin");
+            }
+            else if (user.Role == UserRole.Principal)
+            {
+                return RedirectToAction("Principal", "Analytics");
             }
             else if (user.Role == UserRole.Teacher)
             {

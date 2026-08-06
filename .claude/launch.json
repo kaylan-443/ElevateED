@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "elevateed",
+      "runtimeExecutable": "C:\\Program Files\\IIS Express\\iisexpress.exe",
+      "runtimeArgs": [
+        "/path:C:\\Users\\pofng\\source\\repos\\ElevateED\\ElevateED",
+        "/port:60564"
+      ],
+      "port": 60564
+    }
+  ]
+}

@@ -1654,15 +1654,11 @@ namespace ElevateED.Controllers
                 return View(new StudentExamTimetableViewModel());
             }
 
-            var sessions = _context.ExamSessions
-                .Include(s => s.Subject)
-                .Include(s => s.Grade)
-                .Where(s => s.ExamTimetableId == activeTimetable.Id
-                    && s.GradeId == grade.Id
-                    && s.IsActive)
-                .OrderBy(s => s.ExamDate)
-                .ThenBy(s => s.StartTime)
-                .ToList();
+            var sessions = _examTimetableService.GetExamSessionsForStudent(
+                activeTimetable.Id,
+                grade.Id,
+                student.StreamId,
+                student.ClassId);
 
             var viewModel = new StudentExamTimetableViewModel
             {
@@ -1679,6 +1675,10 @@ namespace ElevateED.Controllers
                 {
                     Id = s.Id,
                     SubjectName = s.Subject?.Name ?? "Unknown",
+                    GradeName = s.Grade?.Name ?? "Unknown",
+                    ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                        ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                        : student.ClassName,
                     PaperNumber = s.PaperNumber.ToString(),
                     ExamDate = s.ExamDate,
                     ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),
@@ -1700,6 +1700,10 @@ namespace ElevateED.Controllers
                     {
                         Id = s.Id,
                         SubjectName = s.Subject?.Name ?? "Unknown",
+                        GradeName = s.Grade?.Name ?? "Unknown",
+                        ClassNames = s.ExamSessionClasses != null && s.ExamSessionClasses.Any()
+                            ? string.Join(", ", s.ExamSessionClasses.Select(c => c.Class?.FullName).Where(c => !string.IsNullOrEmpty(c)))
+                            : student.ClassName,
                         PaperNumber = s.PaperNumber.ToString(),
                         ExamDate = s.ExamDate,
                         ExamDateDisplay = s.ExamDate.ToString("dd MMM yyyy"),

@@ -1,0 +1,219 @@
+@model ElevateED.ViewModels.CareerDetailViewModel
+@{
+    ViewBag.Title = "Career Detail - ElevateED";
+    var career = Model.Match.Career;
+    var match = Model.Match;
+
+    string verdictClass, verdictText, verdictIcon, verdictMsg;
+    switch (match.Verdict)
+    {
+        case ElevateED.Services.CareerMatchVerdict.Qualifies:
+            verdictClass = "v-qualify"; verdictText = "You currently qualify"; verdictIcon = "fa-check-circle";
+            verdictMsg = "Your APS and subject levels meet this career's entry requirements. Keep it up!"; break;
+        case ElevateED.Services.CareerMatchVerdict.Close:
+            verdictClass = "v-close"; verdictText = "Within reach"; verdictIcon = "fa-arrow-trend-up";
+            verdictMsg = "You take the right subjects but need to lift a mark or two — see the gaps below."; break;
+        case ElevateED.Services.CareerMatchVerdict.MissingSubjects:
+            verdictClass = "v-missing"; verdictText = "Missing a required subject"; verdictIcon = "fa-circle-xmark";
+            verdictMsg = "One or more compulsory subjects aren't on your report. Speak to your teacher about subject choices."; break;
+        default:
+            verdictClass = "v-nodata"; verdictText = "No published report card yet"; verdictIcon = "fa-circle-question";
+            verdictMsg = "Once your report card is published we'll show whether you qualify."; break;
+    }
+
+    Func<int, string> lvClass = lv => "lv" + lv;
+}
+
+<style>
+    .content { padding: 32px; max-width: 900px; }
+    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
+
+    .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+    .field-tag { font-size: 13px; color: var(--gray-500); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .detail-head h1 { font-size: 30px; color: var(--gray-900); }
+    .qual { font-size: 15px; color: var(--gray-600); margin-top: 4px; }
+
+    .bookmark-form { margin: 0; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-bookmark { background: var(--primary-soft); color: var(--primary-dark); }
+    .btn-bookmark.active { background: var(--primary); color: white; }
+
+    .verdict-banner { border-radius: 16px; padding: 20px 24px; margin: 20px 0; display: flex; align-items: center; gap: 16px; }
+    .verdict-banner i { font-size: 32px; }
+    .verdict-banner .vb-text h3 { font-size: 18px; margin-bottom: 4px; }
+    .verdict-banner .vb-text p { font-size: 14px; opacity: 0.9; }
+    .verdict-banner.v-qualify { background: #ecfdf5; color: #065f46; }
+    .verdict-banner.v-close { background: #fffbeb; color: #92400e; }
+    .verdict-banner.v-missing { background: #fef2f2; color: #991b1b; }
+    .verdict-banner.v-nodata { background: var(--gray-100); color: var(--gray-600); }
+
+    .panel { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid var(--gray-100); margin-bottom: 20px; }
+    .panel h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 16px; }
+    .panel p.desc { font-size: 15px; color: var(--gray-600); line-height: 1.6; }
+
+    .aps-row { display: flex; align-items: center; gap: 12px; font-size: 15px; margin-bottom: 8px; }
+    .aps-pill { padding: 4px 12px; border-radius: 8px; font-weight: 700; }
+    .aps-pill.ok { background: #ecfdf5; color: #065f46; }
+    .aps-pill.under { background: #fef2f2; color: #991b1b; }
+
+    table.reqs { width: 100%; border-collapse: collapse; }
+    table.reqs th, table.reqs td { text-align: left; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--gray-100); }
+    table.reqs th { color: var(--gray-500); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .level-badge { display: inline-block; min-width: 30px; text-align: center; padding: 3px 8px; border-radius: 8px; font-weight: 700; font-size: 13px; color: white; }
+    .lv7, .lv6 { background: #10b981; }
+    .lv5, .lv4 { background: #3b82f6; }
+    .lv3 { background: #f59e0b; }
+    .lv2, .lv1 { background: #ef4444; }
+    .req-met { color: var(--success); font-weight: 600; }
+    .req-miss { color: var(--danger); font-weight: 600; }
+    .req-opt { font-size: 11px; color: var(--gray-400); text-transform: uppercase; }
+    .study-list { font-size: 14px; color: var(--gray-600); line-height: 1.7; }
+</style>
+
+<div class="app-container">
+    @Html.Partial("_StudentSidebar")
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <a href="@Url.Action("Explore")" class="back-link"><i class="fas fa-arrow-left"></i> Back to explorer</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="detail-head">
+                <div>
+                    <div class="field-tag"><i class="fas fa-@(career.CareerField?.IconClass ?? "briefcase")"></i> @career.CareerField?.Name</div>
+                    <h1>@career.Name</h1>
+                    <div class="qual"><i class="fas fa-graduation-cap"></i> @career.TypicalQualification</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                    <form action="@Url.Action("ToggleBookmark")" method="post" class="bookmark-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="careerId" value="@career.Id" />
+                        <input type="hidden" name="returnUrl" value="@Request.Url.PathAndQuery" />
+                        <button type="submit" class="btn btn-bookmark @(Model.IsBookmarked ? "active" : "")">
+                            <i class="@(Model.IsBookmarked ? "fas" : "far") fa-bookmark"></i>
+                            @(Model.IsBookmarked ? "On your shortlist" : "Add to shortlist")
+                        </button>
+                    </form>
+                    <a href="@Url.Action("Setup", "StudentPlanner", new { goalCareerId = career.Id })" class="btn"
+                       style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #1e1b4b;">
+                        🎯 Plan my studies toward this
+                    </a>
+                    @if (match.Verdict == ElevateED.Services.CareerMatchVerdict.Close || match.Verdict == ElevateED.Services.CareerMatchVerdict.MissingSubjects)
+                    {
+                        <a href="@Url.Action("PrioritySubjects", new { id = career.Id })" class="btn"
+                           style="background: var(--gray-100); color: var(--gray-700);">
+                            <i class="fas fa-list-ol"></i> What should I work on first?
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <div class="verdict-banner @verdictClass">
+                <i class="fas @verdictIcon"></i>
+                <div class="vb-text">
+                    <h3>@verdictText</h3>
+                    <p>@verdictMsg</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(career.Description))
+            {
+                <div class="panel">
+                    <h3>About this career</h3>
+                    <p class="desc">@career.Description</p>
+                </div>
+            }
+
+            <div class="panel">
+                <h3>Admission Point Score</h3>
+                <div class="aps-row">
+                    <span>This career typically needs an APS of</span>
+                    <span class="aps-pill @(match.ApsMet ? "ok" : "under")">@career.MinimumAps</span>
+                </div>
+                @if (match.Verdict != ElevateED.Services.CareerMatchVerdict.NoData)
+                {
+                    <div class="aps-row">
+                        <span>Your current APS is</span>
+                        <span class="aps-pill @(match.ApsMet ? "ok" : "under")">@match.StudentAps</span>
+                        @if (match.ApsMet)
+                        {
+                            <span class="req-met"><i class="fas fa-check"></i> Met</span>
+                        }
+                        else
+                        {
+                            <span class="req-miss"><i class="fas fa-times"></i> @(career.MinimumAps - match.StudentAps) points short</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="panel">
+                <h3>Subject requirements</h3>
+                <table class="reqs">
+                    <thead>
+                        <tr><th>Subject</th><th>Required level</th><th>Your level</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in Model.AllRequirements)
+                        {
+                            int myLevel;
+                            bool taken = Model.Aps.LevelBySubjectId.TryGetValue(req.SubjectId, out myLevel);
+                            <tr>
+                                <td>
+                                    @(req.Subject?.Name)
+                                    @if (!req.IsCompulsory)
+                                    {
+                                        <span class="req-opt"> · recommended</span>
+                                    }
+                                </td>
+                                <td><span class="level-badge @lvClass(req.MinimumLevel)">@req.MinimumLevel</span></td>
+                                <td>
+                                    @if (!Model.Aps.HasReportCard)
+                                    {
+                                        <span style="color: var(--gray-400);">—</span>
+                                    }
+                                    else if (taken)
+                                    {
+                                        <span class="level-badge @lvClass(myLevel)">@myLevel</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--gray-400);">Not taken</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!Model.Aps.HasReportCard)
+                                    {
+                                        <span style="color: var(--gray-400);">—</span>
+                                    }
+                                    else if (!taken)
+                                    {
+                                        <span class="@(req.IsCompulsory ? "req-miss" : "")">@(req.IsCompulsory ? "Missing" : "Optional")</span>
+                                    }
+                                    else if (myLevel >= req.MinimumLevel)
+                                    {
+                                        <span class="req-met"><i class="fas fa-check"></i> Met</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="req-miss"><i class="fas fa-arrow-up"></i> Raise by @(req.MinimumLevel - myLevel)</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(career.WhereToStudy))
+            {
+                <div class="panel">
+                    <h3>Where to study</h3>
+                    <div class="study-list"><i class="fas fa-university"></i> @career.WhereToStudy</div>
+                </div>
+            }
+        </div>
+    </main>
+</div>

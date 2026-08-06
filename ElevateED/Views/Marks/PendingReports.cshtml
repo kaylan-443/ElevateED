@@ -1,0 +1,229 @@
+@model IEnumerable<ElevateED.ViewModels.PendingReportListItemViewModel>
+
+@{
+    ViewBag.Title = "Pending Reports";
+}
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+    }
+    .principal-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 24px;
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+    .page-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1e3c72;
+        margin: 0;
+    }
+    .page-header p { color: #888; font-size: 14px; margin: 4px 0 0; }
+
+    .btn-link-back {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-link-back:hover { background: #5a6268; color: white; text-decoration: none; }
+
+    .reports-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .reports-card table { width: 100%; border-collapse: collapse; }
+    .reports-card thead th {
+        background: #f7f8fb;
+        color: #555;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        padding: 14px 18px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .reports-card tbody td {
+        padding: 14px 18px;
+        font-size: 14px;
+        border-top: 1px solid #f1f1f1;
+        vertical-align: middle;
+    }
+    .reports-card tbody tr:hover { background: #fafbfd; }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .pill-pass { background: #e8f5e9; color: #2e7d32; }
+    .pill-fail { background: #ffebee; color: #c62828; }
+    .pill-promoted { background: #e3f2fd; color: #1565c0; }
+    .pill-progressed { background: #fff8e1; color: #b76e00; }
+    .pill-notpromoted { background: #ffebee; color: #c62828; }
+    .pill-pending { background: #eef0f3; color: #6c757d; }
+    .pill-yes { background: #e8f5e9; color: #2e7d32; }
+    .pill-no { background: #fff8e1; color: #b76e00; }
+
+    .row-actions { display: flex; gap: 8px; }
+    .btn-view {
+        background: white;
+        color: #1e3c72;
+        border: 1.5px solid #1e3c72;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .btn-view:hover { background: #1e3c72; color: white; text-decoration: none; }
+    .btn-publish {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-publish:hover { background: #1e7e34; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 14px;
+    }
+    .empty-state i { font-size: 48px; color: #cbd5dd; margin-bottom: 12px; }
+    .empty-state h4 { color: #333; margin-bottom: 6px; }
+    .empty-state p { color: #888; }
+
+    .alert-flash {
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 18px;
+    }
+    .alert-flash-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+    .nav-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+    .nav-links a {
+        background: white;
+        color: #1e3c72;
+        padding: 8px 16px;
+        border-radius: 18px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1.5px solid #e0e7ff;
+    }
+    .nav-links a.active { background: #1e3c72; color: white; }
+    .nav-links a:hover { text-decoration: none; }
+</style>
+
+<div class="principal-shell">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-file-check" style="color:#6366f1;margin-right:10px;"></i>Pending Reports</h1>
+            <p>Review generated report cards. Publish to make them visible to learners.</p>
+        </div>
+        <a href="@Url.Action("Principal","Analytics")" class="btn-link-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    </div>
+
+    <div class="nav-links">
+        <a href="@Url.Action("PendingReports")" class="active">Pending</a>
+        <a href="@Url.Action("ReportCards")">All Reports</a>
+        <a href="@Url.Action("PromotionRules")">Promotion Rules</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-flash alert-flash-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>Nothing pending</h4>
+            <p>All generated report cards have been published. New reports will appear here automatically when teachers finalize marks.</p>
+        </div>
+    }
+    else
+    {
+        <div class="reports-card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Learner</th>
+                            <th>Class</th>
+                            <th>Term</th>
+                            <th>Final</th>
+                            <th>Result</th>
+                            <th>Decision</th>
+                            <th>Class Teacher</th>
+                            <th>Comment</th>
+                            <th>Generated</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><strong>@r.StudentName</strong></td>
+                                <td>@r.ClassName</td>
+                                <td>@r.Term @r.AcademicYear</td>
+                                <td><strong>@r.FinalMark.ToString("0.0")%</strong></td>
+                                <td><span class="pill @(r.PassFailStatus == "Pass" ? "pill-pass" : "pill-fail")">@r.PassFailStatus</span></td>
+                                <td><span class="pill pill-@r.PromotionDecision.ToString().ToLower()">@r.PromotionDecision</span></td>
+                                <td>@(string.IsNullOrWhiteSpace(r.ClassTeacherName) ? "—" : r.ClassTeacherName)</td>
+                                <td><span class="pill @(r.HasClassTeacherComment ? "pill-yes" : "pill-no")">@(r.HasClassTeacherComment ? "Added" : "Missing")</span></td>
+                                <td style="color:#888;font-size:13px;">@r.GeneratedAt.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a href="@Url.Action("PrintReportCard", new { id = r.ReportId })" class="btn-view" target="_blank">View</a>
+                                        @using (Html.BeginForm("PublishReport", "Marks", new { id = r.ReportId }, FormMethod.Post, new { style = "display:inline;" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-publish"
+                                                    onclick="return confirm('Publish this report? The student will be able to see it.');">
+                                                <i class="fas fa-check"></i> Publish
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

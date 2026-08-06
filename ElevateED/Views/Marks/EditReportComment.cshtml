@@ -1,0 +1,177 @@
+@model ElevateED.ViewModels.ClassTeacherReportCommentViewModel
+
+@{
+    ViewBag.Title = "Class Teacher Comment";
+}
+
+<style>
+    .summary-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 22px 26px;
+        margin-bottom: 22px;
+    }
+    .summary-card h2 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary-blue);
+    }
+    .summary-card .meta { color: #777; font-size: 13px; }
+    .summary-card .meta span { margin-right: 14px; }
+    .summary-card .meta i { margin-right: 4px; color: #999; }
+
+    .summary-row {
+        display: flex;
+        gap: 16px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+    .summary-tile {
+        background: #f7f8fb;
+        border-radius: 10px;
+        padding: 14px 18px;
+        min-width: 140px;
+    }
+    .summary-tile .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: #888;
+        font-weight: 600;
+    }
+    .summary-tile .value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #222;
+        margin-top: 4px;
+    }
+    .summary-tile .value.small { font-size: 15px; }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .pill-pass { background: #e8f5e9; color: #2e7d32; }
+    .pill-fail { background: #ffebee; color: #c62828; }
+    .pill-promoted { background: #e3f2fd; color: #1565c0; }
+    .pill-progressed { background: #fff8e1; color: #b76e00; }
+    .pill-notpromoted { background: #ffebee; color: #c62828; }
+    .pill-pending { background: #eef0f3; color: #6c757d; }
+
+    .form-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        padding: 28px 30px;
+    }
+    .form-card h3 {
+        font-size: 18px;
+        color: var(--primary-blue);
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .form-card .sub { color: #888; font-size: 13px; margin-bottom: 18px; }
+
+    .ctrl-textarea {
+        width: 100%;
+        min-height: 160px;
+        padding: 12px 14px;
+        border: 1px solid #d8dde3;
+        border-radius: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+        resize: vertical;
+    }
+    .ctrl-textarea:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30,60,114,0.12);
+    }
+
+    .form-actions { margin-top: 18px; display: flex; gap: 12px; }
+    .btn-save {
+        background: var(--success-green);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-save:hover { background: #1e7e34; }
+    .btn-cancel {
+        background: white;
+        color: #555;
+        padding: 10px 22px;
+        border-radius: 25px;
+        font-weight: 600;
+        border: 1.5px solid #d8dde3;
+        text-decoration: none;
+        font-size: 14px;
+    }
+</style>
+
+<div class="dashboard-layout">
+    @Html.Partial("_TeacherSidebar", "marks-comments")
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h1><i class="fas fa-comment-dots" style="color:#6366f1;margin-right:10px;"></i>Class Teacher Comment</h1>
+                <p>Write a personal note for this learner before the principal publishes the report.</p>
+            </div>
+            <a href="@Url.Action("ClassTeacherReports")" class="btn-back"><i class="fas fa-arrow-left"></i> All Class Reports</a>
+        </div>
+
+        <div class="summary-card">
+            <h2>@Model.StudentName</h2>
+            <div class="meta">
+                <span><i class="fas fa-chalkboard"></i>@Model.ClassName</span>
+                <span><i class="fas fa-calendar"></i>@Model.Term @Model.AcademicYear</span>
+            </div>
+
+            <div class="summary-row">
+                <div class="summary-tile">
+                    <div class="label">Final mark</div>
+                    <div class="value">@Model.FinalMark.ToString("0.0")%</div>
+                </div>
+                <div class="summary-tile">
+                    <div class="label">Result</div>
+                    <div class="value small"><span class="pill @(Model.PassFailStatus == "Pass" ? "pill-pass" : "pill-fail")">@Model.PassFailStatus</span></div>
+                </div>
+                <div class="summary-tile">
+                    <div class="label">Promotion decision</div>
+                    <div class="value small"><span class="pill pill-@Model.PromotionDecision.ToString().ToLower()">@Model.PromotionDecision</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3>Your comment</h3>
+            <p class="sub">This appears on the report card the learner and parents will see. Keep it specific and constructive.</p>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ReportId)
+
+                @Html.TextAreaFor(m => m.ClassTeacherComment, new { @class = "ctrl-textarea", placeholder = "For example: Showed great improvement in mathematics this term. Encourage continued effort in reading comprehension." })
+                @Html.ValidationMessageFor(m => m.ClassTeacherComment, "", new { @class = "text-danger" })
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save"><i class="fas fa-check"></i> Save Comment</button>
+                    <a href="@Url.Action("ClassTeacherReports")" class="btn-cancel">Cancel</a>
+                </div>
+            }
+        </div>
+    </main>
+</div>

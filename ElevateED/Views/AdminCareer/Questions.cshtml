@@ -1,0 +1,133 @@
+@model List<ElevateED.Models.InterestQuestion>
+@{
+    ViewBag.Title = "Interest Quiz Questions";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var fields = ViewBag.Fields as List<ElevateED.Models.CareerField> ?? new List<ElevateED.Models.CareerField>();
+}
+
+@section SidebarNav { @Html.Partial("_AdminSidebar") }
+
+@section Styles {
+    <style>
+        .page-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+        .crumb { color: var(--gray-500); font-size: 13px; margin-bottom: 20px; }
+        .crumb a { color: var(--primary); text-decoration: none; }
+        .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+        .card { background: white; border-radius: 16px; padding: 22px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
+        .card h3 { font-size: 16px; color: var(--gray-800); margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin: 12px 0 6px; }
+        textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; font-family: inherit; }
+        textarea { min-height: 80px; resize: vertical; }
+        .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+        .check input { width: auto; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-light { background: var(--gray-100); color: var(--gray-700); }
+        .btn-danger { background: #fef2f2; color: #991b1b; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; font-size: 14px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+        th { color: var(--gray-500); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field-pill { padding: 3px 10px; border-radius: 50px; font-size: 12px; font-weight: 600; background: var(--primary-soft, #ede9fe); color: var(--primary-dark, #4338ca); white-space: nowrap; }
+        .badge-off { background: var(--gray-100); color: var(--gray-500); padding: 3px 10px; border-radius: 50px; font-size: 12px; }
+        .actions { display: flex; gap: 6px; }
+        .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        @@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+}
+
+<div class="page-title">Interest Quiz Questions</div>
+<div class="crumb"><a href="@Url.Action("Index")">Career Guidance</a> / Quiz Questions</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert-soft alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+}
+
+<div class="layout">
+    <div class="card">
+        <h3 id="formTitle">Add a question</h3>
+        <form action="@Url.Action("SaveQuestion")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="q_id" value="0" />
+            <label>Question text</label>
+            <textarea name="text" id="q_text" required placeholder="e.g. I enjoy solving problems with maths."></textarea>
+            <label>Points toward field</label>
+            <select name="careerFieldId" id="q_field" required>
+                <option value="">— Select field —</option>
+                @foreach (var f in fields)
+                {
+                    <option value="@f.Id">@f.Name</option>
+                }
+            </select>
+            <div class="check">
+                <input type="checkbox" name="isActive" id="q_active" value="true" checked />
+                <label for="q_active" style="margin:0;">Active (included in quiz)</label>
+            </div>
+            <div style="margin-top:18px; display:flex; gap:8px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="btn btn-light" onclick="resetForm()">Clear</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All questions (@Model.Count)</h3>
+        <table>
+            <thead>
+                <tr><th>Question</th><th>Field</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:32px;">No questions yet.</td></tr>
+                }
+                @foreach (var q in Model)
+                {
+                    <tr>
+                        <td>@q.Text</td>
+                        <td><span class="field-pill">@(q.CareerField?.Name)</span></td>
+                        <td>@(q.IsActive ? Html.Raw("<span class='field-pill' style='background:#ecfdf5;color:#065f46;'>Active</span>") : Html.Raw("<span class='badge-off'>Off</span>"))</td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="editQuestion(@q.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(q.Text))', @q.CareerFieldId, @(q.IsActive ? "true" : "false"))">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form action="@Url.Action("DeleteQuestion")" method="post" onsubmit="return confirm('Delete this question?');" style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@q.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function editQuestion(id, text, fieldId, active) {
+            document.getElementById('q_id').value = id;
+            document.getElementById('q_text').value = text;
+            document.getElementById('q_field').value = fieldId;
+            document.getElementById('q_active').checked = active;
+            document.getElementById('formTitle').textContent = 'Edit question';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function resetForm() {
+            document.getElementById('q_id').value = 0;
+            document.getElementById('q_text').value = '';
+            document.getElementById('q_field').value = '';
+            document.getElementById('q_active').checked = true;
+            document.getElementById('formTitle').textContent = 'Add a question';
+        }
+    </script>
+}
