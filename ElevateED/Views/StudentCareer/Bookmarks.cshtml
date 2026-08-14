@@ -52,8 +52,7 @@
 
             @if (Model.Matches.Any())
             {
-                using (Html.BeginForm("Compare", "StudentCareer", FormMethod.Get, new { id = "compareForm" }))
-                {
+                <form action="@Url.Action("Compare", "StudentCareer")" method="get" id="compareForm">
                     <div class="cards-grid">
                         @foreach (var match in Model.Matches)
                         {
@@ -66,7 +65,7 @@
                         }
                     </div>
 
-                    if (Model.Matches.Count >= 2)
+                    @if (Model.Matches.Count >= 2)
                     {
                         <div class="compare-bar">
                             <span class="msg" id="compareMsg">Pick 2 or 3 careers to compare them side by side.</span>
@@ -75,7 +74,7 @@
                             </button>
                         </div>
                     }
-                }
+                </form>
             }
             else
             {

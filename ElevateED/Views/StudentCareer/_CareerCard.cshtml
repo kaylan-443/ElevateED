@@ -19,6 +19,15 @@
     }
 }
 
+@{
+    var bookmarkFormId = "bf-" + career.Id;
+}
+<form id="@bookmarkFormId" action="@Url.Action("ToggleBookmark", "StudentCareer")" method="post" style="display:none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="careerId" value="@career.Id" />
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+</form>
+
 <div class="career-card @verdictClass">
     <div class="cc-top">
         <div class="cc-field">
@@ -30,14 +39,9 @@
             }
             <i class="fas fa-@(career.CareerField?.IconClass ?? "briefcase")"></i> @(career.CareerField?.Name)
         </div>
-        <form action="@Url.Action("ToggleBookmark", "StudentCareer")" method="post" class="bookmark-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="careerId" value="@career.Id" />
-            <input type="hidden" name="returnUrl" value="@returnUrl" />
-            <button type="submit" class="bookmark-btn @(bookmarked ? "active" : "")" title="@(bookmarked ? "Remove from shortlist" : "Add to shortlist")">
-                <i class="@(bookmarked ? "fas" : "far") fa-bookmark"></i>
-            </button>
-        </form>
+        <button type="submit" form="@bookmarkFormId" class="bookmark-btn @(bookmarked ? "active" : "")" title="@(bookmarked ? "Remove from shortlist" : "Add to shortlist")">
+            <i class="@(bookmarked ? "fas" : "far") fa-bookmark"></i>
+        </button>
     </div>
 
     <a href="@Url.Action("Detail", "StudentCareer", new { id = career.Id })" class="cc-title">@career.Name</a>
