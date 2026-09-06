@@ -455,6 +455,10 @@
     <Compile Include="Migrations\202605121746409_AddAIStudyWorkspace.Designer.cs">
       <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202609061703157_AddVirtualLabSystem.cs" />
+    <Compile Include="Migrations\202609061703157_AddVirtualLabSystem.Designer.cs">
+      <DependentUpon>202609061703157_AddVirtualLabSystem.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AIStudySession.cs" />
     <Compile Include="Models\Announcement.cs" />
@@ -565,9 +569,11 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
+    <Compile Include="Controllers\VirtualLabController.cs" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Compile Include="Models\VirtualLabModels.cs" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -577,6 +583,7 @@
     <None Include="Properties\PublishProfiles\ElevateED - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\ElevateED20260415131603 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\ElevateED20260506233525 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\ElevateED20260806184649 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
@@ -589,6 +596,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Compile Include="ViewModels\VirtualLabViewModels.cs" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -735,6 +743,15 @@
     <Content Include="Views\Podcast\Index.cshtml" />
     <Content Include="Views\AIStudy\Index.cshtml" />
     <Content Include="Views\AIStudy\Workspace.cshtml" />
+    <Content Include="Views\VirtualLab\AssignExperiment.cshtml" />
+    <Content Include="Views\VirtualLab\BiologyLab.cshtml" />
+    <Content Include="Views\VirtualLab\ChemistryLab.cshtml" />
+    <Content Include="Views\VirtualLab\CreateExperiment.cshtml" />
+    <Content Include="Views\VirtualLab\GradeSubmissions.cshtml" />
+    <Content Include="Views\VirtualLab\Index.cshtml" />
+    <Content Include="Views\VirtualLab\MyResults.cshtml" />
+    <Content Include="Views\VirtualLab\PhysicsLab.cshtml" />
+    <Content Include="Views\VirtualLab\TeacherDashboard.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -814,6 +831,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202605121746409_AddAIStudyWorkspace.resx">
       <DependentUpon>202605121746409_AddAIStudyWorkspace.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202609061703157_AddVirtualLabSystem.resx">
+      <DependentUpon>202609061703157_AddVirtualLabSystem.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

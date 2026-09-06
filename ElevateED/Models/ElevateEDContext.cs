@@ -4,7 +4,7 @@ namespace ElevateED.Models
 {
     public class ElevateEDContext : DbContext
     {
-        public ElevateEDContext() : base("ElevateEDConnection")
+        public ElevateEDContext() : base("ElevateEDContext")
         {
             // Initializer is configured once in DatabaseConfig.Initialize() to apply
             // MigrateDatabaseToLatestVersion. Setting it to null here used to wipe that
@@ -89,7 +89,10 @@ namespace ElevateED.Models
         public DbSet<StudyPlan> StudyPlans { get; set; }
         public DbSet<StudyAvailabilitySlot> StudyAvailabilitySlots { get; set; }
         public DbSet<StudySession> StudySessions { get; set; }
-
+        public DbSet<VirtualLabExperiment> VirtualLabExperiments { get; set; }
+        public DbSet<VirtualLabAssignment> VirtualLabAssignments { get; set; }
+        public DbSet<VirtualLabResult> VirtualLabResults { get; set; }
+        public DbSet<VirtualLabSession> VirtualLabSessions { get; set; }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             // Extra Classes configurations
@@ -447,6 +450,37 @@ namespace ElevateED.Models
                 .WillCascadeOnDelete(false);
 
             base.OnModelCreating(modelBuilder);
+
+
+            modelBuilder.Entity<VirtualLabAssignment>()
+.HasRequired(a => a.Experiment)
+.WithMany(e => e.Assignments)
+.HasForeignKey(a => a.ExperimentId)
+.WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<VirtualLabAssignment>()
+                .HasRequired(a => a.Class)
+                .WithMany()
+                .HasForeignKey(a => a.ClassId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<VirtualLabAssignment>()
+                .HasRequired(a => a.Teacher)
+                .WithMany()
+                .HasForeignKey(a => a.AssignedBy)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<VirtualLabResult>()
+                .HasRequired(r => r.Assignment)
+                .WithMany(a => a.Results)
+                .HasForeignKey(r => r.AssignmentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<VirtualLabResult>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
         }
     }
 }

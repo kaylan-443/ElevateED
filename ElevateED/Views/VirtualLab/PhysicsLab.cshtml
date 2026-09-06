@@ -1,0 +1,1197 @@
+﻿@model dynamic
+@{
+    ViewBag.Title = "Physics Lab - " + ViewBag.Experiment.Title;
+    var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title - ElevateED</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+        }
+
+        #taskPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            pointer-events: auto;
+            font-size: 13px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+            #taskPanel h4 {
+                margin: 0 0 10px 0;
+                color: #3498db;
+            }
+
+        .instruction-tip {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: #ccc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .circuit-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+        }
+
+            .circuit-panel.active {
+                display: block;
+            }
+
+        .circuit-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .circuit-component {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+            .circuit-component:hover {
+                transform: scale(1.05);
+                background: #3498db;
+            }
+
+            .circuit-component i {
+                font-size: 24px;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+        .circuit-area {
+            background: #1a1a2e;
+            border: 2px solid #3498db;
+            border-radius: 12px;
+            min-height: 150px;
+            margin: 15px 0;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .placed-component {
+            background: #2ecc71;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+            .placed-component i {
+                font-size: 16px;
+            }
+
+        .magnet-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 450px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+        }
+
+            .magnet-panel.active {
+                display: block;
+            }
+
+        .prism-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+        }
+
+            .prism-panel.active {
+                display: block;
+            }
+
+        .mechanics-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+        }
+
+            .mechanics-panel.active {
+                display: block;
+            }
+
+        canvas {
+            border-radius: 10px;
+            margin: 10px auto;
+        }
+
+        .value-display {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+        }
+
+        .slider {
+            width: 200px;
+            margin: 10px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .btn-lab {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .btn-lab:hover {
+                transform: scale(1.05);
+            }
+
+        .observation-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            width: 280px;
+            z-index: 100;
+        }
+
+            .observation-panel textarea {
+                width: 100%;
+                padding: 8px;
+                margin-top: 5px;
+                border-radius: 4px;
+                border: none;
+            }
+
+        .task {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+            .task.completed {
+                background: rgba(46, 204, 113, 0.2);
+            }
+
+                .task.completed i {
+                    color: #2ecc71;
+                }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <strong>@experiment.Title</strong> | Physics Lab
+    </div>
+
+    <div class="instruction-tip">
+        🖱️ Mouse: Drag to rotate | Right-click + Drag to pan | Scroll to zoom
+    </div>
+
+    <div id="taskPanel">
+        <h4><i class="fas fa-microchip"></i> Physics Lab Tasks</h4>
+        <div id="tasksList">
+            <div class="task" id="task-circuit">
+                <i class="fas fa-circle-notch"></i> Build and test electrical circuit
+            </div>
+            <div class="task" id="task-magnet">
+                <i class="fas fa-circle-notch"></i> Experiment with magnets
+            </div>
+            <div class="task" id="task-prism">
+                <i class="fas fa-circle-notch"></i> Study light refraction using prism
+            </div>
+            <div class="task" id="task-mechanics">
+                <i class="fas fa-circle-notch"></i> Test mechanical systems
+            </div>
+        </div>
+        <div id="taskResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+    </div>
+
+    <!-- Circuit Panel -->
+    <div id="circuitPanel" class="circuit-panel">
+        <h4><i class="fas fa-microchip"></i> Circuit Builder</h4>
+        <div class="circuit-grid" id="componentList">
+            <div class="circuit-component" data-type="battery" data-voltage="9">
+                <i class="fas fa-battery-full"></i>
+                Battery<br><small>9V</small>
+            </div>
+            <div class="circuit-component" data-type="bulb" data-resistance="18">
+                <i class="fas fa-lightbulb"></i>
+                Bulb<br><small>18Ω</small>
+            </div>
+            <div class="circuit-component" data-type="wire">
+                <i class="fas fa-code-branch"></i>
+                Wire
+            </div>
+            <div class="circuit-component" data-type="resistor" data-resistance="100">
+                <i class="fas fa-microchip"></i>
+                Resistor<br><small>100Ω</small>
+            </div>
+            <div class="circuit-component" data-type="switch">
+                <i class="fas fa-toggle-on"></i>
+                Switch
+            </div>
+            <div class="circuit-component" data-type="led" data-voltage="2">
+                <i class="fas fa-lightbulb"></i>
+                LED<br><small>2V</small>
+            </div>
+        </div>
+        <div class="circuit-area" id="circuitArea"></div>
+        <div class="value-display" id="circuitValues">
+            Voltage: 0V | Current: 0A | Power: 0W
+        </div>
+        <button class="btn-lab" onclick="toggleSwitch()">Toggle Switch</button>
+        <button class="btn-lab" onclick="calculateCircuit()">Calculate</button>
+        <button class="btn-lab" onclick="closeCircuitPanel()" style="background: #f44336;">Close</button>
+    </div>
+
+    <!-- Magnet Panel -->
+    <div id="magnetPanel" class="magnet-panel">
+        <h4><i class="fas fa-magnet"></i> Magnetic Field Experiment</h4>
+        <canvas id="magnetCanvas" width="400" height="300"></canvas>
+        <div class="value-display" id="magnetValues">
+            Field Strength: 0.0 T | Polarity: N-S
+        </div>
+        <div>
+            <label>Distance between magnets: </label>
+            <input type="range" id="magnetDistance" min="20" max="200" value="100" class="slider">
+            <span id="distanceValue">100px</span>
+        </div>
+        <div>
+            <button class="btn-lab" onclick="flipPoles()">Flip Polarity</button>
+            <button class="btn-lab" onclick="addIronFilings()">Add Iron Filings</button>
+            <button class="btn-lab" onclick="measureFieldStrength()">Measure Field Strength</button>
+            <button class="btn-lab" onclick="closeMagnetPanel()" style="background: #f44336;">Close</button>
+        </div>
+    </div>
+
+    <!-- Prism Panel -->
+    <div id="prismPanel" class="prism-panel">
+        <h4><i class="fas fa-sun"></i> Light Refraction through Prism</h4>
+        <canvas id="prismCanvas" width="450" height="300"></canvas>
+        <div class="value-display" id="prismValues">
+            Angle of incidence: 0° | Angle of refraction: 0° | Deviation: 0°
+        </div>
+        <div>
+            <label>Angle of incidence: </label>
+            <input type="range" id="incidenceAngle" min="0" max="90" value="45" class="slider">
+            <span id="angleValue">45°</span>
+        </div>
+        <div>
+            <label>Prism Material: </label>
+            <select id="prismMaterial" class="btn-lab" style="background: #2c3e50;">
+                <option value="glass">Glass (n=1.52)</option>
+                <option value="diamond">Diamond (n=2.42)</option>
+                <option value="water">Water (n=1.33)</option>
+                <option value="acrylic">Acrylic (n=1.49)</option>
+            </select>
+        </div>
+        <button class="btn-lab" onclick="updateRefraction()">Update</button>
+        <button class="btn-lab" onclick="closePrismPanel()" style="background: #f44336;">Close</button>
+    </div>
+
+    <!-- Mechanics Panel -->
+    <div id="mechanicsPanel" class="mechanics-panel">
+        <h4><i class="fas fa-cogs"></i> Mechanical Systems</h4>
+        <canvas id="mechanicsCanvas" width="450" height="300"></canvas>
+        <div class="value-display" id="mechanicsValues">
+            Mass: 0 kg | Force: 0 N | Acceleration: 0 m/s² | Work: 0 J
+        </div>
+        <div>
+            <label>Mass (kg): </label>
+            <input type="range" id="massSlider" min="1" max="100" value="50" class="slider">
+            <span id="massValue">50 kg</span>
+        </div>
+        <div>
+            <label>Applied Force (N): </label>
+            <input type="range" id="forceSlider" min="0" max="500" value="100" class="slider">
+            <span id="forceValue">100 N</span>
+        </div>
+        <div>
+            <label>Distance (m): </label>
+            <input type="range" id="distanceSlider" min="0" max="10" value="5" class="slider">
+            <span id="distanceValueM">5 m</span>
+        </div>
+        <button class="btn-lab" onclick="calculateMechanics()">Calculate</button>
+        <button class="btn-lab" onclick="simulateMotion()">Simulate Motion</button>
+        <button class="btn-lab" onclick="closeMechanicsPanel()" style="background: #f44336;">Close</button>
+    </div>
+
+    <div class="observation-panel">
+        <h4><i class="fas fa-pen"></i> Observations</h4>
+        <textarea id="observations" rows="3" placeholder="Record your physics observations here..."></textarea>
+        <button class="btn-lab" style="margin-top: 5px; padding: 5px 10px;" onclick="saveObservations()">Save Observations</button>
+    </div>
+
+    <div id="controls">
+        <button class="btn-lab btn-save" onclick="saveProgress()">💾 Save Progress</button>
+        <button class="btn-lab btn-submit" onclick="submitLab()">📤 Submit Lab</button>
+        <button class="btn-lab btn-exit" onclick="exitLab()">🚪 Exit Lab</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const experimentId = @ViewBag.Experiment.Id;
+        const resultId = @ViewBag.ResultId;
+
+        let scene, camera, renderer, labelRenderer, controls;
+        let equipmentGroup = [];
+
+        let tasks = {
+            circuit: false,
+            magnet: false,
+            prism: false,
+            mechanics: false
+        };
+
+        // Circuit variables
+        let circuitComponents = [];
+        let isSwitchOn = false;
+        let totalVoltage = 0;
+        let totalResistance = 0;
+        let current = 0;
+
+        // Magnet variables
+        let magnetCanvas, magnetCtx;
+        let fieldStrength = 0;
+        let poleFlipped = false;
+
+        // Prism variables
+        let prismCanvas, prismCtx;
+        let refractiveIndex = 1.52;
+
+        // Mechanics variables
+        let mechanicsCanvas, mechanicsCtx;
+        let objectX = 100;
+        let animating = false;
+        let animationId = null;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 4, 8);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0px';
+            labelRenderer.domElement.style.left = '0px';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            document.body.appendChild(labelRenderer.domElement);
+
+            // FIXED: OrbitControls with full functionality
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.5;
+            controls.panSpeed = 1.0;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+            controls.target.set(0, 0, 0);
+
+            setupLighting();
+            createLabEnvironment();
+            createEquipment();
+            animate();
+
+            // Initialize canvas contexts
+            magnetCanvas = document.getElementById('magnetCanvas');
+            magnetCtx = magnetCanvas.getContext('2d');
+            drawMagnetField();
+
+            prismCanvas = document.getElementById('prismCanvas');
+            prismCtx = prismCanvas.getContext('2d');
+            drawPrism();
+
+            mechanicsCanvas = document.getElementById('mechanicsCanvas');
+            mechanicsCtx = mechanicsCanvas.getContext('2d');
+            drawMechanics();
+
+            setupSliders();
+        }
+
+        function setupSliders() {
+            const magnetDistance = document.getElementById('magnetDistance');
+            if (magnetDistance) {
+                magnetDistance.addEventListener('input', function() {
+                    document.getElementById('distanceValue').innerText = this.value + 'px';
+                    drawMagnetField();
+                    calculateFieldStrength();
+                });
+            }
+
+            const incidenceAngle = document.getElementById('incidenceAngle');
+            if (incidenceAngle) {
+                incidenceAngle.addEventListener('input', function() {
+                    document.getElementById('angleValue').innerText = this.value + '°';
+                    updateRefraction();
+                });
+            }
+
+            const massSlider = document.getElementById('massSlider');
+            if (massSlider) {
+                massSlider.addEventListener('input', function() {
+                    document.getElementById('massValue').innerText = this.value + ' kg';
+                    calculateMechanics();
+                });
+            }
+
+            const forceSlider = document.getElementById('forceSlider');
+            if (forceSlider) {
+                forceSlider.addEventListener('input', function() {
+                    document.getElementById('forceValue').innerText = this.value + ' N';
+                    calculateMechanics();
+                });
+            }
+
+            const distanceSlider = document.getElementById('distanceSlider');
+            if (distanceSlider) {
+                distanceSlider.addEventListener('input', function() {
+                    document.getElementById('distanceValueM').innerText = this.value + ' m';
+                    calculateMechanics();
+                });
+            }
+        }
+
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            const fillLight = new THREE.PointLight(0x4466cc, 0.5);
+            fillLight.position.set(0, 2, 3);
+            scene.add(fillLight);
+
+            const backLight = new THREE.PointLight(0xffaa66, 0.3);
+            backLight.position.set(0, 1, -3);
+            scene.add(backLight);
+        }
+
+        function createLabEnvironment() {
+            const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 4),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 }));
+            table.position.set(0, -0.4, 0);
+            table.receiveShadow = true;
+            scene.add(table);
+
+            // Mechanical elements for physics lab
+            const gearGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 24);
+            for (let i = -2; i <= 2; i+=1.5) {
+                const gear = new THREE.Mesh(gearGeometry, new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.8 }));
+                gear.position.set(i, 0.1, 2);
+                gear.rotation.z = Math.PI / 4;
+                gear.castShadow = true;
+                scene.add(gear);
+            }
+        }
+
+        function createEquipment() {
+            const equipment = [
+                { name: 'Circuit Board', type: 'circuit', x: -1.5, y: 0.1, z: 1, action: 'openCircuit' },
+                { name: 'Magnets', type: 'magnet', x: 0, y: 0.1, z: 1.2, action: 'openMagnet' },
+                { name: 'Prism', type: 'prism', x: 1.5, y: 0.1, z: 1, action: 'openPrism' },
+                { name: 'Mechanical System', type: 'mechanics', x: 2.5, y: 0.5, z: -1.5, action: 'openMechanics' }
+            ];
+
+            equipment.forEach(item => {
+                let mesh;
+                if (item.type === 'circuit') {
+                    const board = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.8),
+                        new THREE.MeshStandardMaterial({ color: 0x2ecc71, metalness: 0.3 }));
+                    board.position.set(item.x, item.y, item.z);
+                    mesh = board;
+                } else if (item.type === 'magnet') {
+                    const magnet = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.4),
+                        new THREE.MeshStandardMaterial({ color: 0xCC3333, metalness: 0.5 }));
+                    magnet.position.set(item.x, item.y, item.z);
+                    mesh = magnet;
+                } else if (item.type === 'prism') {
+                    const prism = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.6, 3),
+                        new THREE.MeshPhysicalMaterial({ color: 0x88aaff, transparent: true, opacity: 0.7 }));
+                    prism.position.set(item.x, item.y, item.z);
+                    prism.rotation.y = Math.PI / 6;
+                    mesh = prism;
+                } else {
+                    const mech = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.5),
+                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
+                    mech.position.set(item.x, item.y, item.z);
+                    mesh = mech;
+                }
+
+                mesh.userData = { name: item.name, action: item.action, interactable: true };
+                mesh.castShadow = true;
+                scene.add(mesh);
+
+                const div = document.createElement('div');
+                div.textContent = item.name;
+                div.style.cssText = 'color:white;background:rgba(0,0,0,0.6);padding:2px 8px;border-radius:4px;font-size:12px;pointer-events:none';
+                const label = new CSS2DObject(div);
+                label.position.set(item.x, item.y + 0.5, item.z);
+                scene.add(label);
+
+                equipmentGroup.push({ mesh, label, data: item });
+            });
+        }
+
+        // ============ CIRCUIT BUILDER ============
+        function openCircuit() {
+            document.getElementById('circuitPanel').classList.add('active');
+            updateCircuitDisplay();
+        }
+
+        function closeCircuitPanel() {
+            document.getElementById('circuitPanel').classList.remove('active');
+        }
+
+        function addComponentToCircuit(type, voltage, resistance) {
+            circuitComponents.push({ type, voltage: voltage || 0, resistance: resistance || 0 });
+            updateCircuitDisplay();
+            calculateCircuit();
+        }
+
+        function removeComponent(index) {
+            circuitComponents.splice(index, 1);
+            updateCircuitDisplay();
+            calculateCircuit();
+        }
+
+        function updateCircuitDisplay() {
+            const area = document.getElementById('circuitArea');
+            area.innerHTML = circuitComponents.map((comp, i) => `
+                <div class="placed-component" onclick="removeComponent(${i})">
+                    <i class="fas ${comp.type === 'battery' ? 'fa-battery-full' : comp.type === 'bulb' ? 'fa-lightbulb' : comp.type === 'resistor' ? 'fa-microchip' : 'fa-code-branch'}"></i>
+                    ${comp.type.toUpperCase()}
+                    <i class="fas fa-times-circle" style="color: #f44336;"></i>
+                </div>
+            `).join('');
+
+            if (circuitComponents.length === 0) {
+                area.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Click on components above to add them to your circuit</div>';
+            }
+        }
+
+        function calculateCircuit() {
+            totalVoltage = 0;
+            totalResistance = 0;
+
+            circuitComponents.forEach(comp => {
+                if (comp.type === 'battery') totalVoltage += comp.voltage;
+                if (comp.type === 'bulb') totalResistance += comp.resistance;
+                if (comp.type === 'resistor') totalResistance += comp.resistance;
+                if (comp.type === 'led') totalResistance += 10;
+            });
+
+            const wireCount = circuitComponents.filter(c => c.type === 'wire').length;
+            totalResistance += wireCount * 0.1;
+
+            current = isSwitchOn && totalResistance > 0 ? totalVoltage / totalResistance : 0;
+            const power = current * totalVoltage;
+
+            document.getElementById('circuitValues').innerHTML = `
+                Voltage: ${totalVoltage.toFixed(1)}V |
+                Current: ${current.toFixed(3)}A |
+                Power: ${power.toFixed(2)}W
+            `;
+
+            const hasBattery = circuitComponents.some(c => c.type === 'battery');
+            const hasBulb = circuitComponents.some(c => c.type === 'bulb');
+
+            if (hasBattery && hasBulb && circuitComponents.length >= 3 && current > 0) {
+                updateTask('circuit');
+                saveInteraction(`Circuit built successfully: ${totalVoltage}V, ${current.toFixed(3)}A`);
+
+                // Visual feedback
+                const circuitObj = equipmentGroup.find(e => e.data.name === 'Circuit Board');
+                if (circuitObj && circuitObj.mesh) {
+                    circuitObj.mesh.material.emissiveIntensity = 0.5;
+                    setTimeout(() => {
+                        if (circuitObj.mesh) circuitObj.mesh.material.emissiveIntensity = 0;
+                    }, 1000);
+                }
+            }
+        }
+
+        function toggleSwitch() {
+            isSwitchOn = !isSwitchOn;
+            calculateCircuit();
+            saveInteraction(`Circuit switch turned ${isSwitchOn ? 'ON' : 'OFF'}`);
+
+            // Show visual feedback
+            showResultMessage("Circuit Switch", `Switch turned ${isSwitchOn ? 'ON' : 'OFF'}`);
+        }
+
+        // ============ MAGNET EXPERIMENT ============
+        function openMagnet() {
+            document.getElementById('magnetPanel').classList.add('active');
+            drawMagnetField();
+            updateTask('magnet');
+        }
+
+        function closeMagnetPanel() {
+            document.getElementById('magnetPanel').classList.remove('active');
+        }
+
+        function drawMagnetField() {
+            const canvas = magnetCanvas;
+            const ctx = magnetCtx;
+            const distance = parseInt(document.getElementById('magnetDistance').value);
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const magnetY = canvas.height / 2;
+            const northX = canvas.width / 2 - distance / 2;
+            const southX = canvas.width / 2 + distance / 2;
+
+            // Draw field lines
+            ctx.beginPath();
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+
+            for (let i = 0; i < 8; i++) {
+                const offset = (i - 4) * 15;
+                ctx.beginPath();
+                if (!poleFlipped) {
+                    ctx.moveTo(northX, magnetY + offset);
+                    ctx.quadraticCurveTo(canvas.width / 2, magnetY + offset * 0.5, southX, magnetY + offset);
+                } else {
+                    ctx.moveTo(southX, magnetY + offset);
+                    ctx.quadraticCurveTo(canvas.width / 2, magnetY + offset * 0.5, northX, magnetY + offset);
+                }
+                ctx.stroke();
+            }
+
+            // Draw magnets
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(northX - 30, magnetY - 40, 30, 80);
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(southX, magnetY - 40, 30, 80);
+
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText('N', northX - 20, magnetY);
+            ctx.fillText('S', southX + 40, magnetY);
+
+            const strength = calculateFieldStrength();
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(10, canvas.height - 30, Math.min(strength * 2, 200), 10);
+            ctx.fillStyle = 'white';
+            ctx.fillText(`Field Strength: ${strength.toFixed(2)} T`, 10, canvas.height - 35);
+        }
+
+        function calculateFieldStrength() {
+            const distance = parseInt(document.getElementById('magnetDistance').value);
+            fieldStrength = 100 / distance;
+            document.getElementById('magnetValues').innerHTML = `
+                Field Strength: ${fieldStrength.toFixed(3)} T |
+                Polarity: ${poleFlipped ? 'S-N' : 'N-S'}
+            `;
+            return fieldStrength;
+        }
+
+        function flipPoles() {
+            poleFlipped = !poleFlipped;
+            drawMagnetField();
+            saveInteraction(`Magnet polarity flipped to ${poleFlipped ? 'S-N' : 'N-S'}`);
+            showResultMessage("Magnet Polarity", `Polarity: ${poleFlipped ? 'South-North' : 'North-South'}`);
+        }
+
+        function addIronFilings() {
+            const canvas = magnetCanvas;
+            const ctx = magnetCtx;
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillStyle = '#aaa';
+                ctx.fillRect(x, y, 2, 2);
+            }
+            saveInteraction('Iron filings added to visualize magnetic field lines');
+            showResultMessage("Iron Filings", "Iron filings added - magnetic field lines are now visible!");
+        }
+
+        function measureFieldStrength() {
+            const strength = calculateFieldStrength();
+            showResultMessage("Magnetic Field Measurement", `Field strength: ${strength.toFixed(3)} Tesla`);
+            saveInteraction(`Measured field strength: ${strength.toFixed(3)} T`);
+        }
+
+        // ============ PRISM EXPERIMENT ============
+        function openPrism() {
+            document.getElementById('prismPanel').classList.add('active');
+            drawPrism();
+            updateTask('prism');
+        }
+
+        function closePrismPanel() {
+            document.getElementById('prismPanel').classList.remove('active');
+        }
+
+        function updateRefraction() {
+            const material = document.getElementById('prismMaterial').value;
+            const refractiveIndexes = {
+                glass: 1.52,
+                diamond: 2.42,
+                water: 1.33,
+                acrylic: 1.49
+            };
+            refractiveIndex = refractiveIndexes[material];
+            drawPrism();
+            saveInteraction(`Prism material changed to ${material} (n=${refractiveIndex})`);
+        }
+
+        function drawPrism() {
+            const canvas = prismCanvas;
+            const ctx = prismCtx;
+            const angle = parseInt(document.getElementById('incidenceAngle').value);
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw prism (triangle)
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 80);
+            ctx.lineTo(canvas.width / 2 - 80, 250);
+            ctx.lineTo(canvas.width / 2 + 80, 250);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(136, 170, 255, 0.5)';
+            ctx.fill();
+            ctx.strokeStyle = '#88aaff';
+            ctx.stroke();
+
+            // Calculate refraction
+            const radAngle = angle * Math.PI / 180;
+            const sinTheta2 = Math.sin(radAngle) / refractiveIndex;
+            const refractionAngle = Math.asin(Math.min(1, sinTheta2)) * 180 / Math.PI;
+            const deviation = angle - refractionAngle;
+
+            // Draw incident ray
+            const startX = canvas.width / 2 - 150;
+            const startY = 80 + (angle / 90) * 100;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(canvas.width / 2, 80);
+            ctx.strokeStyle = '#ff6600';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw refracted ray
+            const endX = canvas.width / 2 + 100;
+            const endY = 250 - (refractionAngle / 90) * 100;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 80);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = '#33ff33';
+            ctx.stroke();
+
+            // Draw spectrum
+            const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
+            for (let i = 0; i < colors.length; i++) {
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX + 20 + i * 5, endY + 20 + i * 3);
+                ctx.strokeStyle = colors[i];
+                ctx.stroke();
+            }
+
+            document.getElementById('prismValues').innerHTML = `
+                Angle of incidence: ${angle}° |
+                Angle of refraction: ${refractionAngle.toFixed(1)}° |
+                Deviation: ${deviation.toFixed(1)}°
+            `;
+        }
+
+        // ============ MECHANICS SYSTEM ============
+        function openMechanics() {
+            document.getElementById('mechanicsPanel').classList.add('active');
+            drawMechanics();
+            updateTask('mechanics');
+        }
+
+        function closeMechanicsPanel() {
+            document.getElementById('mechanicsPanel').classList.remove('active');
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animating = false;
+            }
+        }
+
+        function drawMechanics() {
+            const canvas = mechanicsCanvas;
+            const ctx = mechanicsCtx;
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ground
+            ctx.fillStyle = '#666';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Draw object (box)
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(objectX, canvas.height - 90, 60, 40);
+
+            // Draw force arrow
+            const force = parseInt(document.getElementById('forceSlider').value);
+            const arrowLength = Math.min(force / 5, 100);
+            ctx.beginPath();
+            ctx.moveTo(objectX + 70, canvas.height - 70);
+            ctx.lineTo(objectX + 70 + arrowLength, canvas.height - 70);
+            ctx.lineTo(objectX + 70 + arrowLength - 10, canvas.height - 75);
+            ctx.moveTo(objectX + 70 + arrowLength, canvas.height - 70);
+            ctx.lineTo(objectX + 70 + arrowLength - 10, canvas.height - 65);
+            ctx.strokeStyle = '#ff6600';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ff6600';
+            ctx.fillText(`Force: ${force}N`, objectX + 80, canvas.height - 80);
+
+            const mass = parseInt(document.getElementById('massSlider').value);
+            ctx.fillStyle = 'white';
+            ctx.fillText(`Mass: ${mass}kg`, objectX, canvas.height - 95);
+        }
+
+        function calculateMechanics() {
+            const mass = parseInt(document.getElementById('massSlider').value);
+            const force = parseInt(document.getElementById('forceSlider').value);
+            const distance = parseInt(document.getElementById('distanceSlider').value);
+
+            const acceleration = force / mass;
+            const work = force * distance;
+
+            document.getElementById('mechanicsValues').innerHTML = `
+                Mass: ${mass} kg |
+                Force: ${force} N |
+                Acceleration: ${acceleration.toFixed(2)} m/s² |
+                Work: ${work} J
+            `;
+
+            drawMechanics();
+            showResultMessage("Mechanics Calculation", `a = ${acceleration.toFixed(2)} m/s², W = ${work} J`);
+        }
+
+        function simulateMotion() {
+            if (animating) {
+                cancelAnimationFrame(animationId);
+                animating = false;
+                objectX = 100;
+                drawMechanics();
+                return;
+            }
+
+            const force = parseInt(document.getElementById('forceSlider').value);
+            const mass = parseInt(document.getElementById('massSlider').value);
+            const acceleration = force / mass;
+            let velocity = 0;
+            let lastTime = performance.now();
+            animating = true;
+
+            function animateMotion(now) {
+                const dt = Math.min(0.033, (now - lastTime) / 1000);
+                lastTime = now;
+
+                velocity += acceleration * dt;
+                objectX += velocity * dt * 20;
+
+                if (objectX > 350 || objectX < 100) {
+                    cancelAnimationFrame(animationId);
+                    animating = false;
+                    objectX = 100;
+                    drawMechanics();
+                    showResultMessage("Motion Simulation Complete", `Final velocity: ${velocity.toFixed(2)} m/s`);
+                    saveInteraction(`Motion simulation completed: final velocity ${velocity.toFixed(2)} m/s`);
+                } else {
+                    drawMechanics();
+                    animationId = requestAnimationFrame(animateMotion);
+                }
+            }
+
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(animateMotion);
+            saveInteraction(`Started motion simulation with F=${force}N, m=${mass}kg`);
+            showResultMessage("Motion Simulation Started", `Acceleration: ${acceleration.toFixed(2)} m/s²`);
+        }
+
+        function showResultMessage(title, message) {
+            const resultDiv = document.createElement('div');
+            resultDiv.style.position = 'absolute';
+            resultDiv.style.top = '50%';
+            resultDiv.style.left = '50%';
+            resultDiv.style.transform = 'translate(-50%, -50%)';
+            resultDiv.style.background = 'rgba(0,0,0,0.9)';
+            resultDiv.style.color = '#3498db';
+            resultDiv.style.padding = '20px 30px';
+            resultDiv.style.borderRadius = '10px';
+            resultDiv.style.fontSize = '16px';
+            resultDiv.style.fontWeight = 'bold';
+            resultDiv.style.textAlign = 'center';
+            resultDiv.style.zIndex = '300';
+            resultDiv.style.borderLeft = `4px solid #3498db`;
+            resultDiv.innerHTML = `<strong>${title}</strong><br>${message}`;
+            document.body.appendChild(resultDiv);
+
+            setTimeout(() => {
+                resultDiv.style.opacity = '0';
+                resultDiv.style.transition = 'opacity 0.5s';
+                setTimeout(() => resultDiv.remove(), 500);
+            }, 3000);
+        }
+
+        function updateTask(taskName) {
+            if (!tasks[taskName]) {
+                tasks[taskName] = true;
+                const taskElement = document.getElementById(`task-${taskName}`);
+                if (taskElement) {
+                    taskElement.classList.add('completed');
+                    taskElement.innerHTML = `<i class="fas fa-check-circle" style="color: #2ecc71;"></i> ${taskElement.innerText.substring(1)}`;
+                }
+            }
+            checkAllTasks();
+        }
+
+        function checkAllTasks() {
+            const allComplete = Object.values(tasks).every(t => t === true);
+            if (allComplete) {
+                document.getElementById('taskResult').innerHTML = '<i class="fas fa-check-circle"></i> All physics tasks complete! Ready to submit.';
+                document.getElementById('taskResult').style.background = 'rgba(46, 204, 113, 0.3)';
+                document.getElementById('taskResult').style.display = 'block';
+            }
+        }
+
+        function saveInteraction(message) {
+            fetch('@Url.Action("SaveLabProgress", "VirtualLab")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({
+                    resultId: resultId,
+                    observations: message,
+                    conclusions: '',
+                    resultsData: JSON.stringify({ action: message, timestamp: new Date(), tasks: tasks })
+                })
+            }).catch(error => console.error('Error saving:', error));
+        }
+
+        function saveObservations() {
+            const obs = document.getElementById('observations').value;
+            if (obs) {
+                saveInteraction(`Observations: ${obs}`);
+                alert('Observations saved!');
+                document.getElementById('observations').value = '';
+            }
+        }
+
+        function saveProgress() {
+            saveInteraction('Progress saved');
+            alert('Progress saved!');
+        }
+
+        function submitLab() {
+            const allComplete = Object.values(tasks).every(t => t === true);
+            if (!allComplete) {
+                alert('Please complete all tasks before submitting!');
+                return;
+            }
+
+            if (confirm('Submit this lab for grading?')) {
+                fetch('@Url.Action("SubmitLab", "VirtualLab")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ resultId: resultId })
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          alert('Lab submitted successfully!');
+                          window.location.href = '@Url.Action("Index", "VirtualLab")';
+                      }
+                  });
+            }
+        }
+
+        function exitLab() {
+            if (confirm('Exit the lab? Your progress will be saved.')) {
+                saveProgress();
+                setTimeout(() => { window.location.href = '@Url.Action("Index", "VirtualLab")'; }, 500);
+            }
+        }
+
+        // Setup component click handlers
+        document.querySelectorAll('.circuit-component').forEach(comp => {
+            comp.addEventListener('click', () => {
+                const type = comp.dataset.type;
+                const voltage = parseFloat(comp.dataset.voltage) || 0;
+                const resistance = parseFloat(comp.dataset.resistance) || 0;
+                addComponentToCircuit(type, voltage, resistance);
+            });
+        });
+
+        // Interaction handling for 3D objects
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(equipmentGroup.map(e => e.mesh), true);
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj.parent && !obj.userData.action) obj = obj.parent;
+                if (obj.userData.action && typeof window[obj.userData.action] === 'function') {
+                    window[obj.userData.action]();
+                    saveInteraction(`Interacted with: ${obj.userData.name}`);
+                }
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        init();
+
+        window.openCircuit = openCircuit;
+        window.closeCircuitPanel = closeCircuitPanel;
+        window.addComponentToCircuit = addComponentToCircuit;
+        window.removeComponent = removeComponent;
+        window.calculateCircuit = calculateCircuit;
+        window.toggleSwitch = toggleSwitch;
+        window.openMagnet = openMagnet;
+        window.closeMagnetPanel = closeMagnetPanel;
+        window.flipPoles = flipPoles;
+        window.addIronFilings = addIronFilings;
+        window.measureFieldStrength = measureFieldStrength;
+        window.openPrism = openPrism;
+        window.closePrismPanel = closePrismPanel;
+        window.updateRefraction = updateRefraction;
+        window.openMechanics = openMechanics;
+        window.closeMechanicsPanel = closeMechanicsPanel;
+        window.calculateMechanics = calculateMechanics;
+        window.simulateMotion = simulateMotion;
+        window.saveObservations = saveObservations;
+        window.saveProgress = saveProgress;
+        window.submitLab = submitLab;
+        window.exitLab = exitLab;
+    </script>
+</body>
+</html>

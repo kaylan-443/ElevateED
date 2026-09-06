@@ -6,28 +6,118 @@
 @Html.Partial("_CareerCardStyles")
 
 <style>
-    .content { padding: 32px; }
-    .page-head { margin-bottom: 20px; }
-    .page-head h1 { font-size: 26px; color: var(--gray-900); }
-    .page-head p { color: var(--gray-500); margin-top: 4px; }
-    .back-link { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600; }
-    .alert-soft { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-    .empty { text-align: center; padding: 60px 20px; color: var(--gray-400); }
-    .empty i { font-size: 48px; margin-bottom: 16px; }
-    .empty a { color: var(--primary); font-weight: 600; text-decoration: none; }
+    .content {
+        padding: 32px;
+    }
 
-    .compare-cb-wrap { display: inline-flex; align-items: center; margin-right: 4px; }
-    .compare-cb { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+    .page-head {
+        margin-bottom: 20px;
+    }
+
+        .page-head h1 {
+            font-size: 26px;
+            color: var(--gray-900);
+        }
+
+        .page-head p {
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+    .back-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .alert-soft {
+        padding: 14px 18px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--gray-400);
+    }
+
+        .empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+    .compare-cb-wrap {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 4px;
+    }
+
+    .compare-cb {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
 
     .compare-bar {
-        position: sticky; bottom: 20px; margin-top: 24px; background: var(--gray-900); color: white;
-        border-radius: 14px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        position: sticky;
+        bottom: 20px;
+        margin-top: 24px;
+        background: var(--gray-900);
+        color: white;
+        border-radius: 14px;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
-    .compare-bar .msg { font-size: 13px; color: var(--gray-300); }
-    .compare-bar button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; }
-    .compare-bar button:disabled { background: var(--gray-600); cursor: not-allowed; }
+
+        .compare-bar .msg {
+            font-size: 13px;
+            color: var(--gray-300);
+        }
+
+        .compare-bar button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+            .compare-bar button:disabled {
+                background: var(--gray-600);
+                cursor: not-allowed;
+            }
 </style>
 
 <div class="app-container">
@@ -49,6 +139,14 @@
             {
                 <div class="alert-soft alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
             }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert-soft alert-error"><i class="fas fa-triangle-exclamation"></i> @TempData["ErrorMessage"]</div>
+            }
+
+            @* Single shared anti-forgery token used by every card's bookmark fetch() call.
+                Kept outside compareForm so there's no nested-form conflict. *@
+            @Html.AntiForgeryToken()
 
             @if (Model.Matches.Any())
             {
@@ -89,31 +187,54 @@
     </main>
 </div>
 
-@if (Model.Matches.Count >= 2)
-{
-    <script>
-        function updateCompareBar() {
-            var checked = document.querySelectorAll('.compare-cb:checked');
-            var count = checked.length;
-            var btn = document.getElementById('compareBtn');
-            var msg = document.getElementById('compareMsg');
+<script>
+    function updateCompareBar() {
+        var checked = document.querySelectorAll('.compare-cb:checked');
+        var count = checked.length;
+        var btn = document.getElementById('compareBtn');
+        var msg = document.getElementById('compareMsg');
+        if (!btn || !msg) return;
 
-            // Compare up to three at a time — a fourth selection is blocked
-            // client-side, but the server enforces this limit regardless.
-            if (count > 3) {
-                checked[checked.length - 1].checked = false;
-                count = 3;
-            }
-
-            if (count < 2) {
-                btn.disabled = true;
-                msg.textContent = count === 0
-                    ? 'Pick 2 or 3 careers to compare them side by side.'
-                    : 'Pick at least one more to compare.';
-            } else {
-                btn.disabled = false;
-                msg.textContent = count + ' of 3 selected.';
-            }
+        // Compare up to three at a time — a fourth selection is blocked
+        // client-side, but the server enforces this limit regardless.
+        if (count > 3) {
+            checked[checked.length - 1].checked = false;
+            count = 3;
         }
-    </script>
-}
+
+        if (count < 2) {
+            btn.disabled = true;
+            msg.textContent = count === 0
+                ? 'Pick 2 or 3 careers to compare them side by side.'
+                : 'Pick at least one more to compare.';
+        } else {
+            btn.disabled = false;
+            msg.textContent = count + ' of 3 selected.';
+        }
+    }
+
+    // Bookmark toggle — plain button + fetch, so there's no <form> nested
+    // inside #compareForm (nested forms are invalid HTML and broke the
+    // checkbox submission).
+    function toggleBookmark(btn, careerId) {
+        var token = document.querySelector('input[name="__RequestVerificationToken"]');
+        var body = new URLSearchParams();
+        body.append('careerId', careerId);
+        body.append('returnUrl', window.location.pathname + window.location.search);
+        if (token) body.append('__RequestVerificationToken', token.value);
+
+        btn.disabled = true;
+        fetch('@Url.Action("ToggleBookmark", "StudentCareer")', {
+            method: 'POST',
+            body: body
+        })
+        .then(function (resp) {
+            if (!resp.ok) throw new Error('Request failed');
+            window.location.reload();
+        })
+        .catch(function () {
+            btn.disabled = false;
+            alert('Could not update your shortlist. Please try again.');
+        });
+    }
+</script>

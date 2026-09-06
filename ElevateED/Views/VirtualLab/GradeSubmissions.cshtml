@@ -1,0 +1,172 @@
+﻿@model List<ElevateED.Models.VirtualLabResult>
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Grade Submissions - " + ViewBag.Experiment.Title;
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
+}
+
+<style>
+    .submission-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--gray-200);
+        border-left: 4px solid var(--warning);
+    }
+
+    .grade-input {
+        width: 80px;
+        padding: 8px;
+        border: 2px solid var(--gray-200);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .feedback-textarea {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid var(--gray-200);
+        border-radius: 10px;
+        margin-top: 10px;
+        resize: vertical;
+    }
+
+    .btn-save {
+        background: var(--success);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        margin-top: 10px;
+    }
+
+        .btn-save:hover {
+            background: #059669;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-graduation-cap"></i> Grade Submissions</h1>
+            <p>@experiment.Title - @experiment.LabType Lab</p>
+        </div>
+        <a href="@Url.Action("TeacherDashboard", "VirtualLab")" class="btn-primary" style="background: var(--gray-500);">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle" style="color: var(--success);"></i>
+            <h4>No Pending Submissions</h4>
+            <p>All submissions have been graded.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var submission in Model)
+        {
+            <div class="submission-card" id="submission-@submission.Id">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <h3 style="margin: 0;">@submission.Student?.FullName</h3>
+                        <p style="margin: 5px 0 0 0; color: var(--gray-500);">
+                            Student #: @submission.Student?.User?.StudentNumber
+                        </p>
+                    </div>
+                    <div>
+                        <small>Submitted: @submission.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</small>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(submission.Observations))
+                {
+                    <div style="margin: 15px 0; padding: 12px; background: var(--gray-50); border-radius: 10px;">
+                        <strong><i class="fas fa-eye"></i> Student Observations:</strong>
+                        <p style="margin: 8px 0 0 0;">@submission.Observations</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(submission.Conclusions))
+                {
+                    <div style="margin: 15px 0; padding: 12px; background: var(--gray-50); border-radius: 10px;">
+                        <strong><i class="fas fa-lightbulb"></i> Conclusions:</strong>
+                        <p style="margin: 8px 0 0 0;">@submission.Conclusions</p>
+                    </div>
+                }
+
+                <div style="margin-top: 15px;">
+                    <label style="font-weight: 600;">Score (0-100):</label>
+                    <input type="number" id="score-@submission.Id" class="grade-input" min="0" max="100" step="1" />
+
+                    <label style="font-weight: 600; margin-top: 10px; display: block;">Feedback:</label>
+                    <textarea id="feedback-@submission.Id" class="feedback-textarea" rows="3"
+                              placeholder="Provide feedback to the student..."></textarea>
+
+                    <button class="btn-save" onclick="saveGrade(@submission.Id)">
+                        <i class="fas fa-save"></i> Save Grade
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function saveGrade(resultId) {
+        var score = document.getElementById('score-' + resultId).value;
+        var feedback = document.getElementById('feedback-' + resultId).value;
+
+        if (!score) {
+            alert('Please enter a score');
+            return;
+        }
+
+        if (score < 0 || score > 100) {
+            alert('Score must be between 0 and 100');
+            return;
+        }
+
+        fetch('@Url.Action("SaveGrade", "VirtualLab")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                resultId: resultId,
+                score: parseInt(score),
+                feedback: feedback
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Grade saved successfully!');
+                document.getElementById('submission-' + resultId).style.opacity = '0.6';
+                document.getElementById('submission-' + resultId).style.borderLeftColor = '#10b981';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An error occurred. Please try again.');
+        });
+    }
+</script>

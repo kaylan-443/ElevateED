@@ -1,0 +1,582 @@
+﻿@model ElevateED.ViewModels.VirtualLabDashboardViewModel
+@using ElevateED.Models
+
+@{
+    ViewBag.Title = "Virtual Science Lab - ElevateED";
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #4f46e5;
+        --accent: #fbbf24;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #3b82f6;
+        --purple: #8b5cf6;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --sidebar-width: 280px;
+        --header-height: 70px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+    }
+
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--accent), #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e1b4b;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+    .sidebar-nav {
+        flex: 1;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--accent), #f59e0b);
+            color: #1e1b4b;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+    .nav-section {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        padding: 0 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .main-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+    }
+
+    .top-header {
+        height: var(--header-height);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .profile-container {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 50px;
+        background: none;
+        border: none;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #4338ca);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .content-area {
+        padding: 32px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .lab-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s;
+        cursor: pointer;
+        border-left: 4px solid var(--primary);
+    }
+
+        .lab-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .lab-card.biology {
+            border-left-color: #10b981;
+        }
+
+        .lab-card.chemistry {
+            border-left-color: #f59e0b;
+        }
+
+        .lab-card.physics {
+            border-left-color: #3b82f6;
+        }
+
+    .lab-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+    }
+
+    .lab-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .badge-lab {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-biology {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-chemistry {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-physics {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-difficulty {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    .btn-launch {
+        background: var(--success);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+        .btn-launch:hover {
+            background: #059669;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--gray-400);
+            margin-bottom: 15px;
+        }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 24px 0 16px 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .allowed-labs {
+        margin-bottom: 16px;
+    }
+
+    .lab-tag {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 8px;
+    }
+
+    .lab-tag-biology {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .lab-tag-chemistry {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .lab-tag-physics {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .score-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .score-high {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .score-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .score-low {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .score-pending {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    @@media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .content-area {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="logo-text">Elevate<span>ED</span></div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="@Url.Action("Timetable", "Student")" class="nav-item"><i class="fas fa-calendar-alt"></i><span>Timetable</span></a>
+            <div class="nav-section">Learning</div>
+            <a href="@Url.Action("Index", "VirtualLab")" class="nav-item active"><i class="fas fa-vr-cardboard"></i><span>Virtual Lab</span></a>
+            <a href="@Url.Action("Homework", "Student")" class="nav-item"><i class="fas fa-home"></i><span>Homework</span></a>
+            <a href="@Url.Action("Classwork", "Student")" class="nav-item"><i class="fas fa-chalkboard"></i><span>Classwork</span></a>
+            <a href="@Url.Action("StudyMaterials", "Student")" class="nav-item"><i class="fas fa-book"></i><span>Study Materials</span></a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-right">
+                <div class="profile-container">
+                    <button class="profile-trigger" onclick="toggleDropdown()">
+                        <div class="avatar">@(Model.StudentName?.Substring(0, 1) ?? "S")</div>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-vr-cardboard" style="color: var(--purple);"></i> Virtual Science Lab</h1>
+                    <p style="color: var(--gray-500);">Interactive 3D experiments using WebXR technology</p>
+                </div>
+                <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-primary">
+                    <i class="fas fa-chart-line"></i> My Results
+                </a>
+            </div>
+
+            <div class="info-banner" style="background: linear-gradient(135deg, var(--purple), #7c3aed); color: white; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
+                <h3><i class="fas fa-info-circle"></i> Welcome to the Virtual Lab, @Model.StudentName!</h3>
+                <p>Grade: @Model.Grade | Class: @Model.ClassName</p>
+                <div class="allowed-labs">
+                    <strong>Available Labs:</strong>
+                    @foreach (var lab in Model.AllowedLabTypes)
+                    {
+                        <span class="lab-tag lab-tag-@lab.ToString().ToLower()">
+                            @lab Lab
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Assigned Experiments -->
+            @if (Model.AssignedExperiments.Any())
+            {
+                <h3 class="section-title">
+                    <i class="fas fa-tasks"></i> Assigned Experiments
+                </h3>
+                foreach (var lab in Model.AssignedExperiments)
+                {
+                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                        <div class="lab-title">@lab.Title</div>
+                        <div class="lab-meta">
+                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
+                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                            <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
+                            <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
+                        </div>
+                        <p>@lab.Description</p>
+                        <button class="btn-launch"><i class="fas fa-play"></i> Launch Experiment</button>
+                    </div>
+                }
+            }
+
+            <!-- In Progress Experiments -->
+            @if (Model.InProgressExperiments.Any())
+            {
+                <h3 class="section-title">
+                    <i class="fas fa-spinner"></i> In Progress
+                </h3>
+                foreach (var lab in Model.InProgressExperiments)
+                {
+                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                        <div class="lab-title">@lab.Title <span style="font-size: 12px; color: var(--warning);">(Resume)</span></div>
+                        <div class="lab-meta">
+                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
+                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                            <span><i class="fas fa-hourglass-half"></i> In Progress</span>
+                        </div>
+                        <p>@lab.Description</p>
+                        <button class="btn-launch"><i class="fas fa-play-circle"></i> Resume Lab</button>
+                    </div>
+                }
+            }
+
+            <!-- Available Experiments -->
+            @if (Model.AvailableExperiments.Any())
+            {
+                <h3 class="section-title">
+                    <i class="fas fa-flask"></i> Available Experiments
+                </h3>
+                foreach (var lab in Model.AvailableExperiments)
+                {
+                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                        <div class="lab-title">@lab.Title</div>
+                        <div class="lab-meta">
+                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
+                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                            <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
+                            <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
+                        </div>
+                        <p>@lab.Description</p>
+                        <button class="btn-launch"><i class="fas fa-flask"></i> Start Experiment</button>
+                    </div>
+                }
+            }
+
+            <!-- Completed Experiments -->
+            @if (Model.CompletedExperiments.Any())
+            {
+                <h3 class="section-title">
+                    <i class="fas fa-check-circle"></i> Completed
+                </h3>
+                foreach (var result in Model.CompletedExperiments)
+                {
+                    var scoreClass = result.Score >= 70 ? "score-high" : result.Score >= 50 ? "score-medium" : result.Score.HasValue ? "score-low" : "score-pending";
+                    <div class="lab-card @result.Assignment.Experiment.LabType.ToString().ToLower()" style="opacity: 0.8;">
+                        <div class="lab-title">@result.Assignment.Experiment.Title</div>
+                        <div class="lab-meta">
+                            <span class="badge-lab badge-@result.Assignment.Experiment.LabType.ToString().ToLower()">@result.Assignment.Experiment.LabType Lab</span>
+                            <span class="score-badge @scoreClass">
+                                @if (result.Score.HasValue)
+                                {
+                                    <text>Score: @result.Score.Value%</text>
+                                }
+                                else
+                                {
+                                    <text>Pending Review</text>
+                                }
+                            </span>
+                            <span><i class="fas fa-calendar"></i> @result.CompletedAt?.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <p>@result.Assignment.Experiment.Description</p>
+                        <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-launch" style="background: var(--info); text-decoration: none; display: inline-block;">
+                            <i class="fas fa-chart-line"></i> View Results
+                        </a>
+                    </div>
+                }
+            }
+
+            @if (!Model.AssignedExperiments.Any() && !Model.InProgressExperiments.Any() && !Model.AvailableExperiments.Any() && !Model.CompletedExperiments.Any())
+            {
+                <div class="empty-state">
+                    <i class="fas fa-vr-cardboard"></i>
+                    <h4>No Experiments Available</h4>
+                    <p>Check back later for virtual lab experiments.</p>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleDropdown() {
+        var dropdown = document.getElementById('profileDropdown');
+        if (dropdown) dropdown.classList.toggle('show');
+    }
+
+    document.addEventListener('click', function (e) {
+        var container = document.querySelector('.profile-container');
+        var dropdown = document.getElementById('profileDropdown');
+        if (container && dropdown && !container.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+</script>

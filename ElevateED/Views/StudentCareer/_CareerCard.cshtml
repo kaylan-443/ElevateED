@@ -25,19 +25,20 @@
             @if (showCompare)
             {
                 <label class="compare-cb-wrap">
-                    <input type="checkbox" name="ids" value="@career.Id" class="compare-cb" onchange="updateCompareBar && updateCompareBar()" />
+                    <input type="checkbox" name="ids" value="@career.Id" class="compare-cb" onchange="updateCompareBar()" />
                 </label>
             }
             <i class="fas fa-@(career.CareerField?.IconClass ?? "briefcase")"></i> @(career.CareerField?.Name)
         </div>
-        <form action="@Url.Action("ToggleBookmark", "StudentCareer")" method="post" class="bookmark-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="careerId" value="@career.Id" />
-            <input type="hidden" name="returnUrl" value="@returnUrl" />
-            <button type="submit" class="bookmark-btn @(bookmarked ? "active" : "")" title="@(bookmarked ? "Remove from shortlist" : "Add to shortlist")">
-                <i class="@(bookmarked ? "fas" : "far") fa-bookmark"></i>
-            </button>
-        </form>
+
+        @* Plain button + fetch instead of a <form>, so this never nests
+            inside the shortlist page's #compareForm. *@
+        <button type="button"
+                class="bookmark-btn @(bookmarked ? "active" : "")"
+                onclick="toggleBookmark(this, @career.Id)"
+                title="@(bookmarked ? "Remove from shortlist" : "Add to shortlist")">
+            <i class="@(bookmarked ? "fas" : "far") fa-bookmark"></i>
+        </button>
     </div>
 
     <a href="@Url.Action("Detail", "StudentCareer", new { id = career.Id })" class="cc-title">@career.Name</a>

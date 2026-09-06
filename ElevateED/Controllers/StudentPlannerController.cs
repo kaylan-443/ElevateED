@@ -464,7 +464,135 @@ namespace ElevateED.Controllers
             vm.Exams = exams.Select(e => _readiness.ForStudent(student, e)).ToList();
             return View(vm);
         }
+        // ============================================
+        // EXPORT TO CALENDAR (.ics)
+        // ============================================
+        public ActionResult ExportIcs(int id)
+        {
+            var student = GetCurrentStudent();
+            if (student == null) return RedirectToAction("Login", "Account");
 
+            var plan = _context.StudyPlans.FirstOrDefault(p => p.Id == id && p.StudentId == student.Id);
+            if (plan == null) return HttpNotFound();
+
+            var sessions = _context.StudySessions
+                .Include(s => s.Subject)
+                .Where(s => s.StudyPlanId == plan.Id && s.Status != StudySessionStatus.Missed)
+                .ToList();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("BEGIN:VCALENDAR");
+            sb.AppendLine("VERSION:2.0");
+            sb.AppendLine("PRODID:-//ElevateED//Study Planner//EN");
+            sb.AppendLine("CALSCALE:GREGORIAN");
+            foreach (var s in sessions)
+            {
+                var dtStart = s.SessionDate.Date.Add(s.StartTime);
+                var dtEnd = s.SessionDate.Date.Add(s.EndTime);
+                sb.AppendLine("BEGIN:VEVENT");
+                sb.AppendLine("UID:" + s.Id + "-elevateed@studyplanner");
+                sb.AppendLine("DTSTAMP:" + DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ"));
+                sb.AppendLine("DTSTART:" + dtStart.ToString("yyyyMMddTHHmmss"));
+                sb.AppendLine("DTEND:" + dtEnd.ToString("yyyyMMddTHHmmss"));
+                sb.AppendLine("SUMMARY:Study: " + EscapeIcs(s.Subject?.Name ?? "Study session"));
+                if (!string.IsNullOrEmpty(s.FocusNote))
+                    sb.AppendLine("DESCRIPTION:" + EscapeIcs(s.FocusNote));
+                sb.AppendLine("BEGIN:VALARM");
+                sb.AppendLine("TRIGGER:-PT5M");
+                sb.AppendLine("ACTION:DISPLAY");
+                sb.AppendLine("DESCRIPTION:Study reminder");
+                sb.AppendLine("END:VALARM");
+                sb.AppendLine("END:VEVENT");
+            }
+            sb.AppendLine("END:VCALENDAR");
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/calendar", plan.Name.Replace(" ", "_") + ".ics");
+        }
+
+        private static string EscapeIcs(string text)
+        {
+            return text.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
+        }
+
+        // ============================================
+        // DRAG-AND-DROP RESCHEDULE (same-length slot search on the target day)
+        // ============================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public JsonResult MoveSession(int sessionId, string newDate)
+        {
+            var student = GetCurrentStudent();
+            if (student == null) return Json(new { success = false, message = "Not authenticated." });
+
+            DateTime targetDate;
+            if (!DateTime.TryParse(newDate, out targetDate))
+                return Json(new { success = false, message = "Invalid date." });
+
+            var session = _context.StudySessions
+                .Include(s => s.StudyPlan.AvailabilitySlots)
+                .FirstOrDefault(s => s.Id == sessionId && s.StudyPlan.StudentId == student.Id);
+            if (session == null) return Json(new { success = false, message = "Session not found." });
+            if (session.Status != StudySessionStatus.Planned)
+                return Json(new { success = false, message = "Only planned sessions can be moved." });
+
+            var plan = session.StudyPlan;
+            if (targetDate.Date < plan.StartDate.Date || targetDate.Date > plan.EndDate.Date)
+                return Json(new { success = false, message = "That date is outside the plan's range." });
+
+            var duration = session.EndTime - session.StartTime;
+            var daySlots = plan.AvailabilitySlots
+                .Where(sl => sl.DayOfWeek == targetDate.DayOfWeek)
+                .OrderBy(sl => sl.StartTime)
+                .ToList();
+            if (!daySlots.Any())
+                return Json(new { success = false, message = "You're not available to study on that day." });
+
+            var existing = _context.StudySessions
+                .Where(s => s.StudyPlanId == plan.Id && s.Id != session.Id && s.SessionDate.Date == targetDate.Date)
+                .Select(s => new { s.StartTime, s.EndTime })
+                .ToList();
+
+            TimeSpan? placeStart = null;
+            foreach (var sl in daySlots)
+            {
+                var candidateStart = sl.StartTime;
+                var candidateEnd = candidateStart + duration;
+                if (candidateEnd > sl.EndTime) continue;
+                bool overlap = existing.Any(e => candidateStart < e.EndTime && candidateEnd > e.StartTime);
+                if (!overlap) { placeStart = candidateStart; break; }
+            }
+
+            if (!placeStart.HasValue)
+                return Json(new { success = false, message = "No free slot that day fits this session's length." });
+
+            session.SessionDate = targetDate.Date;
+            session.StartTime = placeStart.Value;
+            session.EndTime = placeStart.Value + duration;
+            _context.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        // ============================================
+        // INLINE FOCUS NOTE EDIT
+        // ============================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public JsonResult UpdateNote(int sessionId, string note)
+        {
+            var student = GetCurrentStudent();
+            if (student == null) return Json(new { success = false });
+
+            var session = _context.StudySessions.FirstOrDefault(s => s.Id == sessionId && s.StudyPlan.StudentId == student.Id);
+            if (session == null) return Json(new { success = false });
+
+            session.FocusNote = (note ?? "").Trim();
+            if (session.FocusNote.Length > 300) session.FocusNote = session.FocusNote.Substring(0, 300);
+            _context.SaveChanges();
+
+            return Json(new { success = true });
+        }
         // ============================================
         // HELPERS
         // ============================================

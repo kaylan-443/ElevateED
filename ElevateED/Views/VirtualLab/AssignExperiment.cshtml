@@ -1,0 +1,392 @@
+﻿@model dynamic
+@{
+    ViewBag.Title = "Assign Experiment - " + ViewBag.Experiment.Title;
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
+    var classes = ViewBag.Classes as List<ElevateED.Models.Class> ?? new List<ElevateED.Models.Class>();
+    var subjects = ViewBag.Subjects as List<ElevateED.Models.Subject> ?? new List<ElevateED.Models.Subject>();
+}
+
+<style>
+    /* Main content area */
+    .content-area {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 30px;
+    }
+
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e5e7eb;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: #6b7280;
+            margin: 5px 0 0 0;
+        }
+
+    /* Back button */
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 10px 22px;
+        border-radius: 30px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    /* Form Container - WHITE BACKGROUND for visibility */
+    .form-container {
+        max-width: 650px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    /* Info Box - HIGH CONTRAST */
+    .info-box {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 22px;
+        border-radius: 16px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+        .info-box h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            color: #d4af37;
+        }
+
+        .info-box p {
+            color: rgba(255,255,255,0.95);
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+
+        .info-box small {
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
+        }
+
+    /* Form Groups - CLEAR VISIBILITY */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1e293b;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    /* Form Controls - HIGH CONTRAST */
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #cbd5e1;
+        border-radius: 12px;
+        font-size: 14px;
+        background: white;
+        color: #1e293b;
+        transition: all 0.2s;
+    }
+
+        .form-control:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+    select.form-control {
+        cursor: pointer;
+        background: white;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .text-muted {
+        color: #6c757d;
+        font-size: 12px;
+        margin-top: 6px;
+        display: block;
+    }
+
+    /* Alert Messages */
+    .alert {
+        padding: 14px 18px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        display: none;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        display: block;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        display: block;
+    }
+
+    /* Buttons - HIGH VISIBILITY */
+    .btn-cancel {
+        background: #e2e8f0;
+        color: #1e293b;
+        padding: 12px 24px;
+        border-radius: 30px;
+        border: none;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        width: 100%;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-cancel:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+            text-decoration: none;
+        }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 30px;
+        border: none;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+    /* Row layout */
+    .row {
+        display: flex;
+        gap: 15px;
+    }
+
+        .row > div {
+            flex: 1;
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .content-area {
+            padding: 15px;
+        }
+
+        .form-container {
+            padding: 20px;
+        }
+
+        .row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-tasks" style="color: #8b5cf6;"></i> Assign Experiment</h1>
+            <p>@experiment.Title - @experiment.LabType Laboratory</p>
+        </div>
+        <a href="@Url.Action("TeacherDashboard", "VirtualLab")" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="info-box">
+            <h4><i class="fas fa-info-circle"></i> @experiment.Title</h4>
+            <p>@experiment.Description</p>
+            <small><i class="fas fa-hourglass-half"></i> Duration: @experiment.DurationMinutes minutes | <i class="fas fa-chart-line"></i> Difficulty: @experiment.Difficulty</small>
+        </div>
+
+        <form id="assignForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="experimentId" value="@experiment.Id" />
+
+            <div class="form-group">
+                <label class="form-label required">Select Class</label>
+                <select name="classId" class="form-control" required>
+                    <option value="">-- Select a Class --</option>
+                    @foreach (var cls in classes)
+                    {
+                        <option value="@cls.Id">@cls.FullName (@cls.Grade?.Name)</option>
+                    }
+                </select>
+                <small class="text-muted">Choose the class that will receive this assignment</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Filter by Subject (Optional)</label>
+                <select name="subjectId" class="form-control">
+                    <option value="">-- All Subjects --</option>
+                    @foreach (var sub in subjects)
+                    {
+                        <option value="@sub.Id">@sub.Name</option>
+                    }
+                </select>
+                <small class="text-muted">If selected, only students taking this subject will see the lab</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Due Date</label>
+                <input type="datetime-local" name="dueDate" class="form-control" required
+                       value="@DateTime.Now.AddDays(7).ToString("yyyy-MM-ddTHH:mm")" />
+                <small class="text-muted">Students must complete the lab before this date</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Additional Instructions</label>
+                <textarea name="instructions" class="form-control" rows="4"
+                          placeholder="Provide any specific instructions for this assignment..."></textarea>
+                <small class="text-muted">These instructions will be visible to students when they start the lab</small>
+            </div>
+
+            <div id="message" class="alert" style="display: none;"></div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <a href="@Url.Action("TeacherDashboard", "VirtualLab")" class="btn-cancel">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="btn-submit" onclick="assignExperiment()">
+                        <i class="fas fa-paper-plane"></i> Assign to Class
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function assignExperiment() {
+        var form = document.getElementById('assignForm');
+        var classId = form.querySelector('[name="classId"]').value;
+        var dueDate = form.querySelector('[name="dueDate"]').value;
+        var messageDiv = document.getElementById('message');
+
+        // Clear previous message
+        messageDiv.style.display = 'none';
+        messageDiv.className = 'alert';
+
+        // Validation
+        if (!classId) {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select a class';
+            messageDiv.style.display = 'block';
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        if (!dueDate) {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select a due date';
+            messageDiv.style.display = 'block';
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        var formData = new FormData(form);
+        var submitBtn = document.querySelector('.btn-submit');
+        var originalText = submitBtn.innerHTML;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+
+        fetch('@Url.Action("AssignExperiment", "VirtualLab")', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                messageDiv.className = 'alert alert-success';
+                messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                messageDiv.style.display = 'block';
+
+                setTimeout(function() {
+                    window.location.href = '@Url.Action("TeacherDashboard", "VirtualLab")';
+                }, 2000);
+            } else {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'An error occurred');
+                messageDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please try again.';
+            messageDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+</script>

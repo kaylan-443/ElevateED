@@ -1,0 +1,669 @@
+﻿@model dynamic
+@{
+    ViewBag.Title = "Chemistry Lab - " + ViewBag.Experiment.Title;
+    var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title - ElevateED</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+        }
+
+        #taskPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            pointer-events: auto;
+            font-size: 13px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #reactionPanel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            z-index: 200;
+            display: none;
+            text-align: center;
+        }
+
+        .chemical-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .chemical-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .chemical-btn.selected {
+                background: #f39c12;
+            }
+
+            .chemical-btn:hover {
+                background: #e67e22;
+            }
+
+        .reaction-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .btn-lab {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .btn-lab:hover {
+                transform: scale(1.05);
+            }
+
+        .observation-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            width: 280px;
+            z-index: 100;
+        }
+
+            .observation-panel textarea {
+                width: 100%;
+                padding: 8px;
+                margin-top: 5px;
+                border-radius: 4px;
+                border: none;
+            }
+
+        .task {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+            .task.completed {
+                background: rgba(46, 204, 113, 0.2);
+            }
+
+                .task.completed i {
+                    color: #2ecc71;
+                }
+
+        .instruction-tip {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: #ccc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <strong>@experiment.Title</strong> | Chemistry Lab
+    </div>
+
+    <div class="instruction-tip">
+        🖱️ Mouse: Drag to rotate | Right-click + Drag to pan | Scroll to zoom
+    </div>
+
+    <div id="taskPanel">
+        <h4><i class="fas fa-flask"></i> Chemistry Lab Tasks</h4>
+        <div id="tasksList">
+            <div class="task" id="task-beaker">
+                <i class="fas fa-circle-notch"></i> Mix chemicals in beaker
+            </div>
+            <div class="task" id="task-heat">
+                <i class="fas fa-circle-notch"></i> Use heating apparatus
+            </div>
+            <div class="task" id="task-testtube">
+                <i class="fas fa-circle-notch"></i> Perform test tube reaction
+            </div>
+            <div class="task" id="task-observe">
+                <i class="fas fa-circle-notch"></i> Observe and record color changes
+            </div>
+        </div>
+        <div id="taskResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
+    </div>
+
+    <div id="reactionPanel">
+        <h4><i class="fas fa-vial"></i> Chemical Reaction</h4>
+        <div class="chemical-selector">
+            <button class="chemical-btn" data-chemical="hcl">HCl (Acid)</button>
+            <button class="chemical-btn" data-chemical="naoh">NaOH (Base)</button>
+            <button class="chemical-btn" data-chemical="phenolphthalein">Phenolphthalein</button>
+        </div>
+        <div class="chemical-selector">
+            <button class="chemical-btn" data-chemical="copper">Copper Sulfate</button>
+            <button class="chemical-btn" data-chemical="zinc">Zinc</button>
+            <button class="chemical-btn" data-chemical="water">Water</button>
+        </div>
+        <button class="btn-lab" onclick="mixChemicals()">Mix Selected</button>
+        <div id="reactionResult" class="reaction-result"></div>
+        <button class="btn-lab" onclick="closeReactionPanel()" style="background: #f44336;">Close</button>
+    </div>
+
+    <div class="observation-panel">
+        <h4><i class="fas fa-pen"></i> Observations</h4>
+        <textarea id="observations" rows="3" placeholder="Record your observations (color changes, temperature, bubbles, etc.)..."></textarea>
+        <button class="btn-lab" style="margin-top: 5px; padding: 5px 10px;" onclick="saveObservations()">Save Observations</button>
+    </div>
+
+    <div id="controls">
+        <button class="btn-lab btn-save" onclick="saveProgress()">💾 Save Progress</button>
+        <button class="btn-lab btn-submit" onclick="submitLab()">📤 Submit Lab</button>
+        <button class="btn-lab btn-exit" onclick="exitLab()">🚪 Exit Lab</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const experimentId = @ViewBag.Experiment.Id;
+        const resultId = @ViewBag.ResultId;
+
+        let scene, camera, renderer, labelRenderer, controls;
+        let equipmentGroup = [];
+
+        let tasks = {
+            beaker: false,
+            heat: false,
+            testtube: false,
+            observe: false
+        };
+
+        let selectedChemicals = [];
+        let beakerColor = 0x88aaff;
+        let isHeating = false;
+        let temperature = 25;
+
+        // Chemical reaction database
+        const reactions = {
+            'hcl+naoh': {
+                name: "Neutralization",
+                result: "HCl + NaOH → NaCl + H₂O",
+                observation: "Solution heated up to 35°C. pH became neutral (7). No color change visible.",
+                color: 0x88aaff
+            },
+            'hcl+phenolphthalein': {
+                name: "Acid with Indicator",
+                result: "HCl + Phenolphthalein",
+                observation: "Solution remained colorless (acidic conditions).",
+                color: 0x88aaff
+            },
+            'naoh+phenolphthalein': {
+                name: "Base with Indicator",
+                result: "NaOH + Phenolphthalein",
+                observation: "Solution turned bright pink! (Basic conditions).",
+                color: 0xff69b4
+            },
+            'copper+zinc': {
+                name: "Displacement Reaction",
+                result: "CuSO₄ + Zn → ZnSO₄ + Cu",
+                observation: "Zinc turned reddish-brown as copper deposited. Blue color faded.",
+                color: 0xcd7f32
+            }
+        };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 4, 8);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0px';
+            labelRenderer.domElement.style.left = '0px';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            document.body.appendChild(labelRenderer.domElement);
+
+            // FIXED: OrbitControls with full functionality
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;          // Smooth inertia
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 1.0;             // Rotation speed
+            controls.zoomSpeed = 1.2;               // Zoom speed
+            controls.panSpeed = 0.8;                // Pan speed
+            controls.enableZoom = true;              // Enable zoom
+            controls.enablePan = true;               // Enable pan
+            controls.zoomSpeed = 1.5;
+            controls.panSpeed = 1.0;
+            controls.target.set(0, 0, 0);
+
+            setupLighting();
+            createLabEnvironment();
+            createEquipment();
+            animate();
+        }
+
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            const fillLight = new THREE.PointLight(0xff6600, 0.5);
+            fillLight.position.set(0, 2, 3);
+            scene.add(fillLight);
+
+            // Add back light
+            const backLight = new THREE.PointLight(0x4466cc, 0.3);
+            backLight.position.set(0, 1, -3);
+            scene.add(backLight);
+        }
+
+        function createLabEnvironment() {
+            const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 4),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 }));
+            table.position.set(0, -0.4, 0);
+            table.receiveShadow = true;
+            scene.add(table);
+
+            // Colored accents for chem lab
+            const colors = [0xff4444, 0x44ff44, 0x4444ff];
+            for (let i = -2; i <= 2; i++) {
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16),
+                    new THREE.MeshStandardMaterial({ color: colors[(i+2) % 3], emissive: 0x222222 }));
+                sphere.position.set(i, 0.2, 1.5);
+                scene.add(sphere);
+            }
+        }
+
+        function createEquipment() {
+            const equipment = [
+                { name: 'Beaker', type: 'beaker', x: -1.5, y: 0.1, z: 1, action: 'openReaction' },
+                { name: 'Bunsen Burner', type: 'burner', x: 0, y: 0.1, z: 1.2, action: 'heatChemicals' },
+                { name: 'Test Tubes', type: 'testtube', x: 1.5, y: 0.1, z: 1, action: 'testTubeReaction' },
+                { name: 'pH Meter', type: 'phmeter', x: 2, y: 0.5, z: -1, action: 'measurePH' }
+            ];
+
+            equipment.forEach(item => {
+                let mesh;
+                if (item.type === 'beaker') {
+                    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.6, 32),
+                        new THREE.MeshPhysicalMaterial({ color: beakerColor, transparent: true, opacity: 0.6 }));
+                } else if (item.type === 'burner') {
+                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.1, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x666666 }));
+                    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.3, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                    tube.position.y = 0.2;
+                    mesh = new THREE.Group();
+                    mesh.add(base);
+                    mesh.add(tube);
+                    mesh.position.set(item.x, item.y, item.z);
+                } else if (item.type === 'testtube') {
+                    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.5, 16),
+                        new THREE.MeshPhysicalMaterial({ color: 0x88ff88, transparent: true, opacity: 0.7 }));
+                    mesh.position.set(item.x, item.y, item.z);
+                } else {
+                    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.2),
+                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
+                    mesh.position.set(item.x, item.y, item.z);
+                }
+
+                if (mesh) {
+                    mesh.userData = { name: item.name, action: item.action, interactable: true };
+                    mesh.castShadow = true;
+                    scene.add(mesh);
+
+                    const div = document.createElement('div');
+                    div.textContent = item.name;
+                    div.style.cssText = 'color:white;background:rgba(0,0,0,0.6);padding:2px 8px;border-radius:4px;font-size:12px;pointer-events:none';
+                    const label = new CSS2DObject(div);
+                    label.position.set(item.x, item.y + 0.5, item.z);
+                    scene.add(label);
+
+                    equipmentGroup.push({ mesh, label, data: item });
+                }
+            });
+        }
+
+        function openReaction() {
+            document.getElementById('reactionPanel').style.display = 'block';
+            selectedChemicals = [];
+            document.getElementById('reactionResult').innerHTML = '';
+        }
+
+        function closeReactionPanel() {
+            document.getElementById('reactionPanel').style.display = 'none';
+        }
+
+        function mixChemicals() {
+            const buttons = document.querySelectorAll('.chemical-btn.selected');
+            selectedChemicals = [];
+            buttons.forEach(btn => {
+                selectedChemicals.push(btn.dataset.chemical);
+            });
+
+            if (selectedChemicals.length < 2) {
+                alert('Please select at least 2 chemicals to mix');
+                return;
+            }
+
+            const key = selectedChemicals.sort().join('+');
+            const reaction = reactions[key];
+
+            if (reaction) {
+                document.getElementById('reactionResult').innerHTML = `
+                    <strong>${reaction.name}</strong><br>
+                    ${reaction.result}<br>
+                    Observation: ${reaction.observation}
+                `;
+                beakerColor = reaction.color;
+                updateTask('beaker');
+                updateTask('observe');
+
+                // Visual effect
+                const beakerObj = equipmentGroup.find(e => e.data.name === 'Beaker');
+                if (beakerObj && beakerObj.mesh) {
+                    beakerObj.mesh.material.color.setHex(reaction.color);
+                    beakerObj.mesh.material.emissiveIntensity = 0.3;
+                    setTimeout(() => {
+                        beakerObj.mesh.material.emissiveIntensity = 0;
+                    }, 1000);
+                }
+
+                saveInteraction(`Mixed chemicals: ${selectedChemicals.join(' + ')} - ${reaction.observation}`);
+            } else {
+                document.getElementById('reactionResult').innerHTML = `
+                    No reaction observed. The chemicals may be incompatible or need different conditions.
+                `;
+            }
+        }
+
+        function heatChemicals() {
+            isHeating = !isHeating;
+            if (isHeating) {
+                temperature += 10;
+                updateTask('heat');
+                saveInteraction(`Heating apparatus used. Temperature reached ${temperature}°C`);
+
+                // Visual effect - flame animation
+                const burnerObj = equipmentGroup.find(e => e.data.name === 'Bunsen Burner');
+                if (burnerObj && burnerObj.mesh) {
+                    const flame = new THREE.PointLight(0xff6600, 0.8, 2);
+                    flame.position.set(0, 0.3, 0);
+                    burnerObj.mesh.add(flame);
+                    setTimeout(() => burnerObj.mesh.remove(flame), 2000);
+                }
+
+                // Show result panel
+                showResultMessage("Bunsen burner ignited!", `Temperature increased to ${temperature}°C`);
+            } else {
+                showResultMessage("Bunsen burner turned off", "Heating stopped");
+            }
+        }
+
+        function testTubeReaction() {
+            updateTask('testtube');
+            updateTask('observe');
+
+            const reactions_list = [
+                "Bubbles formed! Gas released (CO₂)",
+                "Solution turned from clear to blue",
+                "Precipitate formed at the bottom",
+                "Temperature increased by 5°C",
+                "Color changed from yellow to red"
+            ];
+            const result = reactions_list[Math.floor(Math.random() * reactions_list.length)];
+
+            showResultMessage("Test Tube Reaction", result);
+            saveInteraction(`Test tube reaction observed: ${result}`);
+        }
+
+        function measurePH() {
+            const phValue = Math.floor(Math.random() * 14) + 1;
+            let phDescription = "";
+            if (phValue < 7) phDescription = "Acidic";
+            else if (phValue > 7) phDescription = "Basic";
+            else phDescription = "Neutral";
+
+            showResultMessage("pH Measurement", `pH Value: ${phValue} (${phDescription})`);
+            saveInteraction(`Measured pH: ${phValue} - ${phDescription}`);
+            updateTask('observe');
+        }
+
+        function showResultMessage(title, message) {
+            const resultDiv = document.createElement('div');
+            resultDiv.style.position = 'absolute';
+            resultDiv.style.top = '50%';
+            resultDiv.style.left = '50%';
+            resultDiv.style.transform = 'translate(-50%, -50%)';
+            resultDiv.style.background = 'rgba(0,0,0,0.9)';
+            resultDiv.style.color = '#4CAF50';
+            resultDiv.style.padding = '20px 30px';
+            resultDiv.style.borderRadius = '10px';
+            resultDiv.style.fontSize = '16px';
+            resultDiv.style.fontWeight = 'bold';
+            resultDiv.style.textAlign = 'center';
+            resultDiv.style.zIndex = '300';
+            resultDiv.style.borderLeft = `4px solid #4CAF50`;
+            resultDiv.innerHTML = `<strong>${title}</strong><br>${message}`;
+            document.body.appendChild(resultDiv);
+
+            setTimeout(() => {
+                resultDiv.style.opacity = '0';
+                resultDiv.style.transition = 'opacity 0.5s';
+                setTimeout(() => resultDiv.remove(), 500);
+            }, 3000);
+        }
+
+        function updateTask(taskName) {
+            if (!tasks[taskName]) {
+                tasks[taskName] = true;
+                const taskElement = document.getElementById(`task-${taskName}`);
+                if (taskElement) {
+                    taskElement.classList.add('completed');
+                    taskElement.innerHTML = `<i class="fas fa-check-circle" style="color: #2ecc71;"></i> ${taskElement.innerText.substring(1)}`;
+                }
+            }
+            checkAllTasks();
+        }
+
+        function checkAllTasks() {
+            const allComplete = Object.values(tasks).every(t => t === true);
+            if (allComplete) {
+                document.getElementById('taskResult').innerHTML = '<i class="fas fa-check-circle"></i> All chemistry tasks complete! Ready to submit.';
+                document.getElementById('taskResult').style.background = 'rgba(46, 204, 113, 0.3)';
+                document.getElementById('taskResult').style.display = 'block';
+            }
+        }
+
+        function saveInteraction(message) {
+            fetch('@Url.Action("SaveLabProgress", "VirtualLab")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({
+                    resultId: resultId,
+                    observations: message,
+                    conclusions: '',
+                    resultsData: JSON.stringify({ action: message, timestamp: new Date(), tasks: tasks })
+                })
+            }).catch(error => console.error('Error saving:', error));
+        }
+
+        function saveObservations() {
+            const obs = document.getElementById('observations').value;
+            if (obs) {
+                saveInteraction(`Observations: ${obs}`);
+                alert('Observations saved!');
+                document.getElementById('observations').value = '';
+            }
+        }
+
+        function saveProgress() {
+            saveInteraction('Progress saved');
+            alert('Progress saved!');
+        }
+
+        function submitLab() {
+            const allComplete = Object.values(tasks).every(t => t === true);
+            if (!allComplete) {
+                alert('Please complete all tasks before submitting!');
+                return;
+            }
+
+            if (confirm('Submit this lab for grading?')) {
+                fetch('@Url.Action("SubmitLab", "VirtualLab")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ resultId: resultId })
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          alert('Lab submitted successfully!');
+                          window.location.href = '@Url.Action("Index", "VirtualLab")';
+                      }
+                  });
+            }
+        }
+
+        function exitLab() {
+            if (confirm('Exit the lab? Your progress will be saved.')) {
+                saveProgress();
+                setTimeout(() => { window.location.href = '@Url.Action("Index", "VirtualLab")'; }, 500);
+            }
+        }
+
+        // Chemical button selection
+        document.querySelectorAll('.chemical-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('selected');
+            });
+        });
+
+        // Interaction handling for 3D objects
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(equipmentGroup.map(e => e.mesh), true);
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj.parent && !obj.userData.action) obj = obj.parent;
+                if (obj.userData.action && typeof window[obj.userData.action] === 'function') {
+                    window[obj.userData.action]();
+                    saveInteraction(`Interacted with: ${obj.userData.name}`);
+                }
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // This is critical for smooth controls
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        init();
+
+        window.openReaction = openReaction;
+        window.closeReactionPanel = closeReactionPanel;
+        window.mixChemicals = mixChemicals;
+        window.heatChemicals = heatChemicals;
+        window.testTubeReaction = testTubeReaction;
+        window.measurePH = measurePH;
+        window.saveObservations = saveObservations;
+        window.saveProgress = saveProgress;
+        window.submitLab = submitLab;
+        window.exitLab = exitLab;
+    </script>
+</body>
+</html>
