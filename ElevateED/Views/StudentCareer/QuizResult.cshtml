@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.InterestResultViewModel
 @{
     ViewBag.Title = "Your Results - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
     var medals = new[] { "🥇", "🥈", "🥉" };
 }
 
@@ -33,16 +35,7 @@
     .btn-light { background: var(--gray-100); color: var(--gray-700); }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-star" style="color: var(--accent);"></i> Your Interest Results</h1>
                 <p>Based on your answers, these career fields suit you best.</p>
@@ -93,5 +86,3 @@
                 <a href="@Url.Action("Quiz")" class="btn btn-light"><i class="fas fa-rotate-right"></i> Retake quiz</a>
             </div>
         </div>
-    </main>
-</div>

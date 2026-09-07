@@ -1,5 +1,7 @@
 ﻿@{
     ViewBag.Title = "Select Class - " + ViewBag.Grade;
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "classregister";
     var teacherName = ViewBag.TeacherName as string;
     var grade = ViewBag.Grade as string;
     var classes = ViewBag.Classes as List<string>;

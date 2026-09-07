@@ -1,6 +1,8 @@
 ﻿@model ElevateED.ViewModels.QuizViewModel
 @{
     ViewBag.Title = "Quiz - " + Model.SubjectName;
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "quiz";
 }
 
 <style>

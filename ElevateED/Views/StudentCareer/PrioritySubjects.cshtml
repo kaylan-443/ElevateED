@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.PrioritySubjectsViewModel
 @{
     ViewBag.Title = "What to Work On First - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
     var career = Model.Career;
     var match = Model.Match;
 }
@@ -44,16 +46,7 @@
     .empty-note { font-size: 13px; color: var(--gray-400); padding: 6px 0; }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Detail", new { id = career.Id })" class="back-link"><i class="fas fa-arrow-left"></i> Back to @career.Name</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-list-ol" style="color: var(--accent);"></i> What to work on first</h1>
                 <p>For <span class="career-name">@career.Name</span> — ranked by how many marks it would actually take to close each gap.</p>
@@ -128,5 +121,3 @@
                 </div>
             }
         </div>
-    </main>
-</div>

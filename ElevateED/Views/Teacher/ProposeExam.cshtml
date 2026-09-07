@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = Model.Id == 0 ? "Propose Exam" : "Edit Exam Proposal";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "proposeexam";
 }
 
 <style>
@@ -246,10 +248,6 @@
     }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "propose-exam")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-calendar-plus" style="color:#6366f1;margin-right:10px;"></i>@ViewBag.Title</h1>
@@ -376,8 +374,6 @@
                 <p>Choose a cycle above and the school calendar will appear here.</p>
             </div>
         }
-    </main>
-</div>
 
 <script>
     (function () {

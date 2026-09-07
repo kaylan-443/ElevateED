@@ -3,6 +3,8 @@
 @model ElevateED.ViewModels.LearnerReadinessDetailViewModel
 @{
     ViewBag.Title = "Learner Readiness - ElevateED";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "readiness";
     var r = Model.Result;
     var subjectId = (int)ViewBag.SubjectId;
 
@@ -56,10 +58,6 @@
     .none-note { color: #999; font-size: 13px; font-style: italic; }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "readiness")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-user-graduate"></i> @r.StudentName</h1>
@@ -177,5 +175,3 @@
                 </table>
             }
         </div>
-    </main>
-</div>

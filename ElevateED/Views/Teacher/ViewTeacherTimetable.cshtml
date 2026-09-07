@@ -1,5 +1,7 @@
 ﻿@{
     ViewBag.Title = "My Timetable - Teacher Dashboard";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "timetable";
     var timetable = ViewBag.Timetable as ElevateED.Models.TimeTable;
     var teacherName = ViewBag.TeacherName as string;
     var noTimetable = ViewBag.NoTimetable as bool?;

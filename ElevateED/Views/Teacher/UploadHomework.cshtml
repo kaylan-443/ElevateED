@@ -1,5 +1,7 @@
 ﻿@{
     ViewBag.Title = "Upload Homework";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "homework";
     var subject = ViewBag.Subject as ElevateED.Models.Subject;
     var classEntity = ViewBag.Class as ElevateED.Models.Class;
     var teacherName = ViewBag.TeacherName as string;

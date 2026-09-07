@@ -3,6 +3,8 @@
 
 @{
     ViewBag.Title = "My Exam Proposals";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "myproposals";
 }
 
 <style>
@@ -68,10 +70,6 @@
     .empty-state p { color: #888; }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "my-proposals")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-calendar-check" style="color:#6366f1;margin-right:10px;"></i>My Exam Proposals</h1>
@@ -162,5 +160,3 @@
                 </div>
             </div>
         }
-    </main>
-</div>

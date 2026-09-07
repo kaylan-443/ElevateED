@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.CareerDashboardViewModel
 @{
     ViewBag.Title = "Career Guidance - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
     var aps = Model.Aps;
 }
 
@@ -70,32 +72,7 @@
     .btn-light { background: var(--gray-100); color: var(--gray-700); }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <div class="profile-container">
-                    <button class="profile-trigger" onclick="toggleCareerDropdown()">
-                        <div class="avatar">@(Model.StudentName?.Substring(0,1) ?? "S")</div>
-                        <span class="profile-name">@Model.StudentName</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </button>
-                    <div class="dropdown-menu" id="careerProfileDropdown">
-                        <div class="dropdown-header">
-                            <div class="user-name">@Model.StudentName</div>
-                            <div class="user-email">@Model.Grade</div>
-                        </div>
-                        <form action="@Url.Action("LogOff", "Account")" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-compass" style="color: var(--accent);"></i> Career Guidance</h1>
                 <p>Discover careers that match your marks and interests.</p>
@@ -203,8 +180,6 @@
 
             <a href="@Url.Action("Explore")" class="btn btn-primary"><i class="fas fa-compass"></i> Explore all careers</a>
         </div>
-    </main>
-</div>
 
 <script>
     function toggleCareerDropdown() {

@@ -1,6 +1,8 @@
 ﻿@model List<ElevateED.Models.Subject>
 @{
     ViewBag.Title = "Quizzes";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "quiz";
     var recentAttempts = ViewBag.RecentAttempts as List<ElevateED.Models.QuizAttempt>;
 }
 

@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.PlannerSetupViewModel
 @{
     ViewBag.Title = "Set Up Study Plan - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "planner";
 }
 
 <style>
@@ -36,16 +38,7 @@
     .btn-light { background: var(--gray-100); color: var(--gray-700); }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to planner</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-wand-magic-sparkles" style="color: var(--accent);"></i> Set up your study plan</h1>
                 <p>Tell us when you're free — we'll do the scheduling.</p>
@@ -170,8 +163,6 @@
                 }
             }
         </div>
-    </main>
-</div>
 
 <script>
     function toggleDay(i, on) {

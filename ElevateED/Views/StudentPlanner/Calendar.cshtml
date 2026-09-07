@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.PlannerCalendarViewModel
 @{
     ViewBag.Title = "Study Calendar - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "planner";
     var weekParam = Model.WeekStart.ToString("yyyy-MM-dd");
     var today = DateTime.Today;
 
@@ -469,16 +471,7 @@
     }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to planner</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="top-bar">
                 <div>
                     <h1><i class="fas fa-calendar-week" style="color: var(--accent);"></i> @Model.Plan.Name</h1>
@@ -670,8 +663,6 @@
                 }
             </div>
         </div>
-    </main>
-</div>
 
 <script>
 var ELEVATEED_AFTOKEN = '@Html.Raw(System.Web.Helpers.AntiForgery.GetHtml().ToString().Replace("'", "\\'"))';

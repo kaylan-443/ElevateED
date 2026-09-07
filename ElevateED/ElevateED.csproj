@@ -740,6 +740,8 @@
     <Content Include="Views\Student\MathSolver.cshtml" />
     <Content Include="Views\Shared\_AdminLayout.cshtml" />
     <Content Include="Views\Shared\_AdminSidebar.cshtml" />
+    <Content Include="Views\Shared\_TeacherLayout.cshtml" />
+    <Content Include="Views\Shared\_StudentLayout.cshtml" />
     <Content Include="Views\Podcast\Index.cshtml" />
     <Content Include="Views\AIStudy\Index.cshtml" />
     <Content Include="Views\AIStudy\Workspace.cshtml" />

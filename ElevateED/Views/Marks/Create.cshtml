@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = "Create Assessment";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "marks";
 }
 
 <style>
@@ -95,10 +97,6 @@
     }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "marks")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-plus-circle" style="color:#6366f1;margin-right:10px;"></i>New Assessment</h1>
@@ -169,5 +167,3 @@
                 </div>
             }
         </div>
-    </main>
-</div>

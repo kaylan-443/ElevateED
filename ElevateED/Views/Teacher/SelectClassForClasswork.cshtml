@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = "Select Class - Classwork";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "classwork";
     var subject = ViewBag.Subject as ElevateED.Models.Subject;
     var grade = ViewBag.Grade as ElevateED.Models.Grade;
     var teacherName = ViewBag.TeacherName as string;

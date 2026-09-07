@@ -3,6 +3,8 @@
 
 @{
     ViewBag.Title = "Assessment Marks";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "marks";
 }
 
 <style>
@@ -125,10 +127,6 @@
     .alert-flash-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "marks")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-clipboard-check" style="color:#6366f1;margin-right:10px;"></i>Assessment Marks</h1>
@@ -204,5 +202,3 @@
                 </div>
             </div>
         }
-    </main>
-</div>

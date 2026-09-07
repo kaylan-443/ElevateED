@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = "View Past Papers - ElevateED";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "pastpapers";
     var selectedGrade = ViewBag.SelectedGrade as string;
     var subjects = ViewBag.Subjects as List<string>;
     var years = ViewBag.Years as List<string>;

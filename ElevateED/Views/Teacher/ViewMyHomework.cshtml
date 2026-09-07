@@ -3,6 +3,8 @@
 @{
     ViewBag.Title = "My Uploaded Homework";
     var teacherName = ViewBag.TeacherName as string;
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "viewhomework";
 }
 
 <style>
@@ -12,55 +14,9 @@
         box-sizing: border-box;
     }
 
-    :root {
-        --primary: #4f46e5;
-        --accent: #fbbf24;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --info: #3b82f6;
-        --purple: #8b5cf6;
-        --orange: #f97316;
-        --teal: #16a085;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        --sidebar-width: 280px;
-        --header-height: 70px;
-    }
-
     body {
         font-family: 'Inter', -apple-system, sans-serif;
         background: var(--gray-50);
-    }
-
-    .app-container {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: var(--sidebar-width);
-        background: linear-gradient(180deg, #1e1b4b 0%, #2e1065 100%);
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        z-index: 100;
-        overflow-y: auto;
-    }
-
-    .sidebar-header {
-        padding: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
     .logo {
@@ -91,91 +47,11 @@
             color: var(--accent);
         }
 
-    .sidebar-nav {
-        flex: 1;
-        padding: 24px 16px;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 12px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        transition: all 0.2s;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-        .nav-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--accent), #f59e0b);
-            color: #1e1b4b;
-        }
-
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
-    .nav-section {
-        margin-top: 24px;
-        margin-bottom: 12px;
-        padding: 0 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .main-content {
-        flex: 1;
-        margin-left: var(--sidebar-width);
-        min-height: 100vh;
-    }
-
-    .top-header {
-        height: var(--header-height);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 0 32px;
-        position: sticky;
-        top: 0;
-        z-index: 99;
-    }
-
     .header-right {
         display: flex;
         align-items: center;
         gap: 24px;
     }
-
-    .profile-trigger {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 50px;
-        transition: all 0.2s;
-        background: none;
-        border: none;
-    }
-
-        .profile-trigger:hover {
-            background: var(--gray-100);
-        }
 
     .avatar {
         width: 40px;
@@ -189,27 +65,6 @@
         font-weight: 600;
         font-size: 16px;
         text-transform: uppercase;
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        width: 220px;
-        overflow: hidden;
-        display: none;
-        z-index: 1000;
-    }
-
-        .dropdown-menu.show {
-            display: block;
-        }
-
-    .content-area {
-        padding: 32px;
     }
 
     .page-header {
@@ -326,7 +181,7 @@
         }
 
     .btn-grade {
-        background: var(--orange);
+        background: #f97316;
         color: white;
     }
 
@@ -369,31 +224,8 @@
             color: var(--gray-400);
             margin-bottom: 15px;
         }
-
-    @@media (max-width: 1024px) {
-        .sidebar {
-            transform: translateX(-100%);
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-    }
 </style>
 
-<div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-header"><div class="logo"><div class="logo-icon"><i class="fas fa-graduation-cap"></i></div><div class="logo-text">Elevate<span>ED</span></div></div></div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Main</div>
-            <a href="@Url.Action("Dashboard","Teacher")" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-            <div class="nav-section">Teaching</div>
-            <a href="@Url.Action("Homework","Teacher")" class="nav-item active"><i class="fas fa-home"></i><span>Homework</span></a>
-        </nav>
-    </aside>
-    <main class="main-content">
-        <header class="top-header"><div class="header-right"><div class="profile-container" style="position:relative;"><button class="profile-trigger" onclick="toggleDropdown()"><div class="avatar">T</div></button></div></div></header>
-        <div class="content-area">
             <div class="page-header"><div><h1><i class="fas fa-home" style="color:var(--teal);"></i> My Uploaded Homework</h1><p style="color:var(--gray-500);">View and manage homework you've assigned</p></div><a href="@Url.Action("Homework","Teacher")" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Subjects</a></div>
 
             @if (Model == null || !Model.Any())
@@ -420,9 +252,6 @@
                         </div>
                     </div>}
             }
-        </div>
-    </main>
-</div>
 <script>
     function toggleDropdown(){document.getElementById('profileDropdown').classList.toggle('show');}
     document.addEventListener('click',function(e){var c=document.querySelector('.profile-container');var d=document.getElementById('profileDropdown');if(c&&!c.contains(e.target))d.classList.remove('show');});

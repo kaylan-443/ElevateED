@@ -2,6 +2,8 @@
 
 @{
     ViewBag.Title = "Class Teacher Comment";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "classreports";
 }
 
 <style>
@@ -120,10 +122,6 @@
     }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "marks-comments")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-comment-dots" style="color:#6366f1;margin-right:10px;"></i>Class Teacher Comment</h1>
@@ -173,5 +171,3 @@
                 </div>
             }
         </div>
-    </main>
-</div>

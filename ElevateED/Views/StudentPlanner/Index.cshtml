@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.PlannerIndexViewModel
 @{
     ViewBag.Title = "Study Planner - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "planner";
     var p = Model.Progress;
     var active = Model.ActiveCard;
 }
@@ -55,16 +57,7 @@
     .plan-actions { display: flex; gap: 6px; align-items: center; }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Dashboard", "Student")" style="color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <div>
                     <h1><i class="fas fa-calendar-day" style="color: var(--accent);"></i> Smart Study Planner</h1>
@@ -187,5 +180,3 @@
                 </div>
             }
         </div>
-    </main>
-</div>

@@ -1,7 +1,8 @@
-﻿@model dynamic
+@model dynamic
 @{
     ViewBag.Title = "Chemistry Lab - " + ViewBag.Experiment.Title;
     var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -9,661 +10,1471 @@
 <head>
     <title>@ViewBag.Title - ElevateED</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <style>
-        body {
+        :root {
+            --bg-deep: #060a16;
+            --bg-deep-2: #0c1224;
+            --panel: rgba(15, 23, 42, 0.72);
+            --panel-solid: #0f172a;
+            --border: rgba(148, 163, 184, 0.16);
+            --cyan: #22d3ee;
+            --cyan-dark: #0891b2;
+            --violet: #8b5cf6;
+            --amber: #fbbf24;
+            --emerald: #34d399;
+            --rose: #fb7185;
+            --text: #e2e8f0;
+            --text-dim: #93a3b8;
+            --text-faint: #64748b;
+            --danger: #f87171;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
             margin: 0;
+            padding: 0;
+            height: 100%;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        #info {
+        body {
+            background:
+                radial-gradient(ellipse 80% 60% at 15% 0%, rgba(34, 211, 238, 0.10), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 10%, rgba(139, 92, 246, 0.12), transparent 55%),
+                linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.25); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.4); }
+
+        .bg-motes { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .mote {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            pointer-events: none;
-            font-size: 14px;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34,211,238,0.7), transparent 70%);
+            animation: moteDrift linear infinite;
+        }
+        @@keyframes moteDrift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: .6; }
+            90% { opacity: .6; }
+            100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
         }
 
-        #taskPanel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 320px;
-            pointer-events: auto;
-            font-size: 13px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        #reactionPanel {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            width: 400px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-        }
-
-        .chemical-selector {
+        .lab-shell {
+            position: relative;
+            z-index: 1;
             display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin: 10px 0;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* ---------- Topbar ---------- */
+        .lab-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 20px;
+            background: rgba(8, 12, 24, 0.75);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
             flex-wrap: wrap;
         }
 
-        .chemical-btn {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+        .topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+        .icon-btn {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(148,163,184,0.06);
+            color: var(--text);
+            display: flex; align-items: center; justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all .2s ease;
+            flex-shrink: 0;
+        }
+        .icon-btn:hover { background: rgba(34,211,238,0.15); border-color: var(--cyan); color: var(--cyan); transform: translateY(-1px); }
+
+        .topbar-title { min-width: 0; }
+        .topbar-title .eyebrow {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+            color: var(--cyan);
+        }
+        .topbar-title h1 {
+            margin: 2px 0 0;
+            font-size: clamp(15px, 2vw, 20px);
+            font-weight: 800;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 46vw;
         }
 
-            .chemical-btn.selected {
-                background: #f39c12;
-            }
+        .topbar-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(148,163,184,0.08);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+        .chip i { color: var(--cyan); }
 
-            .chemical-btn:hover {
-                background: #e67e22;
-            }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .session-timer {
+            display: flex; align-items: center; gap: 7px;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700; font-size: 13px;
+            color: var(--text-dim);
+            background: rgba(148,163,184,0.06);
+            border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 10px;
+        }
+        .session-timer i { color: var(--amber); }
 
-        .reaction-result {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
+        .progress-ring-wrap { position: relative; width: 48px; height: 48px; }
+        .progress-ring { width: 48px; height: 48px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: rgba(148,163,184,0.15); stroke-width: 4; }
+        .ring-fill {
+            fill: none; stroke: var(--emerald); stroke-width: 4; stroke-linecap: round;
+            transition: stroke-dashoffset .6s ease;
+        }
+        #ringLabel {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 800; color: var(--text);
         }
 
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-            flex-direction: column;
+        /* ---------- Layout ---------- */
+        .lab-main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 16px;
+            padding: 16px;
+            overflow: hidden;
+            min-height: 0;
         }
 
-        .btn-lab {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+        .panel { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            backdrop-filter: blur(8px);
+        }
+        .card h3 {
+            margin: 0 0 12px;
+            font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text-dim);
+        }
+        .card h3 i { color: var(--cyan); }
+
+        details.card summary {
             cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+            color: var(--text-dim);
+            display: flex; align-items: center; gap: 8px;
+            list-style: none;
         }
+        details.card summary::-webkit-details-marker { display: none; }
+        details.card summary i { color: var(--cyan); }
+        .brief-body { margin-top: 12px; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+        .brief-body p { margin: 0 0 12px; }
+        .brief-body strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 
-            .btn-lab:hover {
-                transform: scale(1.05);
-            }
-
-        .observation-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 15px;
-            border-radius: 8px;
-            width: 280px;
-            z-index: 100;
-        }
-
-            .observation-panel textarea {
-                width: 100%;
-                padding: 8px;
-                margin-top: 5px;
-                border-radius: 4px;
-                border: none;
-            }
-
+        /* ---------- Tasks ---------- */
+        .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
         .task {
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 4px;
-            transition: all 0.3s;
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            background: rgba(148,163,184,0.04);
+            border: 1px solid transparent;
+            transition: all .3s ease;
+        }
+        .task i { color: var(--text-faint); font-size: 15px; flex-shrink: 0; }
+        .task.completed { background: rgba(52, 211, 153, 0.12); border-color: rgba(52,211,153,0.3); }
+        .task.completed i { color: var(--emerald); }
+        .task.completed span { color: var(--text); }
+
+        .task-banner {
+            display: none;
+            align-items: center; gap: 8px;
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52,211,153,0.4);
+            color: var(--emerald);
+            font-size: 12.5px; font-weight: 700;
+        }
+        .task-banner.show { display: flex; animation: bannerPop .4s ease; }
+        @@keyframes bannerPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ---------- Notebook ---------- */
+        .notebook-card textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 80px;
+            background: rgba(2,6,23,0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .notebook-card textarea:focus { outline: none; border-color: var(--cyan); }
+
+        .log-feed {
+            margin-top: 12px;
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .log-entry {
+            font-size: 11.5px; line-height: 1.4;
+            color: var(--text-dim);
+            padding: 7px 9px;
+            border-left: 2px solid var(--cyan-dark);
+            background: rgba(148,163,184,0.04);
+            border-radius: 0 8px 8px 0;
+            animation: logIn .3s ease;
+        }
+        .log-entry time { color: var(--text-faint); font-weight: 700; margin-right: 5px; }
+        @@keyframes logIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 11px;
+            border: 1px solid var(--border);
+            font-size: 13px; font-weight: 700;
+            cursor: pointer;
+            transition: all .2s ease;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+        .btn:last-child { margin-bottom: 0; }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-primary { background: linear-gradient(135deg, var(--cyan), var(--cyan-dark)); color: #04222b; border-color: transparent; }
+        .btn-primary:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(34,211,238,0.35); }
+        .btn-secondary { background: rgba(139,92,246,0.15); color: #c4b5fd; border-color: rgba(139,92,246,0.35); }
+        .btn-secondary:hover { background: rgba(139,92,246,0.25); }
+        .btn-ghost { background: rgba(148,163,184,0.06); color: var(--text-dim); }
+        .btn-ghost:hover { background: rgba(148,163,184,0.14); color: var(--text); }
+        .btn-equipment { background: rgba(251,191,36,0.1); color: var(--amber); border-color: rgba(251,191,36,0.3); }
+        .btn-equipment:hover { background: rgba(251,191,36,0.2); transform: translateY(-1px); }
+
+        /* ---------- Stage ---------- */
+        .stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: radial-gradient(ellipse at 50% 20%, rgba(34,211,238,0.06), transparent 60%), var(--panel-solid);
+            overflow: hidden;
+            min-height: 0;
         }
 
-            .task.completed {
-                background: rgba(46, 204, 113, 0.2);
-            }
-
-                .task.completed i {
-                    color: #2ecc71;
-                }
-
-        .instruction-tip {
+        .bench {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: clamp(16px, 4vw, 60px);
+            padding: 24px 16px 30px;
+            min-height: 260px;
+        }
+        .bench::before {
+            content: '';
             position: absolute;
-            bottom: 100px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
-            color: #ccc;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            pointer-events: none;
-            z-index: 100;
+            left: 6%; right: 6%; bottom: 14%;
+            height: 10px;
+            background: linear-gradient(90deg, transparent, rgba(148,163,184,0.25), transparent);
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+
+        .fx-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+
+        .equipment { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+
+        /* Burner */
+        .burner { justify-content: flex-end; }
+        .flame { width: 26px; height: 42px; margin-bottom: -4px; opacity: 0; transition: opacity .3s ease; position: relative; }
+        .flame.on { opacity: 1; }
+        .flame::before, .flame::after {
+            content: ''; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        }
+        .flame::before {
+            width: 26px; height: 42px;
+            background: radial-gradient(circle at 50% 75%, #fff7ae 0%, #ffb340 38%, #ff5e00 72%, transparent 78%);
+            animation: flicker .55s ease-in-out infinite alternate;
+        }
+        .flame::after {
+            width: 11px; height: 22px; bottom: 2px;
+            background: radial-gradient(circle at 50% 75%, #ffffff 0%, #ffe999 55%, transparent 80%);
+            animation: flicker .38s ease-in-out infinite alternate-reverse;
+        }
+        @@keyframes flicker { from { transform: translateX(-50%) scale(1,1); } to { transform: translateX(-50%) scale(.88,1.14); } }
+        .burner-body {
+            width: 54px; height: 34px;
+            background: linear-gradient(180deg, #64748b, #334155);
+            border-radius: 6px 6px 3px 3px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.4);
+            position: relative;
+        }
+        .burner-body::before {
+            content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 8px; background: #475569; border-radius: 3px;
+        }
+        .burner.active .burner-body { box-shadow: 0 4px 12px rgba(0,0,0,.4), 0 0 22px rgba(251,146,60,0.55); }
+
+        /* Beaker */
+        .beaker-rig { gap: 0; }
+        .gauge-badge {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 800;
+            padding: 5px 10px; border-radius: 999px;
+            background: rgba(2,6,23,0.6);
+            border: 1px solid var(--border);
+            margin-bottom: 10px;
+            transition: color .4s ease, border-color .4s ease;
+        }
+        .temp-badge { color: var(--cyan); }
+        .temp-badge.warm { color: var(--amber); }
+        .temp-badge.hot { color: var(--rose); }
+
+        .beaker-glass {
+            position: relative;
+            width: clamp(110px, 13vw, 180px);
+            height: clamp(150px, 20vh, 230px);
+            border: 3px solid rgba(226,232,240,0.55);
+            border-top: none;
+            border-radius: 0 0 24px 24px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015));
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 10px 26px rgba(0,0,0,0.45);
+            transition: box-shadow .5s ease;
+        }
+        .beaker-glass::before {
+            content: ''; position: absolute; top: 0; left: -6px; right: -6px; height: 10px;
+            border: 3px solid rgba(226,232,240,0.55); border-bottom: none;
+            border-radius: 4px 4px 0 0;
+        }
+        .liquid {
+            position: absolute; left: 0; right: 0; bottom: 0; height: 12%;
+            background: #38bdf8;
+            transition: height .8s cubic-bezier(.4,0,.2,1), background-color 1s ease;
+        }
+        .wave {
+            position: absolute; top: -9px; left: -12%; width: 124%; height: 20px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: .85;
+        }
+        .wave1 { animation: waveDrift 3.1s ease-in-out infinite; }
+        .wave2 { animation: waveDrift 4.3s ease-in-out infinite reverse; opacity: .5; }
+        @@keyframes waveDrift {
+            0%, 100% { transform: translateX(-4%) scaleY(1); }
+            50% { transform: translateX(4%) scaleY(1.35); }
+        }
+        .sediment {
+            position: absolute; left: 2px; right: 2px; bottom: 0; height: 0;
+            background: repeating-linear-gradient(45deg, rgba(191,219,254,0.9) 0 3px, rgba(147,197,253,0.7) 3px 6px);
+            border-radius: 0 0 20px 20px;
+            transition: height 1.1s ease;
+        }
+        .stand-base {
+            width: clamp(90px, 11vw, 140px); height: 10px;
+            background: linear-gradient(180deg, #475569, #1e293b);
+            border-radius: 4px; margin-top: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,.4);
+        }
+        .beaker.shake { animation: shakeIt .5s ease; }
+        @@keyframes shakeIt {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px) rotate(-1deg); }
+            40% { transform: translateX(4px) rotate(1deg); }
+            60% { transform: translateX(-3px) rotate(-.5deg); }
+            80% { transform: translateX(3px) rotate(.5deg); }
+        }
+
+        /* Test tubes */
+        .testtube-rack { flex-direction: row; gap: 10px; align-items: flex-end; }
+        .testtube {
+            width: 22px; height: 78px;
+            border: 2px solid rgba(226,232,240,0.5);
+            border-top: none;
+            border-radius: 0 0 11px 11px;
+            position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.03);
+            transition: box-shadow .4s ease;
+        }
+        .testtube.flash { box-shadow: 0 0 18px rgba(34,211,238,0.7); }
+        .tt-liquid {
+            position: absolute; left: 0; right: 0; bottom: 0; height: 15%;
+            background: #94a3b8;
+            transition: height .6s ease, background-color .8s ease;
+        }
+
+        /* pH station */
+        .ph-station { align-items: center; }
+        .ph-meter {
+            position: relative;
+            width: clamp(100px, 11vw, 150px); height: 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #ef4444 0%, #f97316 20%, #facc15 40%, #22c55e 55%, #38bdf8 75%, #8b5cf6 100%);
+            margin-bottom: 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0,.35);
+        }
+        .ph-needle {
+            position: absolute; top: -5px; left: 50%;
+            width: 3px; height: 24px;
+            background: #fff;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(255,255,255,0.8);
+            transform: translateX(-50%);
+            transition: left .6s cubic-bezier(.4,0,.2,1);
+        }
+        .ph-badge.acid { color: var(--rose); }
+        .ph-badge.base { color: var(--violet); }
+        .ph-badge.neutral { color: var(--emerald); }
+
+        /* Mix tray */
+        .mix-tray {
+            border-top: 1px solid var(--border);
+            padding: 14px 18px;
+            background: rgba(2,6,23,0.35);
+            display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+        }
+        .mix-tray-label { font-size: 12px; font-weight: 800; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+        .mix-tray-label i { color: var(--cyan); }
+        .mix-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 160px; }
+        .mix-empty { font-size: 12px; color: var(--text-faint); font-style: italic; }
+        .mix-chip {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(34,211,238,0.14);
+            border: 1px solid rgba(34,211,238,0.35);
+            color: #a5f3fc;
+            font-size: 11.5px; font-weight: 700;
+            padding: 5px 8px 5px 10px;
+            border-radius: 999px;
+        }
+        .mix-chip button {
+            background: none; border: none; color: inherit; cursor: pointer; font-size: 12px; opacity: .7; padding: 0; line-height: 1;
+        }
+        .mix-chip button:hover { opacity: 1; }
+        .mix-actions { display: flex; gap: 8px; }
+        .mix-actions .btn { width: auto; margin-bottom: 0; white-space: nowrap; }
+
+        /* Reaction readout */
+        .reaction-readout {
+            border-top: 1px solid var(--border);
+            padding: 12px 18px 16px;
+            background: rgba(2,6,23,0.5);
+            animation: readoutIn .35s ease;
+        }
+        @@keyframes readoutIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .readout-title { font-size: 13px; font-weight: 800; color: var(--cyan); display: flex; align-items: center; gap: 8px; }
+        .readout-title::before { content: '\f0e7'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+        .readout-equation { font-size: 12.5px; color: var(--amber); margin: 4px 0; font-family: 'Cascadia Code', 'Consolas', monospace; }
+        .readout-observation { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
+        /* Shelf */
+        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .bottle {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            background: rgba(148,163,184,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 6px;
+            cursor: pointer;
+            transition: all .2s ease;
+            font-family: inherit;
+            color: var(--text);
+        }
+        .bottle:hover { background: rgba(148,163,184,0.1); transform: translateY(-2px); }
+        .bottle.selected {
+            border-color: var(--cyan);
+            background: rgba(34,211,238,0.12);
+            box-shadow: 0 0 0 3px rgba(34,211,238,0.18);
+            transform: translateY(-2px);
+        }
+        .bottle-glass {
+            width: 32px; height: 50px;
+            border-radius: 6px 6px 9px 9px;
+            border: 2px solid rgba(226,232,240,0.45);
+            position: relative;
+            overflow: hidden;
+            background: rgba(255,255,255,0.04);
+        }
+        .bottle-liquid { position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: var(--tint); }
+        .bottle-cap {
+            position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+            width: 13px; height: 9px; background: #475569; border-radius: 2px;
+        }
+        .bottle-label { font-size: 11px; font-weight: 800; text-align: center; line-height: 1.3; }
+        .bottle-label small { display: block; font-weight: 500; color: var(--text-faint); font-size: 9.5px; margin-top: 1px; }
+
+        .tip-card p { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--text-dim); }
+
+        /* Droplet (pour animation, appended to body) */
+        .droplet {
+            position: fixed; width: 9px; height: 13px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 999; pointer-events: none;
+            box-shadow: 0 0 6px rgba(255,255,255,0.4);
+        }
+
+        /* Toasts */
+        .toast-stack {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px;
+            align-items: center;
+        }
+        .toast {
+            background: rgba(15,23,42,0.95);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px; font-weight: 700;
+            box-shadow: 0 10px 26px rgba(0,0,0,.5);
+            animation: toastIn .3s ease;
+        }
+        .toast.warn { border-color: rgba(251,191,36,0.5); color: var(--amber); }
+        .toast.fade { animation: toastOut .35s ease forwards; }
+        @@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @@keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
+
+        .confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1500; }
+
+        /* ---------- Responsive ---------- */
+        @@media (max-width: 1180px) {
+            .lab-main { grid-template-columns: 260px 1fr 260px; }
+        }
+        @@media (max-width: 980px) {
+            .lab-main { grid-template-columns: 1fr; grid-auto-rows: auto; overflow-y: auto; }
+            .panel { overflow-y: visible; }
+            .stage { min-height: 460px; order: -1; }
+            .topbar-meta { display: none; }
+            .topbar-title h1 { max-width: 60vw; }
+        }
+        @@media (max-width: 560px) {
+            .lab-topbar { padding: 10px 12px; }
+            .session-timer span { display: none; }
+            .lab-main { padding: 10px; gap: 10px; }
+            .card { padding: 12px; }
+            .shelf-grid { grid-template-columns: repeat(3, 1fr); }
+            .mix-actions { width: 100%; }
+            .mix-actions .btn { flex: 1; }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .mote, .wave1, .wave2, .flame::before, .flame::after { animation: none !important; }
         }
     </style>
 </head>
 <body>
-    <div id="info">
-        <strong>@experiment.Title</strong> | Chemistry Lab
+    <div class="bg-motes" aria-hidden="true">
+        <span class="mote" style="left:6%;animation-duration:14s;animation-delay:0s;"></span>
+        <span class="mote" style="left:16%;animation-duration:18s;animation-delay:2s;"></span>
+        <span class="mote" style="left:28%;animation-duration:12s;animation-delay:4s;"></span>
+        <span class="mote" style="left:41%;animation-duration:20s;animation-delay:1s;"></span>
+        <span class="mote" style="left:55%;animation-duration:15s;animation-delay:6s;"></span>
+        <span class="mote" style="left:67%;animation-duration:17s;animation-delay:3s;"></span>
+        <span class="mote" style="left:78%;animation-duration:13s;animation-delay:5s;"></span>
+        <span class="mote" style="left:88%;animation-duration:19s;animation-delay:2.5s;"></span>
+        <span class="mote" style="left:94%;animation-duration:16s;animation-delay:0.5s;"></span>
+        <span class="mote" style="left:35%;animation-duration:22s;animation-delay:7s;"></span>
     </div>
 
-    <div class="instruction-tip">
-        🖱️ Mouse: Drag to rotate | Right-click + Drag to pan | Scroll to zoom
-    </div>
-
-    <div id="taskPanel">
-        <h4><i class="fas fa-flask"></i> Chemistry Lab Tasks</h4>
-        <div id="tasksList">
-            <div class="task" id="task-beaker">
-                <i class="fas fa-circle-notch"></i> Mix chemicals in beaker
+    <div class="lab-shell">
+        <header class="lab-topbar">
+            <div class="topbar-left">
+                <button class="icon-btn" id="btnExit" title="Exit Lab"><i class="fas fa-arrow-left"></i></button>
+                <div class="topbar-title">
+                    <span class="eyebrow"><i class="fas fa-flask"></i> Chemistry Lab</span>
+                    <h1>@experiment.Title</h1>
+                </div>
             </div>
-            <div class="task" id="task-heat">
-                <i class="fas fa-circle-notch"></i> Use heating apparatus
+            <div class="topbar-meta">
+                <span class="chip"><i class="fas fa-layer-group"></i> @experiment.Difficulty</span>
+                <span class="chip"><i class="fas fa-clock"></i> @experiment.DurationMinutes min</span>
+                <span class="chip"><i class="fas fa-graduation-cap"></i> @experiment.GradeLevel</span>
             </div>
-            <div class="task" id="task-testtube">
-                <i class="fas fa-circle-notch"></i> Perform test tube reaction
+            <div class="topbar-right">
+                <div class="session-timer"><i class="fas fa-stopwatch"></i> <span id="sessionTimer">00:00</span></div>
+                <button class="icon-btn" id="btnMute" title="Toggle sound"><i class="fas fa-volume-up" id="muteIcon"></i></button>
+                <div class="progress-ring-wrap" title="Task progress">
+                    <svg viewBox="0 0 44 44" class="progress-ring">
+                        <circle class="ring-bg" cx="22" cy="22" r="19"></circle>
+                        <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="19"></circle>
+                    </svg>
+                    <span id="ringLabel">0/6</span>
+                </div>
             </div>
-            <div class="task" id="task-observe">
-                <i class="fas fa-circle-notch"></i> Observe and record color changes
-            </div>
-        </div>
-        <div id="taskResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
-    </div>
+        </header>
 
-    <div id="reactionPanel">
-        <h4><i class="fas fa-vial"></i> Chemical Reaction</h4>
-        <div class="chemical-selector">
-            <button class="chemical-btn" data-chemical="hcl">HCl (Acid)</button>
-            <button class="chemical-btn" data-chemical="naoh">NaOH (Base)</button>
-            <button class="chemical-btn" data-chemical="phenolphthalein">Phenolphthalein</button>
-        </div>
-        <div class="chemical-selector">
-            <button class="chemical-btn" data-chemical="copper">Copper Sulfate</button>
-            <button class="chemical-btn" data-chemical="zinc">Zinc</button>
-            <button class="chemical-btn" data-chemical="water">Water</button>
-        </div>
-        <button class="btn-lab" onclick="mixChemicals()">Mix Selected</button>
-        <div id="reactionResult" class="reaction-result"></div>
-        <button class="btn-lab" onclick="closeReactionPanel()" style="background: #f44336;">Close</button>
-    </div>
-
-    <div class="observation-panel">
-        <h4><i class="fas fa-pen"></i> Observations</h4>
-        <textarea id="observations" rows="3" placeholder="Record your observations (color changes, temperature, bubbles, etc.)..."></textarea>
-        <button class="btn-lab" style="margin-top: 5px; padding: 5px 10px;" onclick="saveObservations()">Save Observations</button>
-    </div>
-
-    <div id="controls">
-        <button class="btn-lab btn-save" onclick="saveProgress()">💾 Save Progress</button>
-        <button class="btn-lab btn-submit" onclick="submitLab()">📤 Submit Lab</button>
-        <button class="btn-lab btn-exit" onclick="exitLab()">🚪 Exit Lab</button>
-    </div>
-
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-
-        const experimentId = @ViewBag.Experiment.Id;
-        const resultId = @ViewBag.ResultId;
-
-        let scene, camera, renderer, labelRenderer, controls;
-        let equipmentGroup = [];
-
-        let tasks = {
-            beaker: false,
-            heat: false,
-            testtube: false,
-            observe: false
-        };
-
-        let selectedChemicals = [];
-        let beakerColor = 0x88aaff;
-        let isHeating = false;
-        let temperature = 25;
-
-        // Chemical reaction database
-        const reactions = {
-            'hcl+naoh': {
-                name: "Neutralization",
-                result: "HCl + NaOH → NaCl + H₂O",
-                observation: "Solution heated up to 35°C. pH became neutral (7). No color change visible.",
-                color: 0x88aaff
-            },
-            'hcl+phenolphthalein': {
-                name: "Acid with Indicator",
-                result: "HCl + Phenolphthalein",
-                observation: "Solution remained colorless (acidic conditions).",
-                color: 0x88aaff
-            },
-            'naoh+phenolphthalein': {
-                name: "Base with Indicator",
-                result: "NaOH + Phenolphthalein",
-                observation: "Solution turned bright pink! (Basic conditions).",
-                color: 0xff69b4
-            },
-            'copper+zinc': {
-                name: "Displacement Reaction",
-                result: "CuSO₄ + Zn → ZnSO₄ + Cu",
-                observation: "Zinc turned reddish-brown as copper deposited. Blue color faded.",
-                color: 0xcd7f32
-            }
-        };
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
-            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(5, 4, 8);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            labelRenderer = new CSS2DRenderer();
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.domElement.style.position = 'absolute';
-            labelRenderer.domElement.style.top = '0px';
-            labelRenderer.domElement.style.left = '0px';
-            labelRenderer.domElement.style.pointerEvents = 'none';
-            document.body.appendChild(labelRenderer.domElement);
-
-            // FIXED: OrbitControls with full functionality
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;          // Smooth inertia
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 1.0;             // Rotation speed
-            controls.zoomSpeed = 1.2;               // Zoom speed
-            controls.panSpeed = 0.8;                // Pan speed
-            controls.enableZoom = true;              // Enable zoom
-            controls.enablePan = true;               // Enable pan
-            controls.zoomSpeed = 1.5;
-            controls.panSpeed = 1.0;
-            controls.target.set(0, 0, 0);
-
-            setupLighting();
-            createLabEnvironment();
-            createEquipment();
-            animate();
-        }
-
-        function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0x404060);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(5, 10, 7);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
-
-            const fillLight = new THREE.PointLight(0xff6600, 0.5);
-            fillLight.position.set(0, 2, 3);
-            scene.add(fillLight);
-
-            // Add back light
-            const backLight = new THREE.PointLight(0x4466cc, 0.3);
-            backLight.position.set(0, 1, -3);
-            scene.add(backLight);
-        }
-
-        function createLabEnvironment() {
-            const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 4),
-                new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 }));
-            table.position.set(0, -0.4, 0);
-            table.receiveShadow = true;
-            scene.add(table);
-
-            // Colored accents for chem lab
-            const colors = [0xff4444, 0x44ff44, 0x4444ff];
-            for (let i = -2; i <= 2; i++) {
-                const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16),
-                    new THREE.MeshStandardMaterial({ color: colors[(i+2) % 3], emissive: 0x222222 }));
-                sphere.position.set(i, 0.2, 1.5);
-                scene.add(sphere);
-            }
-        }
-
-        function createEquipment() {
-            const equipment = [
-                { name: 'Beaker', type: 'beaker', x: -1.5, y: 0.1, z: 1, action: 'openReaction' },
-                { name: 'Bunsen Burner', type: 'burner', x: 0, y: 0.1, z: 1.2, action: 'heatChemicals' },
-                { name: 'Test Tubes', type: 'testtube', x: 1.5, y: 0.1, z: 1, action: 'testTubeReaction' },
-                { name: 'pH Meter', type: 'phmeter', x: 2, y: 0.5, z: -1, action: 'measurePH' }
-            ];
-
-            equipment.forEach(item => {
-                let mesh;
-                if (item.type === 'beaker') {
-                    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.6, 32),
-                        new THREE.MeshPhysicalMaterial({ color: beakerColor, transparent: true, opacity: 0.6 }));
-                } else if (item.type === 'burner') {
-                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.1, 8),
-                        new THREE.MeshStandardMaterial({ color: 0x666666 }));
-                    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.3, 8),
-                        new THREE.MeshStandardMaterial({ color: 0x888888 }));
-                    tube.position.y = 0.2;
-                    mesh = new THREE.Group();
-                    mesh.add(base);
-                    mesh.add(tube);
-                    mesh.position.set(item.x, item.y, item.z);
-                } else if (item.type === 'testtube') {
-                    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.5, 16),
-                        new THREE.MeshPhysicalMaterial({ color: 0x88ff88, transparent: true, opacity: 0.7 }));
-                    mesh.position.set(item.x, item.y, item.z);
-                } else {
-                    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.2),
-                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
-                    mesh.position.set(item.x, item.y, item.z);
+        <div class="lab-main">
+            <aside class="panel panel-left">
+                @if (!string.IsNullOrEmpty(experiment.Description) || !string.IsNullOrEmpty(experiment.Instructions) || !string.IsNullOrEmpty(experiment.LearningObjectives) || !string.IsNullOrEmpty(experiment.EquipmentList))
+                {
+                    <details class="card brief-card" open>
+                        <summary><i class="fas fa-book-open"></i> Lab Brief</summary>
+                        <div class="brief-body">
+                            @if (!string.IsNullOrEmpty(experiment.Description))
+                            {
+                                <p><strong>Overview</strong>@experiment.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.Instructions))
+                            {
+                                <p><strong>Instructions</strong>@experiment.Instructions</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.LearningObjectives))
+                            {
+                                <p><strong>Learning Objectives</strong>@experiment.LearningObjectives</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.EquipmentList))
+                            {
+                                <p><strong>Equipment</strong>@experiment.EquipmentList</p>
+                            }
+                        </div>
+                    </details>
                 }
 
-                if (mesh) {
-                    mesh.userData = { name: item.name, action: item.action, interactable: true };
-                    mesh.castShadow = true;
-                    scene.add(mesh);
+                <section class="card tasks-card">
+                    <h3><i class="fas fa-list-check"></i> Lab Tasks</h3>
+                    <ul class="task-list" id="taskList">
+                        <li class="task" data-task="beaker"><i class="far fa-circle"></i><span>Mix at least two chemicals in the beaker</span></li>
+                        <li class="task" data-task="reaction"><i class="far fa-circle"></i><span>Trigger a known chemical reaction</span></li>
+                        <li class="task" data-task="heat"><i class="far fa-circle"></i><span>Use the heating apparatus</span></li>
+                        <li class="task" data-task="testtube"><i class="far fa-circle"></i><span>Perform a test tube reaction</span></li>
+                        <li class="task" data-task="ph"><i class="far fa-circle"></i><span>Measure the solution's pH</span></li>
+                        <li class="task" data-task="observe"><i class="far fa-circle"></i><span>Record a written observation</span></li>
+                    </ul>
+                    <div class="task-banner" id="taskBanner"><i class="fas fa-champagne-glasses"></i> All tasks complete — ready to submit!</div>
+                </section>
 
-                    const div = document.createElement('div');
-                    div.textContent = item.name;
-                    div.style.cssText = 'color:white;background:rgba(0,0,0,0.6);padding:2px 8px;border-radius:4px;font-size:12px;pointer-events:none';
-                    const label = new CSS2DObject(div);
-                    label.position.set(item.x, item.y + 0.5, item.z);
-                    scene.add(label);
+                <section class="card notebook-card">
+                    <h3><i class="fas fa-pen-fancy"></i> Lab Notebook</h3>
+                    <textarea id="observations" rows="3" placeholder="Record what you observe — colour changes, gas, precipitate, temperature..."></textarea>
+                    <button class="btn btn-ghost" id="btnSaveObs" style="margin-bottom:0;"><i class="fas fa-bookmark"></i> Add to Notebook</button>
+                    <div class="log-feed" id="logFeed"></div>
+                </section>
+            </aside>
 
-                    equipmentGroup.push({ mesh, label, data: item });
+            <section class="stage">
+                <div class="bench" id="bench">
+                    <canvas class="fx-canvas" id="fxCanvas"></canvas>
+
+                    <div class="equipment burner" id="burner">
+                        <div class="flame" id="flame"></div>
+                        <div class="burner-body"></div>
+                    </div>
+
+                    <div class="equipment beaker-rig">
+                        <div class="gauge-badge temp-badge" id="tempBadge"><i class="fas fa-temperature-half"></i> <span id="tempValue">25</span>&deg;C</div>
+                        <div class="beaker" id="beaker">
+                            <div class="beaker-glass">
+                                <div class="liquid" id="liquid">
+                                    <div class="wave wave1"></div>
+                                    <div class="wave wave2"></div>
+                                </div>
+                                <div class="sediment" id="sediment"></div>
+                            </div>
+                        </div>
+                        <div class="stand-base"></div>
+                    </div>
+
+                    <div class="equipment testtube-rack">
+                        <div class="testtube" data-tube="0"><div class="tt-liquid" id="tube0"></div></div>
+                        <div class="testtube" data-tube="1"><div class="tt-liquid" id="tube1"></div></div>
+                        <div class="testtube" data-tube="2"><div class="tt-liquid" id="tube2"></div></div>
+                    </div>
+
+                    <div class="equipment ph-station" id="phStation">
+                        <div class="ph-meter">
+                            <div class="ph-needle" id="phNeedle"></div>
+                        </div>
+                        <div class="gauge-badge ph-badge" id="phBadge"><i class="fas fa-droplet"></i>&nbsp;pH <span id="phValue">--</span></div>
+                    </div>
+                </div>
+
+                <div class="mix-tray">
+                    <div class="mix-tray-label"><i class="fas fa-vial"></i> Mixing Tray</div>
+                    <div class="mix-chips" id="mixChips"><span class="mix-empty">Select chemicals from the shelf &rarr;</span></div>
+                    <div class="mix-actions">
+                        <button class="btn btn-primary" id="btnMix"><i class="fas fa-flask-vial"></i> Mix in Beaker</button>
+                        <button class="btn btn-ghost" id="btnClearMix"><i class="fas fa-eraser"></i> Clear</button>
+                    </div>
+                </div>
+
+                <div class="reaction-readout" id="reactionReadout" style="display:none;">
+                    <div class="readout-title" id="readoutTitle"></div>
+                    <div class="readout-equation" id="readoutEquation"></div>
+                    <div class="readout-observation" id="readoutObservation"></div>
+                </div>
+            </section>
+
+            <aside class="panel panel-right">
+                <section class="card shelf-card">
+                    <h3><i class="fas fa-boxes-stacked"></i> Chemical Shelf</h3>
+                    <div class="shelf-grid" id="shelfGrid"></div>
+                </section>
+
+                <section class="card equipment-card">
+                    <h3><i class="fas fa-screwdriver-wrench"></i> Equipment</h3>
+                    <button class="btn btn-equipment" id="btnBurner"><i class="fas fa-fire"></i> Toggle Bunsen Burner</button>
+                    <button class="btn btn-equipment" id="btnTestTube"><i class="fas fa-vials"></i> Test Tube Reaction</button>
+                    <button class="btn btn-equipment" id="btnPh" style="margin-bottom:0;"><i class="fas fa-droplet"></i> Dip pH Meter</button>
+                </section>
+
+                <section class="card controls-card">
+                    <button class="btn btn-secondary" id="btnSaveProgress"><i class="fas fa-cloud-arrow-up"></i> Save Progress</button>
+                    <button class="btn btn-primary" id="btnSubmit" disabled><i class="fas fa-paper-plane"></i> Submit Lab</button>
+                    <button class="btn btn-ghost" id="btnExit2" style="margin-bottom:0;"><i class="fas fa-door-open"></i> Exit Lab</button>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+    <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+
+    <script>
+        var experimentId = @ViewBag.Experiment.Id;
+        var resultId = @ViewBag.ResultId;
+
+        var SAVE_URL = '@Url.Action("SaveLabProgress", "VirtualLab")';
+        var SUBMIT_URL = '@Url.Action("SubmitLab", "VirtualLab")';
+        var INDEX_URL = '@Url.Action("Index", "VirtualLab")';
+
+        // ============================================================
+        // Data: chemicals + reaction database
+        // ============================================================
+        var CHEMICALS = [
+            { id: 'hcl', name: 'Hydrochloric Acid', formula: 'HCl', color: '#fef3c7', cls: 'acid' },
+            { id: 'naoh', name: 'Sodium Hydroxide', formula: 'NaOH', color: '#dbeafe', cls: 'base' },
+            { id: 'phenol', name: 'Phenolphthalein', formula: 'Indicator', color: '#f8fafc', cls: 'indicator' },
+            { id: 'universal', name: 'Universal Indicator', formula: 'Indicator', color: '#bbf7d0', cls: 'indicator' },
+            { id: 'cuso4', name: 'Copper Sulfate', formula: 'CuSO4', color: '#3b82f6', cls: 'salt' },
+            { id: 'zinc', name: 'Zinc Granules', formula: 'Zn', color: '#cbd5e1', cls: 'metal' },
+            { id: 'nahco3', name: 'Sodium Bicarbonate', formula: 'NaHCO3', color: '#f1f5f9', cls: 'salt' },
+            { id: 'water', name: 'Distilled Water', formula: 'H2O', color: '#e0f2fe', cls: 'solvent' }
+        ];
+
+        var REACTIONS = {
+            'hcl+naoh': { name: 'Acid-Base Neutralization', equation: 'HCl + NaOH -> NaCl + H2O', color: '#e0f2fe', effect: 'exothermic', tempDelta: 12, observation: 'The solution warms slightly and clears — a textbook neutralization forming salt water.' },
+            'hcl+phenol': { name: 'Acid + Indicator', equation: 'HCl + Phenolphthalein', color: '#fefce8', effect: 'colorchange', observation: 'No colour change — phenolphthalein stays colourless under acidic conditions.' },
+            'naoh+phenol': { name: 'Base + Indicator', equation: 'NaOH + Phenolphthalein', color: '#f472b6', effect: 'colorchange', observation: 'Brilliant magenta bloom! Phenolphthalein confirms a strongly basic solution.' },
+            'hcl+universal': { name: 'Acid + Universal Indicator', equation: 'HCl + Universal Indicator', color: '#ef4444', effect: 'colorchange', observation: 'The solution flushes red — universal indicator reads strongly acidic (pH approx 2).' },
+            'naoh+universal': { name: 'Base + Universal Indicator', equation: 'NaOH + Universal Indicator', color: '#8b5cf6', effect: 'colorchange', observation: 'Deep violet — universal indicator reads strongly basic (pH approx 13).' },
+            'universal+water': { name: 'Neutral Baseline', equation: 'H2O + Universal Indicator', color: '#22c55e', effect: 'colorchange', observation: 'Green — universal indicator confirms a neutral pH approx 7.' },
+            'cuso4+zinc': { name: 'Single Displacement', equation: 'CuSO4 + Zn -> ZnSO4 + Cu', color: '#93c5fd', effect: 'precipitate', observation: 'Reddish copper plates onto the zinc as the blue colour fades — a classic displacement reaction.' },
+            'cuso4+naoh': { name: 'Precipitation Reaction', equation: 'CuSO4 + 2NaOH -> Cu(OH)2 + Na2SO4', color: '#1d4ed8', effect: 'precipitate', observation: 'A pale blue gelatinous precipitate of copper hydroxide clouds the solution and settles.' },
+            'hcl+nahco3': { name: 'Acid-Carbonate Reaction', equation: 'HCl + NaHCO3 -> NaCl + H2O + CO2', color: '#fef3c7', effect: 'fizz', observation: 'Vigorous fizzing! Carbon dioxide gas streams off as the bicarbonate dissolves.' },
+            'hcl+zinc': { name: 'Metal-Acid Reaction', equation: 'Zn + 2HCl -> ZnCl2 + H2', color: '#fef9e7', effect: 'fizz', tempDelta: 6, observation: 'Steady bubbles of hydrogen gas form on the zinc surface as it slowly dissolves.' },
+            'naoh+nahco3': { name: 'Mild Base Mixture', equation: 'NaOH + NaHCO3', color: '#f1f5f9', effect: 'colorchange', observation: 'No dramatic reaction — both are basic/neutral in solution, so it just dilutes.' }
+        };
+
+        function chemById(id) { for (var i = 0; i < CHEMICALS.length; i++) { if (CHEMICALS[i].id === id) return CHEMICALS[i]; } return null; }
+        function labelFor(id) { var c = chemById(id); return c ? c.formula : id; }
+        function pairKey(a, b) { return [a, b].sort().join('+'); }
+
+        function hexToRgb(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+            var num = parseInt(hex, 16);
+            return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+        }
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(function (v) { return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0'); }).join('');
+        }
+        function blendColors(ids) {
+            var r = 0, g = 0, b = 0, n = ids.length || 1;
+            ids.forEach(function (id) {
+                var c = chemById(id);
+                var rgb = hexToRgb(c ? c.color : '#94a3b8');
+                r += rgb[0]; g += rgb[1]; b += rgb[2];
+            });
+            return rgbToHex(Math.round(r / n), Math.round(g / n), Math.round(b / n));
+        }
+
+        function findReaction(ids) {
+            for (var i = 0; i < ids.length; i++) {
+                for (var j = i + 1; j < ids.length; j++) {
+                    var key = pairKey(ids[i], ids[j]);
+                    if (REACTIONS[key]) return { key: key, data: REACTIONS[key] };
                 }
-            });
+            }
+            return null;
         }
 
-        function openReaction() {
-            document.getElementById('reactionPanel').style.display = 'block';
-            selectedChemicals = [];
-            document.getElementById('reactionResult').innerHTML = '';
+        // ============================================================
+        // State
+        // ============================================================
+        var TASK_KEYS = ['beaker', 'reaction', 'heat', 'testtube', 'ph', 'observe'];
+        var state = {
+            tray: [],
+            lastComponents: [],
+            tasks: {},
+            temp: 25,
+            heating: false,
+            boiled: false,
+            liquidColor: '#38bdf8',
+            fill: 12,
+            tubeIndex: -1
+        };
+
+        var muted = false;
+        var audioCtx = null;
+
+        // ============================================================
+        // DOM refs
+        // ============================================================
+        var bench = document.getElementById('bench');
+        var fx = document.getElementById('fxCanvas');
+        var fxCtx = fx.getContext('2d');
+        var beakerEl = document.getElementById('beaker');
+        var liquidEl = document.getElementById('liquid');
+        var sedimentEl = document.getElementById('sediment');
+        var waveEls = document.querySelectorAll('.wave');
+        var flameEl = document.getElementById('flame');
+        var burnerEl = document.getElementById('burner');
+        var tempValueEl = document.getElementById('tempValue');
+        var tempBadgeEl = document.getElementById('tempBadge');
+        var phNeedleEl = document.getElementById('phNeedle');
+        var phValueEl = document.getElementById('phValue');
+        var phBadgeEl = document.getElementById('phBadge');
+        var mixChipsEl = document.getElementById('mixChips');
+        var logFeedEl = document.getElementById('logFeed');
+        var toastStackEl = document.getElementById('toastStack');
+        var ringFillEl = document.getElementById('ringFill');
+        var ringLabelEl = document.getElementById('ringLabel');
+        var taskBannerEl = document.getElementById('taskBanner');
+        var readoutEl = document.getElementById('reactionReadout');
+
+        // ============================================================
+        // Particles (bubbles / steam / precipitate / sparkle)
+        // ============================================================
+        var particles = [];
+
+        function resizeFx() {
+            var rect = bench.getBoundingClientRect();
+            var dpr = window.devicePixelRatio || 1;
+            fx.width = rect.width * dpr;
+            fx.height = rect.height * dpr;
+            fx.style.width = rect.width + 'px';
+            fx.style.height = rect.height + 'px';
+            fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resizeFx);
+
+        function beakerOrigin() {
+            var bRect = bench.getBoundingClientRect();
+            var lRect = beakerEl.getBoundingClientRect();
+            return { x: lRect.left - bRect.left + lRect.width / 2, y: lRect.top - bRect.top + lRect.height * 0.35, w: lRect.width };
         }
 
-        function closeReactionPanel() {
-            document.getElementById('reactionPanel').style.display = 'none';
+        function spawnBubbles(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'bubble', x: origin.x + (Math.random() - 0.5) * origin.w * 0.55, y: origin.y + Math.random() * 12, vx: (Math.random() - 0.5) * 0.3, vy: -0.7 - Math.random() * 0.9, r: 2 + Math.random() * 3, life: 0, maxLife: 55 + Math.random() * 35 });
+            }
+        }
+        function spawnSteam(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'steam', x: origin.x + (Math.random() - 0.5) * 26, y: origin.y - 14, vx: (Math.random() - 0.5) * 0.4, vy: -0.5 - Math.random() * 0.5, r: 6 + Math.random() * 6, life: 0, maxLife: 65 + Math.random() * 30 });
+            }
+        }
+        function spawnPrecipitate(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'precip', x: origin.x + (Math.random() - 0.5) * origin.w * 0.6, y: origin.y, vx: 0, vy: 0.35 + Math.random() * 0.4, r: 1.5 + Math.random() * 2, life: 0, maxLife: 90 });
+            }
+        }
+        function spawnSparkle(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'spark', x: origin.x + (Math.random() - 0.5) * origin.w, y: origin.y, vx: (Math.random() - 0.5) * 1, vy: -(Math.random() * 1), r: 1 + Math.random() * 2, life: 0, maxLife: 40, hue: Math.random() * 360 });
+            }
         }
 
-        function mixChemicals() {
-            const buttons = document.querySelectorAll('.chemical-btn.selected');
-            selectedChemicals = [];
-            buttons.forEach(btn => {
-                selectedChemicals.push(btn.dataset.chemical);
-            });
+        function tickParticles() {
+            fxCtx.clearRect(0, 0, fx.width, fx.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.life++; p.x += p.vx; p.y += p.vy;
+                var t = p.life / p.maxLife;
+                fxCtx.globalAlpha = Math.max(0, 1 - t);
+                if (p.type === 'bubble') {
+                    fxCtx.fillStyle = 'rgba(255,255,255,0.85)';
+                    fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill();
+                } else if (p.type === 'steam') {
+                    fxCtx.fillStyle = 'rgba(226,232,240,0.32)';
+                    fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r * (1 + t), 0, Math.PI * 2); fxCtx.fill();
+                } else if (p.type === 'precip') {
+                    fxCtx.fillStyle = 'rgba(191,219,254,0.9)';
+                    fxCtx.fillRect(p.x, p.y, p.r, p.r);
+                } else if (p.type === 'spark') {
+                    fxCtx.fillStyle = 'hsl(' + p.hue + ',90%,70%)';
+                    fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill();
+                }
+            }
+            fxCtx.globalAlpha = 1;
+            particles = particles.filter(function (p) { return p.life < p.maxLife; });
+            requestAnimationFrame(tickParticles);
+        }
 
-            if (selectedChemicals.length < 2) {
-                alert('Please select at least 2 chemicals to mix');
+        // ============================================================
+        // Audio (lightweight synthesized cues)
+        // ============================================================
+        function ensureAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+            }
+        }
+        function playTone(freq, dur, type) {
+            if (muted) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            try {
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur + 0.02);
+            } catch (e) { }
+        }
+        function playFizz() {
+            if (muted) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            try {
+                var bufferSize = Math.floor(audioCtx.sampleRate * 0.4);
+                var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                var data = buffer.getChannelData(0);
+                for (var i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3 * (1 - i / bufferSize);
+                var noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                var filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass'; filter.frequency.value = 800;
+                noise.connect(filter); filter.connect(audioCtx.destination);
+                noise.start();
+            } catch (e) { }
+        }
+
+        // ============================================================
+        // UI helpers
+        // ============================================================
+        function toast(msg, kind) {
+            var el = document.createElement('div');
+            el.className = 'toast' + (kind === 'warn' ? ' warn' : '');
+            el.textContent = msg;
+            toastStackEl.appendChild(el);
+            setTimeout(function () {
+                el.classList.add('fade');
+                setTimeout(function () { el.remove(); }, 350);
+            }, 2600);
+        }
+
+        function logEvent(text) {
+            var entry = document.createElement('div');
+            entry.className = 'log-entry';
+            var now = new Date();
+            var hh = String(now.getHours()).padStart(2, '0');
+            var mm = String(now.getMinutes()).padStart(2, '0');
+            entry.innerHTML = '<time>' + hh + ':' + mm + '</time>' + text;
+            logFeedEl.appendChild(entry);
+            logFeedEl.scrollTop = logFeedEl.scrollHeight;
+            while (logFeedEl.children.length > 40) logFeedEl.removeChild(logFeedEl.firstChild);
+        }
+
+        function showReadout(title, equation, observation) {
+            readoutEl.style.display = 'block';
+            document.getElementById('readoutTitle').textContent = title;
+            document.getElementById('readoutEquation').textContent = equation;
+            document.getElementById('readoutObservation').textContent = observation;
+        }
+
+        function setLiquid(colorHex, opts) {
+            opts = opts || {};
+            state.liquidColor = colorHex;
+            liquidEl.style.background = colorHex;
+            waveEls.forEach(function (w) { w.style.background = colorHex; });
+            document.querySelectorAll('.tt-liquid').forEach(function () { }); // no-op guard
+            if (opts.fillDelta) {
+                state.fill = Math.min(88, state.fill + opts.fillDelta);
+                liquidEl.style.height = state.fill + '%';
+            }
+            if (opts.glow) {
+                beakerEl.querySelector('.beaker-glass').style.boxShadow =
+                    'inset 0 0 30px rgba(255,255,255,.05), 0 0 34px ' + colorHex + ', 0 10px 26px rgba(0,0,0,.45)';
+                setTimeout(function () {
+                    beakerEl.querySelector('.beaker-glass').style.boxShadow = '';
+                }, 1300);
+            }
+        }
+
+        function growSediment(amount) {
+            var current = parseFloat(sedimentEl.style.height) || 0;
+            sedimentEl.style.height = Math.min(38, current + amount) + '%';
+        }
+
+        function shakeBeaker() {
+            beakerEl.classList.add('shake');
+            setTimeout(function () { beakerEl.classList.remove('shake'); }, 500);
+        }
+
+        function applyEffect(effect, colorHex) {
+            var origin = beakerOrigin();
+            if (effect === 'fizz') {
+                spawnBubbles(24, origin);
+                playFizz();
+                shakeBeaker();
+            } else if (effect === 'precipitate') {
+                spawnPrecipitate(16, origin);
+                growSediment(10);
+                playTone(220, 0.15, 'sine');
+            } else if (effect === 'exothermic') {
+                spawnSteam(6, origin);
+                spawnBubbles(8, origin);
+                playTone(440, 0.2, 'triangle');
+            } else {
+                spawnSparkle(10, origin);
+                playTone(660, 0.12, 'sine');
+            }
+        }
+
+        function renderTemp() {
+            tempValueEl.textContent = Math.round(state.temp);
+            tempBadgeEl.classList.remove('warm', 'hot');
+            if (state.temp >= 75) tempBadgeEl.classList.add('hot');
+            else if (state.temp >= 45) tempBadgeEl.classList.add('warm');
+        }
+
+        function markTaskDone(key) {
+            if (state.tasks[key]) return;
+            state.tasks[key] = true;
+            var li = document.querySelector('.task[data-task="' + key + '"]');
+            if (li) {
+                li.classList.add('completed');
+                var icon = li.querySelector('i');
+                if (icon) icon.className = 'fas fa-check-circle';
+            }
+            updateProgress();
+        }
+
+        function updateProgress() {
+            var done = TASK_KEYS.filter(function (k) { return state.tasks[k]; }).length;
+            ringLabelEl.textContent = done + '/' + TASK_KEYS.length;
+            var circumference = 2 * Math.PI * 19;
+            ringFillEl.style.strokeDasharray = circumference;
+            ringFillEl.style.strokeDashoffset = circumference * (1 - done / TASK_KEYS.length);
+            if (done === TASK_KEYS.length) {
+                taskBannerEl.classList.add('show');
+                document.getElementById('btnSubmit').disabled = false;
+                launchConfetti();
+                playTone(880, 0.3, 'triangle');
+            }
+        }
+
+        // ============================================================
+        // Mixing tray
+        // ============================================================
+        function renderTray() {
+            mixChipsEl.innerHTML = '';
+            if (!state.tray.length) {
+                mixChipsEl.innerHTML = '<span class="mix-empty">Select chemicals from the shelf &rarr;</span>';
                 return;
             }
-
-            const key = selectedChemicals.sort().join('+');
-            const reaction = reactions[key];
-
-            if (reaction) {
-                document.getElementById('reactionResult').innerHTML = `
-                    <strong>${reaction.name}</strong><br>
-                    ${reaction.result}<br>
-                    Observation: ${reaction.observation}
-                `;
-                beakerColor = reaction.color;
-                updateTask('beaker');
-                updateTask('observe');
-
-                // Visual effect
-                const beakerObj = equipmentGroup.find(e => e.data.name === 'Beaker');
-                if (beakerObj && beakerObj.mesh) {
-                    beakerObj.mesh.material.color.setHex(reaction.color);
-                    beakerObj.mesh.material.emissiveIntensity = 0.3;
-                    setTimeout(() => {
-                        beakerObj.mesh.material.emissiveIntensity = 0;
-                    }, 1000);
-                }
-
-                saveInteraction(`Mixed chemicals: ${selectedChemicals.join(' + ')} - ${reaction.observation}`);
-            } else {
-                document.getElementById('reactionResult').innerHTML = `
-                    No reaction observed. The chemicals may be incompatible or need different conditions.
-                `;
-            }
+            state.tray.forEach(function (id) {
+                var c = chemById(id);
+                var chip = document.createElement('span');
+                chip.className = 'mix-chip';
+                chip.innerHTML = '<span>' + c.formula + '</span><button type="button" aria-label="Remove">&times;</button>';
+                chip.querySelector('button').addEventListener('click', function () { removeFromTray(id); });
+                mixChipsEl.appendChild(chip);
+            });
         }
 
-        function heatChemicals() {
-            isHeating = !isHeating;
-            if (isHeating) {
-                temperature += 10;
-                updateTask('heat');
-                saveInteraction(`Heating apparatus used. Temperature reached ${temperature}°C`);
+        function removeFromTray(id) {
+            var idx = state.tray.indexOf(id);
+            if (idx >= 0) state.tray.splice(idx, 1);
+            var btn = document.querySelector('.bottle[data-id="' + id + '"]');
+            if (btn) btn.classList.remove('selected');
+            renderTray();
+        }
 
-                // Visual effect - flame animation
-                const burnerObj = equipmentGroup.find(e => e.data.name === 'Bunsen Burner');
-                if (burnerObj && burnerObj.mesh) {
-                    const flame = new THREE.PointLight(0xff6600, 0.8, 2);
-                    flame.position.set(0, 0.3, 0);
-                    burnerObj.mesh.add(flame);
-                    setTimeout(() => burnerObj.mesh.remove(flame), 2000);
-                }
+        function clearTray() {
+            state.tray = [];
+            document.querySelectorAll('.bottle.selected').forEach(function (b) { b.classList.remove('selected'); });
+            renderTray();
+        }
 
-                // Show result panel
-                showResultMessage("Bunsen burner ignited!", `Temperature increased to ${temperature}°C`);
+        function animatePour(fromEl, toEl, colorHex) {
+            var a = fromEl.getBoundingClientRect();
+            var b = toEl.getBoundingClientRect();
+            var drop = document.createElement('div');
+            drop.className = 'droplet';
+            drop.style.background = colorHex;
+            document.body.appendChild(drop);
+            var startX = a.left + a.width / 2, startY = a.top + a.height / 2;
+            var endX = b.left + b.width / 2, endY = b.top + b.height * 0.25;
+            drop.style.left = startX + 'px';
+            drop.style.top = startY + 'px';
+            var anim = drop.animate([
+                { transform: 'translate(0,0) scale(1)', opacity: 1, offset: 0 },
+                { transform: 'translate(' + ((endX - startX) * 0.5) + 'px,' + ((endY - startY) * 0.6 - 40) + 'px) scale(1.15)', opacity: 1, offset: 0.5 },
+                { transform: 'translate(' + (endX - startX) + 'px,' + (endY - startY) + 'px) scale(.6)', opacity: 0, offset: 1 }
+            ], { duration: 600, easing: 'ease-in' });
+            anim.onfinish = function () {
+                drop.remove();
+                spawnBubbles(5, beakerOrigin());
+            };
+        }
+
+        function toggleChemical(id, btnEl) {
+            var idx = state.tray.indexOf(id);
+            if (idx >= 0) {
+                state.tray.splice(idx, 1);
+                btnEl.classList.remove('selected');
             } else {
-                showResultMessage("Bunsen burner turned off", "Heating stopped");
+                if (state.tray.length >= 4) { toast('You can mix up to 4 chemicals at once.', 'warn'); return; }
+                state.tray.push(id);
+                btnEl.classList.add('selected');
+                var c = chemById(id);
+                animatePour(btnEl, beakerEl, c.color);
+            }
+            renderTray();
+        }
+
+        function buildShelf() {
+            var grid = document.getElementById('shelfGrid');
+            CHEMICALS.forEach(function (c) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bottle';
+                btn.dataset.id = c.id;
+                btn.title = c.name;
+                btn.innerHTML =
+                    '<span class="bottle-glass" style="--tint:' + c.color + '"><span class="bottle-liquid"></span><span class="bottle-cap"></span></span>' +
+                    '<span class="bottle-label">' + c.formula + '<small>' + c.name + '</small></span>';
+                btn.addEventListener('click', function () {
+                    ensureAudio();
+                    toggleChemical(c.id, btn);
+                    playTone(520, 0.08, 'sine');
+                });
+                grid.appendChild(btn);
+            });
+        }
+
+        // ============================================================
+        // Core lab actions
+        // ============================================================
+        function mixInBeaker() {
+            if (state.tray.length < 2) { toast('Select at least two chemicals first.', 'warn'); return; }
+            var found = findReaction(state.tray);
+            var colorHex, observation, title, equation, effect;
+
+            if (found) {
+                colorHex = found.data.color;
+                observation = found.data.observation;
+                title = found.data.name;
+                equation = found.data.equation;
+                effect = found.data.effect;
+                if (found.data.tempDelta) { state.temp += found.data.tempDelta; renderTemp(); }
+                markTaskDone('reaction');
+            } else {
+                colorHex = blendColors(state.tray);
+                title = 'Mixture Combined';
+                equation = state.tray.map(labelFor).join(' + ');
+                observation = "The chemicals combine and the solution's colour shifts to reflect the new mixture.";
+                effect = Math.random() < 0.35 ? 'fizz' : 'colorchange';
+            }
+
+            applyEffect(effect, colorHex);
+            setLiquid(colorHex, { fillDelta: 8, glow: effect === 'exothermic' });
+            showReadout(title, equation, observation);
+            var mixLabel = state.tray.map(labelFor).join(' + ');
+            logEvent('Mixed ' + mixLabel + ' &rarr; ' + observation);
+            saveInteraction('Mixed chemicals: ' + mixLabel + ' - ' + observation);
+            markTaskDone('beaker');
+            state.lastComponents = state.tray.slice();
+            clearTray();
+        }
+
+        function toggleBurner() {
+            state.heating = !state.heating;
+            flameEl.classList.toggle('on', state.heating);
+            burnerEl.classList.toggle('active', state.heating);
+            if (state.heating) {
+                logEvent('Bunsen burner ignited.');
+                saveInteraction('Heating apparatus used.');
+                markTaskDone('heat');
+                showReadout('Bunsen Burner', 'Heat applied to beaker', 'The flame heats the solution — watch the thermometer and bubbling rate increase.');
+            } else {
+                logEvent('Bunsen burner turned off.');
             }
         }
 
         function testTubeReaction() {
-            updateTask('testtube');
-            updateTask('observe');
+            var pool = CHEMICALS.map(function (c) { return c.id; });
+            var a = pool[Math.floor(Math.random() * pool.length)];
+            var b = a;
+            while (b === a) b = pool[Math.floor(Math.random() * pool.length)];
+            var found = findReaction([a, b]);
+            var idx = state.tubeIndex = (state.tubeIndex + 1) % 3;
+            var tubeEl = document.getElementById('tube' + idx);
+            var color = found ? found.data.color : blendColors([a, b]);
+            var observation = found ? found.data.observation : 'A subtle colour shift is observed as the two substances mix.';
 
-            const reactions_list = [
-                "Bubbles formed! Gas released (CO₂)",
-                "Solution turned from clear to blue",
-                "Precipitate formed at the bottom",
-                "Temperature increased by 5°C",
-                "Color changed from yellow to red"
-            ];
-            const result = reactions_list[Math.floor(Math.random() * reactions_list.length)];
+            tubeEl.style.background = color;
+            tubeEl.style.height = '72%';
+            tubeEl.parentElement.classList.add('flash');
+            setTimeout(function () { tubeEl.parentElement.classList.remove('flash'); }, 700);
 
-            showResultMessage("Test Tube Reaction", result);
-            saveInteraction(`Test tube reaction observed: ${result}`);
+            applyEffect(found ? found.data.effect : 'colorchange', color);
+
+            var title = 'Test Tube ' + (idx + 1) + ': ' + labelFor(a) + ' + ' + labelFor(b);
+            var equation = found ? found.data.equation : (labelFor(a) + ' + ' + labelFor(b));
+            showReadout(title, equation, observation);
+            logEvent(title + ' &mdash; ' + observation);
+            saveInteraction('Test tube reaction: ' + title + ' - ' + observation);
+            markTaskDone('testtube');
         }
 
         function measurePH() {
-            const phValue = Math.floor(Math.random() * 14) + 1;
-            let phDescription = "";
-            if (phValue < 7) phDescription = "Acidic";
-            else if (phValue > 7) phDescription = "Basic";
-            else phDescription = "Neutral";
-
-            showResultMessage("pH Measurement", `pH Value: ${phValue} (${phDescription})`);
-            saveInteraction(`Measured pH: ${phValue} - ${phDescription}`);
-            updateTask('observe');
-        }
-
-        function showResultMessage(title, message) {
-            const resultDiv = document.createElement('div');
-            resultDiv.style.position = 'absolute';
-            resultDiv.style.top = '50%';
-            resultDiv.style.left = '50%';
-            resultDiv.style.transform = 'translate(-50%, -50%)';
-            resultDiv.style.background = 'rgba(0,0,0,0.9)';
-            resultDiv.style.color = '#4CAF50';
-            resultDiv.style.padding = '20px 30px';
-            resultDiv.style.borderRadius = '10px';
-            resultDiv.style.fontSize = '16px';
-            resultDiv.style.fontWeight = 'bold';
-            resultDiv.style.textAlign = 'center';
-            resultDiv.style.zIndex = '300';
-            resultDiv.style.borderLeft = `4px solid #4CAF50`;
-            resultDiv.innerHTML = `<strong>${title}</strong><br>${message}`;
-            document.body.appendChild(resultDiv);
-
-            setTimeout(() => {
-                resultDiv.style.opacity = '0';
-                resultDiv.style.transition = 'opacity 0.5s';
-                setTimeout(() => resultDiv.remove(), 500);
-            }, 3000);
-        }
-
-        function updateTask(taskName) {
-            if (!tasks[taskName]) {
-                tasks[taskName] = true;
-                const taskElement = document.getElementById(`task-${taskName}`);
-                if (taskElement) {
-                    taskElement.classList.add('completed');
-                    taskElement.innerHTML = `<i class="fas fa-check-circle" style="color: #2ecc71;"></i> ${taskElement.innerText.substring(1)}`;
-                }
+            var ph = 7;
+            var source = state.lastComponents.length ? state.lastComponents : state.tray;
+            if (source.length) {
+                source.forEach(function (id) {
+                    var c = chemById(id);
+                    if (!c) return;
+                    if (c.cls === 'acid') ph -= 2.3;
+                    if (c.cls === 'base') ph += 2.3;
+                });
+            } else {
+                ph = 6.5 + Math.random();
             }
-            checkAllTasks();
+            ph = Math.max(0, Math.min(14, Math.round(ph * 10) / 10));
+
+            phValueEl.textContent = ph;
+            phNeedleEl.style.left = (ph / 14 * 100) + '%';
+
+            var desc = ph < 6.5 ? 'Acidic' : (ph > 7.5 ? 'Basic' : 'Neutral');
+            var cls = ph < 6.5 ? 'acid' : (ph > 7.5 ? 'base' : 'neutral');
+            phBadgeEl.classList.remove('acid', 'base', 'neutral');
+            phBadgeEl.classList.add(cls);
+
+            showReadout('pH Measurement', 'pH ' + ph, 'The probe reads pH ' + ph + ' — a ' + desc.toLowerCase() + ' solution.');
+            logEvent('Measured pH: ' + ph + ' (' + desc + ')');
+            saveInteraction('Measured pH: ' + ph + ' - ' + desc);
+            markTaskDone('ph');
+            playTone(300 + ph * 20, 0.15, 'sine');
         }
 
-        function checkAllTasks() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (allComplete) {
-                document.getElementById('taskResult').innerHTML = '<i class="fas fa-check-circle"></i> All chemistry tasks complete! Ready to submit.';
-                document.getElementById('taskResult').style.background = 'rgba(46, 204, 113, 0.3)';
-                document.getElementById('taskResult').style.display = 'block';
-            }
+        function saveObservations() {
+            var val = document.getElementById('observations').value.trim();
+            if (!val) { toast('Write something first.', 'warn'); return; }
+            logEvent('Observation noted: "' + val + '"');
+            saveInteraction('Observations: ' + val);
+            markTaskDone('observe');
+            toast('Added to notebook.');
+            document.getElementById('observations').value = '';
         }
 
+        // ============================================================
+        // Network (same contract as before: SaveLabProgress / SubmitLab)
+        // ============================================================
         function saveInteraction(message) {
-            fetch('@Url.Action("SaveLabProgress", "VirtualLab")', {
+            fetch(SAVE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: JSON.stringify({
                     resultId: resultId,
                     observations: message,
                     conclusions: '',
-                    resultsData: JSON.stringify({ action: message, timestamp: new Date(), tasks: tasks })
+                    resultsData: JSON.stringify({ action: message, timestamp: new Date().toISOString(), tasks: state.tasks })
                 })
-            }).catch(error => console.error('Error saving:', error));
-        }
-
-        function saveObservations() {
-            const obs = document.getElementById('observations').value;
-            if (obs) {
-                saveInteraction(`Observations: ${obs}`);
-                alert('Observations saved!');
-                document.getElementById('observations').value = '';
-            }
+            }).catch(function (error) { console.error('Error saving:', error); });
         }
 
         function saveProgress() {
             saveInteraction('Progress saved');
-            alert('Progress saved!');
+            toast('Progress saved.');
         }
 
         function submitLab() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (!allComplete) {
-                alert('Please complete all tasks before submitting!');
-                return;
-            }
+            var allComplete = TASK_KEYS.every(function (k) { return state.tasks[k]; });
+            if (!allComplete) { toast('Please complete all tasks before submitting!', 'warn'); return; }
+            if (!confirm('Submit this lab for grading?')) return;
 
-            if (confirm('Submit this lab for grading?')) {
-                fetch('@Url.Action("SubmitLab", "VirtualLab")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ resultId: resultId })
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          alert('Lab submitted successfully!');
-                          window.location.href = '@Url.Action("Index", "VirtualLab")';
-                      }
-                  });
-            }
+            fetch(SUBMIT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ resultId: resultId })
+            }).then(function (response) { return response.json(); })
+              .then(function (data) {
+                  if (data.success) {
+                      toast('Lab submitted successfully!');
+                      setTimeout(function () { window.location.href = INDEX_URL; }, 900);
+                  } else {
+                      toast(data.message || 'Submission failed.', 'warn');
+                  }
+              }).catch(function () { toast('Network error while submitting.', 'warn'); });
         }
 
         function exitLab() {
-            if (confirm('Exit the lab? Your progress will be saved.')) {
-                saveProgress();
-                setTimeout(() => { window.location.href = '@Url.Action("Index", "VirtualLab")'; }, 500);
+            if (!confirm('Exit the lab? Your progress will be saved.')) return;
+            saveProgress();
+            setTimeout(function () { window.location.href = INDEX_URL; }, 500);
+        }
+
+        // ============================================================
+        // Confetti (completion celebration)
+        // ============================================================
+        var confettiCanvas = document.getElementById('confettiCanvas');
+        var confettiCtx = confettiCanvas.getContext('2d');
+        var confettiPieces = [];
+        var confettiRunning = false;
+
+        function resizeConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+
+        function launchConfetti() {
+            var colors = ['#22d3ee', '#8b5cf6', '#fbbf24', '#34d399', '#fb7185'];
+            for (var i = 0; i < 140; i++) {
+                confettiPieces.push({
+                    x: Math.random() * confettiCanvas.width,
+                    y: -20 - Math.random() * 200,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: 2 + Math.random() * 3,
+                    size: 4 + Math.random() * 5,
+                    rot: Math.random() * 360,
+                    vrot: (Math.random() - 0.5) * 12,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 0,
+                    maxLife: 200 + Math.random() * 60
+                });
+            }
+            if (!confettiRunning) { confettiRunning = true; tickConfetti(); }
+        }
+
+        function tickConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            for (var i = 0; i < confettiPieces.length; i++) {
+                var p = confettiPieces[i];
+                p.life++; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+                confettiCtx.save();
+                confettiCtx.translate(p.x, p.y);
+                confettiCtx.rotate(p.rot * Math.PI / 180);
+                confettiCtx.globalAlpha = Math.max(0, 1 - p.life / p.maxLife);
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                confettiCtx.restore();
+            }
+            confettiCtx.globalAlpha = 1;
+            confettiPieces = confettiPieces.filter(function (p) { return p.life < p.maxLife && p.y < confettiCanvas.height + 40; });
+            if (confettiPieces.length) {
+                requestAnimationFrame(tickConfetti);
+            } else {
+                confettiRunning = false;
             }
         }
 
-        // Chemical button selection
-        document.querySelectorAll('.chemical-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.classList.toggle('selected');
-            });
-        });
+        // ============================================================
+        // Timers: session clock + ambient temperature simulation
+        // ============================================================
+        var seconds = 0;
+        setInterval(function () {
+            seconds++;
+            var m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            var s = String(seconds % 60).padStart(2, '0');
+            var el = document.getElementById('sessionTimer');
+            if (el) el.textContent = m + ':' + s;
+        }, 1000);
 
-        // Interaction handling for 3D objects
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        window.addEventListener('click', (event) => {
-            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(equipmentGroup.map(e => e.mesh), true);
-
-            if (intersects.length > 0) {
-                let obj = intersects[0].object;
-                while (obj.parent && !obj.userData.action) obj = obj.parent;
-                if (obj.userData.action && typeof window[obj.userData.action] === 'function') {
-                    window[obj.userData.action]();
-                    saveInteraction(`Interacted with: ${obj.userData.name}`);
+        setInterval(function () {
+            if (state.heating) {
+                state.temp = Math.min(120, state.temp + 2);
+                if (Math.random() < 0.6) spawnBubbles(2, beakerOrigin());
+                if (state.temp > 65 && Math.random() < 0.4) spawnSteam(1, beakerOrigin());
+                if (state.temp >= 100 && !state.boiled) {
+                    state.boiled = true;
+                    toast('The solution is boiling!', 'warn');
+                    logEvent('Solution reached boiling point (100&deg;C).');
                 }
+            } else if (state.temp > 25) {
+                state.temp = Math.max(25, state.temp - 1);
             }
-        });
+            renderTemp();
+        }, 600);
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update(); // This is critical for smooth controls
-            renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
+        // ============================================================
+        // Init
+        // ============================================================
+        function init() {
+            buildShelf();
+            resizeFx();
+            tickParticles();
+            renderTemp();
+            updateProgress();
+            setLiquid(state.liquidColor);
+            liquidEl.style.height = state.fill + '%';
+
+            document.getElementById('btnExit').addEventListener('click', exitLab);
+            document.getElementById('btnExit2').addEventListener('click', exitLab);
+            document.getElementById('btnSaveProgress').addEventListener('click', saveProgress);
+            document.getElementById('btnSubmit').addEventListener('click', submitLab);
+            document.getElementById('btnSaveObs').addEventListener('click', saveObservations);
+            document.getElementById('btnMix').addEventListener('click', mixInBeaker);
+            document.getElementById('btnClearMix').addEventListener('click', clearTray);
+            document.getElementById('btnBurner').addEventListener('click', function () { ensureAudio(); toggleBurner(); });
+            document.getElementById('btnTestTube').addEventListener('click', function () { ensureAudio(); testTubeReaction(); });
+            document.getElementById('btnPh').addEventListener('click', function () { ensureAudio(); measurePH(); });
+            document.getElementById('btnMute').addEventListener('click', function () {
+                muted = !muted;
+                document.getElementById('muteIcon').className = muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+            });
+
+            logEvent('Lab session started. Good luck, scientist!');
         }
 
         init();
-
-        window.openReaction = openReaction;
-        window.closeReactionPanel = closeReactionPanel;
-        window.mixChemicals = mixChemicals;
-        window.heatChemicals = heatChemicals;
-        window.testTubeReaction = testTubeReaction;
-        window.measurePH = measurePH;
-        window.saveObservations = saveObservations;
-        window.saveProgress = saveProgress;
-        window.submitLab = submitLab;
-        window.exitLab = exitLab;
     </script>
 </body>
 </html>

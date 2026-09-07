@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.SimulatorViewModel
 @{
     ViewBag.Title = "What-If Simulator - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
 }
 
 <style>
@@ -62,16 +64,7 @@
     .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: none; cursor: pointer; background: var(--primary); color: white; }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-sliders" style="color: var(--accent);"></i> What-If Simulator</h1>
                 <p>Drag a projected mark and see which careers on your shortlist would open up.</p>
@@ -131,8 +124,6 @@
                 </div>
             }
         </div>
-    </main>
-</div>
 
 @if (Model.Payload.HasReportCard && Model.HasBookmarks)
 {

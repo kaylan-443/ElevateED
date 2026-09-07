@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.CareerBookmarksViewModel
 @{
     ViewBag.Title = "My Shortlist - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
 }
 
 @Html.Partial("_CareerCardStyles")
@@ -120,16 +122,7 @@
             }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-bookmark" style="color: var(--accent);"></i> My Career Shortlist</h1>
                 <p>Careers you've saved to revisit later.</p>
@@ -184,8 +177,6 @@
                 </div>
             }
         </div>
-    </main>
-</div>
 
 <script>
     function updateCompareBar() {

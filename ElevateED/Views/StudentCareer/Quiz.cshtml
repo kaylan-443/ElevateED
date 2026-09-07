@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.InterestQuizViewModel
 @{
     ViewBag.Title = "Interest Quiz - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
 }
 
 <style>
@@ -41,16 +43,7 @@
     .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Index")" class="back-link"><i class="fas fa-arrow-left"></i> Back to dashboard</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="page-head">
                 <h1><i class="fas fa-clipboard-question" style="color: var(--accent);"></i> Career Interest Quiz</h1>
                 <p>There are no right or wrong answers — just be honest.</p>
@@ -104,8 +97,6 @@
                 </div>
             </form>
         </div>
-    </main>
-</div>
 
 <script>
     (function () {

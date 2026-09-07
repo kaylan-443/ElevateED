@@ -1,7 +1,8 @@
 ﻿@model ElevateED.Models.AIStudySession
 @{
     ViewBag.Title = Model.SessionTitle ?? "Study Workspace";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "aistudy";
 }
 
 <style>

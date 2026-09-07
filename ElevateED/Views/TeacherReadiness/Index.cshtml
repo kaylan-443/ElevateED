@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.ReadinessIndexViewModel
 @{
     ViewBag.Title = "Class Readiness - ElevateED";
+    Layout = "~/Views/Shared/_TeacherLayout.cshtml";
+    ViewBag.ActivePage = "readiness";
 }
 
 <style>
@@ -47,10 +49,6 @@
     .empty-state p { color: #888; max-width: 460px; margin: 0 auto; line-height: 1.6; }
 </style>
 
-<div class="dashboard-layout">
-    @Html.Partial("_TeacherSidebar", "readiness")
-
-    <main class="main-content">
         <div class="top-bar">
             <div class="greeting">
                 <h1><i class="fas fa-heart-pulse"></i> Class Readiness</h1>
@@ -123,5 +121,3 @@
                 }
             </div>
         }
-    </main>
-</div>

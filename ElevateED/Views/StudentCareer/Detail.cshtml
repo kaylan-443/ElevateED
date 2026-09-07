@@ -1,6 +1,8 @@
 @model ElevateED.ViewModels.CareerDetailViewModel
 @{
     ViewBag.Title = "Career Detail - ElevateED";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActivePage = "career";
     var career = Model.Match.Career;
     var match = Model.Match;
 
@@ -70,16 +72,7 @@
     .study-list { font-size: 14px; color: var(--gray-600); line-height: 1.7; }
 </style>
 
-<div class="app-container">
-    @Html.Partial("_StudentSidebar")
-    <main class="main-content">
-        <header class="top-header">
-            <div class="header-right">
-                <a href="@Url.Action("Explore")" class="back-link"><i class="fas fa-arrow-left"></i> Back to explorer</a>
-            </div>
-        </header>
-
-        <div class="content">
+<div class="content">
             <div class="detail-head">
                 <div>
                     <div class="field-tag"><i class="fas fa-@(career.CareerField?.IconClass ?? "briefcase")"></i> @career.CareerField?.Name</div>
@@ -215,5 +208,3 @@
                 </div>
             }
         </div>
-    </main>
-</div>
