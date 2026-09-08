@@ -1,4 +1,4 @@
-﻿@model dynamic
+@model dynamic
 @{
     ViewBag.Title = "Biology Lab - " + ViewBag.Experiment.Title;
     var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
@@ -10,750 +10,970 @@
 <head>
     <title>@ViewBag.Title - ElevateED</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <style>
+        :root {
+            --bg-deep: #060f0c;
+            --bg-deep-2: #0b1a15;
+            --panel: rgba(15, 42, 32, 0.55);
+            --panel-solid: #0f2419;
+            --border: rgba(148, 197, 173, 0.16);
+            --accent: #34d399;
+            --accent-dark: #059669;
+            --violet: #8b5cf6;
+            --amber: #fbbf24;
+            --emerald: #34d399;
+            --rose: #fb7185;
+            --text: #e2f3ea;
+            --text-dim: #93b8a7;
+            --text-faint: #5f8271;
+            --danger: #f87171;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--bg-deep); color: var(--text); font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; }
+
         body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(ellipse 80% 60% at 15% 0%, rgba(52, 211, 153, 0.10), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 10%, rgba(139, 92, 246, 0.10), transparent 55%),
+                linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
         }
 
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            pointer-events: none;
-            font-size: 14px;
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148,197,173,0.25); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148,197,173,0.4); }
+
+        .bg-motes { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .mote { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, rgba(52,211,153,0.7), transparent 70%); animation: moteDrift linear infinite; }
+        @@keyframes moteDrift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: .6; }
+            90% { opacity: .6; }
+            100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
         }
 
-        #taskPanel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 320px;
-            pointer-events: auto;
-            font-size: 13px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
+        .lab-shell { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
 
-            #taskPanel h4 {
-                margin: 0 0 10px 0;
-                color: #2ecc71;
-            }
+        .lab-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: rgba(6, 20, 14, 0.75); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: rgba(148,197,173,0.06); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s ease; flex-shrink: 0; }
+        .icon-btn:hover { background: rgba(52,211,153,0.15); border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+        .topbar-title { min-width: 0; }
+        .topbar-title .eyebrow { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+        .topbar-title h1 { margin: 2px 0 0; font-size: clamp(15px, 2vw, 20px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+        .topbar-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: rgba(148,197,173,0.08); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+        .chip i { color: var(--accent); }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .session-timer { display: flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; color: var(--text-dim); background: rgba(148,197,173,0.06); border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px; }
+        .session-timer i { color: var(--amber); }
+        .progress-ring-wrap { position: relative; width: 48px; height: 48px; }
+        .progress-ring { width: 48px; height: 48px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: rgba(148,197,173,0.15); stroke-width: 4; }
+        .ring-fill { fill: none; stroke: var(--emerald); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+        #ringLabel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--text); }
 
-        .microscope-view {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            height: 400px;
-            background: rgba(0,0,0,0.9);
-            border-radius: 20px;
-            z-index: 200;
-            display: none;
-            flex-direction: column;
-            border: 2px solid #2ecc71;
-        }
+        .lab-main { flex: 1; display: grid; grid-template-columns: 300px 1fr 300px; gap: 16px; padding: 16px; overflow: hidden; min-height: 0; }
+        .panel { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; backdrop-filter: blur(8px); }
+        .card h3 { margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+        .card h3 i { color: var(--accent); }
+        details.card summary { cursor: pointer; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); display: flex; align-items: center; gap: 8px; list-style: none; }
+        details.card summary::-webkit-details-marker { display: none; }
+        details.card summary i { color: var(--accent); }
+        .brief-body { margin-top: 12px; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+        .brief-body p { margin: 0 0 12px; }
+        .brief-body strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 
-            .microscope-view.active {
-                display: flex;
-            }
+        .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .task { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 13px; background: rgba(148,197,173,0.04); border: 1px solid transparent; transition: all .3s ease; }
+        .task i { color: var(--text-faint); font-size: 15px; flex-shrink: 0; }
+        .task.completed { background: rgba(52, 211, 153, 0.12); border-color: rgba(52,211,153,0.3); }
+        .task.completed i { color: var(--emerald); }
+        .task.completed span { color: var(--text); }
+        .task-banner { display: none; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52,211,153,0.4); color: var(--emerald); font-size: 12.5px; font-weight: 700; }
+        .task-banner.show { display: flex; animation: bannerPop .4s ease; }
+        @@keyframes bannerPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-            .microscope-view canvas {
-                flex: 1;
-                border-radius: 15px;
-                margin: 10px;
-                background: #111;
-            }
+        .notebook-card textarea { width: 100%; resize: vertical; min-height: 80px; background: rgba(4,16,10,0.5); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px; font-family: inherit; font-size: 13px; margin-bottom: 10px; }
+        .notebook-card textarea:focus { outline: none; border-color: var(--accent); }
+        .log-feed { margin-top: 12px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .log-entry { font-size: 11.5px; line-height: 1.4; color: var(--text-dim); padding: 7px 9px; border-left: 2px solid var(--accent-dark); background: rgba(148,197,173,0.04); border-radius: 0 8px 8px 0; animation: logIn .3s ease; }
+        .log-entry time { color: var(--text-faint); font-weight: 700; margin-right: 5px; }
+        @@keyframes logIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
 
-        .microscope-controls {
-            padding: 10px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
+        .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--border); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s ease; font-family: inherit; margin-bottom: 8px; }
+        .btn:last-child { margin-bottom: 0; }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #04231a; border-color: transparent; }
+        .btn-primary:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(52,211,153,0.35); }
+        .btn-secondary { background: rgba(139,92,246,0.15); color: #c4b5fd; border-color: rgba(139,92,246,0.35); }
+        .btn-secondary:hover { background: rgba(139,92,246,0.25); }
+        .btn-ghost { background: rgba(148,197,173,0.06); color: var(--text-dim); }
+        .btn-ghost:hover { background: rgba(148,197,173,0.14); color: var(--text); }
+        .btn-equipment { background: rgba(251,191,36,0.1); color: var(--amber); border-color: rgba(251,191,36,0.3); }
+        .btn-equipment:hover { background: rgba(251,191,36,0.2); transform: translateY(-1px); }
 
-        .specimen-selector {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            padding: 10px;
-        }
+        .stage { position: relative; display: flex; flex-direction: column; border-radius: 20px; border: 1px solid var(--border); background: radial-gradient(ellipse at 50% 20%, rgba(52,211,153,0.06), transparent 60%), var(--panel-solid); overflow: hidden; min-height: 0; }
+        .bench { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; gap: clamp(14px, 3.5vw, 46px); padding: 20px 16px; min-height: 300px; flex-wrap: wrap; }
+        .fx-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+        .equipment { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+        .equipment-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); margin-top: 8px; }
 
-        .specimen-btn {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-            .specimen-btn.active {
-                background: #2ecc71;
-            }
-
-        .petri-dish-view {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 500px;
-            background: rgba(0,0,0,0.9);
-            border-radius: 20px;
-            z-index: 200;
-            display: none;
-            flex-direction: column;
-            border: 2px solid #f39c12;
-        }
-
-            .petri-dish-view.active {
-                display: flex;
-            }
-
-        .dish-canvas {
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
+        /* Microscope */
+        .microscope-rig { }
+        .scope-body { display: flex; flex-direction: column; align-items: center; }
+        .scope-view {
+            width: clamp(150px, 20vw, 220px); height: clamp(150px, 20vw, 220px);
             border-radius: 50%;
-            background: #1a1a2e;
-            position: relative;
+            border: 6px solid #1f2937;
+            background: radial-gradient(circle at 50% 50%, #eafff5 0%, #d1fae5 55%, #9fe8c6 100%);
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 0 3px rgba(52,211,153,0.25), inset 0 0 40px rgba(0,0,0,0.25), 0 14px 30px rgba(0,0,0,.5);
         }
+        .scope-view::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 30px rgba(0,0,0,0.35); pointer-events: none; }
+        .scope-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; font-size: 12px; color: #14532d; font-weight: 700; }
+        .specimen-stage { position: absolute; inset: 0; transition: transform .4s ease, filter .3s ease; }
+        .cell-blob { position: absolute; inset: 10%; border-radius: 46% 54% 52% 48% / 50% 46% 54% 50%; opacity: .9; }
+        .organelle-dot { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+        .hotspot { position: absolute; width: 22px; height: 22px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,0.9); background: rgba(52,211,153,0.35); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .3s ease, transform .2s ease; }
+        .hotspot.unlocked { opacity: 1; pointer-events: auto; animation: hotspotPulse 1.8s ease-in-out infinite; }
+        .hotspot.identified { background: rgba(251,191,36,0.5); border-color: var(--amber); animation: none; }
+        .hotspot:hover { transform: translate(-50%, -50%) scale(1.25); }
+        @@keyframes hotspotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); } 50% { box-shadow: 0 0 0 7px rgba(52,211,153,0); } }
+        .stand-base { width: clamp(90px, 11vw, 140px); height: 10px; background: linear-gradient(180deg, #475569, #1e293b); border-radius: 4px; margin-top: 10px; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
 
-        .colony {
-            position: absolute;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s;
+        .mic-mag-row { display: flex; gap: 6px; margin-top: 10px; }
+        .mag-btn { font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(148,197,173,0.06); color: var(--text-dim); cursor: pointer; }
+        .mag-btn.active { background: rgba(52,211,153,0.2); border-color: var(--accent); color: var(--accent); }
+
+        /* Petri */
+        .dish { width: clamp(110px, 13vw, 160px); height: clamp(110px, 13vw, 160px); border-radius: 50%; border: 4px solid rgba(226,232,240,0.4); position: relative; overflow: hidden; background: repeating-radial-gradient(circle at 50% 50%, #fde68a 0px, #fcd34d 3px, #fde68a 6px); box-shadow: inset 0 0 24px rgba(0,0,0,0.25), 0 10px 24px rgba(0,0,0,.4); transition: box-shadow .5s ease; }
+        .dish.optimal { box-shadow: inset 0 0 24px rgba(0,0,0,0.25), 0 0 26px rgba(52,211,153,0.5); }
+        .dish.cold { box-shadow: inset 0 0 24px rgba(0,0,0,0.25), 0 0 26px rgba(56,189,248,0.5); }
+        .dish.hot { box-shadow: inset 0 0 24px rgba(0,0,0,0.25), 0 0 26px rgba(248,113,113,0.55); }
+        .colony-dot { position: absolute; border-radius: 50%; background: radial-gradient(circle, #78350f, #92400e); transform: translate(-50%,-50%); }
+        .petri-readout { display: flex; gap: 10px; margin-top: 10px; font-size: 11px; }
+        .petri-readout span { background: rgba(148,197,173,0.08); border: 1px solid var(--border); padding: 4px 8px; border-radius: 8px; color: var(--text-dim); }
+        .petri-readout b { color: var(--text); }
+        .temp-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; width: clamp(120px, 14vw, 170px); }
+        .temp-slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+
+        /* Flower dissection */
+        .flower { position: relative; width: 130px; height: 130px; }
+        .petal { position: absolute; left: 50%; top: 50%; width: 34px; height: 56px; background: linear-gradient(180deg, #f9a8d4, #ec4899); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; transform-origin: 50% 100%; transition: opacity .5s ease, transform .5s ease; }
+        .petal.removed { opacity: 0; transform-origin: 50% 100%; }
+        .sepal { position: absolute; left: 50%; top: 50%; width: 20px; height: 44px; background: linear-gradient(180deg, #86efac, #22c55e); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; transform-origin: 50% 100%; transition: opacity .5s ease, transform .5s ease; opacity: .85; }
+        .sepal.removed { opacity: 0; }
+        .stamen { position: absolute; left: 50%; top: 50%; width: 4px; height: 30px; background: #a3e635; transform-origin: 50% 100%; transition: opacity .5s ease; }
+        .stamen::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 9px; height: 9px; border-radius: 50%; background: #eab308; }
+        .stamen.removed { opacity: 0; }
+        .pistil { position: absolute; left: 50%; top: 50%; width: 6px; height: 34px; background: #16a34a; transform: translate(-50%, -100%); border-radius: 3px; }
+        .pistil::before { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: #15803d; }
+        .flower-controls { margin-top: 10px; }
+
+        /* Photosynthesis */
+        .photo-jar { width: clamp(90px, 10vw, 130px); height: clamp(120px, 15vh, 170px); border: 3px solid rgba(226,232,240,0.5); border-top: none; border-radius: 0 0 20px 20px; background: linear-gradient(180deg, rgba(56,189,248,0.12), rgba(56,189,248,0.22)); position: relative; overflow: hidden; }
+        .photo-plant { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 6px; height: 70%; background: linear-gradient(180deg, #22c55e, #15803d); border-radius: 3px; }
+        .photo-leaf { position: absolute; width: 20px; height: 10px; background: #4ade80; border-radius: 50% 50% 50% 0; }
+        .light-lamp { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #fef9c3, #facc15); margin-bottom: 8px; transition: box-shadow .3s ease, opacity .3s ease; }
+        .light-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; width: clamp(120px, 14vw, 170px); }
+        .light-slider-row input[type=range] { flex: 1; accent-color: var(--amber); }
+        .photo-readout { font-size: 11px; margin-top: 8px; background: rgba(148,197,173,0.08); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; color: var(--text-dim); }
+        .photo-readout b { color: var(--text); }
+
+        .control-bar { border-top: 1px solid var(--border); padding: 14px 18px; background: rgba(4,16,10,0.35); display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+        .control-bar .cb-group { display: flex; align-items: center; gap: 10px; }
+        .control-bar label { font-size: 11.5px; font-weight: 800; color: var(--text-dim); white-space: nowrap; }
+        .control-bar input[type=range] { width: clamp(120px, 16vw, 200px); accent-color: var(--accent); }
+
+        .lab-readout { border-top: 1px solid var(--border); padding: 12px 18px 16px; background: rgba(4,16,10,0.5); animation: readoutIn .35s ease; }
+        @@keyframes readoutIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .readout-title { font-size: 13px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .readout-title::before { content: '\f5fd'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+        .readout-equation { font-size: 12.5px; color: var(--amber); margin: 4px 0; font-family: 'Cascadia Code', 'Consolas', monospace; }
+        .readout-observation { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
+        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .slide-card { display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(148,197,173,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; cursor: pointer; transition: all .2s ease; font-family: inherit; color: var(--text); }
+        .slide-card:hover { background: rgba(148,197,173,0.1); transform: translateY(-2px); }
+        .slide-card.selected { border-color: var(--accent); background: rgba(52,211,153,0.12); box-shadow: 0 0 0 3px rgba(52,211,153,0.18); }
+        .slide-swatch { width: 34px; height: 26px; border-radius: 4px; border: 2px solid rgba(226,232,240,0.4); }
+        .slide-label { font-size: 10.5px; font-weight: 800; text-align: center; line-height: 1.3; }
+        .slide-label small { display: block; font-weight: 500; color: var(--text-faint); font-size: 9.5px; margin-top: 1px; }
+
+        .droplet { position: fixed; width: 9px; height: 13px; border-radius: 50%; z-index: 999; pointer-events: none; box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+
+        .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .toast { background: rgba(15,42,32,0.95); border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; box-shadow: 0 10px 26px rgba(0,0,0,.5); animation: toastIn .3s ease; }
+        .toast.warn { border-color: rgba(251,191,36,0.5); color: var(--amber); }
+        .toast.fade { animation: toastOut .35s ease forwards; }
+        @@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @@keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
+
+        .confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1500; }
+
+        @@media (max-width: 1180px) { .lab-main { grid-template-columns: 260px 1fr 260px; } }
+        @@media (max-width: 980px) {
+            .lab-main { grid-template-columns: 1fr; grid-auto-rows: auto; overflow-y: auto; }
+            .panel { overflow-y: visible; }
+            .stage { min-height: 480px; order: -1; }
+            .topbar-meta { display: none; }
+            .topbar-title h1 { max-width: 60vw; }
         }
-
-            .colony:hover {
-                transform: scale(1.1);
-            }
-
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-            flex-direction: column;
+        @@media (max-width: 560px) {
+            .lab-topbar { padding: 10px 12px; }
+            .session-timer span { display: none; }
+            .lab-main { padding: 10px; gap: 10px; }
+            .card { padding: 12px; }
+            .shelf-grid { grid-template-columns: repeat(3, 1fr); }
+            .control-bar { flex-direction: column; align-items: stretch; }
         }
-
-        .btn-lab {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-submit {
-            background: #2196F3;
-        }
-
-        .btn-save {
-            background: #ff9800;
-        }
-
-        .btn-exit {
-            background: #f44336;
-        }
-
-        .observation-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 15px;
-            border-radius: 8px;
-            width: 300px;
-            z-index: 100;
-        }
-
-            .observation-panel textarea {
-                width: 100%;
-                padding: 8px;
-                margin-top: 5px;
-                border-radius: 4px;
-                border: none;
-            }
-
-        @@media (max-width: 768px) {
-            #taskPanel {
-                width: 250px;
-                font-size: 11px;
-            }
-
-            .microscope-view {
-                width: 300px;
-                height: 300px;
-            }
-        }
+        @@media (prefers-reduced-motion: reduce) { .mote, .hotspot.unlocked { animation: none !important; } }
     </style>
 </head>
 <body>
-    <div id="info">
-        <strong>@experiment.Title</strong> | Biology Lab
+    <div class="bg-motes" aria-hidden="true">
+        <span class="mote" style="left:6%;animation-duration:14s;animation-delay:0s;"></span>
+        <span class="mote" style="left:16%;animation-duration:18s;animation-delay:2s;"></span>
+        <span class="mote" style="left:28%;animation-duration:12s;animation-delay:4s;"></span>
+        <span class="mote" style="left:41%;animation-duration:20s;animation-delay:1s;"></span>
+        <span class="mote" style="left:55%;animation-duration:15s;animation-delay:6s;"></span>
+        <span class="mote" style="left:67%;animation-duration:17s;animation-delay:3s;"></span>
+        <span class="mote" style="left:78%;animation-duration:13s;animation-delay:5s;"></span>
+        <span class="mote" style="left:88%;animation-duration:19s;animation-delay:2.5s;"></span>
+        <span class="mote" style="left:94%;animation-duration:16s;animation-delay:0.5s;"></span>
+        <span class="mote" style="left:35%;animation-duration:22s;animation-delay:7s;"></span>
     </div>
 
-    <div id="taskPanel">
-        <h4><i class="fas fa-microscope"></i> Biology Lab Tasks</h4>
-        <div id="tasksList">
-            <div class="task" id="task-microscope" style="padding: 8px; margin: 5px 0; border-radius: 4px;">
-                <i class="fas fa-circle-notch"></i> Examine specimen under microscope
+    <div class="lab-shell">
+        <header class="lab-topbar">
+            <div class="topbar-left">
+                <button class="icon-btn" id="btnExit" title="Exit Lab"><i class="fas fa-arrow-left"></i></button>
+                <div class="topbar-title">
+                    <span class="eyebrow"><i class="fas fa-dna"></i> Biology Lab</span>
+                    <h1>@experiment.Title</h1>
+                </div>
             </div>
-            <div class="task" id="task-petri" style="padding: 8px; margin: 5px 0; border-radius: 4px;">
-                <i class="fas fa-circle-notch"></i> Culture bacteria in petri dish
+            <div class="topbar-meta">
+                <span class="chip"><i class="fas fa-layer-group"></i> @experiment.Difficulty</span>
+                <span class="chip"><i class="fas fa-clock"></i> @experiment.DurationMinutes min</span>
+                <span class="chip"><i class="fas fa-graduation-cap"></i> @experiment.GradeLevel</span>
             </div>
-            <div class="task" id="task-slides" style="padding: 8px; margin: 5px 0; border-radius: 4px;">
-                <i class="fas fa-circle-notch"></i> Prepare and examine slides
+            <div class="topbar-right">
+                <div class="session-timer"><i class="fas fa-stopwatch"></i> <span id="sessionTimer">00:00</span></div>
+                <button class="icon-btn" id="btnMute" title="Toggle sound"><i class="fas fa-volume-up" id="muteIcon"></i></button>
+                <div class="progress-ring-wrap" title="Task progress">
+                    <svg viewBox="0 0 44 44" class="progress-ring">
+                        <circle class="ring-bg" cx="22" cy="22" r="19"></circle>
+                        <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="19"></circle>
+                    </svg>
+                    <span id="ringLabel">0/6</span>
+                </div>
             </div>
-            <div class="task" id="task-cells" style="padding: 8px; margin: 5px 0; border-radius: 4px;">
-                <i class="fas fa-circle-notch"></i> Identify cell structures
-            </div>
-        </div>
-        <div id="taskResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
-    </div>
+        </header>
 
-    <div class="observation-panel">
-        <h4><i class="fas fa-pen"></i> Observations</h4>
-        <textarea id="observations" rows="3" placeholder="Record your observations here..."></textarea>
-        <button class="btn-lab" style="margin-top: 5px; padding: 5px 10px;" onclick="saveObservations()">Save Observations</button>
-    </div>
-
-    <div id="controls">
-        <button class="btn-lab btn-save" onclick="saveProgress()">💾 Save Progress</button>
-        <button class="btn-lab btn-submit" onclick="submitLab()">📤 Submit Lab</button>
-        <button class="btn-lab btn-exit" onclick="exitLab()">🚪 Exit Lab</button>
-    </div>
-
-    <!-- Microscope Modal -->
-    <div id="microscopeView" class="microscope-view">
-        <div class="specimen-selector">
-            <button class="specimen-btn active" data-specimen="onion">Onion Cells</button>
-            <button class="specimen-btn" data-specimen="cheek">Cheek Cells</button>
-            <button class="specimen-btn" data-specimen="leaf">Leaf Cross Section</button>
-            <button class="specimen-btn" data-specimen="bacteria">Bacteria</button>
-        </div>
-        <canvas id="microscopeCanvas" width="380" height="300"></canvas>
-        <div class="microscope-controls">
-            <button class="btn-lab" onclick="changeMagnification(40)">40x</button>
-            <button class="btn-lab" onclick="changeMagnification(100)">100x</button>
-            <button class="btn-lab" onclick="changeMagnification(400)">400x</button>
-            <button class="btn-lab" onclick="closeMicroscope()">Close</button>
-        </div>
-        <div id="specimenInfo" style="text-align: center; padding: 5px; color: #aaa; font-size: 12px;"></div>
-    </div>
-
-    <!-- Petri Dish Modal -->
-    <div id="petriView" class="petri-dish-view">
-        <h4 style="text-align: center; margin: 10px;">Bacteria Culture - Day 1</h4>
-        <div class="dish-canvas" id="petriCanvas">
-            <canvas id="petriDishCanvas" width="300" height="300"></canvas>
-        </div>
-        <div style="padding: 10px; text-align: center;">
-            <button class="btn-lab" onclick="incubate()">Incubate (24h)</button>
-            <button class="btn-lab" onclick="closePetri()">Close</button>
-        </div>
-        <div id="cultureInfo" style="text-align: center; padding: 5px; color: #aaa; font-size: 12px;"></div>
-    </div>
-
-    <!-- Three.js script -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-
-        const experimentId = @ViewBag.Experiment.Id;
-        const resultId = @ViewBag.ResultId;
-
-        let scene, camera, renderer, labelRenderer, controls;
-        let equipmentGroup = [];
-
-        // Task completion tracking
-        let tasks = {
-            microscope: false,
-            petri: false,
-            slides: false,
-            cells: false
-        };
-
-        let currentMagnification = 100;
-        let currentSpecimen = 'onion';
-        let cultureDays = 1;
-
-        // Specimen image data (simulated)
-        const specimenImages = {
-            onion: {
-                name: "Onion Cells (Allium cepa)",
-                description: "Rectangular plant cells with visible cell walls, nucleus, and vacuoles.",
-                draw: drawOnionCells
-            },
-            cheek: {
-                name: "Human Cheek Epithelial Cells",
-                description: "Irregular animal cells with visible nucleus and cytoplasm.",
-                draw: drawCheekCells
-            },
-            leaf: {
-                name: "Leaf Cross Section",
-                description: "Plant leaf showing epidermis, mesophyll cells, and chloroplasts.",
-                draw: drawLeafCells
-            },
-            bacteria: {
-                name: "E. coli Bacteria",
-                description: "Rod-shaped bacteria, some dividing, showing Gram-negative cell walls.",
-                draw: drawBacteria
-            }
-        };
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
-            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(5, 4, 8);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            labelRenderer = new CSS2DRenderer();
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.domElement.style.position = 'absolute';
-            labelRenderer.domElement.style.top = '0px';
-            labelRenderer.domElement.style.left = '0px';
-            labelRenderer.domElement.style.pointerEvents = 'none';
-            document.body.appendChild(labelRenderer.domElement);
-
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 1.0;
-            controls.zoomSpeed = 1.2;
-            controls.enableZoom = true;
-
-            setupLighting();
-            createLabEnvironment();
-            createEquipment();
-            animate();
-        }
-
-        function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0x404060);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(5, 10, 7);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
-
-            const fillLight = new THREE.PointLight(0x4466cc, 0.3);
-            fillLight.position.set(0, 2, 3);
-            scene.add(fillLight);
-        }
-
-        function createLabEnvironment() {
-            // Lab table
-            const tableGeometry = new THREE.BoxGeometry(6, 0.2, 4);
-            const tableMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 });
-            const table = new THREE.Mesh(tableGeometry, tableMaterial);
-            table.position.set(0, -0.4, 0);
-            table.receiveShadow = true;
-            scene.add(table);
-
-            // Green accents for bio lab
-            const plantMaterial = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
-            for (let i = -2; i <= 2; i+=2) {
-                const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.3, 8),
-                    new THREE.MeshStandardMaterial({ color: 0xCD853F }));
-                pot.position.set(i, -0.3, 2.5);
-                scene.add(pot);
-
-                const plant = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.5, 8), plantMaterial);
-                plant.position.set(i, -0.05, 2.5);
-                scene.add(plant);
-            }
-        }
-
-        function createEquipment() {
-            const equipment = [
-                { name: 'Microscope', type: 'microscope', x: -1.5, y: 0.1, z: 1, action: 'openMicroscope' },
-                { name: 'Petri Dish', type: 'petri', x: 0, y: 0.1, z: 1.2, action: 'openPetri' },
-                { name: 'Specimen Slides', type: 'slides', x: 1.5, y: 0.1, z: 1, action: 'examineSlides' },
-                { name: 'Cell Chart', type: 'chart', x: 2, y: 0.5, z: -1.5, action: 'showCellChart' }
-            ];
-
-            equipment.forEach(item => {
-                let mesh;
-                if (item.type === 'microscope') {
-                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.4, 8),
-                        new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.7 }));
-                    base.position.y = -0.2;
-                    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.2),
-                        new THREE.MeshStandardMaterial({ color: 0xAAAAAA }));
-                    arm.position.set(0.2, 0.1, 0);
-                    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.5, 16),
-                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
-                    tube.position.set(0.25, 0.35, 0);
-
-                    mesh = new THREE.Group();
-                    mesh.add(base);
-                    mesh.add(arm);
-                    mesh.add(tube);
-                    mesh.position.set(item.x, item.y, item.z);
-                } else if (item.type === 'petri') {
-                    const dishBase = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.35, 0.05, 32),
-                        new THREE.MeshPhysicalMaterial({ color: 0x88aaff, transparent: true, opacity: 0.5 }));
-                    const dishLid = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.03, 32),
-                        new THREE.MeshPhysicalMaterial({ color: 0x88aaff, transparent: true, opacity: 0.3 }));
-                    dishLid.position.y = 0.05;
-                    mesh = new THREE.Group();
-                    mesh.add(dishBase);
-                    mesh.add(dishLid);
-                    mesh.position.set(item.x, item.y, item.z);
-                } else if (item.type === 'slides') {
-                    const slide = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.02, 0.2),
-                        new THREE.MeshStandardMaterial({ color: 0xCCCCAA }));
-                    const cover = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.01, 0.15),
-                        new THREE.MeshStandardMaterial({ color: 0xDDDDBB, transparent: true, opacity: 0.7 }));
-                    cover.position.y = 0.02;
-                    mesh = new THREE.Group();
-                    mesh.add(slide);
-                    mesh.add(cover);
-                    mesh.position.set(item.x, item.y, item.z);
-                } else {
-                    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.5),
-                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
-                    mesh.position.set(item.x, item.y, item.z);
+        <div class="lab-main">
+            <aside class="panel panel-left">
+                @if (!string.IsNullOrEmpty(experiment.Description) || !string.IsNullOrEmpty(experiment.Instructions) || !string.IsNullOrEmpty(experiment.LearningObjectives) || !string.IsNullOrEmpty(experiment.EquipmentList))
+                {
+                    <details class="card brief-card" open>
+                        <summary><i class="fas fa-book-open"></i> Lab Brief</summary>
+                        <div class="brief-body">
+                            @if (!string.IsNullOrEmpty(experiment.Description))
+                            {
+                                <p><strong>Overview</strong>@experiment.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.Instructions))
+                            {
+                                <p><strong>Instructions</strong>@experiment.Instructions</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.LearningObjectives))
+                            {
+                                <p><strong>Learning Objectives</strong>@experiment.LearningObjectives</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.EquipmentList))
+                            {
+                                <p><strong>Equipment</strong>@experiment.EquipmentList</p>
+                            }
+                        </div>
+                    </details>
                 }
 
-                mesh.userData = { name: item.name, action: item.action, interactable: true };
-                mesh.castShadow = true;
-                scene.add(mesh);
+                <section class="card tasks-card">
+                    <h3><i class="fas fa-list-check"></i> Lab Tasks</h3>
+                    <ul class="task-list" id="taskList">
+                        <li class="task" data-task="examine"><i class="far fa-circle"></i><span>Bring a specimen slide into focus</span></li>
+                        <li class="task" data-task="identify"><i class="far fa-circle"></i><span>Identify a labelled structure</span></li>
+                        <li class="task" data-task="incubate"><i class="far fa-circle"></i><span>Incubate the petri dish culture</span></li>
+                        <li class="task" data-task="dissect"><i class="far fa-circle"></i><span>Dissect and reveal the flower's structure</span></li>
+                        <li class="task" data-task="photosynthesis"><i class="far fa-circle"></i><span>Measure the photosynthesis (O2) rate</span></li>
+                        <li class="task" data-task="observe"><i class="far fa-circle"></i><span>Record a written observation</span></li>
+                    </ul>
+                    <div class="task-banner" id="taskBanner"><i class="fas fa-champagne-glasses"></i> All tasks complete — ready to submit!</div>
+                </section>
 
-                const div = document.createElement('div');
-                div.textContent = item.name;
-                div.style.color = 'white';
-                div.style.backgroundColor = 'rgba(0,0,0,0.6)';
-                div.style.padding = '2px 8px';
-                div.style.borderRadius = '4px';
-                div.style.fontSize = '12px';
-                const label = new CSS2DObject(div);
-                label.position.set(item.x, item.y + 0.5, item.z);
-                scene.add(label);
+                <section class="card notebook-card">
+                    <h3><i class="fas fa-pen-fancy"></i> Lab Notebook</h3>
+                    <textarea id="observations" rows="3" placeholder="Record what you observe — cell structures, colony growth, dissection findings..."></textarea>
+                    <button class="btn btn-ghost" id="btnSaveObs" style="margin-bottom:0;"><i class="fas fa-bookmark"></i> Add to Notebook</button>
+                    <div class="log-feed" id="logFeed"></div>
+                </section>
+            </aside>
 
-                equipmentGroup.push({ mesh, label, data: item });
+            <section class="stage">
+                <div class="bench" id="bench">
+                    <canvas class="fx-canvas" id="fxCanvas"></canvas>
+
+                    <div class="equipment microscope-rig">
+                        <div class="scope-body">
+                            <div class="scope-view" id="scopeView">
+                                <div class="scope-placeholder" id="scopePlaceholder">Select a slide from the shelf to begin &rarr;</div>
+                                <div class="specimen-stage" id="specimenStage" style="display:none;"></div>
+                            </div>
+                            <div class="mic-mag-row" id="magRow">
+                                <button class="mag-btn active" data-mag="1">4x</button>
+                                <button class="mag-btn" data-mag="2">10x</button>
+                                <button class="mag-btn" data-mag="3">40x</button>
+                            </div>
+                        </div>
+                        <div class="stand-base"></div>
+                        <div class="equipment-label">Microscope</div>
+                    </div>
+
+                    <div class="equipment petri-rig">
+                        <div class="dish" id="dish"></div>
+                        <div class="petri-readout">
+                            <span>Colonies: <b id="petriCount">0</b></span>
+                            <span>+<b id="petriHours">0</b>h</span>
+                        </div>
+                        <div class="temp-slider-row">
+                            <i class="fas fa-thermometer-half" style="color:var(--text-faint);font-size:11px;"></i>
+                            <input type="range" id="petriTemp" min="10" max="45" value="37" />
+                        </div>
+                        <div class="equipment-label">Petri Culture</div>
+                    </div>
+
+                    <div class="equipment flower-rig">
+                        <div class="flower" id="flower"></div>
+                        <div class="flower-controls">
+                            <button class="btn btn-equipment" id="btnDissect" style="width:auto;padding:8px 14px;margin:0;"><i class="fas fa-hand-scissors"></i> Dissect Next Layer</button>
+                        </div>
+                        <div class="equipment-label">Flower Dissection</div>
+                    </div>
+
+                    <div class="equipment photo-rig">
+                        <div class="light-lamp" id="lightLamp"></div>
+                        <div class="photo-jar" id="photoJar">
+                            <div class="photo-plant"></div>
+                        </div>
+                        <div class="light-slider-row">
+                            <i class="fas fa-sun" style="color:var(--amber);font-size:11px;"></i>
+                            <input type="range" id="lightSlider" min="0" max="100" value="50" />
+                        </div>
+                        <div class="photo-readout">O2 bubbles: <b id="photoBubbles">0</b></div>
+                        <div class="equipment-label">Photosynthesis</div>
+                    </div>
+                </div>
+
+                <div class="control-bar">
+                    <div class="cb-group">
+                        <label><i class="fas fa-eye"></i> Focus</label>
+                        <input type="range" id="focusSlider" min="0" max="100" value="0" />
+                    </div>
+                    <div class="cb-group">
+                        <button class="btn btn-primary" id="btnMeasurePhoto" style="width:auto;margin:0;padding:9px 16px;"><i class="fas fa-vial-circle-check"></i> Measure Photosynthesis</button>
+                    </div>
+                </div>
+
+                <div class="lab-readout" id="reactionReadout" style="display:none;">
+                    <div class="readout-title" id="readoutTitle"></div>
+                    <div class="readout-equation" id="readoutEquation"></div>
+                    <div class="readout-observation" id="readoutObservation"></div>
+                </div>
+            </section>
+
+            <aside class="panel panel-right">
+                <section class="card shelf-card">
+                    <h3><i class="fas fa-microscope"></i> Specimen Slides</h3>
+                    <div class="shelf-grid" id="shelfGrid"></div>
+                </section>
+
+                <section class="card equipment-card">
+                    <h3><i class="fas fa-screwdriver-wrench"></i> Instruments</h3>
+                    <button class="btn btn-equipment" id="btnIncubate"><i class="fas fa-temperature-half"></i> Incubate Petri Dish (+6h)</button>
+                    <button class="btn btn-equipment" id="btnResetDish" style="margin-bottom:0;"><i class="fas fa-rotate"></i> Reset Culture</button>
+                </section>
+
+                <section class="card controls-card">
+                    <button class="btn btn-secondary" id="btnSaveProgress"><i class="fas fa-cloud-arrow-up"></i> Save Progress</button>
+                    <button class="btn btn-primary" id="btnSubmit" disabled><i class="fas fa-paper-plane"></i> Submit Lab</button>
+                    <button class="btn btn-ghost" id="btnExit2" style="margin-bottom:0;"><i class="fas fa-door-open"></i> Exit Lab</button>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+    <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+
+    <script>
+        var experimentId = @ViewBag.Experiment.Id;
+        var resultId = @ViewBag.ResultId;
+
+        var SAVE_URL = '@Url.Action("SaveLabProgress", "VirtualLab")';
+        var SUBMIT_URL = '@Url.Action("SubmitLab", "VirtualLab")';
+        var INDEX_URL = '@Url.Action("Index", "VirtualLab")';
+
+        // ============================================================
+        // Data: specimens + dissection layers
+        // ============================================================
+        var SPECIMENS = [
+            { id: 'onion', name: 'Onion Epidermis', type: 'Plant Cell', idealFocus: 58, blobColor: 'rgba(134,239,172,0.55)', dotColor: '#6366f1',
+              hotspots: [
+                  { x: 50, y: 50, minMag: 1, size: 26, label: 'Cell Wall', desc: 'A rigid outer layer made of cellulose that gives the plant cell its fixed shape.' },
+                  { x: 38, y: 42, minMag: 1, size: 18, label: 'Nucleus', desc: "The dense central body containing the cell's DNA." },
+                  { x: 65, y: 60, minMag: 2, size: 14, label: 'Cytoplasm', desc: 'The jelly-like fluid filling the cell, where most cell activity occurs.' },
+                  { x: 30, y: 68, minMag: 3, size: 10, label: 'Cell Membrane', desc: 'A thin membrane just inside the cell wall, controlling what enters and exits.' }
+              ] },
+            { id: 'cheek', name: 'Human Cheek Cell', type: 'Animal Cell', idealFocus: 47, blobColor: 'rgba(253,186,207,0.55)', dotColor: '#8b5cf6',
+              hotspots: [
+                  { x: 50, y: 50, minMag: 1, size: 18, label: 'Nucleus', desc: "Contains the cell's genetic material, visible as a darker central spot." },
+                  { x: 66, y: 44, minMag: 1, size: 14, label: 'Cytoplasm', desc: 'The fluid interior of the cell surrounding the nucleus.' },
+                  { x: 30, y: 62, minMag: 2, size: 10, label: 'Cell Membrane', desc: 'The flexible outer boundary — animal cells have no rigid wall, so the shape is irregular.' }
+              ] },
+            { id: 'stomata', name: 'Leaf Stomata', type: 'Plant Tissue', idealFocus: 70, blobColor: 'rgba(187,247,208,0.6)', dotColor: '#16a34a',
+              hotspots: [
+                  { x: 50, y: 50, minMag: 1, size: 20, label: 'Stoma (Pore)', desc: 'The opening that allows gas exchange — CO2 in, O2 and water vapour out.' },
+                  { x: 40, y: 36, minMag: 2, size: 12, label: 'Guard Cell', desc: 'A bean-shaped cell that swells or shrinks to open and close the stoma.' },
+                  { x: 72, y: 66, minMag: 3, size: 10, label: 'Epidermal Cell', desc: "Flat surface cells surrounding the stomata, forming the leaf's outer layer." }
+              ] },
+            { id: 'blood', name: 'Human Blood Smear', type: 'Tissue Sample', idealFocus: 33, blobColor: 'rgba(254,202,202,0.35)', dotColor: '#ef4444',
+              hotspots: [
+                  { x: 45, y: 52, minMag: 1, size: 14, label: 'Red Blood Cell', desc: 'A biconcave disc packed with haemoglobin that carries oxygen through the body.' },
+                  { x: 70, y: 34, minMag: 2, size: 16, label: 'White Blood Cell', desc: "A larger cell with a visible nucleus — part of the body's immune system." },
+                  { x: 30, y: 70, minMag: 3, size: 7, label: 'Platelet', desc: 'A tiny cell fragment that helps blood clot at a wound.' }
+              ] },
+            { id: 'pond', name: 'Pond Water Sample', type: 'Microorganisms', idealFocus: 80, blobColor: 'rgba(165,243,252,0.4)', dotColor: '#0891b2',
+              hotspots: [
+                  { x: 40, y: 46, minMag: 1, size: 20, label: 'Paramecium', desc: 'A slipper-shaped protozoan covered in cilia that beat to move it through water.' },
+                  { x: 68, y: 62, minMag: 2, size: 18, label: 'Amoeba', desc: 'A shapeless single-celled organism that moves using temporary "false feet" (pseudopodia).' },
+                  { x: 55, y: 28, minMag: 3, size: 10, label: 'Algae Cell', desc: 'A photosynthetic single-celled organism, appears green from chlorophyll.' }
+              ] }
+        ];
+
+        var DISSECT_LAYERS = [
+            { cls: 'petal', label: 'Petals', desc: 'The colourful outer parts that attract pollinators to the flower.' },
+            { cls: 'sepal', label: 'Sepals', desc: 'The green, leaf-like parts that protected the bud before it opened.' },
+            { cls: 'stamen', label: 'Stamen (Anther + Filament)', desc: 'The male part — the anther produces pollen atop a slender filament.' },
+            { cls: 'pistil', label: 'Pistil (Stigma, Style, Ovary)', desc: 'The female part — pollen lands on the sticky stigma and travels down the style to fertilise the ovary.' }
+        ];
+
+        // ============================================================
+        // State
+        // ============================================================
+        var TASK_KEYS = ['examine', 'identify', 'incubate', 'dissect', 'photosynthesis', 'observe'];
+        var state = {
+            tasks: {},
+            specimen: null,
+            focus: 0,
+            magLevel: 1,
+            identified: {},
+            petri: { colonies: 0, temp: 37, hours: 0, dots: [] },
+            dissectStep: 0,
+            photo: { light: 50, running: false, bubbles: 0 }
+        };
+
+        var muted = false;
+        var audioCtx = null;
+
+        // ============================================================
+        // DOM refs
+        // ============================================================
+        var bench = document.getElementById('bench');
+        var fx = document.getElementById('fxCanvas');
+        var fxCtx = fx.getContext('2d');
+        var scopeView = document.getElementById('scopeView');
+        var scopePlaceholder = document.getElementById('scopePlaceholder');
+        var specimenStage = document.getElementById('specimenStage');
+        var dishEl = document.getElementById('dish');
+        var flowerEl = document.getElementById('flower');
+        var photoJarEl = document.getElementById('photoJar');
+        var lightLampEl = document.getElementById('lightLamp');
+        var toastStackEl = document.getElementById('toastStack');
+        var logFeedEl = document.getElementById('logFeed');
+        var ringFillEl = document.getElementById('ringFill');
+        var ringLabelEl = document.getElementById('ringLabel');
+        var taskBannerEl = document.getElementById('taskBanner');
+        var readoutEl = document.getElementById('reactionReadout');
+
+        // ============================================================
+        // Particles
+        // ============================================================
+        var particles = [];
+        function resizeFx() {
+            var rect = bench.getBoundingClientRect();
+            var dpr = window.devicePixelRatio || 1;
+            fx.width = rect.width * dpr; fx.height = rect.height * dpr;
+            fx.style.width = rect.width + 'px'; fx.style.height = rect.height + 'px';
+            fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resizeFx);
+
+        function elOrigin(el) {
+            var bRect = bench.getBoundingClientRect();
+            var r = el.getBoundingClientRect();
+            return { x: r.left - bRect.left + r.width / 2, y: r.top - bRect.top + r.height * 0.25, w: r.width };
+        }
+
+        function spawnBubbles(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'bubble', x: origin.x + (Math.random() - 0.5) * origin.w * 0.5, y: origin.y + Math.random() * 12, vx: (Math.random() - 0.5) * 0.3, vy: -0.7 - Math.random() * 0.9, r: 2 + Math.random() * 2.4, life: 0, maxLife: 55 + Math.random() * 35 });
+            }
+        }
+        function spawnSparkle(n, origin) {
+            for (var i = 0; i < n; i++) {
+                particles.push({ type: 'spark', x: origin.x + (Math.random() - 0.5) * origin.w, y: origin.y, vx: (Math.random() - 0.5) * 1, vy: -(Math.random() * 1), r: 1 + Math.random() * 2, life: 0, maxLife: 40, hue: 90 + Math.random() * 60 });
+            }
+        }
+
+        function tickParticles() {
+            fxCtx.clearRect(0, 0, fx.width, fx.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.life++; p.x += p.vx; p.y += p.vy;
+                var t = p.life / p.maxLife;
+                fxCtx.globalAlpha = Math.max(0, 1 - t);
+                if (p.type === 'bubble') {
+                    fxCtx.fillStyle = 'rgba(255,255,255,0.85)';
+                    fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill();
+                } else if (p.type === 'spark') {
+                    fxCtx.fillStyle = 'hsl(' + p.hue + ',85%,65%)';
+                    fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill();
+                }
+            }
+            fxCtx.globalAlpha = 1;
+            particles = particles.filter(function (p) { return p.life < p.maxLife; });
+            requestAnimationFrame(tickParticles);
+        }
+
+        // ============================================================
+        // Audio
+        // ============================================================
+        function ensureAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; } } }
+        function playTone(freq, dur, type) {
+            if (muted) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            try {
+                var osc = audioCtx.createOscillator(); var gain = audioCtx.createGain();
+                osc.type = type || 'sine'; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur + 0.02);
+            } catch (e) { }
+        }
+
+        // ============================================================
+        // UI helpers
+        // ============================================================
+        function toast(msg, kind) {
+            var el = document.createElement('div');
+            el.className = 'toast' + (kind === 'warn' ? ' warn' : '');
+            el.textContent = msg;
+            toastStackEl.appendChild(el);
+            setTimeout(function () { el.classList.add('fade'); setTimeout(function () { el.remove(); }, 350); }, 2600);
+        }
+
+        function logEvent(text) {
+            var entry = document.createElement('div');
+            entry.className = 'log-entry';
+            var now = new Date();
+            var hh = String(now.getHours()).padStart(2, '0');
+            var mm = String(now.getMinutes()).padStart(2, '0');
+            entry.innerHTML = '<time>' + hh + ':' + mm + '</time>' + text;
+            logFeedEl.appendChild(entry);
+            logFeedEl.scrollTop = logFeedEl.scrollHeight;
+            while (logFeedEl.children.length > 40) logFeedEl.removeChild(logFeedEl.firstChild);
+        }
+
+        function showReadout(title, equation, observation) {
+            readoutEl.style.display = 'block';
+            document.getElementById('readoutTitle').textContent = title;
+            document.getElementById('readoutEquation').textContent = equation;
+            document.getElementById('readoutObservation').textContent = observation;
+        }
+
+        function markTaskDone(key) {
+            if (state.tasks[key]) return;
+            state.tasks[key] = true;
+            var li = document.querySelector('.task[data-task="' + key + '"]');
+            if (li) { li.classList.add('completed'); var icon = li.querySelector('i'); if (icon) icon.className = 'fas fa-check-circle'; }
+            updateProgress();
+        }
+
+        function updateProgress() {
+            var done = TASK_KEYS.filter(function (k) { return state.tasks[k]; }).length;
+            ringLabelEl.textContent = done + '/' + TASK_KEYS.length;
+            var circumference = 2 * Math.PI * 19;
+            ringFillEl.style.strokeDasharray = circumference;
+            ringFillEl.style.strokeDashoffset = circumference * (1 - done / TASK_KEYS.length);
+            if (done === TASK_KEYS.length) {
+                taskBannerEl.classList.add('show');
+                document.getElementById('btnSubmit').disabled = false;
+                launchConfetti();
+                playTone(880, 0.3, 'triangle');
+            }
+        }
+
+        // ============================================================
+        // Microscope
+        // ============================================================
+        function buildShelf() {
+            var grid = document.getElementById('shelfGrid');
+            SPECIMENS.forEach(function (s) {
+                var card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'slide-card';
+                card.dataset.id = s.id;
+                card.title = s.type;
+                card.innerHTML = '<span class="slide-swatch" style="background:' + s.blobColor + '"></span><span class="slide-label">' + s.name + '<small>' + s.type + '</small></span>';
+                card.addEventListener('click', function () { ensureAudio(); loadSpecimen(s, card); playTone(500, 0.08, 'sine'); });
+                grid.appendChild(card);
             });
         }
 
-        // Microscope Functions
-        function openMicroscope() {
-            document.getElementById('microscopeView').classList.add('active');
-            currentSpecimen = 'onion';
-            drawSpecimen();
-            updateTask('microscope');
+        function loadSpecimen(spec, cardEl) {
+            document.querySelectorAll('.slide-card.selected').forEach(function (c) { c.classList.remove('selected'); });
+            if (cardEl) cardEl.classList.add('selected');
+            state.specimen = spec;
+            state.focus = Math.max(0, Math.min(100, spec.idealFocus + (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 25)));
+            document.getElementById('focusSlider').value = state.focus;
+            state.magLevel = 1;
+            document.querySelectorAll('.mag-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.mag === '1'); });
+            scopePlaceholder.style.display = 'none';
+            specimenStage.style.display = 'block';
+            renderSpecimenStage();
+            applyFocusBlur();
+            logEvent('Loaded slide: ' + spec.name + ' (' + spec.type + ').');
+            saveInteraction('Loaded microscope slide: ' + spec.name);
         }
 
-        function closeMicroscope() {
-            document.getElementById('microscopeView').classList.remove('active');
-        }
-
-        function changeMagnification(mag) {
-            currentMagnification = mag;
-            drawSpecimen();
-        }
-
-        function drawSpecimen() {
-            const canvas = document.getElementById('microscopeCanvas');
-            const ctx = canvas.getContext('2d');
-            const spec = specimenImages[currentSpecimen];
-            spec.draw(ctx, canvas.width, canvas.height, currentMagnification);
-            document.getElementById('specimenInfo').innerHTML = `${spec.name}<br>Magnification: ${currentMagnification}x<br>${spec.description}`;
-        }
-
-        function drawOnionCells(ctx, w, h, mag) {
-            ctx.fillStyle = '#2a2a3e';
-            ctx.fillRect(0, 0, w, h);
-            ctx.strokeStyle = '#88ff88';
-            ctx.lineWidth = 1;
-
-            const cellSize = 40 * (mag / 100);
-            for (let y = 20; y < h - 20; y += cellSize) {
-                for (let x = 20; x < w - 20; x += cellSize) {
-                    ctx.strokeRect(x, y, cellSize - 5, cellSize - 5);
-                    ctx.fillStyle = '#aaffaa';
-                    ctx.beginPath();
-                    ctx.arc(x + (cellSize - 5)/2, y + (cellSize - 5)/2, 5, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.fillStyle = '#ffaa88';
-                    ctx.beginPath();
-                    ctx.arc(x + (cellSize - 5)/2 - 3, y + (cellSize - 5)/2 - 2, 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                }
-            }
-        }
-
-        function drawCheekCells(ctx, w, h, mag) {
-            ctx.fillStyle = '#2a2a3e';
-            ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = '#ffccaa';
-
-            for (let i = 0; i < 10; i++) {
-                ctx.beginPath();
-                ctx.ellipse(30 + (i * 35), h/2, 20, 15, 0, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.fillStyle = '#aa88ff';
-                ctx.beginPath();
-                ctx.arc(35 + (i * 35), h/2 - 2, 5, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.fillStyle = '#ffccaa';
-            }
-        }
-
-        function drawLeafCells(ctx, w, h, mag) {
-            ctx.fillStyle = '#1a3a1a';
-            ctx.fillRect(0, 0, w, h);
-            for (let i = 0; i < 20; i++) {
-                ctx.fillStyle = '#2ecc71';
-                ctx.beginPath();
-                ctx.ellipse(20 + (i * 18), h/2, 8, 12, 0, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.arc(20 + (i * 18), h/2, 3, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        }
-
-        function drawBacteria(ctx, w, h, mag) {
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = '#e74c3c';
-            for (let i = 0; i < 50; i++) {
-                ctx.fillRect(10 + (i * 8), h/2 + Math.sin(i) * 10, 4, 8);
-            }
-        }
-
-        // Petri Dish Functions
-        let colonies = [];
-
-        function openPetri() {
-            document.getElementById('petriView').classList.add('active');
-            drawPetriDish();
-            updateTask('petri');
-        }
-
-        function closePetri() {
-            document.getElementById('petriView').classList.remove('active');
-        }
-
-        function drawPetriDish() {
-            const canvas = document.getElementById('petriDishCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#2a2a3e';
-            ctx.fillRect(0, 0, 300, 300);
-
-            // Draw agar
-            ctx.fillStyle = '#6a4a2a';
-            ctx.beginPath();
-            ctx.arc(150, 150, 140, 0, 2 * Math.PI);
-            ctx.fill();
-
-            // Draw colonies
-            colonies.forEach(colony => {
-                ctx.fillStyle = colony.color;
-                ctx.beginPath();
-                ctx.arc(colony.x, colony.y, colony.size, 0, 2 * Math.PI);
-                ctx.fill();
+        function renderSpecimenStage() {
+            var spec = state.specimen;
+            if (!spec) return;
+            var html = '<div class="cell-blob" style="background:' + spec.blobColor + '"></div>';
+            spec.hotspots.forEach(function (h, idx) {
+                var key = spec.id + '__' + idx;
+                var isIdentified = !!state.identified[key];
+                html += '<span class="organelle-dot" data-hotspot="' + idx + '" style="left:' + h.x + '%;top:' + h.y + '%;width:' + h.size + 'px;height:' + h.size + 'px;background:' + spec.dotColor + (isIdentified ? '' : '99') + '"></span>';
+                html += '<button type="button" class="hotspot' + (h.minMag <= state.magLevel ? ' unlocked' : '') + (isIdentified ? ' identified' : '') + '" data-hotspot="' + idx + '" style="left:' + h.x + '%;top:' + h.y + '%;"></button>';
             });
+            specimenStage.innerHTML = html;
+            specimenStage.querySelectorAll('.hotspot').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var idx = parseInt(btn.dataset.hotspot, 10);
+                    identifyStructure(spec, idx);
+                });
+            });
+            document.getElementById('magRow').querySelectorAll('.mag-btn').forEach(function (b) {
+                b.classList.toggle('active', parseInt(b.dataset.mag, 10) === state.magLevel);
+            });
+        }
 
-            document.getElementById('cultureInfo').innerHTML = `Culture Day ${cultureDays} | Colonies: ${colonies.length}`;
+        function applyFocusBlur() {
+            var spec = state.specimen;
+            if (!spec) return;
+            var dist = Math.abs(state.focus - spec.idealFocus);
+            var blur = Math.min(9, dist / 6);
+            specimenStage.style.filter = blur < 0.6 ? 'none' : 'blur(' + blur + 'px)';
+            specimenStage.style.transform = 'scale(' + (state.magLevel === 1 ? 1 : state.magLevel === 2 ? 1.5 : 2.2) + ')';
+            if (blur < 0.6) {
+                markTaskDone('examine');
+            }
+        }
+
+        function identifyStructure(spec, idx) {
+            var dist = Math.abs(state.focus - spec.idealFocus);
+            if (dist >= 6) { toast('Adjust the focus first.', 'warn'); return; }
+            var h = spec.hotspots[idx];
+            if (h.minMag > state.magLevel) { toast('Increase magnification to see this clearly.', 'warn'); return; }
+            var key = spec.id + '__' + idx;
+            if (!state.identified[key]) {
+                state.identified[key] = true;
+                spawnSparkle(10, elOrigin(scopeView));
+                playTone(660, 0.12, 'sine');
+                markTaskDone('identify');
+            }
+            renderSpecimenStage();
+            showReadout(h.label, spec.name + ' — ' + spec.type, h.desc);
+            logEvent('Identified structure: ' + h.label + ' (' + spec.name + ').');
+            saveInteraction('Identified structure: ' + h.label + ' on ' + spec.name + ' — ' + h.desc);
+        }
+
+        // ============================================================
+        // Petri dish
+        // ============================================================
+        function growthFactor(temp) {
+            if (temp < 12) return -0.05;
+            if (temp > 44) return -0.35;
+            var dist = Math.abs(temp - 37);
+            return Math.max(-0.1, 0.85 - dist * 0.03);
+        }
+
+        function renderPetri() {
+            var target = Math.max(0, Math.min(60, state.petri.colonies));
+            while (state.petri.dots.length < target) {
+                state.petri.dots.push({ x: 10 + Math.random() * 80, y: 10 + Math.random() * 80, s: 3 + Math.random() * 4 });
+            }
+            if (state.petri.dots.length > target) state.petri.dots.length = target;
+            dishEl.innerHTML = state.petri.dots.map(function (d) {
+                return '<span class="colony-dot" style="left:' + d.x + '%;top:' + d.y + '%;width:' + d.s + 'px;height:' + d.s + 'px;"></span>';
+            }).join('');
+            dishEl.classList.remove('optimal', 'cold', 'hot');
+            if (state.petri.temp >= 30 && state.petri.temp <= 40) dishEl.classList.add('optimal');
+            else if (state.petri.temp < 30) dishEl.classList.add('cold');
+            else dishEl.classList.add('hot');
+            document.getElementById('petriCount').textContent = state.petri.colonies;
+            document.getElementById('petriHours').textContent = state.petri.hours;
         }
 
         function incubate() {
-            cultureDays++;
-            const newColonies = Math.floor(Math.random() * 5) + 1;
-            for (let i = 0; i < newColonies; i++) {
-                colonies.push({
-                    x: 100 + Math.random() * 100,
-                    y: 100 + Math.random() * 100,
-                    size: 5 + Math.random() * 15,
-                    color: `hsl(${Math.random() * 40 + 20}, 70%, 50%)`
-                });
+            var factor = growthFactor(state.petri.temp);
+            var before = state.petri.colonies || 3;
+            var after = Math.round(before * (1 + factor));
+            state.petri.colonies = Math.max(0, Math.min(400, after));
+            state.petri.hours += 6;
+            renderPetri();
+            var desc = factor > 0.3 ? 'Rapid growth — near-optimal temperature for bacterial division.' : factor > 0 ? 'Slow, steady growth.' : factor < -0.15 ? 'Colonies are dying off — this temperature is too extreme.' : 'Growth has stalled at this temperature.';
+            showReadout('Petri Dish Incubation', state.petri.colonies + ' colonies at ' + state.petri.hours + 'h', desc);
+            logEvent('Incubated +6h at ' + state.petri.temp + '&deg;C &rarr; ' + state.petri.colonies + ' colonies.');
+            saveInteraction('Incubated petri dish: ' + state.petri.colonies + ' colonies at ' + state.petri.hours + 'h (' + state.petri.temp + ' C). ' + desc);
+            if (state.petri.hours >= 12 && state.petri.colonies > 3) markTaskDone('incubate');
+        }
+
+        // ============================================================
+        // Flower dissection
+        // ============================================================
+        function renderFlower() {
+            var html = '';
+            for (var i = 0; i < 6; i++) {
+                var angle = i * 60;
+                html += '<div class="petal" data-layer="0" style="transform:translate(-50%,-100%) rotate(' + angle + 'deg) translateY(-8px);"></div>';
             }
-            drawPetriDish();
-            saveInteraction(`Cultured bacteria - Day ${cultureDays}, ${colonies.length} colonies`);
+            for (var j = 0; j < 2; j++) {
+                var a2 = j * 180 + 30;
+                html += '<div class="sepal" data-layer="1" style="transform:translate(-50%,-90%) rotate(' + a2 + 'deg) translateY(4px);"></div>';
+            }
+            html += '<div class="stamen" data-layer="2" style="transform:translate(-50%,-100%) rotate(-15deg);"></div>';
+            html += '<div class="stamen" data-layer="2" style="transform:translate(-50%,-100%) rotate(15deg);"></div>';
+            html += '<div class="pistil" data-layer="3"></div>';
+            flowerEl.innerHTML = html;
         }
 
-        function examineSlides() {
-            updateTask('slides');
-            saveInteraction('Prepared and examined specimen slides');
-            alert('You prepared specimen slides on the microscope stage. Now use the microscope to view them!');
+        function dissectNextLayer() {
+            if (state.dissectStep >= DISSECT_LAYERS.length) { toast('The flower is fully dissected.', 'warn'); return; }
+            var layer = DISSECT_LAYERS[state.dissectStep];
+            flowerEl.querySelectorAll('[data-layer="' + state.dissectStep + '"]').forEach(function (el) { el.classList.add('removed'); });
+            spawnSparkle(8, elOrigin(flowerEl));
+            playTone(420, 0.14, 'triangle');
+            showReadout(layer.label, 'Flower Dissection — Layer ' + (state.dissectStep + 1) + '/4', layer.desc);
+            logEvent('Removed layer: ' + layer.label + ' &mdash; ' + layer.desc);
+            saveInteraction('Dissected flower layer: ' + layer.label + ' - ' + layer.desc);
+            state.dissectStep++;
+            if (state.dissectStep >= DISSECT_LAYERS.length) {
+                markTaskDone('dissect');
+                document.getElementById('btnDissect').disabled = true;
+                toast('Full flower structure revealed!');
+            }
         }
 
-        function showCellChart() {
-            updateTask('cells');
-            saveInteraction('Studied cell structure chart - identified nucleus, mitochondria, and cell membrane');
-            alert('Cell Structure Chart:\n\n- Nucleus: Controls cell activities\n- Mitochondria: Produces energy\n- Cell Membrane: Controls what enters/leaves\n- Cytoplasm: Where chemical reactions occur');
+        // ============================================================
+        // Photosynthesis
+        // ============================================================
+        function renderLight() {
+            var v = state.photo.light;
+            lightLampEl.style.boxShadow = '0 0 ' + (10 + v * 0.4) + 'px ' + (4 + v * 0.1) + 'px rgba(250,204,21,' + (0.2 + v / 160) + ')';
+            lightLampEl.style.opacity = 0.4 + v / 170;
         }
 
-        function updateTask(taskName) {
-            if (!tasks[taskName]) {
-                tasks[taskName] = true;
-                const taskElement = document.getElementById(`task-${taskName}`);
-                if (taskElement) {
-                    taskElement.innerHTML = `<i class="fas fa-check-circle" style="color: #2ecc71;"></i> ${taskElement.innerText}`;
-                    taskElement.style.background = 'rgba(46, 204, 113, 0.2)';
+        function measurePhotosynthesis() {
+            if (state.photo.running) return;
+            state.photo.running = true;
+            state.photo.bubbles = 0;
+            document.getElementById('photoBubbles').textContent = '0';
+            toast('Measuring oxygen output for 10 seconds...');
+            var ticks = 0;
+            var timer = setInterval(function () {
+                ticks++;
+                var chance = state.photo.light / 100;
+                if (Math.random() < chance) {
+                    state.photo.bubbles++;
+                    document.getElementById('photoBubbles').textContent = state.photo.bubbles;
+                    spawnBubbles(2, elOrigin(photoJarEl));
                 }
-            }
-            checkAllTasks();
+                if (ticks >= 10) {
+                    clearInterval(timer);
+                    state.photo.running = false;
+                    var rate = state.photo.bubbles * 6;
+                    var desc = state.photo.light < 20 ? 'Very little oxygen produced — the plant has almost no light to photosynthesise with.' :
+                        state.photo.light > 75 ? 'A strong stream of oxygen bubbles — high light intensity drives a fast rate of photosynthesis.' :
+                        'A moderate, steady stream of oxygen bubbles at this light level.';
+                    showReadout('Photosynthesis Rate', state.photo.bubbles + ' bubbles / 10s (&asymp; ' + rate + '/min)', desc);
+                    logEvent('Measured photosynthesis: ' + state.photo.bubbles + ' bubbles in 10s at ' + state.photo.light + '% light.');
+                    saveInteraction('Measured photosynthesis rate: ' + state.photo.bubbles + ' bubbles/10s at ' + state.photo.light + '% light. ' + desc);
+                    markTaskDone('photosynthesis');
+                }
+            }, 1000);
         }
 
-        function checkAllTasks() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (allComplete) {
-                document.getElementById('taskResult').innerHTML = '<i class="fas fa-check-circle"></i> All tasks complete! Ready to submit.';
-                document.getElementById('taskResult').style.background = 'rgba(46, 204, 113, 0.3)';
-                document.getElementById('taskResult').style.display = 'block';
-            }
+        // ============================================================
+        // Notebook
+        // ============================================================
+        function saveObservations() {
+            var val = document.getElementById('observations').value.trim();
+            if (!val) { toast('Write something first.', 'warn'); return; }
+            logEvent('Observation noted: "' + val + '"');
+            saveInteraction('Observations: ' + val);
+            markTaskDone('observe');
+            toast('Added to notebook.');
+            document.getElementById('observations').value = '';
         }
 
+        // ============================================================
+        // Network
+        // ============================================================
         function saveInteraction(message) {
-            fetch('@Url.Action("SaveLabProgress", "VirtualLab")', {
+            fetch(SAVE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({
-                    resultId: resultId,
-                    observations: message,
-                    conclusions: '',
-                    resultsData: JSON.stringify({ action: message, timestamp: new Date(), tasks: tasks })
-                })
-            }).catch(error => console.error('Error saving:', error));
+                body: JSON.stringify({ resultId: resultId, observations: message, conclusions: '', resultsData: JSON.stringify({ action: message, timestamp: new Date().toISOString(), tasks: state.tasks }) })
+            }).catch(function (error) { console.error('Error saving:', error); });
         }
-
-        function saveObservations() {
-            const obs = document.getElementById('observations').value;
-            if (obs) {
-                saveInteraction(`Observations: ${obs}`);
-                alert('Observations saved!');
-            }
-        }
-
-        function saveProgress() {
-            saveInteraction('Progress saved');
-            alert('Progress saved!');
-        }
-
+        function saveProgress() { saveInteraction('Progress saved'); toast('Progress saved.'); }
         function submitLab() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (!allComplete) {
-                alert('Please complete all tasks before submitting!');
-                return;
-            }
-
-            if (confirm('Submit this lab for grading?')) {
-                fetch('@Url.Action("SubmitLab", "VirtualLab")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ resultId: resultId })
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          alert('Lab submitted successfully!');
-                          window.location.href = '@Url.Action("Index", "VirtualLab")';
-                      }
-                  });
-            }
+            var allComplete = TASK_KEYS.every(function (k) { return state.tasks[k]; });
+            if (!allComplete) { toast('Please complete all tasks before submitting!', 'warn'); return; }
+            if (!confirm('Submit this lab for grading?')) return;
+            fetch(SUBMIT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ resultId: resultId })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) { toast('Lab submitted successfully!'); setTimeout(function () { window.location.href = INDEX_URL; }, 900); }
+                else { toast(data.message || 'Submission failed.', 'warn'); }
+            }).catch(function () { toast('Network error while submitting.', 'warn'); });
         }
-
         function exitLab() {
-            if (confirm('Exit the lab? Your progress will be saved.')) {
-                saveProgress();
-                setTimeout(() => { window.location.href = '@Url.Action("Index", "VirtualLab")'; }, 500);
-            }
+            if (!confirm('Exit the lab? Your progress will be saved.')) return;
+            saveProgress();
+            setTimeout(function () { window.location.href = INDEX_URL; }, 500);
         }
 
-        // Interaction handling
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        window.addEventListener('click', (event) => {
-            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(equipmentGroup.map(e => e.mesh), true);
-
-            if (intersects.length > 0) {
-                let obj = intersects[0].object;
-                while (obj.parent && !obj.userData.action) obj = obj.parent;
-                if (obj.userData.action && typeof window[obj.userData.action] === 'function') {
-                    window[obj.userData.action]();
-                    saveInteraction(`Interacted with: ${obj.userData.name}`);
-                }
+        // ============================================================
+        // Confetti
+        // ============================================================
+        var confettiCanvas = document.getElementById('confettiCanvas');
+        var confettiCtx = confettiCanvas.getContext('2d');
+        var confettiPieces = [];
+        var confettiRunning = false;
+        function resizeConfetti() { confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+        function launchConfetti() {
+            var colors = ['#34d399', '#8b5cf6', '#fbbf24', '#22d3ee', '#fb7185'];
+            for (var i = 0; i < 140; i++) {
+                confettiPieces.push({ x: Math.random() * confettiCanvas.width, y: -20 - Math.random() * 200, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 3, size: 4 + Math.random() * 5, rot: Math.random() * 360, vrot: (Math.random() - 0.5) * 12, color: colors[Math.floor(Math.random() * colors.length)], life: 0, maxLife: 200 + Math.random() * 60 });
             }
-        });
+            if (!confettiRunning) { confettiRunning = true; tickConfetti(); }
+        }
+        function tickConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            for (var i = 0; i < confettiPieces.length; i++) {
+                var p = confettiPieces[i];
+                p.life++; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+                confettiCtx.save(); confettiCtx.translate(p.x, p.y); confettiCtx.rotate(p.rot * Math.PI / 180);
+                confettiCtx.globalAlpha = Math.max(0, 1 - p.life / p.maxLife);
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                confettiCtx.restore();
+            }
+            confettiCtx.globalAlpha = 1;
+            confettiPieces = confettiPieces.filter(function (p) { return p.life < p.maxLife && p.y < confettiCanvas.height + 40; });
+            if (confettiPieces.length) requestAnimationFrame(tickConfetti); else confettiRunning = false;
+        }
 
-        // Setup specimen buttons
-        document.querySelectorAll('.specimen-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.specimen-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentSpecimen = btn.dataset.specimen;
-                drawSpecimen();
+        // ============================================================
+        // Timers
+        // ============================================================
+        var seconds = 0;
+        setInterval(function () {
+            seconds++;
+            var m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            var s = String(seconds % 60).padStart(2, '0');
+            var el = document.getElementById('sessionTimer');
+            if (el) el.textContent = m + ':' + s;
+        }, 1000);
+
+        // ============================================================
+        // Init
+        // ============================================================
+        function init() {
+            buildShelf();
+            renderFlower();
+            renderPetri();
+            renderLight();
+            resizeFx();
+            tickParticles();
+            updateProgress();
+
+            document.getElementById('focusSlider').addEventListener('input', function (e) {
+                state.focus = parseFloat(e.target.value);
+                if (state.specimen) applyFocusBlur();
             });
-        });
+            document.getElementById('magRow').querySelectorAll('.mag-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    state.magLevel = parseInt(btn.dataset.mag, 10);
+                    if (state.specimen) { renderSpecimenStage(); applyFocusBlur(); }
+                });
+            });
+            document.getElementById('petriTemp').addEventListener('input', function (e) {
+                state.petri.temp = parseFloat(e.target.value);
+                renderPetri();
+            });
+            document.getElementById('lightSlider').addEventListener('input', function (e) {
+                state.photo.light = parseFloat(e.target.value);
+                renderLight();
+            });
+            document.getElementById('btnDissect').addEventListener('click', function () { ensureAudio(); dissectNextLayer(); });
+            document.getElementById('btnIncubate').addEventListener('click', function () { ensureAudio(); incubate(); });
+            document.getElementById('btnResetDish').addEventListener('click', function () {
+                state.petri = { colonies: 0, temp: 37, hours: 0, dots: [] };
+                document.getElementById('petriTemp').value = 37;
+                renderPetri();
+                toast('Culture reset.');
+            });
+            document.getElementById('btnMeasurePhoto').addEventListener('click', function () { ensureAudio(); measurePhotosynthesis(); });
+            document.getElementById('btnExit').addEventListener('click', exitLab);
+            document.getElementById('btnExit2').addEventListener('click', exitLab);
+            document.getElementById('btnSaveProgress').addEventListener('click', saveProgress);
+            document.getElementById('btnSubmit').addEventListener('click', submitLab);
+            document.getElementById('btnSaveObs').addEventListener('click', saveObservations);
+            document.getElementById('btnMute').addEventListener('click', function () {
+                muted = !muted;
+                document.getElementById('muteIcon').className = muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+            });
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
+            logEvent('Lab session started. Good luck, scientist!');
         }
 
         init();
-
-        window.openMicroscope = openMicroscope;
-        window.closeMicroscope = closeMicroscope;
-        window.changeMagnification = changeMagnification;
-        window.openPetri = openPetri;
-        window.closePetri = closePetri;
-        window.incubate = incubate;
-        window.examineSlides = examineSlides;
-        window.showCellChart = showCellChart;
-        window.saveObservations = saveObservations;
-        window.saveProgress = saveProgress;
-        window.submitLab = submitLab;
-        window.exitLab = exitLab;
     </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿@model dynamic
+@model dynamic
 @{
     ViewBag.Title = "Physics Lab - " + ViewBag.Experiment.Title;
     var experiment = ViewBag.Experiment as ElevateED.Models.VirtualLabExperiment;
@@ -10,1189 +10,922 @@
 <head>
     <title>@ViewBag.Title - ElevateED</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <style>
+        :root {
+            --bg-deep: #0a071a;
+            --bg-deep-2: #120c26;
+            --panel: rgba(30, 20, 55, 0.55);
+            --panel-solid: #180f30;
+            --border: rgba(196, 181, 253, 0.16);
+            --accent: #a78bfa;
+            --accent-dark: #7c3aed;
+            --cyan: #22d3ee;
+            --amber: #fbbf24;
+            --emerald: #34d399;
+            --rose: #fb7185;
+            --text: #ede9fe;
+            --text-dim: #a89bc9;
+            --text-faint: #6f6293;
+            --danger: #f87171;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--bg-deep); color: var(--text); font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; }
+
         body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(ellipse 80% 60% at 15% 0%, rgba(167, 139, 250, 0.12), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 10%, rgba(34, 211, 238, 0.10), transparent 55%),
+                linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
         }
 
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            pointer-events: none;
-            font-size: 14px;
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(196,181,253,0.25); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(196,181,253,0.4); }
+
+        .bg-motes { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .mote { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, rgba(167,139,250,0.7), transparent 70%); animation: moteDrift linear infinite; }
+        @@keyframes moteDrift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: .6; }
+            90% { opacity: .6; }
+            100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
         }
 
-        #taskPanel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 320px;
-            pointer-events: auto;
-            font-size: 13px;
-            max-height: 80vh;
-            overflow-y: auto;
+        .lab-shell { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
+
+        .lab-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: rgba(10, 6, 26, 0.75); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: rgba(196,181,253,0.06); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s ease; flex-shrink: 0; }
+        .icon-btn:hover { background: rgba(167,139,250,0.15); border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+        .topbar-title { min-width: 0; }
+        .topbar-title .eyebrow { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+        .topbar-title h1 { margin: 2px 0 0; font-size: clamp(15px, 2vw, 20px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+        .topbar-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: rgba(196,181,253,0.08); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+        .chip i { color: var(--accent); }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .session-timer { display: flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; color: var(--text-dim); background: rgba(196,181,253,0.06); border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px; }
+        .session-timer i { color: var(--amber); }
+        .progress-ring-wrap { position: relative; width: 48px; height: 48px; }
+        .progress-ring { width: 48px; height: 48px; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: rgba(196,181,253,0.15); stroke-width: 4; }
+        .ring-fill { fill: none; stroke: var(--emerald); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+        #ringLabel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--text); }
+
+        .lab-main { flex: 1; display: grid; grid-template-columns: 300px 1fr 300px; gap: 16px; padding: 16px; overflow: hidden; min-height: 0; }
+        .panel { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; backdrop-filter: blur(8px); }
+        .card h3 { margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+        .card h3 i { color: var(--accent); }
+        details.card summary { cursor: pointer; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); display: flex; align-items: center; gap: 8px; list-style: none; }
+        details.card summary::-webkit-details-marker { display: none; }
+        details.card summary i { color: var(--accent); }
+        .brief-body { margin-top: 12px; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+        .brief-body p { margin: 0 0 12px; }
+        .brief-body strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+
+        .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .task { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 13px; background: rgba(196,181,253,0.04); border: 1px solid transparent; transition: all .3s ease; }
+        .task i { color: var(--text-faint); font-size: 15px; flex-shrink: 0; }
+        .task.completed { background: rgba(52, 211, 153, 0.12); border-color: rgba(52,211,153,0.3); }
+        .task.completed i { color: var(--emerald); }
+        .task.completed span { color: var(--text); }
+        .task-banner { display: none; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52,211,153,0.4); color: var(--emerald); font-size: 12.5px; font-weight: 700; }
+        .task-banner.show { display: flex; animation: bannerPop .4s ease; }
+        @@keyframes bannerPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .notebook-card textarea { width: 100%; resize: vertical; min-height: 80px; background: rgba(10,6,22,0.5); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px; font-family: inherit; font-size: 13px; margin-bottom: 10px; }
+        .notebook-card textarea:focus { outline: none; border-color: var(--accent); }
+        .log-feed { margin-top: 12px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .log-entry { font-size: 11.5px; line-height: 1.4; color: var(--text-dim); padding: 7px 9px; border-left: 2px solid var(--accent-dark); background: rgba(196,181,253,0.04); border-radius: 0 8px 8px 0; animation: logIn .3s ease; }
+        .log-entry time { color: var(--text-faint); font-weight: 700; margin-right: 5px; }
+        @@keyframes logIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+
+        .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--border); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s ease; font-family: inherit; margin-bottom: 8px; }
+        .btn:last-child { margin-bottom: 0; }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #1a0f38; border-color: transparent; }
+        .btn-primary:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(167,139,250,0.35); }
+        .btn-secondary { background: rgba(34,211,238,0.14); color: #a5f3fc; border-color: rgba(34,211,238,0.32); }
+        .btn-secondary:hover { background: rgba(34,211,238,0.24); }
+        .btn-ghost { background: rgba(196,181,253,0.06); color: var(--text-dim); }
+        .btn-ghost:hover { background: rgba(196,181,253,0.14); color: var(--text); }
+        .btn-equipment { background: rgba(251,191,36,0.1); color: var(--amber); border-color: rgba(251,191,36,0.3); }
+        .btn-equipment:hover { background: rgba(251,191,36,0.2); transform: translateY(-1px); }
+        .btn-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .btn-row .btn { margin-bottom: 0; flex: 1; }
+
+        .stage { position: relative; display: flex; flex-direction: column; border-radius: 20px; border: 1px solid var(--border); background: radial-gradient(ellipse at 50% 10%, rgba(167,139,250,0.08), transparent 60%), var(--panel-solid); overflow: hidden; min-height: 0; }
+
+        .launch-zone { position: relative; height: clamp(180px, 30vh, 260px); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        #trajCanvas { position: absolute; inset: 0; }
+        .launch-readout { position: absolute; top: 10px; right: 12px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
+        .launch-readout span { font-size: 11px; font-weight: 700; background: rgba(10,6,26,0.6); border: 1px solid var(--border); padding: 4px 9px; border-radius: 999px; color: var(--text-dim); }
+        .launch-readout b { color: var(--accent); }
+        .launch-title { position: absolute; top: 10px; left: 14px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+
+        .bench { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; gap: clamp(16px, 4vw, 60px); padding: 18px 16px; min-height: 200px; flex-wrap: wrap; }
+        .equipment { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+        .equipment-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); margin-top: 8px; }
+
+        /* Pendulum */
+        .pendulum-mount { width: 60px; height: 10px; background: linear-gradient(180deg, #475569, #1e293b); border-radius: 3px; }
+        .pendulum-wrap { position: relative; width: 4px; transform-origin: top center; }
+        .pendulum-string { width: 2px; background: rgba(196,181,253,0.5); margin: 0 auto; }
+        .pendulum-bob { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c4b5fd, #7c3aed); position: absolute; left: 50%; transform: translateX(-50%); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+        .pendulum-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; width: clamp(110px, 13vw, 160px); }
+        .pendulum-slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+        .pendulum-readout { font-size: 11px; margin-top: 6px; color: var(--text-dim); }
+        .pendulum-readout b { color: var(--text); }
+
+        /* Circuit */
+        .wire-loop { position: relative; width: 150px; height: 90px; border: 3px solid #6b7280; border-radius: 8px; background: rgba(255,255,255,0.02); }
+        .battery-symbol { position: absolute; left: -3px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 2px; }
+        .battery-symbol .plate { background: #cbd5e1; }
+        .battery-symbol .plate.tall { width: 3px; height: 20px; }
+        .battery-symbol .plate.short { width: 3px; height: 11px; margin-top: 4.5px; }
+        .resistor-symbol { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 44px; height: 16px; }
+        .bulb-wrap { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; background: #451a03; display: flex; align-items: center; justify-content: center; }
+        .bulb-glow { width: 16px; height: 16px; border-radius: 50%; background: #fde68a; opacity: .15; transition: opacity .3s ease, box-shadow .3s ease; }
+        .switch-gap { position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); width: 22px; height: 8px; background: var(--panel-solid); }
+        .electron { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 5px var(--accent); offset-path: path('M2,2 H148 V88 H2 Z'); animation: flowMove linear infinite; animation-duration: 0s; opacity: 0; top: 0; left: 0; }
+        @@keyframes flowMove { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+        .circuit-readout { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+        .circuit-readout span { font-size: 10.5px; background: rgba(196,181,253,0.08); border: 1px solid var(--border); padding: 4px 8px; border-radius: 8px; color: var(--text-dim); }
+        .circuit-readout b { color: var(--text); }
+
+        /* Spring */
+        .spring-mount { width: 44px; height: 8px; background: linear-gradient(180deg, #475569, #1e293b); border-radius: 3px; }
+        .spring-coil { width: 22px; height: 50px; margin: 0 auto; background: repeating-linear-gradient(0deg, #94a3b8 0px, #94a3b8 2px, transparent 2px, transparent 8px); border-left: 2px solid #94a3b8; border-right: 2px solid #94a3b8; transition: height .4s ease; }
+        .mass-block { width: 30px; height: 0; margin: 0 auto; background: linear-gradient(180deg, #f87171, #b91c1c); border-radius: 3px; display: none; transition: height .4s ease; }
+        .spring-readout { font-size: 11px; margin-top: 8px; color: var(--text-dim); text-align: center; }
+        .spring-readout b { color: var(--text); }
+
+        .control-bar { border-top: 1px solid var(--border); padding: 14px 18px; background: rgba(10,6,22,0.35); display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+        .control-bar .cb-group { display: flex; align-items: center; gap: 10px; }
+        .control-bar label { font-size: 11.5px; font-weight: 800; color: var(--text-dim); white-space: nowrap; }
+        .control-bar input[type=range] { width: clamp(110px, 15vw, 190px); accent-color: var(--accent); }
+        .control-bar .btn { width: auto; margin-bottom: 0; white-space: nowrap; }
+
+        .lab-readout { border-top: 1px solid var(--border); padding: 12px 18px 16px; background: rgba(10,6,22,0.5); animation: readoutIn .35s ease; }
+        @@keyframes readoutIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .readout-title { font-size: 13px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .readout-title::before { content: '\f201'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+        .readout-equation { font-size: 12.5px; color: var(--amber); margin: 4px 0; font-family: 'Cascadia Code', 'Consolas', monospace; }
+        .readout-observation { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
+        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .resistor-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: rgba(196,181,253,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 12px 6px; cursor: pointer; transition: all .2s ease; font-family: inherit; color: var(--text); font-weight: 800; font-size: 13px; }
+        .resistor-btn small { font-weight: 500; color: var(--text-faint); font-size: 9.5px; }
+        .resistor-btn:hover { background: rgba(196,181,253,0.1); transform: translateY(-2px); }
+        .resistor-btn.active { border-color: var(--accent); background: rgba(167,139,250,0.14); box-shadow: 0 0 0 3px rgba(167,139,250,0.18); }
+
+        .toast-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .toast { background: rgba(24,15,48,0.95); border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; box-shadow: 0 10px 26px rgba(0,0,0,.5); animation: toastIn .3s ease; }
+        .toast.warn { border-color: rgba(251,191,36,0.5); color: var(--amber); }
+        .toast.fade { animation: toastOut .35s ease forwards; }
+        @@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @@keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
+
+        .confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1500; }
+
+        @@media (max-width: 1180px) { .lab-main { grid-template-columns: 260px 1fr 260px; } }
+        @@media (max-width: 980px) {
+            .lab-main { grid-template-columns: 1fr; grid-auto-rows: auto; overflow-y: auto; }
+            .panel { overflow-y: visible; }
+            .stage { min-height: 520px; order: -1; }
+            .topbar-meta { display: none; }
+            .topbar-title h1 { max-width: 60vw; }
         }
-
-            #taskPanel h4 {
-                margin: 0 0 10px 0;
-                color: #3498db;
-            }
-
-        .instruction-tip {
-            position: absolute;
-            bottom: 100px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
-            color: #ccc;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            pointer-events: none;
-            z-index: 100;
+        @@media (max-width: 560px) {
+            .lab-topbar { padding: 10px 12px; }
+            .session-timer span { display: none; }
+            .lab-main { padding: 10px; gap: 10px; }
+            .card { padding: 12px; }
+            .shelf-grid { grid-template-columns: repeat(2, 1fr); }
+            .control-bar { flex-direction: column; align-items: stretch; }
+            .launch-readout { max-width: 100%; }
         }
-
-        .circuit-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            width: 500px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-        }
-
-            .circuit-panel.active {
-                display: block;
-            }
-
-        .circuit-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .circuit-component {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-            .circuit-component:hover {
-                transform: scale(1.05);
-                background: #3498db;
-            }
-
-            .circuit-component i {
-                font-size: 24px;
-                display: block;
-                margin-bottom: 5px;
-            }
-
-        .circuit-area {
-            background: #1a1a2e;
-            border: 2px solid #3498db;
-            border-radius: 12px;
-            min-height: 150px;
-            margin: 15px 0;
-            padding: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .placed-component {
-            background: #2ecc71;
-            padding: 8px 12px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-            .placed-component i {
-                font-size: 16px;
-            }
-
-        .magnet-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            width: 450px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-        }
-
-            .magnet-panel.active {
-                display: block;
-            }
-
-        .prism-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            width: 500px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-        }
-
-            .prism-panel.active {
-                display: block;
-            }
-
-        .mechanics-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 20px;
-            border-radius: 8px;
-            width: 500px;
-            z-index: 200;
-            display: none;
-            text-align: center;
-        }
-
-            .mechanics-panel.active {
-                display: block;
-            }
-
-        canvas {
-            border-radius: 10px;
-            margin: 10px auto;
-        }
-
-        .value-display {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 8px;
-        }
-
-        .slider {
-            width: 200px;
-            margin: 10px;
-        }
-
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            gap: 10px;
-            flex-direction: column;
-        }
-
-        .btn-lab {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-            .btn-lab:hover {
-                transform: scale(1.05);
-            }
-
-        .observation-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 15px;
-            border-radius: 8px;
-            width: 280px;
-            z-index: 100;
-        }
-
-            .observation-panel textarea {
-                width: 100%;
-                padding: 8px;
-                margin-top: 5px;
-                border-radius: 4px;
-                border: none;
-            }
-
-        .task {
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-
-            .task.completed {
-                background: rgba(46, 204, 113, 0.2);
-            }
-
-                .task.completed i {
-                    color: #2ecc71;
-                }
+        @@media (prefers-reduced-motion: reduce) { .mote, .electron { animation: none !important; } }
     </style>
 </head>
 <body>
-    <div id="info">
-        <strong>@experiment.Title</strong> | Physics Lab
+    <div class="bg-motes" aria-hidden="true">
+        <span class="mote" style="left:6%;animation-duration:14s;animation-delay:0s;"></span>
+        <span class="mote" style="left:16%;animation-duration:18s;animation-delay:2s;"></span>
+        <span class="mote" style="left:28%;animation-duration:12s;animation-delay:4s;"></span>
+        <span class="mote" style="left:41%;animation-duration:20s;animation-delay:1s;"></span>
+        <span class="mote" style="left:55%;animation-duration:15s;animation-delay:6s;"></span>
+        <span class="mote" style="left:67%;animation-duration:17s;animation-delay:3s;"></span>
+        <span class="mote" style="left:78%;animation-duration:13s;animation-delay:5s;"></span>
+        <span class="mote" style="left:88%;animation-duration:19s;animation-delay:2.5s;"></span>
+        <span class="mote" style="left:94%;animation-duration:16s;animation-delay:0.5s;"></span>
+        <span class="mote" style="left:35%;animation-duration:22s;animation-delay:7s;"></span>
     </div>
 
-    <div class="instruction-tip">
-        🖱️ Mouse: Drag to rotate | Right-click + Drag to pan | Scroll to zoom
+    <div class="lab-shell">
+        <header class="lab-topbar">
+            <div class="topbar-left">
+                <button class="icon-btn" id="btnExit" title="Exit Lab"><i class="fas fa-arrow-left"></i></button>
+                <div class="topbar-title">
+                    <span class="eyebrow"><i class="fas fa-atom"></i> Physics Lab</span>
+                    <h1>@experiment.Title</h1>
+                </div>
+            </div>
+            <div class="topbar-meta">
+                <span class="chip"><i class="fas fa-layer-group"></i> @experiment.Difficulty</span>
+                <span class="chip"><i class="fas fa-clock"></i> @experiment.DurationMinutes min</span>
+                <span class="chip"><i class="fas fa-graduation-cap"></i> @experiment.GradeLevel</span>
+            </div>
+            <div class="topbar-right">
+                <div class="session-timer"><i class="fas fa-stopwatch"></i> <span id="sessionTimer">00:00</span></div>
+                <button class="icon-btn" id="btnMute" title="Toggle sound"><i class="fas fa-volume-up" id="muteIcon"></i></button>
+                <div class="progress-ring-wrap" title="Task progress">
+                    <svg viewBox="0 0 44 44" class="progress-ring">
+                        <circle class="ring-bg" cx="22" cy="22" r="19"></circle>
+                        <circle class="ring-fill" id="ringFill" cx="22" cy="22" r="19"></circle>
+                    </svg>
+                    <span id="ringLabel">0/6</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="lab-main">
+            <aside class="panel panel-left">
+                @if (!string.IsNullOrEmpty(experiment.Description) || !string.IsNullOrEmpty(experiment.Instructions) || !string.IsNullOrEmpty(experiment.LearningObjectives) || !string.IsNullOrEmpty(experiment.EquipmentList))
+                {
+                    <details class="card brief-card" open>
+                        <summary><i class="fas fa-book-open"></i> Lab Brief</summary>
+                        <div class="brief-body">
+                            @if (!string.IsNullOrEmpty(experiment.Description))
+                            {
+                                <p><strong>Overview</strong>@experiment.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.Instructions))
+                            {
+                                <p><strong>Instructions</strong>@experiment.Instructions</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.LearningObjectives))
+                            {
+                                <p><strong>Learning Objectives</strong>@experiment.LearningObjectives</p>
+                            }
+                            @if (!string.IsNullOrEmpty(experiment.EquipmentList))
+                            {
+                                <p><strong>Equipment</strong>@experiment.EquipmentList</p>
+                            }
+                        </div>
+                    </details>
+                }
+
+                <section class="card tasks-card">
+                    <h3><i class="fas fa-list-check"></i> Lab Tasks</h3>
+                    <ul class="task-list" id="taskList">
+                        <li class="task" data-task="launch"><i class="far fa-circle"></i><span>Launch the projectile at least once</span></li>
+                        <li class="task" data-task="target"><i class="far fa-circle"></i><span>Land a shot inside the target zone</span></li>
+                        <li class="task" data-task="pendulum"><i class="far fa-circle"></i><span>Time the pendulum's oscillation period</span></li>
+                        <li class="task" data-task="circuit"><i class="far fa-circle"></i><span>Close the circuit and read the current</span></li>
+                        <li class="task" data-task="spring"><i class="far fa-circle"></i><span>Measure the spring's extension under load</span></li>
+                        <li class="task" data-task="observe"><i class="far fa-circle"></i><span>Record a written observation</span></li>
+                    </ul>
+                    <div class="task-banner" id="taskBanner"><i class="fas fa-champagne-glasses"></i> All tasks complete — ready to submit!</div>
+                </section>
+
+                <section class="card notebook-card">
+                    <h3><i class="fas fa-pen-fancy"></i> Lab Notebook</h3>
+                    <textarea id="observations" rows="3" placeholder="Record what you observe — trajectory shape, period, current, extension..."></textarea>
+                    <button class="btn btn-ghost" id="btnSaveObs" style="margin-bottom:0;"><i class="fas fa-bookmark"></i> Add to Notebook</button>
+                    <div class="log-feed" id="logFeed"></div>
+                </section>
+            </aside>
+
+            <section class="stage">
+                <div class="launch-zone">
+                    <span class="launch-title"><i class="fas fa-bullseye"></i> Projectile Launcher</span>
+                    <div class="launch-readout" id="launchReadout">
+                        <span>Range: <b id="rReadout">--</b> m</span>
+                        <span>Height: <b id="hReadout">--</b> m</span>
+                        <span>Time: <b id="tReadout">--</b> s</span>
+                    </div>
+                    <canvas id="trajCanvas"></canvas>
+                </div>
+
+                <div class="bench" id="bench">
+                    <div class="equipment pendulum-rig">
+                        <div class="pendulum-mount"></div>
+                        <div class="pendulum-wrap" id="pendulumWrap">
+                            <div class="pendulum-string" id="pendulumString"></div>
+                            <div class="pendulum-bob" id="pendulumBob" style="top:0;"></div>
+                        </div>
+                        <div class="pendulum-slider-row">
+                            <i class="fas fa-ruler-vertical" style="color:var(--text-faint);font-size:11px;"></i>
+                            <input type="range" id="lengthSlider" min="40" max="200" value="100" />
+                        </div>
+                        <div class="pendulum-readout">L: <b id="lengthReadout">1.00</b>m &nbsp; T: <b id="periodReadout">2.01</b>s</div>
+                        <button class="btn btn-equipment" id="btnPendulum" style="width:auto;padding:8px 14px;margin-top:10px;"><i class="fas fa-stopwatch"></i> Measure Period (5 swings)</button>
+                        <div class="equipment-label">Pendulum</div>
+                    </div>
+
+                    <div class="equipment circuit-rig">
+                        <div class="wire-loop">
+                            <div class="battery-symbol"><span class="plate tall"></span><span class="plate short"></span></div>
+                            <svg class="resistor-symbol" viewBox="0 0 44 16"><polyline points="0,8 6,8 10,1 16,15 22,1 28,15 34,1 38,8 44,8" fill="none" stroke="#fbbf24" stroke-width="2"/></svg>
+                            <div class="bulb-wrap"><div class="bulb-glow" id="bulbGlow"></div></div>
+                            <div class="switch-gap" id="switchGap"></div>
+                            <div class="electron" id="e1" style="animation-delay:0s;"></div>
+                            <div class="electron" id="e2" style="animation-delay:.4s;"></div>
+                            <div class="electron" id="e3" style="animation-delay:.8s;"></div>
+                        </div>
+                        <div class="circuit-readout">
+                            <span>V: <b id="voltReadout">6.0</b></span>
+                            <span>R: <b id="resReadout">100</b>&Omega;</span>
+                            <span>I: <b id="curReadout">0</b>mA</span>
+                        </div>
+                        <div class="equipment-label">Series Circuit</div>
+                    </div>
+
+                    <div class="equipment spring-rig">
+                        <div class="spring-mount"></div>
+                        <div class="spring-coil" id="springCoil"></div>
+                        <div class="mass-block" id="massBlock"></div>
+                        <div class="spring-readout" id="springReadout">F: <b>0.00</b>N &nbsp; x: <b>0.0</b>cm</div>
+                        <div class="equipment-label">Hooke's Law Spring</div>
+                    </div>
+                </div>
+
+                <div class="control-bar">
+                    <div class="cb-group">
+                        <label><i class="fas fa-angle-up"></i> Angle</label>
+                        <input type="range" id="angleSlider" min="5" max="85" value="45" />
+                        <span id="angleValue" style="font-size:12px;color:var(--text-dim);font-weight:700;">45&deg;</span>
+                    </div>
+                    <div class="cb-group">
+                        <label><i class="fas fa-gauge-high"></i> Velocity</label>
+                        <input type="range" id="velocitySlider" min="5" max="25" value="18" />
+                        <span id="velocityValue" style="font-size:12px;color:var(--text-dim);font-weight:700;">18 m/s</span>
+                    </div>
+                    <div class="cb-group">
+                        <button class="btn btn-primary" id="btnLaunch"><i class="fas fa-rocket"></i> Launch</button>
+                        <button class="btn btn-ghost" id="btnNewTarget"><i class="fas fa-crosshairs"></i> New Target</button>
+                    </div>
+                </div>
+
+                <div class="lab-readout" id="reactionReadout" style="display:none;">
+                    <div class="readout-title" id="readoutTitle"></div>
+                    <div class="readout-equation" id="readoutEquation"></div>
+                    <div class="readout-observation" id="readoutObservation"></div>
+                </div>
+            </section>
+
+            <aside class="panel panel-right">
+                <section class="card shelf-card">
+                    <h3><i class="fas fa-microchip"></i> Resistor Bank</h3>
+                    <div class="shelf-grid" id="resistorGrid"></div>
+                </section>
+
+                <section class="card equipment-card">
+                    <h3><i class="fas fa-screwdriver-wrench"></i> Instruments</h3>
+                    <div class="cb-group" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:11.5px;font-weight:800;color:var(--text-dim);white-space:nowrap;"><i class="fas fa-bolt"></i> Voltage</label>
+                        <input type="range" id="voltageSlider" min="1.5" max="12" step="0.5" value="6" style="flex:1;accent-color:var(--accent);" />
+                    </div>
+                    <button class="btn btn-equipment" id="btnSwitch"><i class="fas fa-toggle-off"></i> Close Switch</button>
+                    <div class="btn-row">
+                        <button class="btn btn-equipment" id="btnMass50">+50g</button>
+                        <button class="btn btn-equipment" id="btnMass100">+100g</button>
+                        <button class="btn btn-equipment" id="btnMass200">+200g</button>
+                    </div>
+                    <button class="btn btn-ghost" id="btnResetSpring" style="margin-bottom:0;"><i class="fas fa-rotate"></i> Remove All Masses</button>
+                </section>
+
+                <section class="card controls-card">
+                    <button class="btn btn-secondary" id="btnSaveProgress"><i class="fas fa-cloud-arrow-up"></i> Save Progress</button>
+                    <button class="btn btn-primary" id="btnSubmit" disabled><i class="fas fa-paper-plane"></i> Submit Lab</button>
+                    <button class="btn btn-ghost" id="btnExit2" style="margin-bottom:0;"><i class="fas fa-door-open"></i> Exit Lab</button>
+                </section>
+            </aside>
+        </div>
     </div>
 
-    <div id="taskPanel">
-        <h4><i class="fas fa-microchip"></i> Physics Lab Tasks</h4>
-        <div id="tasksList">
-            <div class="task" id="task-circuit">
-                <i class="fas fa-circle-notch"></i> Build and test electrical circuit
-            </div>
-            <div class="task" id="task-magnet">
-                <i class="fas fa-circle-notch"></i> Experiment with magnets
-            </div>
-            <div class="task" id="task-prism">
-                <i class="fas fa-circle-notch"></i> Study light refraction using prism
-            </div>
-            <div class="task" id="task-mechanics">
-                <i class="fas fa-circle-notch"></i> Test mechanical systems
-            </div>
-        </div>
-        <div id="taskResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none;"></div>
-    </div>
+    <div class="toast-stack" id="toastStack"></div>
+    <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
 
-    <!-- Circuit Panel -->
-    <div id="circuitPanel" class="circuit-panel">
-        <h4><i class="fas fa-microchip"></i> Circuit Builder</h4>
-        <div class="circuit-grid" id="componentList">
-            <div class="circuit-component" data-type="battery" data-voltage="9">
-                <i class="fas fa-battery-full"></i>
-                Battery<br><small>9V</small>
-            </div>
-            <div class="circuit-component" data-type="bulb" data-resistance="18">
-                <i class="fas fa-lightbulb"></i>
-                Bulb<br><small>18Ω</small>
-            </div>
-            <div class="circuit-component" data-type="wire">
-                <i class="fas fa-code-branch"></i>
-                Wire
-            </div>
-            <div class="circuit-component" data-type="resistor" data-resistance="100">
-                <i class="fas fa-microchip"></i>
-                Resistor<br><small>100Ω</small>
-            </div>
-            <div class="circuit-component" data-type="switch">
-                <i class="fas fa-toggle-on"></i>
-                Switch
-            </div>
-            <div class="circuit-component" data-type="led" data-voltage="2">
-                <i class="fas fa-lightbulb"></i>
-                LED<br><small>2V</small>
-            </div>
-        </div>
-        <div class="circuit-area" id="circuitArea"></div>
-        <div class="value-display" id="circuitValues">
-            Voltage: 0V | Current: 0A | Power: 0W
-        </div>
-        <button class="btn-lab" onclick="toggleSwitch()">Toggle Switch</button>
-        <button class="btn-lab" onclick="calculateCircuit()">Calculate</button>
-        <button class="btn-lab" onclick="closeCircuitPanel()" style="background: #f44336;">Close</button>
-    </div>
+    <script>
+        var experimentId = @ViewBag.Experiment.Id;
+        var resultId = @ViewBag.ResultId;
 
-    <!-- Magnet Panel -->
-    <div id="magnetPanel" class="magnet-panel">
-        <h4><i class="fas fa-magnet"></i> Magnetic Field Experiment</h4>
-        <canvas id="magnetCanvas" width="400" height="300"></canvas>
-        <div class="value-display" id="magnetValues">
-            Field Strength: 0.0 T | Polarity: N-S
-        </div>
-        <div>
-            <label>Distance between magnets: </label>
-            <input type="range" id="magnetDistance" min="20" max="200" value="100" class="slider">
-            <span id="distanceValue">100px</span>
-        </div>
-        <div>
-            <button class="btn-lab" onclick="flipPoles()">Flip Polarity</button>
-            <button class="btn-lab" onclick="addIronFilings()">Add Iron Filings</button>
-            <button class="btn-lab" onclick="measureFieldStrength()">Measure Field Strength</button>
-            <button class="btn-lab" onclick="closeMagnetPanel()" style="background: #f44336;">Close</button>
-        </div>
-    </div>
+        var SAVE_URL = '@Url.Action("SaveLabProgress", "VirtualLab")';
+        var SUBMIT_URL = '@Url.Action("SubmitLab", "VirtualLab")';
+        var INDEX_URL = '@Url.Action("Index", "VirtualLab")';
 
-    <!-- Prism Panel -->
-    <div id="prismPanel" class="prism-panel">
-        <h4><i class="fas fa-sun"></i> Light Refraction through Prism</h4>
-        <canvas id="prismCanvas" width="450" height="300"></canvas>
-        <div class="value-display" id="prismValues">
-            Angle of incidence: 0° | Angle of refraction: 0° | Deviation: 0°
-        </div>
-        <div>
-            <label>Angle of incidence: </label>
-            <input type="range" id="incidenceAngle" min="0" max="90" value="45" class="slider">
-            <span id="angleValue">45°</span>
-        </div>
-        <div>
-            <label>Prism Material: </label>
-            <select id="prismMaterial" class="btn-lab" style="background: #2c3e50;">
-                <option value="glass">Glass (n=1.52)</option>
-                <option value="diamond">Diamond (n=2.42)</option>
-                <option value="water">Water (n=1.33)</option>
-                <option value="acrylic">Acrylic (n=1.49)</option>
-            </select>
-        </div>
-        <button class="btn-lab" onclick="updateRefraction()">Update</button>
-        <button class="btn-lab" onclick="closePrismPanel()" style="background: #f44336;">Close</button>
-    </div>
+        var G = 9.8;
+        var RESISTORS = [10, 47, 100, 220];
+        var SPRING_K = 40; // N/m
 
-    <!-- Mechanics Panel -->
-    <div id="mechanicsPanel" class="mechanics-panel">
-        <h4><i class="fas fa-cogs"></i> Mechanical Systems</h4>
-        <canvas id="mechanicsCanvas" width="450" height="300"></canvas>
-        <div class="value-display" id="mechanicsValues">
-            Mass: 0 kg | Force: 0 N | Acceleration: 0 m/s² | Work: 0 J
-        </div>
-        <div>
-            <label>Mass (kg): </label>
-            <input type="range" id="massSlider" min="1" max="100" value="50" class="slider">
-            <span id="massValue">50 kg</span>
-        </div>
-        <div>
-            <label>Applied Force (N): </label>
-            <input type="range" id="forceSlider" min="0" max="500" value="100" class="slider">
-            <span id="forceValue">100 N</span>
-        </div>
-        <div>
-            <label>Distance (m): </label>
-            <input type="range" id="distanceSlider" min="0" max="10" value="5" class="slider">
-            <span id="distanceValueM">5 m</span>
-        </div>
-        <button class="btn-lab" onclick="calculateMechanics()">Calculate</button>
-        <button class="btn-lab" onclick="simulateMotion()">Simulate Motion</button>
-        <button class="btn-lab" onclick="closeMechanicsPanel()" style="background: #f44336;">Close</button>
-    </div>
-
-    <div class="observation-panel">
-        <h4><i class="fas fa-pen"></i> Observations</h4>
-        <textarea id="observations" rows="3" placeholder="Record your physics observations here..."></textarea>
-        <button class="btn-lab" style="margin-top: 5px; padding: 5px 10px;" onclick="saveObservations()">Save Observations</button>
-    </div>
-
-    <div id="controls">
-        <button class="btn-lab btn-save" onclick="saveProgress()">💾 Save Progress</button>
-        <button class="btn-lab btn-submit" onclick="submitLab()">📤 Submit Lab</button>
-        <button class="btn-lab btn-exit" onclick="exitLab()">🚪 Exit Lab</button>
-    </div>
-
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-
-        const experimentId = @ViewBag.Experiment.Id;
-        const resultId = @ViewBag.ResultId;
-
-        let scene, camera, renderer, labelRenderer, controls;
-        let equipmentGroup = [];
-
-        let tasks = {
-            circuit: false,
-            magnet: false,
-            prism: false,
-            mechanics: false
+        // ============================================================
+        // State
+        // ============================================================
+        var TASK_KEYS = ['launch', 'target', 'pendulum', 'circuit', 'spring', 'observe'];
+        var state = {
+            tasks: {},
+            pendulum: { L: 1.0, timing: false, phaseStart: performance.now() },
+            circuit: { R: 100, V: 6, closed: false },
+            spring: { totalGrams: 0 }
         };
 
-        // Circuit variables
-        let circuitComponents = [];
-        let isSwitchOn = false;
-        let totalVoltage = 0;
-        let totalResistance = 0;
-        let current = 0;
+        var muted = false;
+        var audioCtx = null;
 
-        // Magnet variables
-        let magnetCanvas, magnetCtx;
-        let fieldStrength = 0;
-        let poleFlipped = false;
+        // ============================================================
+        // DOM refs
+        // ============================================================
+        var toastStackEl = document.getElementById('toastStack');
+        var logFeedEl = document.getElementById('logFeed');
+        var ringFillEl = document.getElementById('ringFill');
+        var ringLabelEl = document.getElementById('ringLabel');
+        var taskBannerEl = document.getElementById('taskBanner');
+        var readoutEl = document.getElementById('reactionReadout');
 
-        // Prism variables
-        let prismCanvas, prismCtx;
-        let refractiveIndex = 1.52;
-
-        // Mechanics variables
-        let mechanicsCanvas, mechanicsCtx;
-        let objectX = 100;
-        let animating = false;
-        let animationId = null;
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
-            scene.fog = new THREE.FogExp2(0x1a1a2e, 0.008);
-
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(5, 4, 8);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            labelRenderer = new CSS2DRenderer();
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.domElement.style.position = 'absolute';
-            labelRenderer.domElement.style.top = '0px';
-            labelRenderer.domElement.style.left = '0px';
-            labelRenderer.domElement.style.pointerEvents = 'none';
-            document.body.appendChild(labelRenderer.domElement);
-
-            // FIXED: OrbitControls with full functionality
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 1.0;
-            controls.zoomSpeed = 1.5;
-            controls.panSpeed = 1.0;
-            controls.enableZoom = true;
-            controls.enablePan = true;
-            controls.target.set(0, 0, 0);
-
-            setupLighting();
-            createLabEnvironment();
-            createEquipment();
-            animate();
-
-            // Initialize canvas contexts
-            magnetCanvas = document.getElementById('magnetCanvas');
-            magnetCtx = magnetCanvas.getContext('2d');
-            drawMagnetField();
-
-            prismCanvas = document.getElementById('prismCanvas');
-            prismCtx = prismCanvas.getContext('2d');
-            drawPrism();
-
-            mechanicsCanvas = document.getElementById('mechanicsCanvas');
-            mechanicsCtx = mechanicsCanvas.getContext('2d');
-            drawMechanics();
-
-            setupSliders();
+        // ============================================================
+        // Audio
+        // ============================================================
+        function ensureAudio() { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; } } }
+        function playTone(freq, dur, type) {
+            if (muted) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            try {
+                var osc = audioCtx.createOscillator(); var gain = audioCtx.createGain();
+                osc.type = type || 'sine'; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur + 0.02);
+            } catch (e) { }
         }
 
-        function setupSliders() {
-            const magnetDistance = document.getElementById('magnetDistance');
-            if (magnetDistance) {
-                magnetDistance.addEventListener('input', function() {
-                    document.getElementById('distanceValue').innerText = this.value + 'px';
-                    drawMagnetField();
-                    calculateFieldStrength();
-                });
-            }
-
-            const incidenceAngle = document.getElementById('incidenceAngle');
-            if (incidenceAngle) {
-                incidenceAngle.addEventListener('input', function() {
-                    document.getElementById('angleValue').innerText = this.value + '°';
-                    updateRefraction();
-                });
-            }
-
-            const massSlider = document.getElementById('massSlider');
-            if (massSlider) {
-                massSlider.addEventListener('input', function() {
-                    document.getElementById('massValue').innerText = this.value + ' kg';
-                    calculateMechanics();
-                });
-            }
-
-            const forceSlider = document.getElementById('forceSlider');
-            if (forceSlider) {
-                forceSlider.addEventListener('input', function() {
-                    document.getElementById('forceValue').innerText = this.value + ' N';
-                    calculateMechanics();
-                });
-            }
-
-            const distanceSlider = document.getElementById('distanceSlider');
-            if (distanceSlider) {
-                distanceSlider.addEventListener('input', function() {
-                    document.getElementById('distanceValueM').innerText = this.value + ' m';
-                    calculateMechanics();
-                });
+        // ============================================================
+        // UI helpers
+        // ============================================================
+        function toast(msg, kind) {
+            var el = document.createElement('div');
+            el.className = 'toast' + (kind === 'warn' ? ' warn' : '');
+            el.textContent = msg;
+            toastStackEl.appendChild(el);
+            setTimeout(function () { el.classList.add('fade'); setTimeout(function () { el.remove(); }, 350); }, 2600);
+        }
+        function logEvent(text) {
+            var entry = document.createElement('div');
+            entry.className = 'log-entry';
+            var now = new Date();
+            var hh = String(now.getHours()).padStart(2, '0');
+            var mm = String(now.getMinutes()).padStart(2, '0');
+            entry.innerHTML = '<time>' + hh + ':' + mm + '</time>' + text;
+            logFeedEl.appendChild(entry);
+            logFeedEl.scrollTop = logFeedEl.scrollHeight;
+            while (logFeedEl.children.length > 40) logFeedEl.removeChild(logFeedEl.firstChild);
+        }
+        function showReadout(title, equation, observation) {
+            readoutEl.style.display = 'block';
+            document.getElementById('readoutTitle').textContent = title;
+            document.getElementById('readoutEquation').textContent = equation;
+            document.getElementById('readoutObservation').textContent = observation;
+        }
+        function markTaskDone(key) {
+            if (state.tasks[key]) return;
+            state.tasks[key] = true;
+            var li = document.querySelector('.task[data-task="' + key + '"]');
+            if (li) { li.classList.add('completed'); var icon = li.querySelector('i'); if (icon) icon.className = 'fas fa-check-circle'; }
+            updateProgress();
+        }
+        function updateProgress() {
+            var done = TASK_KEYS.filter(function (k) { return state.tasks[k]; }).length;
+            ringLabelEl.textContent = done + '/' + TASK_KEYS.length;
+            var circumference = 2 * Math.PI * 19;
+            ringFillEl.style.strokeDasharray = circumference;
+            ringFillEl.style.strokeDashoffset = circumference * (1 - done / TASK_KEYS.length);
+            if (done === TASK_KEYS.length) {
+                taskBannerEl.classList.add('show');
+                document.getElementById('btnSubmit').disabled = false;
+                launchConfetti();
+                playTone(880, 0.3, 'triangle');
             }
         }
 
-        function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0x404060);
-            scene.add(ambientLight);
+        // ============================================================
+        // Projectile launcher
+        // ============================================================
+        var traj = document.getElementById('trajCanvas');
+        var trajCtx = traj.getContext('2d');
+        var launchZone = traj.parentElement;
+        var PX_PER_M = 8;
+        var GROUND_Y = 0;
+        var ORIGIN_X = 22;
+        var launcher = { angle: 45, velocity: 18, animating: false, trails: [], currentTrail: [], targetM: 30, ballPos: null };
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(5, 10, 7);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
+        function resizeTraj() {
+            var rect = launchZone.getBoundingClientRect();
+            var dpr = window.devicePixelRatio || 1;
+            traj.width = rect.width * dpr; traj.height = rect.height * dpr;
+            traj.style.width = rect.width + 'px'; traj.style.height = rect.height + 'px';
+            trajCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            GROUND_Y = rect.height - 24;
+            PX_PER_M = Math.max(3, Math.min((rect.width - 40) / 80, GROUND_Y / 25));
+            drawScene();
+        }
+        window.addEventListener('resize', resizeTraj);
 
-            const fillLight = new THREE.PointLight(0x4466cc, 0.5);
-            fillLight.position.set(0, 2, 3);
-            scene.add(fillLight);
-
-            const backLight = new THREE.PointLight(0xffaa66, 0.3);
-            backLight.position.set(0, 1, -3);
-            scene.add(backLight);
+        function computeTrajectory(v, angleDeg) {
+            var angle = angleDeg * Math.PI / 180;
+            return {
+                range: (v * v * Math.sin(2 * angle)) / G,
+                maxHeight: (v * v * Math.sin(angle) * Math.sin(angle)) / (2 * G),
+                flightTime: (2 * v * Math.sin(angle)) / G,
+                v: v, angle: angle
+            };
         }
 
-        function createLabEnvironment() {
-            const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 4),
-                new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.4 }));
-            table.position.set(0, -0.4, 0);
-            table.receiveShadow = true;
-            scene.add(table);
+        function drawScene() {
+            var w = traj.clientWidth, h = traj.clientHeight;
+            trajCtx.clearRect(0, 0, w, h);
+            trajCtx.strokeStyle = 'rgba(196,181,253,0.35)';
+            trajCtx.lineWidth = 2;
+            trajCtx.beginPath(); trajCtx.moveTo(0, GROUND_Y); trajCtx.lineTo(w, GROUND_Y); trajCtx.stroke();
 
-            // Mechanical elements for physics lab
-            const gearGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 24);
-            for (let i = -2; i <= 2; i+=1.5) {
-                const gear = new THREE.Mesh(gearGeometry, new THREE.MeshStandardMaterial({ color: 0xCCCCCC, metalness: 0.8 }));
-                gear.position.set(i, 0.1, 2);
-                gear.rotation.z = Math.PI / 4;
-                gear.castShadow = true;
-                scene.add(gear);
+            var tx = ORIGIN_X + launcher.targetM * PX_PER_M;
+            trajCtx.fillStyle = 'rgba(167,139,250,0.9)';
+            trajCtx.fillRect(tx - 1, GROUND_Y - 26, 2, 26);
+            trajCtx.fillStyle = 'rgba(167,139,250,0.35)';
+            trajCtx.beginPath(); trajCtx.moveTo(tx - 10, GROUND_Y - 26); trajCtx.lineTo(tx + 10, GROUND_Y - 26); trajCtx.lineTo(tx, GROUND_Y - 12); trajCtx.closePath(); trajCtx.fill();
+
+            launcher.trails.forEach(function (trail, idx) {
+                trajCtx.strokeStyle = 'rgba(167,139,250,' + (0.12 + idx * 0.08) + ')';
+                trajCtx.lineWidth = 2;
+                trajCtx.beginPath();
+                trail.forEach(function (p, i) { if (i === 0) trajCtx.moveTo(p.x, p.y); else trajCtx.lineTo(p.x, p.y); });
+                trajCtx.stroke();
+            });
+
+            if (launcher.currentTrail.length) {
+                trajCtx.strokeStyle = '#a78bfa'; trajCtx.lineWidth = 2.5;
+                trajCtx.beginPath();
+                launcher.currentTrail.forEach(function (p, i) { if (i === 0) trajCtx.moveTo(p.x, p.y); else trajCtx.lineTo(p.x, p.y); });
+                trajCtx.stroke();
             }
+
+            if (launcher.ballPos) {
+                trajCtx.fillStyle = '#fbbf24';
+                trajCtx.beginPath(); trajCtx.arc(launcher.ballPos.x, launcher.ballPos.y, 5, 0, Math.PI * 2); trajCtx.fill();
+            }
+
+            trajCtx.save();
+            trajCtx.translate(ORIGIN_X, GROUND_Y);
+            trajCtx.rotate(-launcher.angle * Math.PI / 180);
+            trajCtx.fillStyle = '#64748b';
+            trajCtx.fillRect(0, -4, 24, 8);
+            trajCtx.restore();
         }
 
-        function createEquipment() {
-            const equipment = [
-                { name: 'Circuit Board', type: 'circuit', x: -1.5, y: 0.1, z: 1, action: 'openCircuit' },
-                { name: 'Magnets', type: 'magnet', x: 0, y: 0.1, z: 1.2, action: 'openMagnet' },
-                { name: 'Prism', type: 'prism', x: 1.5, y: 0.1, z: 1, action: 'openPrism' },
-                { name: 'Mechanical System', type: 'mechanics', x: 2.5, y: 0.5, z: -1.5, action: 'openMechanics' }
-            ];
+        function newTarget() {
+            launcher.targetM = 15 + Math.random() * 42;
+            drawScene();
+            logEvent('New target placed at ' + launcher.targetM.toFixed(1) + 'm.');
+        }
 
-            equipment.forEach(item => {
-                let mesh;
-                if (item.type === 'circuit') {
-                    const board = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.8),
-                        new THREE.MeshStandardMaterial({ color: 0x2ecc71, metalness: 0.3 }));
-                    board.position.set(item.x, item.y, item.z);
-                    mesh = board;
-                } else if (item.type === 'magnet') {
-                    const magnet = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.4),
-                        new THREE.MeshStandardMaterial({ color: 0xCC3333, metalness: 0.5 }));
-                    magnet.position.set(item.x, item.y, item.z);
-                    mesh = magnet;
-                } else if (item.type === 'prism') {
-                    const prism = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.6, 3),
-                        new THREE.MeshPhysicalMaterial({ color: 0x88aaff, transparent: true, opacity: 0.7 }));
-                    prism.position.set(item.x, item.y, item.z);
-                    prism.rotation.y = Math.PI / 6;
-                    mesh = prism;
+        function launchProjectile() {
+            if (launcher.animating) return;
+            var v = launcher.velocity, angleDeg = launcher.angle;
+            var t = computeTrajectory(v, angleDeg);
+            launcher.animating = true;
+            launcher.currentTrail = [];
+            var start = null;
+
+            function frame(ts) {
+                if (!start) start = ts;
+                var elapsed = (ts - start) / 1000;
+                var clamped = Math.min(elapsed, t.flightTime);
+                var x = v * Math.cos(t.angle) * clamped;
+                var y = v * Math.sin(t.angle) * clamped - 0.5 * G * clamped * clamped;
+                var cx = ORIGIN_X + x * PX_PER_M;
+                var cy = GROUND_Y - Math.max(0, y) * PX_PER_M;
+                launcher.ballPos = { x: cx, y: cy };
+                launcher.currentTrail.push({ x: cx, y: cy });
+                drawScene();
+                if (elapsed < t.flightTime) {
+                    requestAnimationFrame(frame);
                 } else {
-                    const mech = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.5),
-                        new THREE.MeshStandardMaterial({ color: 0xDDDDDD }));
-                    mech.position.set(item.x, item.y, item.z);
-                    mesh = mech;
-                }
-
-                mesh.userData = { name: item.name, action: item.action, interactable: true };
-                mesh.castShadow = true;
-                scene.add(mesh);
-
-                const div = document.createElement('div');
-                div.textContent = item.name;
-                div.style.cssText = 'color:white;background:rgba(0,0,0,0.6);padding:2px 8px;border-radius:4px;font-size:12px;pointer-events:none';
-                const label = new CSS2DObject(div);
-                label.position.set(item.x, item.y + 0.5, item.z);
-                scene.add(label);
-
-                equipmentGroup.push({ mesh, label, data: item });
-            });
-        }
-
-        // ============ CIRCUIT BUILDER ============
-        function openCircuit() {
-            document.getElementById('circuitPanel').classList.add('active');
-            updateCircuitDisplay();
-        }
-
-        function closeCircuitPanel() {
-            document.getElementById('circuitPanel').classList.remove('active');
-        }
-
-        function addComponentToCircuit(type, voltage, resistance) {
-            circuitComponents.push({ type, voltage: voltage || 0, resistance: resistance || 0 });
-            updateCircuitDisplay();
-            calculateCircuit();
-        }
-
-        function removeComponent(index) {
-            circuitComponents.splice(index, 1);
-            updateCircuitDisplay();
-            calculateCircuit();
-        }
-
-        function updateCircuitDisplay() {
-            const area = document.getElementById('circuitArea');
-            area.innerHTML = circuitComponents.map((comp, i) => `
-                <div class="placed-component" onclick="removeComponent(${i})">
-                    <i class="fas ${comp.type === 'battery' ? 'fa-battery-full' : comp.type === 'bulb' ? 'fa-lightbulb' : comp.type === 'resistor' ? 'fa-microchip' : 'fa-code-branch'}"></i>
-                    ${comp.type.toUpperCase()}
-                    <i class="fas fa-times-circle" style="color: #f44336;"></i>
-                </div>
-            `).join('');
-
-            if (circuitComponents.length === 0) {
-                area.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Click on components above to add them to your circuit</div>';
-            }
-        }
-
-        function calculateCircuit() {
-            totalVoltage = 0;
-            totalResistance = 0;
-
-            circuitComponents.forEach(comp => {
-                if (comp.type === 'battery') totalVoltage += comp.voltage;
-                if (comp.type === 'bulb') totalResistance += comp.resistance;
-                if (comp.type === 'resistor') totalResistance += comp.resistance;
-                if (comp.type === 'led') totalResistance += 10;
-            });
-
-            const wireCount = circuitComponents.filter(c => c.type === 'wire').length;
-            totalResistance += wireCount * 0.1;
-
-            current = isSwitchOn && totalResistance > 0 ? totalVoltage / totalResistance : 0;
-            const power = current * totalVoltage;
-
-            document.getElementById('circuitValues').innerHTML = `
-                Voltage: ${totalVoltage.toFixed(1)}V |
-                Current: ${current.toFixed(3)}A |
-                Power: ${power.toFixed(2)}W
-            `;
-
-            const hasBattery = circuitComponents.some(c => c.type === 'battery');
-            const hasBulb = circuitComponents.some(c => c.type === 'bulb');
-
-            if (hasBattery && hasBulb && circuitComponents.length >= 3 && current > 0) {
-                updateTask('circuit');
-                saveInteraction(`Circuit built successfully: ${totalVoltage}V, ${current.toFixed(3)}A`);
-
-                // Visual feedback
-                const circuitObj = equipmentGroup.find(e => e.data.name === 'Circuit Board');
-                if (circuitObj && circuitObj.mesh) {
-                    circuitObj.mesh.material.emissiveIntensity = 0.5;
-                    setTimeout(() => {
-                        if (circuitObj.mesh) circuitObj.mesh.material.emissiveIntensity = 0;
-                    }, 1000);
+                    launcher.animating = false;
+                    launcher.trails.push(launcher.currentTrail);
+                    if (launcher.trails.length > 3) launcher.trails.shift();
+                    finishLaunch(t);
                 }
             }
+            requestAnimationFrame(frame);
+            markTaskDone('launch');
+            logEvent('Launched at ' + angleDeg + '&deg;, ' + v + ' m/s.');
+            saveInteraction('Launched projectile at ' + angleDeg + ' degrees, ' + v + ' m/s.');
+        }
+
+        function finishLaunch(t) {
+            document.getElementById('rReadout').textContent = t.range.toFixed(1);
+            document.getElementById('hReadout').textContent = t.maxHeight.toFixed(1);
+            document.getElementById('tReadout').textContent = t.flightTime.toFixed(2);
+            var hit = Math.abs(t.range - launcher.targetM) <= 4;
+            var desc = 'Range: ' + t.range.toFixed(1) + 'm, Max height: ' + t.maxHeight.toFixed(1) + 'm, Flight time: ' + t.flightTime.toFixed(2) + 's.' + (hit ? ' Target hit!' : ' Missed — try adjusting angle or velocity.');
+            showReadout('Projectile Landed', 'R = v²sin(2θ) / g', desc);
+            logEvent('Landed at ' + t.range.toFixed(1) + 'm. ' + (hit ? 'Target hit!' : 'Missed target at ' + launcher.targetM.toFixed(1) + 'm.'));
+            saveInteraction('Projectile result: ' + desc);
+            if (hit) { markTaskDone('target'); toast('Target hit!'); playTone(740, 0.25, 'triangle'); }
+            else { playTone(280, 0.15, 'sine'); }
+        }
+
+        // ============================================================
+        // Pendulum
+        // ============================================================
+        var pendulumWrap = document.getElementById('pendulumWrap');
+        var pendulumString = document.getElementById('pendulumString');
+        var pendulumBob = document.getElementById('pendulumBob');
+        var AMPLITUDE_DEG = 25;
+
+        function theoreticalPeriod(L) { return 2 * Math.PI * Math.sqrt(L / G); }
+
+        function renderPendulumLength() {
+            var px = 40 + state.pendulum.L * 70;
+            pendulumString.style.height = px + 'px';
+            pendulumBob.style.top = px + 'px';
+            document.getElementById('lengthReadout').textContent = state.pendulum.L.toFixed(2);
+            document.getElementById('periodReadout').textContent = theoreticalPeriod(state.pendulum.L).toFixed(2);
+        }
+
+        function animatePendulum(ts) {
+            var T = theoreticalPeriod(state.pendulum.L);
+            var elapsed = (ts - state.pendulum.phaseStart) / 1000;
+            var angle = AMPLITUDE_DEG * Math.cos((2 * Math.PI / T) * elapsed);
+            pendulumWrap.style.transform = 'rotate(' + angle + 'deg)';
+            requestAnimationFrame(animatePendulum);
+        }
+
+        function measurePendulum() {
+            if (state.pendulum.timing) return;
+            var T = theoreticalPeriod(state.pendulum.L);
+            state.pendulum.timing = true;
+            var btn = document.getElementById('btnPendulum');
+            btn.disabled = true;
+            var totalSwings = 5, swings = 0;
+            function tick() {
+                swings++;
+                btn.innerHTML = '<i class="fas fa-stopwatch"></i> Timing&hellip; (' + swings + '/' + totalSwings + ')';
+                if (swings < totalSwings) { setTimeout(tick, T * 1000); }
+                else {
+                    var measured = T * (0.97 + Math.random() * 0.06);
+                    state.pendulum.timing = false;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-stopwatch"></i> Measure Period (5 swings)';
+                    showReadout('Pendulum Period', 'T = 2π√(L / g)', 'Theoretical period: ' + T.toFixed(2) + 's. Measured over 5 swings: ' + measured.toFixed(2) + 's at L = ' + state.pendulum.L.toFixed(2) + 'm.');
+                    logEvent('Measured pendulum period: ' + measured.toFixed(2) + 's (theory ' + T.toFixed(2) + 's) at L=' + state.pendulum.L.toFixed(2) + 'm.');
+                    saveInteraction('Measured pendulum period: ' + measured.toFixed(2) + 's vs theoretical ' + T.toFixed(2) + 's at length ' + state.pendulum.L.toFixed(2) + 'm.');
+                    markTaskDone('pendulum');
+                    playTone(600, 0.15, 'sine');
+                }
+            }
+            setTimeout(tick, T * 1000);
+        }
+
+        // ============================================================
+        // Circuit
+        // ============================================================
+        function selectResistor(r, btn) {
+            state.circuit.R = r;
+            document.querySelectorAll('.resistor-btn').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            updateCircuit();
         }
 
         function toggleSwitch() {
-            isSwitchOn = !isSwitchOn;
-            calculateCircuit();
-            saveInteraction(`Circuit switch turned ${isSwitchOn ? 'ON' : 'OFF'}`);
-
-            // Show visual feedback
-            showResultMessage("Circuit Switch", `Switch turned ${isSwitchOn ? 'ON' : 'OFF'}`);
-        }
-
-        // ============ MAGNET EXPERIMENT ============
-        function openMagnet() {
-            document.getElementById('magnetPanel').classList.add('active');
-            drawMagnetField();
-            updateTask('magnet');
-        }
-
-        function closeMagnetPanel() {
-            document.getElementById('magnetPanel').classList.remove('active');
-        }
-
-        function drawMagnetField() {
-            const canvas = magnetCanvas;
-            const ctx = magnetCtx;
-            const distance = parseInt(document.getElementById('magnetDistance').value);
-
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            const magnetY = canvas.height / 2;
-            const northX = canvas.width / 2 - distance / 2;
-            const southX = canvas.width / 2 + distance / 2;
-
-            // Draw field lines
-            ctx.beginPath();
-            ctx.strokeStyle = '#3498db';
-            ctx.lineWidth = 2;
-
-            for (let i = 0; i < 8; i++) {
-                const offset = (i - 4) * 15;
-                ctx.beginPath();
-                if (!poleFlipped) {
-                    ctx.moveTo(northX, magnetY + offset);
-                    ctx.quadraticCurveTo(canvas.width / 2, magnetY + offset * 0.5, southX, magnetY + offset);
-                } else {
-                    ctx.moveTo(southX, magnetY + offset);
-                    ctx.quadraticCurveTo(canvas.width / 2, magnetY + offset * 0.5, northX, magnetY + offset);
-                }
-                ctx.stroke();
-            }
-
-            // Draw magnets
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(northX - 30, magnetY - 40, 30, 80);
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(southX, magnetY - 40, 30, 80);
-
-            ctx.fillStyle = 'white';
-            ctx.font = '16px Arial';
-            ctx.fillText('N', northX - 20, magnetY);
-            ctx.fillText('S', southX + 40, magnetY);
-
-            const strength = calculateFieldStrength();
-            ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(10, canvas.height - 30, Math.min(strength * 2, 200), 10);
-            ctx.fillStyle = 'white';
-            ctx.fillText(`Field Strength: ${strength.toFixed(2)} T`, 10, canvas.height - 35);
-        }
-
-        function calculateFieldStrength() {
-            const distance = parseInt(document.getElementById('magnetDistance').value);
-            fieldStrength = 100 / distance;
-            document.getElementById('magnetValues').innerHTML = `
-                Field Strength: ${fieldStrength.toFixed(3)} T |
-                Polarity: ${poleFlipped ? 'S-N' : 'N-S'}
-            `;
-            return fieldStrength;
-        }
-
-        function flipPoles() {
-            poleFlipped = !poleFlipped;
-            drawMagnetField();
-            saveInteraction(`Magnet polarity flipped to ${poleFlipped ? 'S-N' : 'N-S'}`);
-            showResultMessage("Magnet Polarity", `Polarity: ${poleFlipped ? 'South-North' : 'North-South'}`);
-        }
-
-        function addIronFilings() {
-            const canvas = magnetCanvas;
-            const ctx = magnetCtx;
-            for (let i = 0; i < 200; i++) {
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height;
-                ctx.fillStyle = '#aaa';
-                ctx.fillRect(x, y, 2, 2);
-            }
-            saveInteraction('Iron filings added to visualize magnetic field lines');
-            showResultMessage("Iron Filings", "Iron filings added - magnetic field lines are now visible!");
-        }
-
-        function measureFieldStrength() {
-            const strength = calculateFieldStrength();
-            showResultMessage("Magnetic Field Measurement", `Field strength: ${strength.toFixed(3)} Tesla`);
-            saveInteraction(`Measured field strength: ${strength.toFixed(3)} T`);
-        }
-
-        // ============ PRISM EXPERIMENT ============
-        function openPrism() {
-            document.getElementById('prismPanel').classList.add('active');
-            drawPrism();
-            updateTask('prism');
-        }
-
-        function closePrismPanel() {
-            document.getElementById('prismPanel').classList.remove('active');
-        }
-
-        function updateRefraction() {
-            const material = document.getElementById('prismMaterial').value;
-            const refractiveIndexes = {
-                glass: 1.52,
-                diamond: 2.42,
-                water: 1.33,
-                acrylic: 1.49
-            };
-            refractiveIndex = refractiveIndexes[material];
-            drawPrism();
-            saveInteraction(`Prism material changed to ${material} (n=${refractiveIndex})`);
-        }
-
-        function drawPrism() {
-            const canvas = prismCanvas;
-            const ctx = prismCtx;
-            const angle = parseInt(document.getElementById('incidenceAngle').value);
-
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw prism (triangle)
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 80);
-            ctx.lineTo(canvas.width / 2 - 80, 250);
-            ctx.lineTo(canvas.width / 2 + 80, 250);
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(136, 170, 255, 0.5)';
-            ctx.fill();
-            ctx.strokeStyle = '#88aaff';
-            ctx.stroke();
-
-            // Calculate refraction
-            const radAngle = angle * Math.PI / 180;
-            const sinTheta2 = Math.sin(radAngle) / refractiveIndex;
-            const refractionAngle = Math.asin(Math.min(1, sinTheta2)) * 180 / Math.PI;
-            const deviation = angle - refractionAngle;
-
-            // Draw incident ray
-            const startX = canvas.width / 2 - 150;
-            const startY = 80 + (angle / 90) * 100;
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(canvas.width / 2, 80);
-            ctx.strokeStyle = '#ff6600';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Draw refracted ray
-            const endX = canvas.width / 2 + 100;
-            const endY = 250 - (refractionAngle / 90) * 100;
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 80);
-            ctx.lineTo(endX, endY);
-            ctx.strokeStyle = '#33ff33';
-            ctx.stroke();
-
-            // Draw spectrum
-            const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
-            for (let i = 0; i < colors.length; i++) {
-                ctx.beginPath();
-                ctx.moveTo(endX, endY);
-                ctx.lineTo(endX + 20 + i * 5, endY + 20 + i * 3);
-                ctx.strokeStyle = colors[i];
-                ctx.stroke();
-            }
-
-            document.getElementById('prismValues').innerHTML = `
-                Angle of incidence: ${angle}° |
-                Angle of refraction: ${refractionAngle.toFixed(1)}° |
-                Deviation: ${deviation.toFixed(1)}°
-            `;
-        }
-
-        // ============ MECHANICS SYSTEM ============
-        function openMechanics() {
-            document.getElementById('mechanicsPanel').classList.add('active');
-            drawMechanics();
-            updateTask('mechanics');
-        }
-
-        function closeMechanicsPanel() {
-            document.getElementById('mechanicsPanel').classList.remove('active');
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animating = false;
+            state.circuit.closed = !state.circuit.closed;
+            document.getElementById('switchGap').style.display = state.circuit.closed ? 'none' : 'block';
+            var btn = document.getElementById('btnSwitch');
+            btn.innerHTML = state.circuit.closed ? '<i class="fas fa-toggle-on"></i> Open Switch' : '<i class="fas fa-toggle-off"></i> Close Switch';
+            updateCircuit();
+            if (state.circuit.closed) {
+                var I = state.circuit.V / state.circuit.R;
+                logEvent('Switch closed: I = ' + (I * 1000).toFixed(1) + 'mA at V=' + state.circuit.V + 'V, R=' + state.circuit.R + '&Omega;.');
+                saveInteraction('Closed circuit switch: V=' + state.circuit.V + 'V, R=' + state.circuit.R + ' ohm, I=' + (I * 1000).toFixed(1) + 'mA.');
+                showReadout('Circuit Closed', 'I = V / R', 'Current: ' + (I * 1000).toFixed(1) + 'mA. Power: ' + (state.circuit.V * I).toFixed(2) + 'W.');
+                markTaskDone('circuit');
+                playTone(500, 0.12, 'square');
+            } else {
+                logEvent('Switch opened &mdash; circuit broken.');
             }
         }
 
-        function drawMechanics() {
-            const canvas = mechanicsCanvas;
-            const ctx = mechanicsCtx;
-
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw ground
-            ctx.fillStyle = '#666';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-
-            // Draw object (box)
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(objectX, canvas.height - 90, 60, 40);
-
-            // Draw force arrow
-            const force = parseInt(document.getElementById('forceSlider').value);
-            const arrowLength = Math.min(force / 5, 100);
-            ctx.beginPath();
-            ctx.moveTo(objectX + 70, canvas.height - 70);
-            ctx.lineTo(objectX + 70 + arrowLength, canvas.height - 70);
-            ctx.lineTo(objectX + 70 + arrowLength - 10, canvas.height - 75);
-            ctx.moveTo(objectX + 70 + arrowLength, canvas.height - 70);
-            ctx.lineTo(objectX + 70 + arrowLength - 10, canvas.height - 65);
-            ctx.strokeStyle = '#ff6600';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            ctx.fillStyle = '#ff6600';
-            ctx.fillText(`Force: ${force}N`, objectX + 80, canvas.height - 80);
-
-            const mass = parseInt(document.getElementById('massSlider').value);
-            ctx.fillStyle = 'white';
-            ctx.fillText(`Mass: ${mass}kg`, objectX, canvas.height - 95);
+        function updateCircuit() {
+            var I = state.circuit.closed ? state.circuit.V / state.circuit.R : 0;
+            document.getElementById('voltReadout').textContent = state.circuit.V.toFixed(1);
+            document.getElementById('curReadout').textContent = (I * 1000).toFixed(0);
+            document.getElementById('resReadout').textContent = state.circuit.R;
+            var pct = Math.min(1, I / 0.08);
+            var glow = document.getElementById('bulbGlow');
+            glow.style.opacity = state.circuit.closed ? (0.15 + pct * 0.85) : 0.08;
+            glow.style.boxShadow = state.circuit.closed ? ('0 0 ' + (6 + pct * 22) + 'px ' + (2 + pct * 8) + 'px rgba(250,204,21,' + (0.3 + pct * 0.5) + ')') : 'none';
+            var dur = state.circuit.closed ? Math.max(0.35, 1.6 - pct * 1.2) : 0;
+            document.querySelectorAll('.electron').forEach(function (e) {
+                e.style.animationDuration = dur + 's';
+                e.style.opacity = state.circuit.closed ? '1' : '0';
+            });
         }
 
-        function calculateMechanics() {
-            const mass = parseInt(document.getElementById('massSlider').value);
-            const force = parseInt(document.getElementById('forceSlider').value);
-            const distance = parseInt(document.getElementById('distanceSlider').value);
-
-            const acceleration = force / mass;
-            const work = force * distance;
-
-            document.getElementById('mechanicsValues').innerHTML = `
-                Mass: ${mass} kg |
-                Force: ${force} N |
-                Acceleration: ${acceleration.toFixed(2)} m/s² |
-                Work: ${work} J
-            `;
-
-            drawMechanics();
-            showResultMessage("Mechanics Calculation", `a = ${acceleration.toFixed(2)} m/s², W = ${work} J`);
+        // ============================================================
+        // Spring
+        // ============================================================
+        function updateSpring() {
+            var Fg = (state.spring.totalGrams / 1000) * G;
+            var xM = Fg / SPRING_K;
+            var xPx = Math.min(90, xM * 220);
+            document.getElementById('springCoil').style.height = (46 + xPx) + 'px';
+            var mb = document.getElementById('massBlock');
+            mb.style.display = state.spring.totalGrams > 0 ? 'block' : 'none';
+            mb.style.height = Math.min(40, 6 + state.spring.totalGrams / 12) + 'px';
+            document.getElementById('springReadout').innerHTML = 'F: <b>' + Fg.toFixed(2) + 'N</b> &nbsp; x: <b>' + (xM * 100).toFixed(1) + 'cm</b>';
         }
 
-        function simulateMotion() {
-            if (animating) {
-                cancelAnimationFrame(animationId);
-                animating = false;
-                objectX = 100;
-                drawMechanics();
-                return;
-            }
-
-            const force = parseInt(document.getElementById('forceSlider').value);
-            const mass = parseInt(document.getElementById('massSlider').value);
-            const acceleration = force / mass;
-            let velocity = 0;
-            let lastTime = performance.now();
-            animating = true;
-
-            function animateMotion(now) {
-                const dt = Math.min(0.033, (now - lastTime) / 1000);
-                lastTime = now;
-
-                velocity += acceleration * dt;
-                objectX += velocity * dt * 20;
-
-                if (objectX > 350 || objectX < 100) {
-                    cancelAnimationFrame(animationId);
-                    animating = false;
-                    objectX = 100;
-                    drawMechanics();
-                    showResultMessage("Motion Simulation Complete", `Final velocity: ${velocity.toFixed(2)} m/s`);
-                    saveInteraction(`Motion simulation completed: final velocity ${velocity.toFixed(2)} m/s`);
-                } else {
-                    drawMechanics();
-                    animationId = requestAnimationFrame(animateMotion);
-                }
-            }
-
-            lastTime = performance.now();
-            animationId = requestAnimationFrame(animateMotion);
-            saveInteraction(`Started motion simulation with F=${force}N, m=${mass}kg`);
-            showResultMessage("Motion Simulation Started", `Acceleration: ${acceleration.toFixed(2)} m/s²`);
+        function addMass(grams) {
+            state.spring.totalGrams += grams;
+            updateSpring();
+            var Fg = (state.spring.totalGrams / 1000) * G;
+            var xM = Fg / SPRING_K;
+            showReadout('Spring Extension', 'x = F / k   (k = ' + SPRING_K + ' N/m)', 'Total load: ' + state.spring.totalGrams + 'g. Force: ' + Fg.toFixed(2) + 'N. Extension: ' + (xM * 100).toFixed(1) + 'cm.');
+            logEvent('Added ' + grams + 'g mass &rarr; extension ' + (xM * 100).toFixed(1) + 'cm at ' + state.spring.totalGrams + 'g total.');
+            saveInteraction('Spring loaded with ' + state.spring.totalGrams + 'g total, extension ' + (xM * 100).toFixed(1) + 'cm, force ' + Fg.toFixed(2) + 'N.');
+            markTaskDone('spring');
+            playTone(360, 0.1, 'sine');
         }
 
-        function showResultMessage(title, message) {
-            const resultDiv = document.createElement('div');
-            resultDiv.style.position = 'absolute';
-            resultDiv.style.top = '50%';
-            resultDiv.style.left = '50%';
-            resultDiv.style.transform = 'translate(-50%, -50%)';
-            resultDiv.style.background = 'rgba(0,0,0,0.9)';
-            resultDiv.style.color = '#3498db';
-            resultDiv.style.padding = '20px 30px';
-            resultDiv.style.borderRadius = '10px';
-            resultDiv.style.fontSize = '16px';
-            resultDiv.style.fontWeight = 'bold';
-            resultDiv.style.textAlign = 'center';
-            resultDiv.style.zIndex = '300';
-            resultDiv.style.borderLeft = `4px solid #3498db`;
-            resultDiv.innerHTML = `<strong>${title}</strong><br>${message}`;
-            document.body.appendChild(resultDiv);
-
-            setTimeout(() => {
-                resultDiv.style.opacity = '0';
-                resultDiv.style.transition = 'opacity 0.5s';
-                setTimeout(() => resultDiv.remove(), 500);
-            }, 3000);
+        function resetSpring() {
+            state.spring.totalGrams = 0;
+            updateSpring();
+            toast('Masses removed.');
+            logEvent('All masses removed from spring.');
         }
 
-        function updateTask(taskName) {
-            if (!tasks[taskName]) {
-                tasks[taskName] = true;
-                const taskElement = document.getElementById(`task-${taskName}`);
-                if (taskElement) {
-                    taskElement.classList.add('completed');
-                    taskElement.innerHTML = `<i class="fas fa-check-circle" style="color: #2ecc71;"></i> ${taskElement.innerText.substring(1)}`;
-                }
-            }
-            checkAllTasks();
+        // ============================================================
+        // Notebook
+        // ============================================================
+        function saveObservations() {
+            var val = document.getElementById('observations').value.trim();
+            if (!val) { toast('Write something first.', 'warn'); return; }
+            logEvent('Observation noted: "' + val + '"');
+            saveInteraction('Observations: ' + val);
+            markTaskDone('observe');
+            toast('Added to notebook.');
+            document.getElementById('observations').value = '';
         }
 
-        function checkAllTasks() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (allComplete) {
-                document.getElementById('taskResult').innerHTML = '<i class="fas fa-check-circle"></i> All physics tasks complete! Ready to submit.';
-                document.getElementById('taskResult').style.background = 'rgba(46, 204, 113, 0.3)';
-                document.getElementById('taskResult').style.display = 'block';
-            }
-        }
-
+        // ============================================================
+        // Network
+        // ============================================================
         function saveInteraction(message) {
-            fetch('@Url.Action("SaveLabProgress", "VirtualLab")', {
+            fetch(SAVE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({
-                    resultId: resultId,
-                    observations: message,
-                    conclusions: '',
-                    resultsData: JSON.stringify({ action: message, timestamp: new Date(), tasks: tasks })
-                })
-            }).catch(error => console.error('Error saving:', error));
+                body: JSON.stringify({ resultId: resultId, observations: message, conclusions: '', resultsData: JSON.stringify({ action: message, timestamp: new Date().toISOString(), tasks: state.tasks }) })
+            }).catch(function (error) { console.error('Error saving:', error); });
         }
-
-        function saveObservations() {
-            const obs = document.getElementById('observations').value;
-            if (obs) {
-                saveInteraction(`Observations: ${obs}`);
-                alert('Observations saved!');
-                document.getElementById('observations').value = '';
-            }
-        }
-
-        function saveProgress() {
-            saveInteraction('Progress saved');
-            alert('Progress saved!');
-        }
-
+        function saveProgress() { saveInteraction('Progress saved'); toast('Progress saved.'); }
         function submitLab() {
-            const allComplete = Object.values(tasks).every(t => t === true);
-            if (!allComplete) {
-                alert('Please complete all tasks before submitting!');
-                return;
-            }
-
-            if (confirm('Submit this lab for grading?')) {
-                fetch('@Url.Action("SubmitLab", "VirtualLab")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ resultId: resultId })
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          alert('Lab submitted successfully!');
-                          window.location.href = '@Url.Action("Index", "VirtualLab")';
-                      }
-                  });
-            }
+            var allComplete = TASK_KEYS.every(function (k) { return state.tasks[k]; });
+            if (!allComplete) { toast('Please complete all tasks before submitting!', 'warn'); return; }
+            if (!confirm('Submit this lab for grading?')) return;
+            fetch(SUBMIT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ resultId: resultId })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) { toast('Lab submitted successfully!'); setTimeout(function () { window.location.href = INDEX_URL; }, 900); }
+                else { toast(data.message || 'Submission failed.', 'warn'); }
+            }).catch(function () { toast('Network error while submitting.', 'warn'); });
         }
-
         function exitLab() {
-            if (confirm('Exit the lab? Your progress will be saved.')) {
-                saveProgress();
-                setTimeout(() => { window.location.href = '@Url.Action("Index", "VirtualLab")'; }, 500);
-            }
+            if (!confirm('Exit the lab? Your progress will be saved.')) return;
+            saveProgress();
+            setTimeout(function () { window.location.href = INDEX_URL; }, 500);
         }
 
-        // Setup component click handlers
-        document.querySelectorAll('.circuit-component').forEach(comp => {
-            comp.addEventListener('click', () => {
-                const type = comp.dataset.type;
-                const voltage = parseFloat(comp.dataset.voltage) || 0;
-                const resistance = parseFloat(comp.dataset.resistance) || 0;
-                addComponentToCircuit(type, voltage, resistance);
-            });
-        });
-
-        // Interaction handling for 3D objects
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        window.addEventListener('click', (event) => {
-            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(equipmentGroup.map(e => e.mesh), true);
-
-            if (intersects.length > 0) {
-                let obj = intersects[0].object;
-                while (obj.parent && !obj.userData.action) obj = obj.parent;
-                if (obj.userData.action && typeof window[obj.userData.action] === 'function') {
-                    window[obj.userData.action]();
-                    saveInteraction(`Interacted with: ${obj.userData.name}`);
-                }
+        // ============================================================
+        // Confetti
+        // ============================================================
+        var confettiCanvas = document.getElementById('confettiCanvas');
+        var confettiCtx = confettiCanvas.getContext('2d');
+        var confettiPieces = [];
+        var confettiRunning = false;
+        function resizeConfetti() { confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+        function launchConfetti() {
+            var colors = ['#a78bfa', '#22d3ee', '#fbbf24', '#34d399', '#fb7185'];
+            for (var i = 0; i < 140; i++) {
+                confettiPieces.push({ x: Math.random() * confettiCanvas.width, y: -20 - Math.random() * 200, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 3, size: 4 + Math.random() * 5, rot: Math.random() * 360, vrot: (Math.random() - 0.5) * 12, color: colors[Math.floor(Math.random() * colors.length)], life: 0, maxLife: 200 + Math.random() * 60 });
             }
-        });
+            if (!confettiRunning) { confettiRunning = true; tickConfetti(); }
+        }
+        function tickConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            for (var i = 0; i < confettiPieces.length; i++) {
+                var p = confettiPieces[i];
+                p.life++; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+                confettiCtx.save(); confettiCtx.translate(p.x, p.y); confettiCtx.rotate(p.rot * Math.PI / 180);
+                confettiCtx.globalAlpha = Math.max(0, 1 - p.life / p.maxLife);
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                confettiCtx.restore();
+            }
+            confettiCtx.globalAlpha = 1;
+            confettiPieces = confettiPieces.filter(function (p) { return p.life < p.maxLife && p.y < confettiCanvas.height + 40; });
+            if (confettiPieces.length) requestAnimationFrame(tickConfetti); else confettiRunning = false;
+        }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
+        // ============================================================
+        // Timers
+        // ============================================================
+        var seconds = 0;
+        setInterval(function () {
+            seconds++;
+            var m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            var s = String(seconds % 60).padStart(2, '0');
+            var el = document.getElementById('sessionTimer');
+            if (el) el.textContent = m + ':' + s;
+        }, 1000);
+
+        // ============================================================
+        // Init
+        // ============================================================
+        function init() {
+            var grid = document.getElementById('resistorGrid');
+            RESISTORS.forEach(function (r, idx) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'resistor-btn' + (r === state.circuit.R ? ' active' : '');
+                btn.innerHTML = r + '&Omega;<small>Resistor</small>';
+                btn.addEventListener('click', function () { ensureAudio(); selectResistor(r, btn); playTone(440, 0.06, 'sine'); });
+                grid.appendChild(btn);
+            });
+
+            resizeTraj();
+            newTarget();
+            renderPendulumLength();
+            requestAnimationFrame(animatePendulum);
+            updateCircuit();
+            updateSpring();
+            updateProgress();
+
+            document.getElementById('angleSlider').addEventListener('input', function (e) {
+                launcher.angle = parseFloat(e.target.value);
+                document.getElementById('angleValue').textContent = launcher.angle + '°';
+            });
+            document.getElementById('velocitySlider').addEventListener('input', function (e) {
+                launcher.velocity = parseFloat(e.target.value);
+                document.getElementById('velocityValue').textContent = launcher.velocity + ' m/s';
+            });
+            document.getElementById('btnLaunch').addEventListener('click', function () { ensureAudio(); launchProjectile(); });
+            document.getElementById('btnNewTarget').addEventListener('click', function () { ensureAudio(); newTarget(); playTone(520, 0.08, 'sine'); });
+
+            document.getElementById('lengthSlider').addEventListener('input', function (e) {
+                state.pendulum.L = parseFloat(e.target.value) / 100;
+                state.pendulum.phaseStart = performance.now();
+                renderPendulumLength();
+            });
+            document.getElementById('btnPendulum').addEventListener('click', function () { ensureAudio(); measurePendulum(); });
+
+            document.getElementById('voltageSlider').addEventListener('input', function (e) {
+                state.circuit.V = parseFloat(e.target.value);
+                updateCircuit();
+            });
+            document.getElementById('btnSwitch').addEventListener('click', function () { ensureAudio(); toggleSwitch(); });
+
+            document.getElementById('btnMass50').addEventListener('click', function () { ensureAudio(); addMass(50); });
+            document.getElementById('btnMass100').addEventListener('click', function () { ensureAudio(); addMass(100); });
+            document.getElementById('btnMass200').addEventListener('click', function () { ensureAudio(); addMass(200); });
+            document.getElementById('btnResetSpring').addEventListener('click', resetSpring);
+
+            document.getElementById('btnExit').addEventListener('click', exitLab);
+            document.getElementById('btnExit2').addEventListener('click', exitLab);
+            document.getElementById('btnSaveProgress').addEventListener('click', saveProgress);
+            document.getElementById('btnSubmit').addEventListener('click', submitLab);
+            document.getElementById('btnSaveObs').addEventListener('click', saveObservations);
+            document.getElementById('btnMute').addEventListener('click', function () {
+                muted = !muted;
+                document.getElementById('muteIcon').className = muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+            });
+
+            logEvent('Lab session started. Good luck, scientist!');
         }
 
         init();
-
-        window.openCircuit = openCircuit;
-        window.closeCircuitPanel = closeCircuitPanel;
-        window.addComponentToCircuit = addComponentToCircuit;
-        window.removeComponent = removeComponent;
-        window.calculateCircuit = calculateCircuit;
-        window.toggleSwitch = toggleSwitch;
-        window.openMagnet = openMagnet;
-        window.closeMagnetPanel = closeMagnetPanel;
-        window.flipPoles = flipPoles;
-        window.addIronFilings = addIronFilings;
-        window.measureFieldStrength = measureFieldStrength;
-        window.openPrism = openPrism;
-        window.closePrismPanel = closePrismPanel;
-        window.updateRefraction = updateRefraction;
-        window.openMechanics = openMechanics;
-        window.closeMechanicsPanel = closeMechanicsPanel;
-        window.calculateMechanics = calculateMechanics;
-        window.simulateMotion = simulateMotion;
-        window.saveObservations = saveObservations;
-        window.saveProgress = saveProgress;
-        window.submitLab = submitLab;
-        window.exitLab = exitLab;
     </script>
 </body>
 </html>
