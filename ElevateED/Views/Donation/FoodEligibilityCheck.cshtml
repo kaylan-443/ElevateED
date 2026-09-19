@@ -1,0 +1,381 @@
+﻿@model ElevateED.Models.FoodEligibilityViewModel
+@{
+    ViewBag.Title = "Food Safety Report";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "foodeligibility";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var reasons = ViewBag.DecisionReasons as List<string> ?? new List<string>();
+    var warnings = ViewBag.DecisionWarnings as List<string> ?? new List<string>();
+    string summary = ViewBag.DecisionSummary as string ?? "";
+
+    string statusText = "Unknown";
+    string statusClass = "badge-secondary";
+    string statusIcon = "❓";
+
+    switch (Model.Status)
+    {
+        case ElevateED.Models.FoodDonationStatus.Approved:
+            statusText = "Auto-Approved";
+            statusClass = "badge-success";
+            statusIcon = "✅";
+            break;
+        case ElevateED.Models.FoodDonationStatus.Rejected:
+            statusText = "Auto-Rejected";
+            statusClass = "badge-danger";
+            statusIcon = "❌";
+            break;
+        case ElevateED.Models.FoodDonationStatus.Expired:
+            statusText = "Expired";
+            statusClass = "badge-secondary";
+            statusIcon = "⚠️";
+            break;
+        default:
+            statusText = "Unknown";
+            statusClass = "badge-warning";
+            statusIcon = "⏳";
+            break;
+    }
+
+    string boxClass = "expired";
+    if (Model.Status == ElevateED.Models.FoodDonationStatus.Approved)
+    {
+        boxClass = "approved";
+    }
+    else if (Model.Status == ElevateED.Models.FoodDonationStatus.Rejected)
+    {
+        boxClass = "rejected";
+    }
+}
+
+<style>
+    .report-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .report-card h4 {
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 12px 0;
+        }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+    }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-row .label {
+            color: #6b7280;
+        }
+
+        .detail-row .value {
+            color: #111827;
+            font-weight: 500;
+        }
+
+    .decision-box {
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin-bottom: 20px;
+    }
+
+        .decision-box.approved {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #059669;
+        }
+
+        .decision-box.rejected {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .decision-box.expired {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+
+        .decision-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+        }
+
+        .decision-box .summary {
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+
+        .decision-box ul {
+            margin: 8px 0 0 18px;
+            padding: 0;
+            font-size: 13px;
+            color: #111827;
+        }
+
+            .decision-box ul li {
+                margin-bottom: 4px;
+            }
+
+    .warnings-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 12px 16px;
+        color: #b45309;
+        font-size: 13px;
+        margin-top: 12px;
+    }
+
+        .warnings-box ul {
+            margin: 6px 0 0 18px;
+            padding: 0;
+        }
+
+    .answer-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 20px;
+        font-size: 13px;
+    }
+
+        .answer-grid .item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f3f4f6;
+            padding: 5px 0;
+            color: #111827;
+        }
+
+            .answer-grid .item .label {
+                color: #6b7280;
+            }
+
+    .answer-yes {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .answer-no {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-shield-alt"></i> Food Safety Report
+    </h1>
+    <a href="@Url.Action("FoodEligibilityList")" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Report
+    </a>
+</div>
+
+    <!-- Decision summary -->
+    <div class="decision-box @boxClass">
+        <h3>@statusIcon @statusText</h3>
+        <div class="summary">@summary</div>
+
+        @if (reasons.Any())
+        {
+            <strong style="font-size:13px;">Reasons:</strong>
+            <ul>
+                @foreach (var r in reasons)
+                {
+                    <li>@r</li>
+                }
+            </ul>
+        }
+
+        @if (warnings.Any())
+        {
+            <div class="warnings-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Warnings (not blocking):</strong>
+                <ul>
+                    @foreach (var w in warnings)
+                    {
+                        <li>@w</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+
+    <!-- Donation Summary -->
+    <div class="report-card">
+        <h4><i class="fas fa-box"></i> Donation Summary</h4>
+        <div class="detail-row">
+            <span class="label">Item</span>
+            <span class="value">@Model.DonationItemName</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Quantity</span>
+            <span class="value">@Model.Quantity</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Donor</span>
+            <span class="value">@Model.DonorName</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Donated On</span>
+            <span class="value">@Model.DonationDate.ToString("dd MMM yyyy HH:mm")</span>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.PhotoPath))
+        {
+            <div class="detail-row">
+                <span class="label">Photo</span>
+                <span class="value"><a href="@Model.PhotoPath" target="_blank" style="color:#4f46e5;">View</a></span>
+            </div>
+        }
+    </div>
+
+    <!-- Food details -->
+    <div class="report-card">
+        <h4><i class="fas fa-info-circle"></i> Food Details</h4>
+        <div class="detail-row">
+            <span class="label">Food Type</span>
+            <span class="value">@Model.FoodType</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Expiry Date</span>
+            <span class="value">@Model.ExpiryDate.ToString("dd MMM yyyy")</span>
+        </div>
+        @if (Model.ProductionDate.HasValue)
+        {
+            <div class="detail-row">
+                <span class="label">Production Date</span>
+                <span class="value">@Model.ProductionDate.Value.ToString("dd MMM yyyy")</span>
+            </div>
+        }
+        <div class="detail-row">
+            <span class="label">Storage Type</span>
+            <span class="value">@Model.StorageType</span>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.StorageNotes))
+        {
+            <div class="detail-row">
+                <span class="label">Storage Notes</span>
+                <span class="value">@Model.StorageNotes</span>
+            </div>
+        }
+        <div class="detail-row">
+            <span class="label">Allergens</span>
+            <span class="value">@Model.Allergens</span>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.AllergenDetails))
+        {
+            <div class="detail-row">
+                <span class="label">Allergen Details</span>
+                <span class="value">@Model.AllergenDetails</span>
+            </div>
+        }
+        <div class="detail-row">
+            <span class="label">Quality Grade</span>
+            <span class="value">@Model.QualityGrade</span>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.ConditionNotes))
+        {
+            <div class="detail-row">
+                <span class="label">Condition Notes</span>
+                <span class="value">@Model.ConditionNotes</span>
+            </div>
+        }
+    </div>
+
+    <!-- Safety questionnaire answers -->
+    <div class="report-card">
+        <h4><i class="fas fa-clipboard-check"></i> Safety Questionnaire Answers</h4>
+        <div class="answer-grid">
+            <div class="item">
+                <span class="label">Packaging sealed</span>
+                <span class="@(Model.PackagingSealed ? "answer-yes" : "answer-no")">
+                    @(Model.PackagingSealed ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">No packaging damage</span>
+                <span class="@(Model.NoDamage ? "answer-yes" : "answer-no")">
+                    @(Model.NoDamage ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Cans not bulging/dented</span>
+                <span class="@(Model.NoBulging ? "answer-yes" : "answer-no")">
+                    @(Model.NoBulging ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">No pest damage</span>
+                <span class="@(Model.NoPestDamage ? "answer-yes" : "answer-no")">
+                    @(Model.NoPestDamage ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Appearance check</span>
+                <span class="@(Model.AppearancePassed ? "answer-yes" : "answer-no")">
+                    @(Model.AppearancePassed ? "Passed" : "Failed")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Smell check</span>
+                <span class="@(Model.SmellPassed ? "answer-yes" : "answer-no")">
+                    @(Model.SmellPassed ? "Passed" : "Failed")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Commercial source</span>
+                <span class="@(Model.IsCommercialSource ? "answer-yes" : "answer-no")">
+                    @(Model.IsCommercialSource ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Properly labelled</span>
+                <span class="@(Model.ProperlyLabeled ? "answer-yes" : "answer-no")">
+                    @(Model.ProperlyLabeled ? "Yes" : "No")
+                </span>
+            </div>
+            <div class="item">
+                <span class="label">Nutrition info present</span>
+                <span class="@(Model.NutritionInfoPresent ? "answer-yes" : "answer-no")">
+                    @(Model.NutritionInfoPresent ? "Yes" : "No")
+                </span>
+            </div>
+        </div>
+    </div>

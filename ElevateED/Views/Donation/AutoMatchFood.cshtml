@@ -1,0 +1,307 @@
+﻿@model List<ElevateED.Models.DonationItem>
+@{
+    ViewBag.Title = "Auto-Match Food";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "automatchfood";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+
+    var donationChecks = ViewBag.DonationChecks as Dictionary<int, ElevateED.Models.FoodDonationCheck>
+                          ?? new Dictionary<int, ElevateED.Models.FoodDonationCheck>();
+    int pendingCount = ViewBag.PendingFoodRequestCount is int ? (int)ViewBag.PendingFoodRequestCount : 0;
+}
+
+<style>
+    .page-wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+            color: white;
+            text-decoration: none;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    .summary-card {
+        background: rgba(16,185,129,0.06);
+        border: 1px solid rgba(16,185,129,0.2);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: #065f46;
+        font-size: 14px;
+    }
+
+        .summary-card .icon {
+            font-size: 26px;
+            color: #10b981;
+        }
+
+        .summary-card strong {
+            color: #047857;
+        }
+
+    .donation-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        transition: all 0.2s;
+    }
+
+        .donation-card:hover {
+            border-color: #10b981;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        }
+
+    .donation-info {
+        flex: 1;
+        min-width: 240px;
+    }
+
+        .donation-info .title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+            .donation-info .title .qty-badge {
+                background: rgba(16,185,129,0.15);
+                color: #059669;
+                padding: 2px 10px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+        .donation-info .meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+            .donation-info .meta span {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+    .allergen-badge {
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .allergen-none {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .allergen-warn {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-wrap">
+
+    <div class="page-header">
+        <h1><i class="fas fa-robot" style="color:#10b981;"></i> Auto-Match Food</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="summary-card">
+        <span class="icon">👥</span>
+        <span>
+            <strong>@pendingCount</strong> student@(pendingCount != 1 ? "s have" : " has")
+            registered a food need.
+            @if (Model.Any())
+            {
+                <span>
+                    Below are the <strong>@Model.Count</strong> food donation@(Model.Count != 1 ? "s" : "")
+                    ready to be allocated.
+                </span>
+            }
+        </span>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <h4 style="color:#64748b;margin-bottom:6px;">No food donations waiting</h4>
+            <p style="font-size:13px;">
+                When a donor submits food and it passes the automatic safety check and delivery confirmation,
+                it will appear here for allocation.
+            </p>
+        </div>
+    }
+    else
+    {
+        foreach (var donation in Model)
+        {
+            var check = donationChecks.ContainsKey(donation.Id)
+                        ? donationChecks[donation.Id]
+                        : null;
+
+            var foodType = check?.FoodType ?? "Unknown";
+            var allergens = check?.Allergens ?? ElevateED.Models.FoodAllergen.None;
+            var allergenText = allergens == ElevateED.Models.FoodAllergen.None
+                ? "No allergens"
+                : allergens.ToString();
+            var allergenClass = allergens == ElevateED.Models.FoodAllergen.None
+                ? "allergen-none"
+                : "allergen-warn";
+
+            <div class="donation-card">
+                <div class="donation-info">
+                    <div class="title">
+                        📦 @donation.ItemName
+                        <span class="qty-badge">×@donation.QuantityRemaining</span>
+                    </div>
+                    <div class="meta">
+                        <span>🍽️ @foodType</span>
+                        <span>👤 @donation.DonorName</span>
+                        @if (check != null)
+                        {
+                            <span>📅 Expires @check.ExpiryDate.ToString("dd MMM yyyy")</span>
+                        }
+                        <span class="allergen-badge @allergenClass">@allergenText</span>
+                    </div>
+                    <div class="meta" style="margin-top:4px;">
+                        <span>Delivered: @donation.DonationDate.ToString("dd MMM yyyy HH:mm")</span>
+                    </div>
+                </div>
+                <a href="@Url.Action("PreviewFoodAllocation", new { id = donation.Id })" class="btn-primary">
+                    <i class="fas fa-eye"></i> Preview Allocation
+                </a>
+            </div>
+        }
+    }
+
+</div>

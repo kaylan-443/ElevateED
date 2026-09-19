@@ -1,0 +1,85 @@
+@* Shared sub-nav for the Donation section — lets users move between donation
+   pages without going back to the main sidebar. Each view sets
+   ViewBag.ActiveTab to one of the keys below before including this partial. *@
+@{
+    var role = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Teacher") ? "Teacher" : "Student";
+    var activeTab = ViewBag.ActiveTab as string ?? "";
+    Func<string, string> tabCls = key => "donation-tab" + (activeTab == key ? " active" : "");
+}
+<style>
+    .donation-subnav {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        padding-bottom: 0;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+        .donation-subnav::-webkit-scrollbar {
+            display: none;
+        }
+
+    .donation-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        text-decoration: none;
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        transition: color 0.15s, border-color 0.15s;
+    }
+
+        .donation-tab i {
+            font-size: 12px;
+            width: 14px;
+            text-align: center;
+        }
+
+        .donation-tab:hover {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+
+        .donation-tab.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+        }
+</style>
+<div class="donation-subnav">
+    <a href="@Url.Action("Dashboard", "Donation")" class="@tabCls("dashboard")"><i class="fas fa-th-large"></i> Dashboard</a>
+    @if (role == "Student")
+    {
+        <a href="@Url.Action("RequestDonation", "Donation")" class="@tabCls("requestdonation")"><i class="fas fa-hand-paper"></i> Request Donation</a>
+        <a href="@Url.Action("MyRequests", "Donation")" class="@tabCls("myrequests")"><i class="fas fa-list"></i> My Requests</a>
+    }
+    <a href="@Url.Action("AddDonation", "Donation")" class="@tabCls("adddonation")"><i class="fas fa-gift"></i> Donate an Item</a>
+    <a href="@Url.Action("MyPendingDeliveries", "Donation")" class="@tabCls("mydeliveries")"><i class="fas fa-truck"></i> My Deliveries</a>
+    @if (role == "Student")
+    {
+        <a href="@Url.Action("MyCollections", "Donation")" class="@tabCls("mycollections")"><i class="fas fa-box-open"></i> My Collections</a>
+    }
+    else
+    {
+        <a href="@Url.Action("MatchDonations", "Donation")" class="@tabCls("matchdonations")"><i class="fas fa-link"></i> Match Donations</a>
+        <a href="@Url.Action("PriorityWaitlist", "Donation")" class="@tabCls("waitlist")"><i class="fas fa-list-ol"></i> Waitlist</a>
+        <a href="@Url.Action("AutoMatchFood", "Donation")" class="@tabCls("automatchfood")"><i class="fas fa-utensils"></i> Auto-Match Food</a>
+        if (role == "Admin")
+        {
+            <a href="@Url.Action("FoodEligibilityList", "Donation")" class="@tabCls("foodeligibility")"><i class="fas fa-shield-alt"></i> Food Eligibility</a>
+        }
+        <a href="@Url.Action("Distribution", "Donation")" class="@tabCls("distribution")"><i class="fas fa-dolly"></i> Distribution</a>
+    }
+    <a href="@Url.Action("DonationHistory", "Donation")" class="@tabCls("history")"><i class="fas fa-history"></i> History</a>
+    @if (role == "Admin")
+    {
+        <a href="@Url.Action("Campaigns", "Donation")" class="@tabCls("campaigns")"><i class="fas fa-bullhorn"></i> Campaigns</a>
+        <a href="@Url.Action("Pledges", "Donation")" class="@tabCls("pledges")"><i class="fas fa-handshake"></i> Pledges</a>
+    }
+</div>

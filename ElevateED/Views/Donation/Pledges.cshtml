@@ -1,0 +1,264 @@
+﻿@model List<ElevateED.Models.BulkPledge>
+@{
+    ViewBag.Title = "Pledges";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "pledges";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .pledge-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .pledge-card:hover {
+            border-color: rgba(139,92,246,0.3);
+        }
+
+        .pledge-card .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .pledge-card .meta {
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .pledge-card .delivery {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+    .status-badge {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-pendingapproval {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .status-approved {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-partiallydelivered {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+
+    .status-fullydelivered {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-cancelled {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .btn-approve {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid rgba(5,150,105,0.3);
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+    }
+
+        .btn-approve:hover {
+            background: #d1fae5;
+        }
+
+    .btn-deliver {
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79,70,229,0.3);
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+    }
+
+        .btn-deliver:hover {
+            background: #e0e7ff;
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+    .delivery-input {
+        width: 80px;
+        padding: 4px 8px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        color: #111827;
+        font-size: 12px;
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-handshake"></i> Pledges</h1>
+    <a href="@Url.Action("Campaigns")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card empty-state">
+        <i class="fas fa-handshake"></i>
+        <h4 style="color:#4b5563;">No Pledges</h4>
+        <p style="color:#9ca3af;">No bulk pledges have been submitted yet.</p>
+    </div>
+}
+    else
+    {
+        foreach (var pledge in Model.OrderByDescending(p => p.CreatedAt))
+        {
+            <div class="pledge-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <div class="title">@pledge.DonorName</div>
+                        <div class="meta">
+                            <span>📦 @pledge.ItemName</span>
+                            <span>📂 @pledge.Category</span>
+                            <span>📊 @pledge.QuantityPledged items</span>
+                            <span>📅 Expected: @pledge.ExpectedDeliveryDate.ToString("dd MMM yyyy")</span>
+                            @if (!string.IsNullOrEmpty(pledge.DonorOrganization))
+                            {
+                                <span>🏢 @pledge.DonorOrganization</span>
+                            }
+                        </div>
+                    </div>
+                    <span class="status-badge status-@pledge.Status.ToString().ToLower()">@pledge.Status</span>
+                </div>
+
+                <div class="delivery">
+                    <span style="font-size:13px;color:#6b7280;">Delivered: @pledge.QuantityDelivered / @pledge.QuantityPledged</span>
+                    @if (pledge.Status == ElevateED.Models.PledgeStatus.PendingApproval)
+                    {
+                        <button class="btn-approve" onclick="approvePledge(@pledge.Id)"><i class="fas fa-check"></i> Approve</button>
+                    }
+                    @if (pledge.Status == ElevateED.Models.PledgeStatus.Approved || pledge.Status == ElevateED.Models.PledgeStatus.PartiallyDelivered)
+                    {
+                        <form onsubmit="recordDelivery(@pledge.Id); return false;" style="display:flex;align-items:center;gap:8px;">
+                            <input type="number" id="deliveryQty_@pledge.Id" class="delivery-input" min="1" max="@(pledge.QuantityPledged - pledge.QuantityDelivered)" placeholder="Qty" />
+                            <button type="submit" class="btn-deliver"><i class="fas fa-box"></i> Record Delivery</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+@Html.AntiForgeryToken()
+
+<script>
+    function getVerificationHeaders() {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+        return headers;
+    }
+
+    function approvePledge(id) {
+        if (confirm('Approve this pledge?')) {
+            fetch('@Url.Action("ApprovePledge")', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: getVerificationHeaders(),
+                body: JSON.stringify({ id: id })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pledge approved successfully!');
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(() => alert('An error occurred.'));
+        }
+    }
+
+    function recordDelivery(id) {
+        var qty = parseInt(document.getElementById('deliveryQty_' + id).value);
+        if (!qty || qty < 1) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+
+        fetch('@Url.Action("RecordPledgeDelivery")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: getVerificationHeaders(),
+            body: JSON.stringify({ id: id, quantityDelivered: qty })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Delivery recorded successfully!');
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(() => alert('An error occurred.'));
+    }
+</script>

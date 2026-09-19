@@ -1,0 +1,143 @@
+﻿@model List<ElevateED.Models.PriorityMatchViewModel>
+@{
+    ViewBag.Title = "Priority Waitlist";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "waitlist";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .waitlist-item {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .waitlist-item:hover {
+            border-color: rgba(79,70,229,0.3);
+        }
+
+        .waitlist-item .position {
+            font-size: 20px;
+            font-weight: 800;
+            color: #6b7280;
+            min-width: 40px;
+        }
+
+        .waitlist-item .info .name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .waitlist-item .info .details {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+    .priority-urgent {
+        color: #dc2626;
+    }
+
+    .priority-high {
+        color: #b45309;
+    }
+
+    .priority-medium {
+        color: #059669;
+    }
+
+    .priority-low {
+        color: #6b7280;
+    }
+
+    .score-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-list-ol"></i> Priority Waitlist</h1>
+    <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card empty-state">
+        <i class="fas fa-check-circle"></i>
+        <h4 style="color:#4b5563;">No Pending Requests</h4>
+        <p style="color:#9ca3af;">All donation requests have been fulfilled.</p>
+    </div>
+}
+else
+{
+    <div style="margin-bottom:16px;color:#6b7280;font-size:13px;">
+        <i class="fas fa-info-circle"></i> Students are prioritized based on urgency, grade level, and wait time.
+    </div>
+
+        // Remove the extra @ here - just use foreach without @
+        foreach (var item in Model.OrderBy(m => m.WaitListPosition))
+        {
+            var priorityClass = item.Priority == ElevateED.Models.RequestPriority.Urgent ? "priority-urgent" :
+                               item.Priority == ElevateED.Models.RequestPriority.High ? "priority-high" :
+                               item.Priority == ElevateED.Models.RequestPriority.Medium ? "priority-medium" : "priority-low";
+            <div class="waitlist-item">
+                <div class="position">#@item.WaitListPosition</div>
+                <div class="info" style="flex:1;">
+                    <div class="name">@item.StudentName <span style="font-size:12px;color:#6b7280;">(@item.StudentNumber)</span></div>
+                    <div class="details">
+                        <span>Needs: @item.ItemNeeded</span> |
+                        <span class="@priorityClass">@item.Priority</span> |
+                        <span>Score: @item.PriorityScore</span> |
+                        <span>Requested: @item.RequestDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="score-badge">@item.PriorityScore pts</span>
+                </div>
+            </div>
+        }
+    }

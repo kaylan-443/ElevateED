@@ -1,0 +1,306 @@
+@model ElevateED.Services.FoodAllocationPlan
+@{
+    ViewBag.Title = "Preview Food Allocation";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "automatchfood";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+    var donation = ViewBag.DonationItem as ElevateED.Models.DonationItem;
+    var foodCheck = ViewBag.FoodCheck as ElevateED.Models.FoodDonationCheck;
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .summary-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .summary-tile {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 16px 20px;
+        flex: 1;
+        min-width: 140px;
+    }
+
+        .summary-tile .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .summary-tile .label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+    .card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .card h3 {
+            font-size: 15px;
+            color: #111827;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    table.plan-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+        table.plan-table th {
+            text-align: left;
+            color: #6b7280;
+            font-weight: 600;
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        table.plan-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
+        }
+
+    .priority-badge {
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .priority-urgent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .priority-high {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .priority-medium {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .priority-low {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .qty-input {
+        width: 64px;
+        padding: 6px 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .excluded-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #f3f4f6;
+        font-size: 13px;
+    }
+
+        .excluded-row:last-child {
+            border-bottom: none;
+        }
+
+        .excluded-row .name {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .excluded-row .reason {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 12px 28px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9ca3af;
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-magic" style="color:#4f46e5;"></i> Preview Food Allocation</h1>
+    <a href="@Url.Action("AutoMatchFood")" class="btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-tile">
+        <div class="value">@Model.ItemName</div>
+        <div class="label">Donation item @(donation != null ? "(" + donation.FoodType + ")" : "")</div>
+    </div>
+    <div class="summary-tile">
+        <div class="value">@Model.TotalAvailable</div>
+        <div class="label">Units available</div>
+    </div>
+    <div class="summary-tile">
+        <div class="value">@Model.TotalAllocated</div>
+        <div class="label">Planned to allocate</div>
+    </div>
+    <div class="summary-tile">
+        <div class="value">@Model.EligibleStudentCount</div>
+        <div class="label">Eligible students</div>
+    </div>
+    <div class="summary-tile">
+        <div class="value">@Model.ExcludedStudentCount</div>
+        <div class="label">Excluded</div>
+    </div>
+</div>
+
+@if (foodCheck != null && foodCheck.Allergens != ElevateED.Models.FoodAllergen.None)
+{
+    <div class="card" style="border-color:rgba(245,158,11,0.4);background:#fffbeb;">
+        <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+        <strong>Contains:</strong> @foodCheck.Allergens @(!string.IsNullOrEmpty(foodCheck.AllergenDetails) ? "— " + foodCheck.AllergenDetails : "")
+    </div>
+}
+
+<div class="card">
+    <h3><i class="fas fa-users" style="color:#4f46e5;"></i> Proposed Allocation (@Model.Lines.Count student@(Model.Lines.Count != 1 ? "s" : ""))</h3>
+
+    @if (!Model.Lines.Any())
+    {
+        <div class="empty-state">No eligible waiting students for this donation right now.</div>
+    }
+    else
+    {
+        <form method="post" action="@Url.Action("CommitFoodAllocation", "Donation")" id="commitForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="donationItemId" value="@Model.DonationItemId" />
+            <input type="hidden" name="excludedCount" value="@Model.ExcludedStudentCount" />
+            <input type="hidden" name="excludedSummary" value="@(Model.Excluded.Any() ? string.Join("; ", Model.Excluded.Select(e => e.StudentName + ": " + e.Reason)) : "")" />
+
+            <div style="overflow-x:auto;">
+                <table class="plan-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Priority</th>
+                            <th>Need Score</th>
+                            <th>Recently Served</th>
+                            <th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Lines.Count; i++)
+                        {
+                            var line = Model.Lines[i];
+                            var pClass = "priority-" + line.Priority.ToString().ToLower();
+
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="Lines[@i].StudentId" value="@line.StudentId" />
+                                    <input type="hidden" name="Lines[@i].RequestId" value="@line.RequestId" />
+                                    <input type="hidden" name="Lines[@i].RequestItemId" value="@line.RequestItemId" />
+                                    <strong>@line.StudentName</strong>
+                                    <div style="color:#9ca3af;font-size:11px;">@line.StudentNumber</div>
+                                </td>
+                                <td><span class="priority-badge @pClass">@line.PriorityLabel</span></td>
+                                <td>@line.NeedScore.ToString("0.0")</td>
+                                <td>@(line.UnitsInWindow > 0 ? line.UnitsInWindow + " units recently" : "Not recently served")</td>
+                                <td><input type="number" class="qty-input" name="Lines[@i].Quantity" value="@line.AllocatedQuantity" min="0" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:20px;text-align:right;">
+                <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Commit Allocation</button>
+            </div>
+        </form>
+    }
+</div>
+
+@if (Model.Excluded.Any())
+{
+    <div class="card">
+        <h3><i class="fas fa-user-slash" style="color:#9ca3af;"></i> Excluded Students (@Model.Excluded.Count)</h3>
+        @foreach (var ex in Model.Excluded)
+        {
+            <div class="excluded-row">
+                <span class="name">@ex.StudentName</span>
+                <span class="reason">@ex.Reason</span>
+            </div>
+        }
+    </div>
+}

@@ -93,6 +93,18 @@ namespace ElevateED.Models
         public DbSet<VirtualLabAssignment> VirtualLabAssignments { get; set; }
         public DbSet<VirtualLabResult> VirtualLabResults { get; set; }
         public DbSet<VirtualLabSession> VirtualLabSessions { get; set; }
+        // Add these DbSets inside your ElevateEDContext class
+        public DbSet<DonationRequest> DonationRequests { get; set; }
+        public DbSet<DonationItem> DonationItems { get; set; }
+        public DbSet<DonationAllocation> DonationAllocations { get; set; }
+        public DbSet<DonationCampaign> DonationCampaigns { get; set; }
+        public DbSet<BulkPledge> BulkPledges { get; set; }
+        public DbSet<DonationHistory> DonationHistories { get; set; }
+        public DbSet<FoodDonationCheck> FoodDonationChecks { get; set; }
+        public DbSet<DonationRequestItem> DonationRequestItems { get; set; }
+
+        public DbSet<FoodAllocationDecision> FoodAllocationDecisions { get; set; }
+        public DbSet<FoodAllocationDecisionLine> FoodAllocationDecisionLines { get; set; }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             // Extra Classes configurations
@@ -481,6 +493,92 @@ namespace ElevateED.Models
                 .WithMany()
                 .HasForeignKey(r => r.StudentId)
                 .WillCascadeOnDelete(false);
+
+            // ============================================
+            // DONATION SYSTEM CONFIGURATIONS
+            // ============================================
+
+            // DonationRequestItem → DonationRequest (one-to-many)
+            modelBuilder.Entity<DonationRequestItem>()
+                .HasRequired(i => i.DonationRequest)
+                .WithMany(r => r.Items)
+                .HasForeignKey(i => i.DonationRequestId)
+                .WillCascadeOnDelete(true);
+
+            // DonationAllocation → DonationItem
+            modelBuilder.Entity<DonationAllocation>()
+                .HasRequired(a => a.DonationItem)
+                .WithMany(d => d.Allocations)
+                .HasForeignKey(a => a.DonationItemId)
+                .WillCascadeOnDelete(false);
+
+            // DonationAllocation → Student
+            modelBuilder.Entity<DonationAllocation>()
+                .HasRequired(a => a.Student)
+                .WithMany()
+                .HasForeignKey(a => a.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // DonationAllocation → Request
+            modelBuilder.Entity<DonationAllocation>()
+                .HasOptional(a => a.Request)
+                .WithMany(r => r.Allocations)
+                .HasForeignKey(a => a.RequestId)
+                .WillCascadeOnDelete(false);
+
+            // DonationItem → Campaign
+            modelBuilder.Entity<DonationItem>()
+                .HasOptional(d => d.Campaign)
+                .WithMany(c => c.Donations)
+                .HasForeignKey(d => d.CampaignId)
+                .WillCascadeOnDelete(false);
+
+            // DonationItem → TargetStudent
+            modelBuilder.Entity<DonationItem>()
+                .HasOptional(d => d.TargetStudent)
+                .WithMany()
+                .HasForeignKey(d => d.TargetStudentId)
+                .WillCascadeOnDelete(false);
+
+            // DonationItem → FoodDonationCheck (one-to-many)
+            modelBuilder.Entity<DonationItem>()
+                .HasMany(d => d.FoodChecks)
+                .WithRequired(f => f.DonationItem)
+                .HasForeignKey(f => f.DonationItemId)
+                .WillCascadeOnDelete(false);
+
+            // BulkPledge → Campaign
+            modelBuilder.Entity<BulkPledge>()
+                .HasRequired(p => p.Campaign)
+                .WithMany(c => c.Pledges)
+                .HasForeignKey(p => p.CampaignId)
+                .WillCascadeOnDelete(false);
+
+            // DonationRequest → Student
+            modelBuilder.Entity<DonationRequest>()
+                .HasRequired(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            // DonationHistory → DonationItem
+            modelBuilder.Entity<DonationHistory>()
+                .HasRequired(h => h.DonationItem)
+                .WithMany()
+                .HasForeignKey(h => h.DonationItemId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<FoodAllocationDecision>()
+                .HasRequired(d => d.DonationItem)
+                .WithMany()
+                .HasForeignKey(d => d.DonationItemId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<FoodAllocationDecisionLine>()
+                .HasRequired(l => l.FoodAllocationDecision)
+                .WithMany(d => d.Lines)
+                .HasForeignKey(l => l.FoodAllocationDecisionId)
+                .WillCascadeOnDelete(true);
         }
     }
 }

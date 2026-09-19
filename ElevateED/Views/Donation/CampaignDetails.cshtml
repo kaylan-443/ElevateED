@@ -1,0 +1,316 @@
+﻿@model ElevateED.Models.DonationCampaign
+@{
+    ViewBag.Title = "Campaign Details - " + Model.Name;
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "campaigns";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var donations = ViewBag.Donations as List<ElevateED.Models.DonationItem> ?? new List<ElevateED.Models.DonationItem>();
+}
+
+<style>
+    .campaign-header {
+        background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+        border: 1px solid #e0e7ff;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+    }
+
+        .campaign-header .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .campaign-header .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 4px 0 12px;
+        }
+
+        .campaign-header .meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+            .campaign-header .meta span {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+    .progress-container {
+        background: #e5e7eb;
+        border-radius: 8px;
+        height: 20px;
+        overflow: hidden;
+        margin: 12px 0;
+        position: relative;
+    }
+
+        .progress-container .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #4f46e5);
+            border-radius: 8px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-container .label {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: #ffffff;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.35);
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background: #f5f3ff;
+        color: #7c3aed;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid rgba(124,58,237,0.3);
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-secondary:hover {
+            background: #ede9fe;
+            color: #7c3aed;
+            text-decoration: none;
+        }
+
+    .btn-success {
+        background: #ecfdf5;
+        color: #059669;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #a7f3d0;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-success:hover {
+            background: #d1fae5;
+            color: #059669;
+            text-decoration: none;
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .donation-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pledge-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .status-badge {
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .status-draft {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .status-active {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-completed {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .status-cancelled {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+        <h1><i class="fas fa-bullhorn"></i> Campaign Details</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="@Url.Action("BulkPledge", new { campaignId = Model.Id })" class="btn-secondary"><i class="fas fa-handshake"></i> Add Pledge</a>
+            @if (Model.Status == ElevateED.Models.CampaignStatus.Draft)
+            {
+                <button onclick="activateCampaign(@Model.Id)" class="btn-success"><i class="fas fa-play"></i> Activate</button>
+            }
+            <a href="@Url.Action("Campaigns")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    <div class="campaign-header">
+        <div class="title">@Model.Name</div>
+        <div class="subtitle">@Model.Description</div>
+        <div class="meta">
+            <span>📂 @Model.Category</span>
+            <span>📅 @Model.StartDate.ToString("dd MMM yyyy") - @Model.EndDate.ToString("dd MMM yyyy")</span>
+            <span>🎯 Target: @Model.TargetQuantity items</span>
+            <span>📦 Received: @Model.CurrentQuantity items</span>
+            <span><span class="status-badge status-@Model.Status.ToString().ToLower()">@Model.Status</span></span>
+            @if (Model.IsExternal)
+            {
+                <span>🌐 External</span>
+            }
+        </div>
+        @{
+            var progress = Model.TargetQuantity > 0 ? (int)((double)Model.CurrentQuantity / Model.TargetQuantity * 100) : 0;
+        }
+        <div class="progress-container">
+            <div class="fill" style="width:@progress%;"></div>
+            <div class="label">@progress% complete</div>
+        </div>
+    </div>
+
+    @if (donations.Any())
+    {
+        <div class="card" style="margin-bottom:16px;">
+            <h4 style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">
+                <i class="fas fa-gift"></i> Donations Received
+            </h4>
+            @foreach (var donation in donations)
+            {
+                <div class="donation-item">
+                    <div>
+                        <span style="color:#111827;">@donation.ItemName</span>
+                        <span style="color:#6b7280;font-size:12px;margin-left:8px;">x @donation.Quantity</span>
+                    </div>
+                    <div>
+                        <span class="status-badge status-@donation.Status.ToString().ToLower()">@donation.Status</span>
+                        <span style="color:#6b7280;font-size:11px;margin-left:8px;">@donation.DonationDate.ToString("dd MMM")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.Pledges.Any())
+    {
+        <div class="card">
+            <h4 style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">
+                <i class="fas fa-handshake"></i> Pledges
+            </h4>
+            @foreach (var pledge in Model.Pledges.Where(p => p.IsActive))
+            {
+                <div class="pledge-item">
+                    <div>
+                        <span style="color:#111827;">@pledge.DonorName</span>
+                        <span style="color:#6b7280;font-size:12px;margin-left:8px;">@pledge.ItemName x @pledge.QuantityPledged</span>
+                        @if (!string.IsNullOrEmpty(pledge.DonorOrganization))
+                        {
+                            <span style="color:#6b7280;font-size:11px;margin-left:8px;">(@pledge.DonorOrganization)</span>
+                        }
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="status-badge" style="background:#eef2ff;color:#4f46e5;">@pledge.QuantityDelivered/@pledge.QuantityPledged</span>
+                        <span class="status-badge status-@pledge.Status.ToString().ToLower()">@pledge.Status</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+@Html.AntiForgeryToken()
+
+<script>
+    function activateCampaign(id) {
+        if (confirm('Activate this campaign?')) {
+            var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            var headers = {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (tokenInput) {
+                headers['RequestVerificationToken'] = tokenInput.value;
+            }
+
+            fetch('@Url.Action("ActivateCampaign")', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: headers,
+                body: JSON.stringify({ id: id })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Campaign activated successfully!');
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(() => alert('An error occurred.'));
+        }
+    }
+</script>

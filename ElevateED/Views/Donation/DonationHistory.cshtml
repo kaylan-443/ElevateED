@@ -1,0 +1,226 @@
+﻿@model List<ElevateED.Models.DonationItem>
+@using ElevateED.Models
+@{
+    ViewBag.Title = "Donation History";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "history";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .filter-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .filter-bar select, .filter-bar input {
+            padding: 8px 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #111827;
+            font-size: 13px;
+        }
+
+            .filter-bar select:focus, .filter-bar input:focus {
+                outline: none;
+                border-color: #4f46e5;
+            }
+
+        .filter-bar button {
+            padding: 8px 20px;
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid rgba(79,70,229,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+            .filter-bar button:hover {
+                background: #e0e7ff;
+            }
+
+        .filter-bar .btn-clear {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #e5e7eb;
+        }
+
+            .filter-bar .btn-clear:hover {
+                background: #e5e7eb;
+            }
+
+    .donation-item {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        transition: all 0.2s;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .donation-item:hover {
+            border-color: rgba(79,70,229,0.3);
+            transform: translateX(4px);
+        }
+
+        .donation-item .info .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .donation-item .info .meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .donation-item .info .tracking {
+            font-size: 11px;
+            color: #6b7280;
+            font-family: monospace;
+        }
+
+    .status-badge {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-pendingverification {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .status-verified {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .status-allocated {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+    .status-collected {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .status-expired {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .status-rejected {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-history"></i> Donation History</h1>
+    <a href="@Url.Action("Index")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="filter-bar">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;width:100%;align-items:center;">
+        <select name="filter">
+            <option value="">All Categories</option>
+            @foreach (var cat in ViewBag.Categories as List<string> ?? new List<string>())
+            {
+                <option value="@cat" @(Request.QueryString["filter"] == cat ? "selected" : "")>@cat</option>
+            }
+        </select>
+        <select name="status">
+            <option value="">All Statuses</option>
+            @foreach (var stat in ViewBag.Statuses as List<string> ?? new List<string>())
+            {
+                <option value="@stat" @(Request.QueryString["status"] == stat ? "selected" : "")>@stat</option>
+            }
+        </select>
+        <input type="text" name="search" placeholder="Search by item or donor..." value="@Request.QueryString["search"]" />
+        <button type="submit"><i class="fas fa-search"></i> Filter</button>
+        <a href="@Url.Action("DonationHistory")" class="btn-clear" style="padding:8px 20px;background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;font-weight:600;">Clear</a>
+    </form>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card empty-state">
+        <i class="fas fa-box-open"></i>
+        <h4 style="color:#4b5563;">No Donations Found</h4>
+        <p style="color:#9ca3af;">Try adjusting your filters or add a new donation.</p>
+    </div>
+}
+    else
+    {
+        foreach (var donation in Model)
+        {
+            var statusClass = donation.Status.ToString().ToLower();
+            <div class="donation-item" onclick="location.href='@Url.Action("DonationDetails", new { id = donation.Id })'">
+                <div class="info">
+                    <div class="title">@donation.ItemName</div>
+                    <div class="meta">
+                        <span>Category: @donation.Category</span> |
+                        <span>Type: @donation.ItemType</span> |
+                        <span>Qty: @donation.Quantity</span> |
+                        <span>Remaining: @donation.QuantityRemaining</span>
+                    </div>
+                    <div class="tracking">🔑 @donation.TrackingCode</div>
+                    <div class="meta">Donor: @donation.DonorName | @donation.DonationDate.ToString("dd MMM yyyy HH:mm")</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                    <span class="status-badge status-@statusClass">@donation.Status</span>
+                    <span style="font-size:11px;color:#6b7280;">@donation.Allocations?.Count allocations</span>
+                </div>
+            </div>
+        }
+    }

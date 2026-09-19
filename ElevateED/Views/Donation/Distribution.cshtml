@@ -1,0 +1,584 @@
+@model List<ElevateED.Models.DonationDistributionViewModel>
+@{
+    ViewBag.Title = "Donation Distribution";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "distribution";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .distribution-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .distribution-card:hover {
+            border-color: rgba(79,70,229,0.3);
+        }
+
+        .distribution-card .info .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .distribution-card .info .meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+    .btn-schedule {
+        background: #fffbeb;
+        color: #b45309;
+        border: 1px solid rgba(180,83,9,0.25);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+        .btn-schedule:hover {
+            background: #fef3c7;
+        }
+
+    .btn-collect {
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79,70,229,0.3);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+        .btn-collect:hover {
+            background: #e0e7ff;
+        }
+
+    .btn-token {
+        background: #f5f3ff;
+        color: #7c3aed;
+        border: 1px solid rgba(124,58,237,0.25);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+        .btn-token:hover {
+            background: #ede9fe;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 44px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+    .status-badge {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-ready {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .status-collected {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .ai-match-badge {
+        background: #f5f3ff;
+        border: 1px solid rgba(124,58,237,0.2);
+        border-radius: 20px;
+        padding: 2px 12px;
+        font-size: 10px;
+        color: #7c3aed;
+    }
+
+    /* Modals */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(17,24,39,0.55);
+        z-index: 2147483647;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 32px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+        .modal-box h3 {
+            color: #111827;
+            margin: 0 0 6px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-box p.sub {
+            color: #6b7280;
+            font-size: 13px;
+            margin: 0 0 18px 0;
+        }
+
+        .modal-box .form-group {
+            margin-bottom: 16px;
+        }
+
+            .modal-box .form-group label {
+                display: block;
+                font-weight: 600;
+                color: #4b5563;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .modal-box .form-group input {
+                width: 100%;
+                padding: 10px 14px;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                color: #111827;
+                font-size: 15px;
+                box-sizing: border-box;
+            }
+
+            .modal-box .form-group input#pinInput,
+            .modal-box .form-group input#qrInput {
+                text-align: center;
+                letter-spacing: 3px;
+            }
+
+                .modal-box .form-group input:focus {
+                    outline: none;
+                    border-color: #4f46e5;
+                }
+
+        .modal-box .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+            .modal-box .btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+            }
+
+        .modal-box .btn-cancel {
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 10px 24px;
+            border-radius: 30px;
+            border: 1px solid #e5e7eb;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+            .modal-box .btn-cancel:hover {
+                background: #e5e7eb;
+                color: #111827;
+            }
+
+    .token-result {
+        background: #eef2ff;
+        border: 1px solid rgba(79,70,229,0.25);
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: center;
+        margin-top: 4px;
+        display: none;
+    }
+
+        .token-result.show {
+            display: block;
+        }
+
+        .token-result .t {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .token-result .p {
+            font-family: 'Courier New', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            color: #4f46e5;
+            letter-spacing: 4px;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-dolly" style="color:#4f46e5;"></i> Donation Distribution</h1>
+    <a href="@Url.Action("Dashboard")" class="btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+        <h4 style="color:#4b5563;">No Pending Distributions</h4>
+        <p style="color:#9ca3af;">All allocations have been distributed.</p>
+    </div>
+}
+else
+{
+    foreach (var item in Model)
+    {
+        <div class="distribution-card">
+            <div class="info">
+                <div class="title">
+                    @item.StudentName
+                    <span style="font-size:12px;color:#9ca3af;">(@item.StudentNumber)</span>
+                    @if (item.AiMatchScore.HasValue)
+                    {
+                        <span class="ai-match-badge">
+                            <i class="fas fa-robot"></i> AI Score: @(item.AiMatchScore.Value * 100)%
+                            @if (!string.IsNullOrEmpty(item.AiMatchReason))
+                            {
+                                <span style="font-size:9px;color:#9ca3af;"> - @item.AiMatchReason</span>
+                            }
+                        </span>
+                    }
+                </div>
+                <div class="meta">
+                    <span>📦 @item.ItemName</span> |
+                    <span>Qty: @item.Quantity</span> |
+                    <span>Type: @item.ItemType</span>
+                </div>
+                <div class="meta">
+                    <span class="status-badge status-@item.Status.ToLower()">@item.Status</span>
+                    @if (!string.IsNullOrEmpty(item.CollectionToken))
+                    {
+                        <span style="color:#9ca3af;font-size:11px;margin-left:8px;">🔑 @item.CollectionToken</span>
+                    }
+                    @if (!string.IsNullOrEmpty(item.PinCode))
+                    {
+                        <span style="color:#9ca3af;font-size:11px;margin-left:8px;">🔒 PIN: @item.PinCode</span>
+                    }
+                    @if (item.ScheduledDate.HasValue)
+                    {
+                        <span style="color:#9ca3af;font-size:11px;margin-left:8px;">📅 @item.ScheduledDate.Value.ToString("dd MMM yyyy HH:mm")</span>
+                    }
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                @if (item.Status == "Pending")
+                {
+                    <button type="button" class="btn-schedule" onclick="openScheduleModal(@item.AllocationId)"><i class="fas fa-calendar-plus"></i> Schedule</button>
+                }
+                @if (item.Status == "Ready")
+                {
+                    <button type="button" class="btn-collect" onclick="openCollectionModal(@item.AllocationId)">
+                        <i class="fas fa-qrcode"></i> Collect
+                    </button>
+                }
+                <button type="button" class="btn-token" onclick="generateToken(@item.AllocationId, this)"><i class="fas fa-key"></i> Generate Token</button>
+            </div>
+        </div>
+    }
+}
+
+@Html.AntiForgeryToken()
+
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-calendar-plus" style="color:#4f46e5;"></i> Schedule Collection</h3>
+        <p class="sub">Pick a date and time the student can come collect this item.</p>
+
+        <div class="form-group">
+            <label>Collection Date &amp; Time</label>
+            <input type="datetime-local" id="scheduleDateInput" />
+        </div>
+
+        <button type="button" class="btn-primary" onclick="confirmSchedule()"><i class="fas fa-check"></i> Schedule</button>
+        <button type="button" class="btn-cancel" onclick="closeScheduleModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Collection Modal -->
+<div class="modal-overlay" id="collectionModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-qrcode" style="color:#4f46e5;"></i> Verify Student</h3>
+        <p class="sub">Scan the student's QR code (or type their collection token) and verify their PIN.</p>
+
+        <input type="hidden" id="allocId" />
+
+        <div class="form-group">
+            <label>Collection Token</label>
+            <input type="text" id="qrInput" placeholder="e.g. COL-ABC12345" />
+        </div>
+
+        <div class="form-group">
+            <label>PIN Code</label>
+            <input type="password" id="pinInput" placeholder="Enter 4-digit PIN" maxlength="4" inputmode="numeric" />
+        </div>
+
+        <button type="button" class="btn-primary" onclick="confirmCollection()"><i class="fas fa-check"></i> Verify &amp; Collect</button>
+        <button type="button" class="btn-cancel" onclick="closeCollectionModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Token Result Modal -->
+<div class="modal-overlay" id="tokenModal">
+    <div class="modal-box" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fas fa-key" style="color:#7c3aed;"></i> Collection Code Generated</h3>
+        <p class="sub">Share this with the student, or they can view it themselves under My Collections.</p>
+        <div class="token-result show">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Token</div>
+            <div class="t" id="tokenResultToken"></div>
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px;">PIN</div>
+            <div class="p" id="tokenResultPin"></div>
+        </div>
+        <button type="button" class="btn-cancel" style="margin-top:18px;" onclick="closeTokenModal()">Close</button>
+    </div>
+</div>
+
+<script>
+    function getVerificationHeaders() {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+        return headers;
+    }
+
+    var currentAllocationId = 0;
+
+    // ---- Collect ----
+    function openCollectionModal(allocationId) {
+        currentAllocationId = allocationId;
+        document.getElementById('allocId').value = allocationId;
+        document.getElementById('qrInput').value = '';
+        document.getElementById('pinInput').value = '';
+        document.getElementById('collectionModal').classList.add('active');
+    }
+
+    function closeCollectionModal() {
+        document.getElementById('collectionModal').classList.remove('active');
+    }
+
+    function confirmCollection() {
+        var token = document.getElementById('qrInput').value.trim();
+        var pinCode = document.getElementById('pinInput').value.trim();
+
+        if (!token || !pinCode) {
+            alert('Please enter both the collection token and PIN.');
+            return;
+        }
+
+        if (pinCode.length !== 4 || !/^\d+$/.test(pinCode)) {
+            alert('PIN must be 4 digits.');
+            return;
+        }
+
+        fetch('@Url.Action("ConfirmCollection")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: getVerificationHeaders(),
+            body: JSON.stringify({
+                allocationId: currentAllocationId,
+                token: token,
+                pinCode: pinCode
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                alert('Collection confirmed successfully!');
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    document.getElementById('collectionModal').addEventListener('click', function (e) {
+        if (e.target === this) closeCollectionModal();
+    });
+
+    // ---- Schedule ----
+    var scheduleAllocationId = 0;
+
+    function openScheduleModal(allocationId) {
+        scheduleAllocationId = allocationId;
+        var input = document.getElementById('scheduleDateInput');
+        var now = new Date(Date.now() + 60 * 60 * 1000);
+        now.setSeconds(0, 0);
+        input.value = now.toISOString().slice(0, 16);
+        document.getElementById('scheduleModal').classList.add('active');
+    }
+
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.remove('active');
+    }
+
+    function confirmSchedule() {
+        var raw = document.getElementById('scheduleDateInput').value;
+        if (!raw) {
+            alert('Please pick a date and time.');
+            return;
+        }
+        var scheduleDate = new Date(raw);
+        if (isNaN(scheduleDate)) {
+            alert('Invalid date.');
+            return;
+        }
+
+        fetch('@Url.Action("ScheduleDistribution")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: getVerificationHeaders(),
+            body: JSON.stringify({
+                allocationId: scheduleAllocationId,
+                scheduleDate: scheduleDate.toISOString()
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    document.getElementById('scheduleModal').addEventListener('click', function (e) {
+        if (e.target === this) closeScheduleModal();
+    });
+
+    // ---- Generate Token ----
+    function generateToken(allocationId) {
+        fetch('@Url.Action("GenerateCollectionToken")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: getVerificationHeaders(),
+            body: JSON.stringify({ allocationId: allocationId })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                document.getElementById('tokenResultToken').textContent = data.token;
+                document.getElementById('tokenResultPin').textContent = data.pin;
+                document.getElementById('tokenModal').classList.add('active');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    function closeTokenModal() {
+        document.getElementById('tokenModal').classList.remove('active');
+        location.reload();
+    }
+
+    document.getElementById('tokenModal').addEventListener('click', function (e) {
+        if (e.target === this) closeTokenModal();
+    });
+</script>

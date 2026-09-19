@@ -1,0 +1,328 @@
+@model ElevateED.Models.DonationDistributionViewModel
+@{
+    ViewBag.Title = "Process Collection";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "distribution";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .collection-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .collection-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .collection-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+        .collection-header .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: white;
+        }
+
+        .collection-header h2 {
+            color: #111827;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .collection-header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+        .detail-row .label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .detail-row .value {
+            color: #111827;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+    .collection-token {
+        background: #eef2ff;
+        border: 1px solid rgba(79,70,229,0.2);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        margin: 20px 0;
+    }
+
+        .collection-token .token {
+            font-family: 'Courier New', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            color: #4f46e5;
+            letter-spacing: 2px;
+        }
+
+        .collection-token .pin {
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: #4f46e5;
+            letter-spacing: 4px;
+        }
+
+    .pin-field {
+        margin: 20px 0;
+    }
+
+        .pin-field label {
+            display: block;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .pin-field input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            color: #111827;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 6px;
+        }
+
+            .pin-field input:focus {
+                outline: none;
+                border-color: #4f46e5;
+            }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        border: none;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+        .btn-confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+        }
+
+    .error-box {
+        background: #fef2f2;
+        border: 1px solid rgba(220,38,38,0.2);
+        border-radius: 12px;
+        padding: 16px;
+        color: #b91c1c;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .token-search-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        color: #111827;
+        font-size: 16px;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
+        .token-search-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="collection-container">
+    <div style="margin-bottom:20px;">
+        <a href="@Url.Action("Distribution")" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Distribution
+        </a>
+    </div>
+
+    <div class="collection-card">
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="error-box">
+                <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+            </div>
+        }
+        @if (Model.AllocationId > 0)
+        {
+            <div class="collection-header">
+                <div class="icon"><i class="fas fa-box-open"></i></div>
+                <h2>Process Collection</h2>
+                <p>Verify student identity and confirm collection</p>
+            </div>
+
+            <div class="detail-row">
+                <span class="label">Student</span>
+                <span class="value">@Model.StudentName (@Model.StudentNumber)</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Item</span>
+                <span class="value">@Model.ItemName</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Quantity</span>
+                <span class="value">@Model.Quantity</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Status</span>
+                <span class="value">@Model.Status</span>
+            </div>
+
+            <div class="collection-token">
+                <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Collection Token</div>
+                <div class="token">@Model.CollectionToken</div>
+            </div>
+
+            @if (Model.Status == "Ready")
+            {
+                <div class="pin-field">
+                    <label>Enter the student's 4-digit PIN to confirm</label>
+                    <input type="password" id="pinInput" maxlength="4" inputmode="numeric" placeholder="----" />
+                </div>
+
+                <button type="button" class="btn-confirm" onclick="confirmCollection(@Model.AllocationId, '@Model.CollectionToken')">
+                    <i class="fas fa-check"></i> Confirm Collection
+                </button>
+            }
+            else if (Model.Status == "Collected")
+            {
+                <div style="text-align:center;color:#059669;font-weight:600;padding:12px 0;">
+                    <i class="fas fa-check-circle"></i> Already collected.
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;color:#92400e;font-weight:600;padding:12px 0;">
+                    <i class="fas fa-clock"></i> Not yet scheduled for collection.
+                </div>
+            }
+        }
+        else
+        {
+            <div class="collection-header">
+                <div class="icon"><i class="fas fa-search"></i></div>
+                <h2>Enter Collection Token</h2>
+                <p>Scan or enter the student's collection token</p>
+            </div>
+
+            <form method="get" action="@Url.Action("ProcessCollection")">
+                <input type="text" name="token" class="token-search-input"
+                       placeholder="Enter collection token (e.g., COL-ABC12345)" />
+                <button type="submit" class="btn-confirm">
+                    <i class="fas fa-search"></i> Find Allocation
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    function confirmCollection(allocationId, token) {
+        var pin = document.getElementById('pinInput').value.trim();
+
+        if (!pin) {
+            alert("Please enter the student's PIN.");
+            return;
+        }
+        if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+            alert('PIN must be 4 digits.');
+            return;
+        }
+
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+
+        fetch('@Url.Action("ConfirmCollection")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headers,
+            body: JSON.stringify({
+                allocationId: allocationId,
+                token: token,
+                pinCode: pin
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                alert('Collection confirmed successfully!');
+                window.location.href = '@Url.Action("Distribution")';
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+</script>

@@ -1,0 +1,214 @@
+﻿@model ElevateED.Models.BulkPledgeViewModel
+@{
+    ViewBag.Title = "Bulk Pledge";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "campaigns";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #111827;
+            font-size: 13px;
+        }
+
+        .form-group .required {
+            color: #dc2626;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        color: #111827;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139,92,246,0.35);
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .campaign-badge {
+        background: #f5f3ff;
+        border: 1px solid #ddd6fe;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        color: #7c3aed;
+    }
+
+    .text-danger {
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-handshake"></i> Bulk Pledge</h1>
+    <a href="@Url.Action("CampaignDetails", new { id = Model.CampaignId })" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="form-container">
+    <div class="card" style="padding:30px;">
+        @if (ViewBag.CampaignName != null)
+        {
+            <div class="campaign-badge">
+                <i class="fas fa-bullhorn"></i> Campaign: @ViewBag.CampaignName
+            </div>
+        }
+
+        <p style="color:#6b7280;margin-bottom:24px;">Submit a bulk pledge from an organization or external donor.</p>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.CampaignId)
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DonorName, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DonorName, new { @class = "form-control", placeholder = "e.g., ABC Corporation" })
+                        @Html.ValidationMessageFor(m => m.DonorName, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DonorEmail, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.DonorEmail, new { @class = "form-control", placeholder = "contact@company.com", type = "email" })
+                        @Html.ValidationMessageFor(m => m.DonorEmail, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DonorOrganization)
+                        @Html.TextBoxFor(m => m.DonorOrganization, new { @class = "form-control", placeholder = "Organization name" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DonorPhone)
+                        @Html.TextBoxFor(m => m.DonorPhone, new { @class = "form-control", placeholder = "+27 82 123 4567" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Category, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.Category,
+                            new SelectList(Enum.GetValues(typeof(ElevateED.Models.DonationCategory))),
+                            "-- Select Category --", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ItemType, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.ItemType,
+                            new SelectList(Enum.GetValues(typeof(ElevateED.Models.DonationItemType))),
+                            "-- Select Type --", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.ItemType, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.ItemName, new { @class = "required" })
+                    @Html.TextBoxFor(m => m.ItemName, new { @class = "form-control", placeholder = "e.g., Mathematics Textbooks, School Uniforms" })
+                    @Html.ValidationMessageFor(m => m.ItemName, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Description)
+                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", placeholder = "Additional details about the pledged items..." })
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.QuantityPledged, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.QuantityPledged, new { @class = "form-control", type = "number", min = "1" })
+                        @Html.ValidationMessageFor(m => m.QuantityPledged, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.ExpectedDeliveryDate, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.ExpectedDeliveryDate, new { @class = "form-control", type = "date" })
+                        @Html.ValidationMessageFor(m => m.ExpectedDeliveryDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.DeliveryNotes)
+                    @Html.TextAreaFor(m => m.DeliveryNotes, new { @class = "form-control", placeholder = "Delivery instructions or special notes..." })
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Pledge</button>
+            }
+        </div>
+    </div>

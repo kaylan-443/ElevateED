@@ -1,0 +1,524 @@
+﻿@model List<ElevateED.Models.PriorityMatchViewModel>
+@{
+    ViewBag.Title = "Match Donations";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "matchdonations";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .match-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .match-card:hover {
+            border-color: rgba(79,70,229,0.3);
+        }
+
+        .match-card .info .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .match-card .info .meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .match-card .info .priority {
+            font-size: 11px;
+        }
+
+    .priority-urgent {
+        color: #dc2626;
+    }
+
+    .priority-high {
+        color: #d97706;
+    }
+
+    .priority-medium {
+        color: #059669;
+    }
+
+    .priority-low {
+        color: #6b7280;
+    }
+
+    .score-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .btn-match {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid rgba(5,150,105,0.3);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .btn-match:hover {
+            background: #d1fae5;
+        }
+
+    .btn-decline {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid rgba(220,38,38,0.3);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .btn-decline:hover {
+            background: #fee2e2;
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .stats-bar {
+        display: flex;
+        gap: 20px;
+        padding: 16px;
+        background: #ffffff;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+    }
+
+        .stats-bar .stat {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+            .stats-bar .stat strong {
+                color: #111827;
+            }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0, 0, 0, 0.85) !important;
+        z-index: 2147483647 !important;
+        overflow-y: auto !important;
+        padding: 40px 20px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+        .modal-overlay.active {
+            display: block !important;
+        }
+
+    .modal-box {
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        padding: 28px 30px !important;
+        max-width: 460px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+        position: relative !important;
+        z-index: 2147483647 !important;
+        display: block !important;
+        color: #1e293b !important;
+        box-sizing: border-box !important;
+    }
+
+        .modal-box h3 {
+            color: #1e293b !important;
+            margin: 0 0 16px 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-size: 20px !important;
+        }
+
+        .modal-box label {
+            color: #475569 !important;
+            font-weight: 600 !important;
+            display: block !important;
+            margin-bottom: 6px !important;
+            font-size: 13px !important;
+        }
+
+        .modal-box input[type="number"] {
+            width: 100% !important;
+            padding: 10px 14px !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            color: #1e293b !important;
+            font-size: 15px !important;
+            box-sizing: border-box !important;
+        }
+
+            .modal-box input[type="number"]:focus {
+                outline: none !important;
+                border-color: #4f46e5 !important;
+                background: #ffffff !important;
+            }
+
+    .modal-actions {
+        display: flex !important;
+        gap: 10px !important;
+        justify-content: flex-end !important;
+        margin-top: 20px !important;
+        padding-top: 16px !important;
+        border-top: 1px solid #f1f5f9 !important;
+    }
+
+        .modal-actions .btn-primary {
+            background: linear-gradient(135deg, #34d399, #059669) !important;
+            color: #ffffff !important;
+            padding: 10px 24px !important;
+            border: none !important;
+            border-radius: 30px !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+        }
+
+            .modal-actions .btn-primary:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 8px 20px rgba(52, 211, 153, 0.35) !important;
+            }
+
+        .modal-actions .btn-secondary {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            padding: 10px 24px !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 30px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+        }
+
+            .modal-actions .btn-secondary:hover {
+                background: #e2e8f0 !important;
+                color: #1e293b !important;
+            }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-link" style="color:#4f46e5;"></i> Match Donations
+    </h1>
+    <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="stats-bar">
+    <span class="stat"><strong>@ViewBag.PendingRequests</strong> Pending Requests</span>
+    <span class="stat"><strong>@ViewBag.AvailableDonations</strong> Available Donations</span>
+    <span class="stat"><strong>@Model.Count</strong> Potential Matches</span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card empty-state">
+        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+        <h4 style="color:#4b5563;">No Matches Available</h4>
+        <p style="color:#6b7280;">Either there are no pending requests or no available donations.</p>
+    </div>
+}
+else
+{
+        foreach (var match in Model.OrderByDescending(m => m.MatchScore))
+        {
+            var priorityClass =
+                match.Priority == ElevateED.Models.RequestPriority.Urgent ? "priority-urgent" :
+                match.Priority == ElevateED.Models.RequestPriority.High ? "priority-high" :
+                match.Priority == ElevateED.Models.RequestPriority.Medium ? "priority-medium" :
+                                                                            "priority-low";
+
+            <div class="match-card">
+                <div class="info">
+                    <div class="title">
+                        @match.StudentName
+                        <span style="font-size:12px;color:#64748b;">(@match.StudentNumber)</span>
+                    </div>
+                    <div class="meta">
+                        <span>Needs: @match.ItemNeeded</span> |
+                        <span>Priority Score: @match.PriorityScore</span> |
+                        <span>Waitlist: #@match.WaitListPosition</span>
+                    </div>
+                    <div class="meta">
+                        <span class="priority @priorityClass">@match.Priority</span>
+                        <span style="margin-left:12px;">Requested: @match.RequestDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span class="score-badge">Match: @match.MatchScore%</span>
+                    @if (match.DonationItemId.HasValue)
+                    {
+                        <span style="font-size:12px;color:#34d399;">📦 @match.DonationItemName</span>
+                        <button type="button"
+                                class="btn-match"
+                                onclick="openMatchModal(@match.RequestId, @match.DonationItemId)">
+                            Allocate
+                        </button>
+                    }
+                    else
+                    {
+                        <span style="font-size:12px;color:#d97706;">⚠️ No matching donation found</span>
+                    }
+                    <button type="button"
+                            class="btn-decline"
+                            data-item-id="@match.RequestItemId"
+                            data-item-name="@match.ItemNeeded"
+                            onclick="openDeclineModal(this)">
+                        Decline
+                    </button>
+                </div>
+            </div>
+        }
+    }
+
+<!-- Hidden form that actually submits the allocation.
+     This is a plain HTML form post — no fetch, no JSON, no headers —
+     so no filter can redirect it into a view the way it did with the
+     fetch-based call. -->
+<form id="allocationForm" method="post" action="@Url.Action("AllocateDonation", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="requestId" id="allocRequestId" value="" />
+    <input type="hidden" name="donationItemId" id="allocDonationItemId" value="" />
+    <input type="hidden" name="quantity" id="allocQuantityHidden" value="1" />
+</form>
+
+<!-- Match Modal -->
+<div class="modal-overlay" id="matchModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-hand-holding-heart"></i> Allocate Donation</h3>
+
+        <div style="margin-bottom:16px;">
+            <label>Quantity to Allocate</label>
+            <input type="number" id="allocQuantity" value="1" min="1" />
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeMatchModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="confirmAllocation()">
+                <i class="fas fa-check"></i> Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal-overlay" id="declineModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#fb7185;"></i> Decline Request Item</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Declining <strong id="declineItemName" style="color:#1e293b;"></strong> lets the student
+            know this item won't be sourced. This is visible to them right away.
+        </p>
+
+        <div style="margin-bottom:16px;">
+            <label>Reason (optional, shown to the student)</label>
+            <textarea id="declineReason" rows="3" style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-size:14px;box-sizing:border-box;font-family:inherit;"></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="closeDeclineModal()">Cancel</button>
+            <button type="button" class="btn-primary" style="background:linear-gradient(135deg,#f87171,#dc2626) !important;" onclick="confirmDecline()">
+                <i class="fas fa-times"></i> Decline Item
+            </button>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    (function () {
+        function moveModalToBody() {
+            var matchModal = document.getElementById('matchModal');
+            if (matchModal && matchModal.parentNode !== document.body) {
+                document.body.appendChild(matchModal);
+            }
+            var declineModal = document.getElementById('declineModal');
+            if (declineModal && declineModal.parentNode !== document.body) {
+                document.body.appendChild(declineModal);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', moveModalToBody);
+        } else {
+            moveModalToBody();
+        }
+    })();
+
+    var currentDeclineItemId = 0;
+
+    function openDeclineModal(btn) {
+        currentDeclineItemId = btn.getAttribute('data-item-id');
+        document.getElementById('declineItemName').textContent = btn.getAttribute('data-item-name');
+        document.getElementById('declineReason').value = '';
+        document.getElementById('declineModal').classList.add('active');
+    }
+
+    function closeDeclineModal() {
+        document.getElementById('declineModal').classList.remove('active');
+    }
+
+    function confirmDecline() {
+        var reason = document.getElementById('declineReason').value;
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+
+        fetch('@Url.Action("DeclineRequestItem", "Donation")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headers,
+            body: JSON.stringify({ id: currentDeclineItemId, reason: reason })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) {
+                location.reload();
+            } else {
+                alert((data && data.message) || 'Error declining item');
+            }
+        })
+        .catch(function () {
+            alert('An error occurred.');
+        });
+    }
+
+    document.getElementById('declineModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDeclineModal();
+    });
+
+    var currentRequestId = 0;
+    var currentDonationId = 0;
+
+    function openMatchModal(requestId, donationId) {
+        currentRequestId = requestId;
+        currentDonationId = donationId;
+        document.getElementById('allocQuantity').value = 1;
+        document.getElementById('matchModal').classList.add('active');
+    }
+
+    function closeMatchModal() {
+        document.getElementById('matchModal').classList.remove('active');
+    }
+
+    // ============================================================
+    // CONFIRM — fills the hidden form and submits it.
+    // A normal HTML form POST — the browser navigates.
+    // No fetch, no JSON, no custom headers.
+    // ============================================================
+    function confirmAllocation() {
+        var quantity = parseInt(document.getElementById('allocQuantity').value, 10);
+        if (!quantity || quantity < 1) {
+            alert('Please enter a valid quantity.');
+            return;
+        }
+
+        document.getElementById('allocRequestId').value = currentRequestId;
+        document.getElementById('allocDonationItemId').value = currentDonationId;
+        document.getElementById('allocQuantityHidden').value = quantity;
+
+        document.getElementById('allocationForm').submit();
+    }
+
+    document.getElementById('matchModal').addEventListener('click', function (e) {
+        if (e.target === this) closeMatchModal();
+    });
+</script>

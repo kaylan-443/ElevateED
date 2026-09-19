@@ -1,0 +1,340 @@
+﻿@model ElevateED.Models.DonationDashboardViewModel
+@{
+    ViewBag.Title = "Donation Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .donation-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: rgba(15,23,42,0.72);
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        backdrop-filter: blur(8px);
+    }
+
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #22d3ee;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: #93a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+
+        .stat-card.pending .number {
+            color: #fbbf24;
+        }
+
+        .stat-card.success .number {
+            color: #34d399;
+        }
+
+        .stat-card.danger .number {
+            color: #fb7185;
+        }
+
+        .stat-card.info .number {
+            color: #8b5cf6;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #22d3ee, #0891b2);
+        color: #04222b;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34,211,238,0.35);
+            color: #04222b;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background: rgba(139,92,246,0.15);
+        color: #c4b5fd;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid rgba(139,92,246,0.35);
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-secondary:hover {
+            background: rgba(139,92,246,0.25);
+            color: #c4b5fd;
+            text-decoration: none;
+        }
+
+    .content-area {
+        padding: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+            .page-header h1 i {
+                color: #22d3ee;
+            }
+
+    .card {
+        background: rgba(15,23,42,0.72);
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 16px;
+        padding: 20px;
+        backdrop-filter: blur(8px);
+    }
+
+        .card h3 {
+            color: #93a3b8;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+        }
+
+            .card h3 i {
+                color: #22d3ee;
+                margin-right: 8px;
+            }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .list-item {
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(148,163,184,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #e2e8f0;
+        font-size: 13px;
+    }
+
+        .list-item .meta {
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .list-item .status {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+    .status-pending {
+        background: rgba(251,191,36,0.2);
+        color: #fbbf24;
+    }
+
+    .status-verified {
+        background: rgba(52,211,153,0.2);
+        color: #34d399;
+    }
+
+    .status-collected {
+        background: rgba(34,211,238,0.2);
+        color: #22d3ee;
+    }
+
+    .view-link {
+        color: #22d3ee;
+        text-decoration: none;
+        font-size: 12px;
+    }
+
+        .view-link:hover {
+            text-decoration: underline;
+        }
+
+    @@media (max-width: 768px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .donation-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-hand-holding-heart"></i> Donation Management</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            @if (User.IsInRole("Student"))
+            {
+                <a href="@Url.Action("RequestDonation")" class="btn-primary"><i class="fas fa-plus"></i> Request Donation</a>
+            }
+            else
+            {
+                <a href="@Url.Action("AddDonation")" class="btn-primary"><i class="fas fa-plus"></i> Add Donation</a>
+                <a href="@Url.Action("MatchDonations")" class="btn-secondary"><i class="fas fa-link"></i> Match</a>
+                <a href="@Url.Action("Campaigns")" class="btn-secondary"><i class="fas fa-bullhorn"></i> Campaigns</a>
+                <a href="@Url.Action("Distribution")" class="btn-secondary"><i class="fas fa-truck"></i> Distribute</a>
+            }
+            <a href="@Url.Action("DonationHistory")" class="btn-secondary"><i class="fas fa-history"></i> History</a>
+        </div>
+    </div>
+
+    <div class="donation-stats">
+        <div class="stat-card">
+            <div class="number">@Model.TotalRequests</div>
+            <div class="label">Total Requests</div>
+        </div>
+        <div class="stat-card pending">
+            <div class="number">@Model.PendingRequests</div>
+            <div class="label">Pending Requests</div>
+        </div>
+        <div class="stat-card success">
+            <div class="number">@Model.FulfilledRequests</div>
+            <div class="label">Fulfilled</div>
+        </div>
+        <div class="stat-card info">
+            <div class="number">@Model.TotalDonations</div>
+            <div class="label">Donations Received</div>
+        </div>
+        <div class="stat-card pending">
+            <div class="number">@Model.PendingVerifications</div>
+            <div class="label">Pending Verification</div>
+        </div>
+        <div class="stat-card success">
+            <div class="number">@Model.AvailableDonations</div>
+            <div class="label">Available</div>
+        </div>
+        <div class="stat-card info">
+            <div class="number">@Model.TotalAllocations</div>
+            <div class="label">Allocations</div>
+        </div>
+        <div class="stat-card pending">
+            <div class="number">@Model.PendingCollection</div>
+            <div class="label">Pending Collection</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- ✅ FIXED: Recent Requests (multi-item) -->
+        <div class="card">
+            <h3><i class="fas fa-list"></i> Recent Requests</h3>
+            @if (Model.RecentRequests != null && Model.RecentRequests.Any())
+            {
+                foreach (var req in Model.RecentRequests.Take(5))
+                {
+                    var itemCount = req.Items?.Count ?? 0;
+                    var firstItemName = req.Items?.FirstOrDefault()?.ItemName ?? "No items";
+                    <div class="list-item">
+                        <div>
+                            <div>@req.Student?.FullName</div>
+                            <div class="meta">
+                                @firstItemName
+                                @if (itemCount > 1)
+                                {
+                                    <span> + @(itemCount - 1) more</span>
+                                }
+                                • @req.RequestDate.ToString("dd MMM")
+                            </div>
+                        </div>
+                        <span class="status status-@(req.IsFulfilled ? "verified" : "pending")">
+                            @(req.IsFulfilled ? "Fulfilled" : "Pending")
+                        </span>
+                    </div>
+                }
+                <a href="@Url.Action("MyRequests")" class="view-link">View All →</a>
+            }
+            else
+            {
+                <p style="color:#64748b;text-align:center;padding:20px;">No recent requests</p>
+            }
+        </div>
+
+        <!-- Recent Donations (unchanged) -->
+        <div class="card">
+            <h3><i class="fas fa-gift"></i> Recent Donations</h3>
+            @if (Model.RecentDonations != null && Model.RecentDonations.Any())
+            {
+                foreach (var don in Model.RecentDonations.Take(5))
+                {
+                    <div class="list-item">
+                        <div>
+                            <div>@don.ItemName</div>
+                            <div class="meta">@don.Quantity items - @don.DonationDate.ToString("dd MMM")</div>
+                        </div>
+                        <span class="status status-@(don.Status.ToString().ToLower())">@don.Status</span>
+                    </div>
+                }
+                <a href="@Url.Action("DonationHistory")" class="view-link">View All →</a>
+            }
+            else
+            {
+                <p style="color:#64748b;text-align:center;padding:20px;">No recent donations</p>
+            }
+        </div>
+
+        @if (Model.ActiveCampaigns != null && Model.ActiveCampaigns.Any())
+        {
+            <div class="card" style="grid-column:1/-1;">
+                <h3><i class="fas fa-bullhorn"></i> Active Campaigns</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                    @foreach (var campaign in Model.ActiveCampaigns)
+                    {
+                        <div style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.15);border-radius:12px;padding:12px 16px;flex:1;min-width:150px;">
+                            <div style="font-weight:700;color:#e2e8f0;">@campaign.Name</div>
+                            <div style="font-size:11px;color:#64748b;">@campaign.CurrentQuantity / @campaign.TargetQuantity items</div>
+                            <div style="font-size:10px;color:#64748b;">Ends: @campaign.EndDate.ToString("dd MMM yyyy")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

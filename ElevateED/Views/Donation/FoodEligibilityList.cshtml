@@ -1,0 +1,258 @@
+﻿@model List<ElevateED.Models.FoodEligibilityListViewModel>
+@{
+    ViewBag.Title = "Food Safety Report";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "foodeligibility";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 18px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card.pending .number {
+            color: #b45309;
+        }
+
+        .stat-card.success .number {
+            color: #059669;
+        }
+
+        .stat-card.danger .number {
+            color: #dc2626;
+        }
+
+        .stat-card.info .number {
+            color: #4f46e5;
+        }
+
+        .stat-card.warning .number {
+            color: #d97706;
+        }
+
+    .eligibility-item {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .eligibility-item:hover {
+            border-color: rgba(79,70,229,0.3);
+        }
+
+        .eligibility-item .info .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .eligibility-item .info .meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+    .status-badge {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-warning {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .badge-success {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .badge-danger {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .badge-secondary {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .badge-info {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+    .reasons-box {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #dc2626;
+        margin-top: 6px;
+        max-width: 640px;
+    }
+
+    .btn-view {
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid rgba(79,70,229,0.3);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 12px;
+    }
+
+        .btn-view:hover {
+            background: #e0e7ff;
+            color: #4f46e5;
+            text-decoration: none;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-shield-alt"></i> Food Safety Report
+    </h1>
+    <a href="@Url.Action("Dashboard")" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="stats-grid">
+        <div class="stat-card success">
+            <div class="number">@ViewBag.ApprovedCount</div>
+            <div class="label">✅ Auto-Approved</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="number">@ViewBag.RejectedCount</div>
+            <div class="label">❌ Auto-Rejected</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="number">@ViewBag.ExpiredCount</div>
+            <div class="label">⚠️ Expired</div>
+        </div>
+        <div class="stat-card info">
+            <div class="number">@ViewBag.TotalCount</div>
+            <div class="label">📦 Total Evaluated</div>
+        </div>
+    </div>
+
+    <p style="color:#6b7280;font-size:13px;margin-bottom:16px;">
+        <i class="fas fa-info-circle"></i>
+        The system evaluates every food donation automatically when it's submitted.
+        This page is a read-only audit log — no manual approval is required.
+    </p>
+
+    @if (!Model.Any())
+    {
+        <div class="card empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4 style="color:#4b5563;">No Food Donations Yet</h4>
+            <p style="color:#9ca3af;">No food donations have been submitted for evaluation.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model.OrderByDescending(i => i.CheckedAt))
+        {
+            <div class="eligibility-item">
+                <div class="info" style="flex:1;min-width:260px;">
+                    <div class="title">
+                        @item.ItemName
+                        <span style="font-size:12px;color:#6b7280;font-weight:400;">x @item.Quantity</span>
+                    </div>
+                    <div class="meta">
+                        <span>🍽️ @item.FoodType</span> |
+                        <span>📅 Expiry: @item.ExpiryDate.ToString("dd MMM yyyy")</span> |
+                        <span>👤 @item.DonorName</span>
+                    </div>
+                    <div class="meta">
+                        <span>🤖 Decided by: @(string.IsNullOrEmpty(item.CheckerName) ? "System" : item.CheckerName)</span> |
+                        <span>🕒 @item.CheckedAt.ToString("dd MMM yyyy HH:mm")</span>
+                    </div>
+                    @if (item.Status == ElevateED.Models.FoodDonationStatus.Rejected
+                         || item.Status == ElevateED.Models.FoodDonationStatus.Expired)
+                    {
+                        <div class="reasons-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @item.StatusDisplay
+                        </div>
+                    }
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span class="status-badge @item.StatusBadgeClass">@item.StatusDisplay</span>
+                    <a href="@Url.Action("FoodEligibilityCheck", new { id = item.DonationItemId })" class="btn-view">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+            </div>
+        }
+    }

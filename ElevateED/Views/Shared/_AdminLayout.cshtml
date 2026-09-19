@@ -412,7 +412,14 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
-                @RenderSection("SidebarNav", required: false)
+                @if (IsSectionDefined("SidebarNav"))
+                {
+                    @RenderSection("SidebarNav", required: false)
+                }
+                else
+                {
+                    @Html.Partial("_AdminSidebar")
+                }
             </nav>
         </aside>
 

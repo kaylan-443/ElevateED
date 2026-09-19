@@ -1,0 +1,951 @@
+﻿@model List<ElevateED.Models.DonationRequest>
+@{
+    ViewBag.Title = "My Donation Requests";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "myrequests";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .requests-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    .request-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .request-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .request-card-header .date {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .request-card-header .status {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+    .status-active {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-fulfilled {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .items-list {
+        margin-bottom: 12px;
+    }
+
+    .request-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px dashed #f1f5f9;
+        gap: 12px;
+    }
+
+        .request-item:last-child {
+            border-bottom: none;
+        }
+
+    .item-info {
+        flex: 1;
+    }
+
+        .item-info .name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .item-info .details {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+    .item-meta {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .item-qty {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+        .item-qty.received {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+    .priority-badge {
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .priority-urgent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .priority-high {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .priority-medium {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .priority-low {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .food-item {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        border: 1px solid rgba(16,185,129,0.2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 8px;
+    }
+
+        .food-item .name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #065f46;
+        }
+
+        .food-item .diet-tags {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+    .diet-tag {
+        background: rgba(16,185,129,0.12);
+        color: #047857;
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .food-item .status-line {
+        margin-top: 8px;
+        font-size: 12.5px;
+        color: #475569;
+    }
+
+        .food-item .status-line.allocated {
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .food-item .status-line.waiting {
+            color: #92400e;
+        }
+
+    .collection-banner {
+        background: rgba(245,158,11,0.08);
+        border: 1px solid rgba(245,158,11,0.25);
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        color: #92400e;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .collection-banner i {
+            font-size: 18px;
+            color: #f59e0b;
+        }
+
+        .collection-banner a {
+            color: #92400e;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+    .request-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        background: rgba(239,68,68,0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.3);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+    /* Status badge + Track button */
+    .status-badge {
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-badge.status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-badge.status-allocated {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.status-declined {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .btn-track {
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid rgba(79,70,229,0.25);
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .btn-track:hover {
+            background: #e0e7ff;
+        }
+
+    .item-status-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    /* Tracking modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15,23,42,0.6);
+        z-index: 2147483647;
+        overflow-y: auto;
+        padding: 40px 20px;
+        box-sizing: border-box;
+    }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 28px 30px;
+        max-width: 440px;
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        position: relative;
+        box-sizing: border-box;
+    }
+
+        .modal-box h3 {
+            color: #1e293b;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 19px;
+        }
+
+        .modal-box .modal-sub {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .modal-box .btn-close-modal {
+            position: absolute;
+            top: 20px;
+            right: 22px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+    .track-steps {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .track-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+
+        .track-step .dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px auto;
+            font-size: 12px;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .track-step .line {
+            position: absolute;
+            top: 13px;
+            left: -50%;
+            width: 100%;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+        .track-step:first-child .line {
+            display: none;
+        }
+
+        .track-step .label {
+            font-size: 10.5px;
+            color: #94a3b8;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .track-step.done .dot {
+            background: #10b981;
+            color: white;
+        }
+
+        .track-step.done .line {
+            background: #10b981;
+        }
+
+        .track-step.active .dot {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .track-step.done .label,
+        .track-step.active .label {
+            color: #1e293b;
+        }
+
+    .track-detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #f1f5f9;
+        font-size: 13px;
+    }
+
+        .track-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .track-detail-row .label {
+            color: #64748b;
+        }
+
+        .track-detail-row .value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+    .decline-banner {
+        background: rgba(239,68,68,0.08);
+        border: 1px solid rgba(239,68,68,0.25);
+        border-radius: 10px;
+        padding: 14px 16px;
+        color: #991b1b;
+        font-size: 13px;
+    }
+
+        .decline-banner strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+    @@media (max-width: 640px) {
+        .request-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .request-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="requests-container">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <div class="page-header">
+        <h1><i class="fas fa-list" style="color:#4f46e5;"></i> My Requests</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="@Url.Action("RequestDonation")" class="btn-primary">
+                <i class="fas fa-plus"></i> New Request
+            </a>
+            <a href="@Url.Action("MyCollections")" class="btn-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                <i class="fas fa-box-open"></i> My Collections
+            </a>
+            <a href="@Url.Action("Dashboard")" class="btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-hand-holding-heart"></i>
+            <h4>No Donation Requests</h4>
+            <p>You haven't made any donation requests yet.</p>
+            <a href="@Url.Action("RequestDonation")" class="btn-primary" style="margin-top:12px;">
+                Request Donation
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var request in Model)
+        {
+            var statusClass = request.IsFulfilled
+                ? "status-fulfilled"
+                : (request.IsActive ? "status-active" : "status-cancelled");
+
+            var statusText = request.IsFulfilled
+                ? "✅ Fulfilled"
+                : (request.IsActive ? "🔄 Active" : "❌ Cancelled");
+
+            var itemCount = request.Items != null ? request.Items.Count : 0;
+
+            var hasReadyCollection = request.Allocations != null
+                && request.Allocations.Any(a => a.IsActive && a.Status == "Ready");
+
+            <div class="request-card">
+                <div class="request-card-header">
+                    <div>
+                        <strong style="color:#1e293b;">Request #@request.Id</strong>
+                        <span class="date" style="margin-left:8px;">
+                            @itemCount item@(itemCount != 1 ? "s" : "") •
+                            @request.RequestDate.ToString("dd MMM yyyy")
+                        </span>
+                    </div>
+                    <span class="status @statusClass">@statusText</span>
+                </div>
+
+                @if (hasReadyCollection)
+                {
+                    <div class="collection-banner">
+                        <i class="fas fa-bell"></i>
+                        <span>
+                            <strong>Ready for collection!</strong>
+                            One or more items are waiting for you.
+                            <a href="@Url.Action("MyCollections")">View collection details →</a>
+                        </span>
+                    </div>
+                }
+
+                <div class="items-list">
+                    @if (request.Items != null && request.Items.Any())
+                    {
+                        foreach (var item in request.Items)
+                        {
+                            if (item.Category == ElevateED.Models.DonationCategory.Food)
+                            {
+                                // ── Food item ──
+                                var dietRaw = (item.DietaryRequirements ?? "").Trim();
+                                var diets = new List<string>();
+
+                                if (string.IsNullOrEmpty(dietRaw))
+                                {
+                                    diets.Add("No restrictions");
+                                }
+                                else
+                                {
+                                    var parts = dietRaw.Split(',');
+                                    foreach (var p in parts)
+                                    {
+                                        var trimmed = p.Trim();
+                                        if (trimmed.Length > 0)
+                                        {
+                                            diets.Add(trimmed);
+                                        }
+                                    }
+                                    if (diets.Count == 0)
+                                    {
+                                        diets.Add("No restrictions");
+                                    }
+                                }
+
+                                var isAllocated = item.IsFulfilled;
+                                var receivedQty = item.QuantityReceived;
+
+                                var foodPClass = "priority-" + item.Priority.ToString().ToLower();
+                                var foodPLabel = item.Priority.ToString();
+
+                                var foodStatusClass = "status-" + item.Status.ToString().ToLower();
+                                var foodStatusLabel = item.Status == ElevateED.Models.RequestItemStatus.Allocated ? "✅ Allocated"
+                                    : item.Status == ElevateED.Models.RequestItemStatus.Declined ? "❌ Declined"
+                                    : "⏳ Pending";
+
+                                <div class="food-item">
+                                    <div class="name">
+                                        🍎 Food assistance
+                                    </div>
+
+                                    <div class="diet-tags">
+                                        @foreach (var d in diets)
+                                        {
+                                            <span class="diet-tag">@d</span>
+                                        }
+                                    </div>
+
+                                    <div class="status-line">
+                                        <strong>Urgency:</strong>
+                                        <span class="priority-badge @foodPClass">@foodPLabel</span>
+                                        &nbsp; • Registered @item.CreatedAt.ToString("dd MMM yyyy")
+                                    </div>
+
+                                    @if (isAllocated && receivedQty > 0)
+                                    {
+                                        <div class="status-line allocated">
+                                            🎁 You have been allocated @receivedQty unit@(receivedQty != 1 ? "s" : "")
+                                            of food. Check your collections for pickup details.
+                                        </div>
+                                    }
+                                    else if (isAllocated)
+                                    {
+                                        <div class="status-line allocated">
+                                            ✅ Food need fulfilled.
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="status-line waiting">
+                                            ⏳ Waiting for food donation. You'll be notified when one arrives.
+                                        </div>
+                                    }
+
+                                    <div class="item-status-row">
+                                        <span class="status-badge @foodStatusClass">@foodStatusLabel</span>
+                                        <button type="button" class="btn-track" data-item-id="@item.Id" data-item-name="Food assistance" onclick="openTrackModal(this)">
+                                            <i class="fas fa-route"></i> Track
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                // ── Non-food item ──
+                                var priorityClass = "priority-" + item.Priority.ToString().ToLower();
+                                var emoji =
+                                    item.Category == ElevateED.Models.DonationCategory.Textbook ? "📚" :
+                                    item.Category == ElevateED.Models.DonationCategory.Clothing ? "👕" :
+                                    item.Category == ElevateED.Models.DonationCategory.Stationery ? "✏️" : "📦";
+
+                                var itemStatusClass = "status-" + item.Status.ToString().ToLower();
+                                var itemStatusLabel = item.Status == ElevateED.Models.RequestItemStatus.Allocated ? "✅ Allocated"
+                                    : item.Status == ElevateED.Models.RequestItemStatus.Declined ? "❌ Declined"
+                                    : "⏳ Pending";
+
+                                <div class="request-item" style="flex-direction:column;align-items:stretch;">
+                                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;width:100%;">
+                                        <div class="item-info">
+                                            <div class="name">@emoji @item.ItemName</div>
+                                            <div class="details">
+                                                @item.Category
+                                                @if (!string.IsNullOrEmpty(item.Subject))
+                                                {
+                                                    <span> • @item.Subject</span>
+                                                }
+                                                @if (!string.IsNullOrEmpty(item.GradeLevel))
+                                                {
+                                                    <span> • @item.GradeLevel</span>
+                                                }
+                                                @if (!string.IsNullOrEmpty(item.ClothingSize))
+                                                {
+                                                    <span> • Size @item.ClothingSize</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="item-meta">
+                                            @if (item.QuantityReceived > 0)
+                                            {
+                                                <span class="item-qty received">
+                                                    Received: @item.QuantityReceived / @item.QuantityRequested
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="item-qty">Qty: @item.QuantityRequested</span>
+                                            }
+                                            <span class="priority-badge @priorityClass">@item.Priority</span>
+                                        </div>
+                                    </div>
+                                    <div class="item-status-row">
+                                        <span class="status-badge @itemStatusClass">@itemStatusLabel</span>
+                                        <button type="button" class="btn-track" data-item-id="@item.Id" data-item-name="@item.ItemName" onclick="openTrackModal(this)">
+                                            <i class="fas fa-route"></i> Track
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+
+                <div class="request-actions">
+                    @if (request.IsActive && !request.IsFulfilled)
+                    {
+                        <button type="button"
+                                class="btn-danger"
+                                onclick="cancelRequest(@request.Id)">
+                            <i class="fas fa-times"></i> Cancel Request
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+<!-- Track status modal -->
+<div class="modal-overlay" id="trackModal">
+    <div class="modal-box">
+        <button type="button" class="btn-close-modal" onclick="closeTrackModal()">&times;</button>
+        <h3><i class="fas fa-route" style="color:#4f46e5;"></i> <span id="trackItemName">Item</span></h3>
+        <div class="modal-sub" id="trackSub"></div>
+        <div id="trackBody"></div>
+    </div>
+</div>
+
+<script>
+    var trackingData = @Html.Raw(ViewBag.TrackingDataJson ?? "{}");
+
+    function moveTrackModalToBody() {
+        var modal = document.getElementById('trackModal');
+        if (modal && modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', moveTrackModalToBody);
+    } else {
+        moveTrackModalToBody();
+    }
+
+    function openTrackModal(btn) {
+        var itemId = btn.getAttribute('data-item-id');
+        var itemName = btn.getAttribute('data-item-name');
+        var info = trackingData[itemId];
+
+        document.getElementById('trackItemName').textContent = itemName;
+
+        if (!info) {
+            document.getElementById('trackSub').textContent = '';
+            document.getElementById('trackBody').innerHTML = '<p style="color:#64748b;font-size:13px;">No tracking information available yet.</p>';
+            document.getElementById('trackModal').classList.add('active');
+            return;
+        }
+
+        if (info.status === 'Declined') {
+            document.getElementById('trackSub').textContent = 'This item was declined.';
+            document.getElementById('trackBody').innerHTML =
+                '<div class="decline-banner">' +
+                '<strong>Reason</strong>' +
+                escapeHtml(info.declineReason || 'No reason provided.') +
+                (info.declinedDate ? '<div style="margin-top:8px;color:#64748b;">Declined on ' + escapeHtml(info.declinedDate) + '</div>' : '') +
+                '</div>';
+            document.getElementById('trackModal').classList.add('active');
+            return;
+        }
+
+        // Work out how far along the item is.
+        // 0 = Requested only, 1 = Allocated, 2 = Ready for collection, 3 = Collected
+        var stepIndex = 0;
+        if (info.status === 'Allocated') {
+            if (info.allocationStatus === 'Collected') stepIndex = 3;
+            else if (info.allocationStatus === 'Ready') stepIndex = 2;
+            else stepIndex = 1;
+        }
+
+        var steps = ['Requested', 'Allocated', 'Ready for Collection', 'Collected'];
+        var stepsHtml = '<div class="track-steps">';
+        for (var i = 0; i < steps.length; i++) {
+            var cls = i < stepIndex ? 'done' : (i === stepIndex ? (i === 3 ? 'done' : 'active') : '');
+            stepsHtml += '<div class="track-step ' + cls + '"><div class="line"></div><div class="dot">' +
+                (i < stepIndex || (i === stepIndex && i === 3) ? '<i class="fas fa-check"></i>' : (i + 1)) +
+                '</div><div class="label">' + steps[i] + '</div></div>';
+        }
+        stepsHtml += '</div>';
+
+        var detailsHtml = '<div>';
+        detailsHtml += '<div class="track-detail-row"><span class="label">Quantity</span><span class="value">' +
+            info.quantityReceived + ' / ' + info.quantityRequested + ' received</span></div>';
+
+        if (stepIndex >= 2 && info.scheduledDate) {
+            detailsHtml += '<div class="track-detail-row"><span class="label">Collection scheduled</span><span class="value">' + escapeHtml(info.scheduledDate) + '</span></div>';
+        }
+        if (stepIndex === 2 && info.pinCode) {
+            detailsHtml += '<div class="track-detail-row"><span class="label">Your PIN code</span><span class="value">' + escapeHtml(info.pinCode) + '</span></div>';
+        }
+        if (stepIndex === 3 && info.collectedDate) {
+            detailsHtml += '<div class="track-detail-row"><span class="label">Collected on</span><span class="value">' + escapeHtml(info.collectedDate) + '</span></div>';
+        }
+        detailsHtml += '</div>';
+
+        document.getElementById('trackSub').textContent =
+            stepIndex === 0 ? 'Waiting to be matched with a donation.' :
+            stepIndex === 1 ? 'A donation has been allocated to you.' :
+            stepIndex === 2 ? 'Ready — bring your PIN to collect it.' :
+            'Collected. Thank you!';
+
+        document.getElementById('trackBody').innerHTML = stepsHtml + detailsHtml;
+        document.getElementById('trackModal').classList.add('active');
+    }
+
+    function closeTrackModal() {
+        document.getElementById('trackModal').classList.remove('active');
+    }
+
+    document.getElementById('trackModal').addEventListener('click', function (e) {
+        if (e.target === this) closeTrackModal();
+    });
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function cancelRequest(id) {
+        if (!confirm('Are you sure you want to cancel this request?')) return;
+
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+
+        fetch('@Url.Action("CancelRequest", "Donation")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headers,
+            body: JSON.stringify({ id: id })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) {
+                location.reload();
+            } else {
+                alert((data && data.message) || 'Error cancelling request');
+            }
+        })
+        .catch(function () {
+            alert('An error occurred.');
+        });
+    }
+</script>

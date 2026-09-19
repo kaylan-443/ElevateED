@@ -1,0 +1,126 @@
+﻿@model List<ElevateED.Models.DonationItem>
+@{
+    ViewBag.Title = "My Pending Deliveries";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "mydeliveries";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .delivery-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .delivery-card .info .title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .delivery-card .info .meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .delivery-card .info .tracking {
+            font-family: monospace;
+            font-size: 13px;
+            color: #4f46e5;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+    .btn-confirm {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid rgba(5,150,105,0.3);
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+        .btn-confirm:hover {
+            background: #d1fae5;
+            color: #059669;
+            text-decoration: none;
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-truck"></i> My Pending Deliveries
+    </h1>
+    <a href="@Url.Action("Dashboard")" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card empty-state">
+        <i class="fas fa-check-circle"></i>
+        <h4 style="color:#4b5563;">Nothing to Deliver</h4>
+        <p style="color:#9ca3af;">You have no donations awaiting delivery confirmation.</p>
+    </div>
+}
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="delivery-card">
+                <div class="info">
+                    <div class="title">@item.ItemName <span style="font-size:12px;color:#6b7280;">x @item.Quantity</span></div>
+                    <div class="meta">
+                        Category: @item.Category |
+                        Submitted: @item.DonationDate.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                    <div class="tracking">🔑 @item.TrackingCode</div>
+                </div>
+                <a href="@Url.Action("ConfirmDelivery", new { trackingCode = item.TrackingCode })" class="btn-confirm">
+                    <i class="fas fa-check"></i> Confirm Delivery
+                </a>
+            </div>
+        }
+    }

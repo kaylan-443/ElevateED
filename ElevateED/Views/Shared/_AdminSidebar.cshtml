@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewBag.Title = "_AdminSidebar";
 }
 <div class="nav-section">Main</div>
@@ -45,4 +44,7 @@
 </a>
 <a href="@Url.Action("Dashboard", "AdminAnnouncement")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "AdminAnnouncement" && ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">
     <i class="fas fa-robot"></i><span>AI Announcements</span>
+</a>
+<a href="@Url.Action("Dashboard", "Donation")" class="nav-item @(ViewContext.RouteData.Values["Controller"].ToString() == "Donation" ? "active" : "")">
+    <i class="fas fa-hand-holding-heart"></i><span>Donations</span>
 </a>

@@ -1,0 +1,610 @@
+﻿@{
+    ViewBag.Title = "Confirm Delivery";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "mydeliveries";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+    string initialCode = ViewBag.InitialTrackingCode as string ?? "";
+}
+
+<style>
+    .form-container {
+        max-width: 620px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .info-banner {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        color: #4338ca;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+        .info-banner strong {
+            color: #3730a3;
+        }
+
+        .info-banner .icon {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+    .card-form {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .field-group {
+        margin-bottom: 20px;
+    }
+
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        .field-group .required {
+            color: #ef4444;
+        }
+
+        .field-group .hint {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        color: #1e293b;
+        font-size: 15px;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #10b981;
+            background: white;
+        }
+
+    .tracking-input {
+        text-align: center;
+        font-family: monospace;
+        font-size: 18px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .loc-panel {
+        border-radius: 16px;
+        padding: 22px;
+        margin-bottom: 22px;
+        text-align: center;
+        border: 2px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1e40af;
+        transition: all 0.3s ease;
+    }
+
+        .loc-panel.success {
+            border-color: #10b981;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .loc-panel.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .loc-panel.warning {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+    .loc-icon {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: white;
+        margin-bottom: 14px;
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .loc-panel.success .loc-icon {
+        background: linear-gradient(135deg, #34d399, #10b981);
+    }
+
+    .loc-panel.error .loc-icon {
+        background: linear-gradient(135deg, #f87171, #ef4444);
+    }
+
+    .loc-panel.warning .loc-icon {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .loc-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .loc-message {
+        font-size: 13.5px;
+        line-height: 1.5;
+        opacity: 0.9;
+    }
+
+    .map-preview {
+        display: none;
+        margin-top: 16px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+        .map-preview.active {
+            display: block;
+        }
+
+        .map-preview iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+            display: block;
+        }
+
+        .map-preview .coords {
+            padding: 8px 12px;
+            font-size: 11px;
+            color: #64748b;
+            font-family: monospace;
+            background: rgba(255,255,255,0.7);
+            border-top: 1px solid #e5e7eb;
+        }
+
+    .btn-locate {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 12px 26px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 12px;
+    }
+
+        .btn-locate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+        }
+
+        .btn-locate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 14px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    @@keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-check-circle" style="color:#10b981;"></i> Confirm Delivery</h1>
+    <a href="@Url.Action("Dashboard")" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="form-container">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="loc-panel" id="locPanel">
+            <div class="loc-icon" id="locIcon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="loc-title" id="locTitle">Step 1: Get your location</div>
+            <div class="loc-message" id="locMessage">
+                Tap the button below and click <strong>Allow</strong> when your browser asks.
+            </div>
+
+            <button type="button" class="btn-locate" id="locateBtn" onclick="getLocation()">
+                <i class="fas fa-crosshairs"></i> Get my location
+            </button>
+
+            <div class="map-preview" id="mapPreview">
+                <iframe id="mapFrame" loading="lazy"></iframe>
+                <div class="coords" id="coordsText"></div>
+            </div>
+        </div>
+
+        <div class="info-banner">
+            <span class="icon">📍</span>
+            <strong>How this works:</strong> Enter your tracking code below. Your phone's GPS is checked
+            against the school's location — if you're within a few hundred metres, the delivery is confirmed.
+        </div>
+
+        <div class="card-form">
+            <form id="deliveryForm"
+                  method="post"
+                  action="@Url.Action("ConfirmDeliverySubmit", "Donation")"
+                  autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="field-group">
+                    <label class="required">Tracking Code</label>
+                    <input type="text"
+                           name="trackingCode"
+                           id="trackingCode"
+                           class="form-control tracking-input"
+                           placeholder="DON-YYYYMMDD-XXXXXXXX"
+                           value="@initialCode"
+                           autocomplete="off" />
+                    <span class="hint">The code shown on your donation confirmation screen.</span>
+                </div>
+
+                <!-- GPS coordinates — names must match what the controller reads from the FormCollection -->
+                <input type="hidden" name="deliveryLatitude" id="deliveryLatitude" value="" />
+                <input type="hidden" name="deliveryLongitude" id="deliveryLongitude" value="" />
+
+                <div class="field-group">
+                    <label>Delivery Notes (optional)</label>
+                    <textarea name="deliveryNotes"
+                              class="form-control"
+                              rows="3"
+                              placeholder="e.g., Handed to Mrs. Smith at reception. Packaging intact."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" id="submitButton" disabled>
+                    <i class="fas fa-check"></i> Confirm Delivery
+                </button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // ============================================================
+    //  Confirm Delivery — GPS-first, plain form POST.
+    //
+    //  The form is a normal HTML form. JS writes the coordinates
+    //  into two hidden inputs named "deliveryLatitude" and
+    //  "deliveryLongitude". The controller reads them from the
+    //  raw FormCollection, so there is no model-binding step that
+    //  can lose them.
+    // ============================================================
+
+    // ── DOM ────────────────────────────────────────────────────
+    var trackingInput = document.getElementById('trackingCode');
+    var submitBtn = document.getElementById('submitButton');
+    var locateBtn = document.getElementById('locateBtn');
+    var locPanel = document.getElementById('locPanel');
+    var locIcon = document.getElementById('locIcon');
+    var locTitle = document.getElementById('locTitle');
+    var locMessage = document.getElementById('locMessage');
+    var mapPreview = document.getElementById('mapPreview');
+    var mapFrame = document.getElementById('mapFrame');
+    var coordsText = document.getElementById('coordsText');
+    var latInput = document.getElementById('deliveryLatitude');
+    var lngInput = document.getElementById('deliveryLongitude');
+    var form = document.getElementById('deliveryForm');
+
+    var lastLat = null;
+    var lastLng = null;
+
+    // ── Panel helpers ──────────────────────────────────────────
+    function panel(kind, iconClass, title, message) {
+        locPanel.className = 'loc-panel ' + kind;
+        locIcon.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+        locTitle.textContent = title;
+        locMessage.textContent = message;
+    }
+
+    function panelSpinner(title, message) {
+        locPanel.className = 'loc-panel';
+        locIcon.innerHTML = '<i class="fas fa-spinner spin"></i>';
+        locTitle.textContent = title;
+        locMessage.textContent = message;
+    }
+
+    function refreshSubmitState() {
+        var hasGps = (typeof lastLat === 'number' && typeof lastLng === 'number');
+        var hasCode = trackingInput.value.trim().length > 0;
+        submitBtn.disabled = !(hasGps && hasCode);
+    }
+
+    // ── Write coordinates into the hidden inputs ───────────────
+    // Called from every place that matters: GPS success, every
+    // keystroke in the tracking code, and right before submit.
+    function writeCoordinatesToForm() {
+        if (typeof lastLat === 'number' && typeof lastLng === 'number') {
+            latInput.value = String(lastLat);
+            lngInput.value = String(lastLng);
+            return true;
+        }
+        return false;
+    }
+
+    // ── Main GPS function ──────────────────────────────────────
+    function getLocation() {
+        locateBtn.disabled = true;
+        locateBtn.innerHTML = '<i class="fas fa-spinner spin"></i> Getting location…';
+        panelSpinner('Getting your location…',
+            'If your browser asks for permission, click Allow.');
+
+        if (!navigator.geolocation) {
+            locateBtn.disabled = false;
+            locateBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Try again';
+            panel('error', 'fa-times', 'Not supported',
+                'This browser does not support location services. Please use Edge, Chrome or a phone.');
+            return;
+        }
+
+        // First attempt: high accuracy.
+        navigator.geolocation.getCurrentPosition(
+            onGpsSuccess,
+            function (err) {
+                console.warn('High-accuracy GPS failed, retrying with low accuracy.', err);
+                panelSpinner('Retrying with lower accuracy…',
+                    'Some devices cannot provide high-accuracy GPS. Trying a fallback.');
+
+                navigator.geolocation.getCurrentPosition(
+                    onGpsSuccess,
+                    function (err2) { onGpsError(err2); },
+                    { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+                );
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        );
+    }
+
+    function onGpsSuccess(pos) {
+        lastLat = pos.coords.latitude;
+        lastLng = pos.coords.longitude;
+        var accuracy = Math.round(pos.coords.accuracy);
+
+        // Write to hidden inputs immediately.
+        writeCoordinatesToForm();
+        refreshSubmitState();
+
+        // Map preview.
+        var delta = 0.003;
+        var bbox = (lastLng - delta) + ',' + (lastLat - delta) + ',' +
+            (lastLng + delta) + ',' + (lastLat + delta);
+        mapFrame.src = 'https://www.openstreetmap.org/export/embed.html?bbox=' +
+            encodeURIComponent(bbox) +
+            '&layer=mapnik&marker=' + lastLat + ',' + lastLng;
+        coordsText.textContent = 'Position: ' +
+            lastLat.toFixed(6) + ', ' + lastLng.toFixed(6) +
+            '  (accuracy ±' + accuracy + ' m)';
+        mapPreview.classList.add('active');
+
+        locateBtn.disabled = false;
+        locateBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh location';
+
+        panel('success', 'fa-check',
+            'Location captured',
+            'Your position has been recorded. Enter the tracking code below to submit.');
+    }
+
+    function onGpsError(err) {
+        locateBtn.disabled = false;
+        locateBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Try again';
+
+        var code = err && err.code ? err.code : 0;
+        var title = 'Location unavailable';
+        var message = 'We could not read your GPS.';
+
+        if (code === 1) {
+            title = 'Location permission denied';
+            message = 'You blocked location access for this site. ' +
+                'Open the browser settings (padlock in the address bar → Site permissions → Location) ' +
+                'and set it to Allow, then reload the page.';
+        } else if (code === 2) {
+            title = 'Location unavailable';
+            message = 'Your device cannot determine its location right now. ' +
+                'On Windows, check Settings → Privacy & security → Location ' +
+                'and make sure it is ON. Then tap Try again.';
+        } else if (code === 3) {
+            title = 'Location timed out';
+            message = 'Reading your location took too long. Tap Try again, ' +
+                'and if you are on a laptop, move near a window.';
+        } else {
+            message = 'We could not read your GPS. ' +
+                'Make sure location services are enabled on your device, then tap Try again.';
+        }
+
+        panel('error', 'fa-times', title, message);
+    }
+
+    // ── Tracking-code input: uppercase + refresh state ────────
+    trackingInput.addEventListener('input', function () {
+        var pos = this.selectionStart;
+        this.value = this.value.toUpperCase();
+        this.setSelectionRange(pos, pos);
+
+        // Keep coordinates written as the user types.
+        writeCoordinatesToForm();
+        refreshSubmitState();
+    });
+
+    // ── Submit interceptor ─────────────────────────────────────
+    // Runs in the capture phase so it fires before the browser
+    // serialises the form. Guarantees the coordinates are present.
+    form.addEventListener('submit', function (e) {
+        // Log what we're about to submit — visible in the Console.
+        console.log('[ConfirmDelivery] Submitting with:', {
+            trackingCode: trackingInput.value,
+            deliveryLatitude: latInput.value,
+            deliveryLongitude: lngInput.value,
+            lastLat: lastLat,
+            lastLng: lastLng
+        });
+
+        // Re-write the coordinates one last time.
+        var ok = writeCoordinatesToForm();
+
+        if (!ok || !latInput.value || !lngInput.value) {
+            e.preventDefault();
+            alert('Please tap "Get my location" first — the coordinates are required.');
+            getLocation();
+            return;
+        }
+
+        if (!trackingInput.value.trim()) {
+            e.preventDefault();
+            alert('Please enter your tracking code.');
+            trackingInput.focus();
+        }
+    }, true);
+
+    // ── On page load, nudge the user to click the button ──────
+    setTimeout(function () {
+        if (lastLat === null) {
+            panel('', 'fa-map-marker-alt',
+                'Step 1: Get your location',
+                'Tap "Get my location" below and click Allow when the browser asks.');
+        }
+    }, 100);
+</script>

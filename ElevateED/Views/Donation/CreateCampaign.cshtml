@@ -1,0 +1,205 @@
+﻿@model ElevateED.Models.CampaignViewModel
+@{
+    ViewBag.Title = "Create Campaign";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "campaigns";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #111827;
+            font-size: 13px;
+        }
+
+        .form-group .required {
+            color: #dc2626;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        color: #111827;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: #ffffff;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.35);
+        }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e5e7eb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+    .text-danger {
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4f46e5;
+        }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> Create Campaign</h1>
+    <a href="@Url.Action("Campaigns")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="form-container">
+    <div class="card" style="padding:30px;">
+        <p style="color:#6b7280;margin-bottom:24px;">Create a new donation campaign to drive donations for specific causes.</p>
+
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Name, new { @class = "required" })
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "e.g., Winter Clothing Drive 2024" })
+                    @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Description)
+                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", placeholder = "Describe the campaign and its goals..." })
+                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Category, new { @class = "required" })
+                        @Html.DropDownListFor(m => m.Category,
+                            new SelectList(Enum.GetValues(typeof(ElevateED.Models.DonationCategory))),
+                            "-- Select Category --", new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Category, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.TargetQuantity, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.TargetQuantity, new { @class = "form-control", type = "number", min = "1" })
+                        @Html.ValidationMessageFor(m => m.TargetQuantity, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.StartDate, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.StartDate, new { @class = "form-control", type = "datetime-local" })
+                        @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.EndDate, new { @class = "required" })
+                        @Html.TextBoxFor(m => m.EndDate, new { @class = "form-control", type = "datetime-local" })
+                        @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.TargetGroup)
+                    @Html.TextBoxFor(m => m.TargetGroup, new { @class = "form-control", placeholder = "e.g., Grade 10-12, All Students, Staff" })
+                    @Html.ValidationMessageFor(m => m.TargetGroup, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        @Html.CheckBoxFor(m => m.IsExternal)
+                        @Html.LabelFor(m => m.IsExternal, "External Campaign (visible to public donors)")
+                    </div>
+                </div>
+
+                <div class="form-group" id="externalUrlGroup" style="@(Model.IsExternal ? "" : "display:none;")">
+                    @Html.LabelFor(m => m.ExternalPortalUrl)
+                    @Html.TextBoxFor(m => m.ExternalPortalUrl, new { @class = "form-control", placeholder = "https://..." })
+                    @Html.ValidationMessageFor(m => m.ExternalPortalUrl, "", new { @class = "text-danger" })
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Create Campaign</button>
+            }
+        </div>
+    </div>
+
+<script>
+    document.getElementById('IsExternal').addEventListener('change', function() {
+        document.getElementById('externalUrlGroup').style.display = this.checked ? 'block' : 'none';
+    });
+</script>

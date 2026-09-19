@@ -376,6 +376,7 @@
     <Compile Include="Controllers\AnalyticsController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\AttendanceController.cs" />
+    <Compile Include="Controllers\DonationController.cs" />
     <Compile Include="Controllers\ExamApprovalController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarksController.cs" />
@@ -388,6 +389,7 @@
     <Compile Include="Controllers\StudentQuizController.cs" />
     <Compile Include="Controllers\TeacherController.cs" />
     <Compile Include="Controllers\TeacherQuizController.cs" />
+    <Compile Include="Filters\ValidateJsonAntiForgeryTokenAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -459,6 +461,14 @@
     <Compile Include="Migrations\202609061703157_AddVirtualLabSystem.Designer.cs">
       <DependentUpon>202609061703157_AddVirtualLabSystem.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202609111906366_AddDonationSystem.cs" />
+    <Compile Include="Migrations\202609111906366_AddDonationSystem.Designer.cs">
+      <DependentUpon>202609111906366_AddDonationSystem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202609121553379_AddRequestItemStatus.cs" />
+    <Compile Include="Migrations\202609121553379_AddRequestItemStatus.Designer.cs">
+      <DependentUpon>202609121553379_AddRequestItemStatus.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AIStudySession.cs" />
     <Compile Include="Models\Announcement.cs" />
@@ -469,6 +479,7 @@
     <Compile Include="Models\AttendanceSession.cs" />
     <Compile Include="Models\AcademicMarks.cs" />
     <Compile Include="Models\CareerGuidance.cs" />
+    <Compile Include="Models\DonationModels.cs" />
     <Compile Include="Models\StudentMarkTarget.cs" />
     <Compile Include="Models\StudyPlanner.cs" />
     <Compile Include="Models\Class.cs" />
@@ -510,6 +521,10 @@
     <Compile Include="Services\CareerGuidanceService.cs" />
     <Compile Include="Services\CareerSimulatorService.cs" />
     <Compile Include="Services\ExamReadinessService.cs" />
+    <Compile Include="Services\FoodAllocationEngine.cs" />
+    <Compile Include="Services\FoodEligibilityService.cs" />
+    <Compile Include="Services\FoodSafetyEvaluator.cs" />
+    <Compile Include="Services\SchoolLocation.cs" />
     <Compile Include="Services\StudyPlannerService.cs" />
     <Compile Include="Services\SchoolSchedule.cs" />
     <Compile Include="Services\EmailService.cs" />
@@ -597,6 +612,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Compile Include="ViewModels\VirtualLabViewModels.cs" />
+    <Compile Include="Services\AIDonationMatcher.cs" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -754,6 +770,30 @@
     <Content Include="Views\VirtualLab\MyResults.cshtml" />
     <Content Include="Views\VirtualLab\PhysicsLab.cshtml" />
     <Content Include="Views\VirtualLab\TeacherDashboard.cshtml" />
+    <Content Include="Views\Donation\AddDonation.cshtml" />
+    <Content Include="Views\Donation\AutoMatchFood.cshtml" />
+    <Content Include="Views\Donation\BulkPledge.cshtml" />
+    <Content Include="Views\Donation\CampaignDetails.cshtml" />
+    <Content Include="Views\Donation\Campaigns.cshtml" />
+    <Content Include="Views\Donation\ConfirmDelivery.cshtml" />
+    <Content Include="Views\Donation\CreateCampaign.cshtml" />
+    <Content Include="Views\Donation\Dashboard.cshtml" />
+    <Content Include="Views\Donation\Distribution.cshtml" />
+    <Content Include="Views\Donation\DonationDetails.cshtml" />
+    <Content Include="Views\Donation\DonationHistory.cshtml" />
+    <Content Include="Views\Donation\FoodEligibilityCheck.cshtml" />
+    <Content Include="Views\Donation\FoodEligibilityList.cshtml" />
+    <Content Include="Views\Donation\Index.cshtml" />
+    <Content Include="Views\Donation\MatchDonations.cshtml" />
+    <Content Include="Views\Donation\MyCollections.cshtml" />
+    <Content Include="Views\Donation\MyPendingDeliveries.cshtml" />
+    <Content Include="Views\Donation\MyRequests.cshtml" />
+    <Content Include="Views\Donation\Pledges.cshtml" />
+    <Content Include="Views\Donation\PreviewFoodAllocation.cshtml" />
+    <Content Include="Views\Donation\PriorityWaitlist.cshtml" />
+    <Content Include="Views\Donation\ProcessCollection.cshtml" />
+    <Content Include="Views\Donation\RequestDonation.cshtml" />
+    <Content Include="Views\Donation\_DonationSubNav.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -836,6 +876,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202609061703157_AddVirtualLabSystem.resx">
       <DependentUpon>202609061703157_AddVirtualLabSystem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202609111906366_AddDonationSystem.resx">
+      <DependentUpon>202609111906366_AddDonationSystem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202609121553379_AddRequestItemStatus.resx">
+      <DependentUpon>202609121553379_AddRequestItemStatus.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

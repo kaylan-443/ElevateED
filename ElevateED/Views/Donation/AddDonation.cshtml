@@ -1,0 +1,1265 @@
+﻿@model ElevateED.Models.DonationItemFormViewModel
+@{
+    ViewBag.Title = "Donate an Item";
+    ViewBag.ActivePage = "donations";
+    ViewBag.ActiveTab = "adddonation";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .btn-request {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 10px 24px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+        .btn-request:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.35);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        justify-content: center;
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+        }
+
+    .btn-danger {
+        background: rgba(239,68,68,0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.3);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+        }
+
+    .field-group {
+        margin-bottom: 16px;
+    }
+
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        .field-group .required {
+            color: #ef4444;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        color: #1e293b;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #10b981;
+            background: white;
+        }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .dynamic-section {
+        background: rgba(16,185,129,0.03);
+        border: 1px solid rgba(16,185,129,0.1);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 20px;
+    }
+
+        .dynamic-section h4 {
+            font-size: 13px;
+            color: #059669;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+    .radio-card-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin: 8px 0 4px;
+    }
+
+    .radio-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+        .radio-card:hover {
+            border-color: #10b981;
+            transform: translateY(-2px);
+            background: white;
+        }
+
+        .radio-card .emoji {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .radio-card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .radio-card .sub-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .radio-card.selected {
+            border-color: #10b981;
+            background: rgba(16,185,129,0.08);
+            box-shadow: 0 0 20px rgba(16,185,129,0.15);
+        }
+
+            .radio-card.selected .label {
+                color: #059669;
+            }
+
+    .item-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s;
+    }
+
+        .item-card:hover {
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+    .item-card-info {
+        flex: 1;
+    }
+
+        .item-card-info .title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-card-info .meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+    .category-badge {
+        background: rgba(16,185,129,0.15);
+        color: #059669;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9ca3af;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+        margin-bottom: 16px;
+    }
+
+        .empty-state i {
+            font-size: 40px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+
+    .needs-section {
+        background: rgba(79,70,229,0.05);
+        border: 1px solid rgba(79,70,229,0.15);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+
+        .needs-section h4 {
+            color: #4f46e5;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .needs-section p {
+            color: #64748b;
+            font-size: 13px;
+            margin: 0 0 12px 0;
+        }
+
+    .need-item {
+        padding: 6px 0;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 13px;
+        color: #1e293b;
+    }
+
+        .need-item:last-child {
+            border-bottom: none;
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(17,24,39,0.55) !important;
+        z-index: 2147483647 !important;
+        overflow-y: auto !important;
+        padding: 40px 20px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+        .modal-overlay.active {
+            display: block !important;
+        }
+
+    .modal {
+        background: white !important;
+        border-radius: 20px !important;
+        padding: 32px !important;
+        max-width: 700px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+        position: relative !important;
+        z-index: 2147483647 !important;
+        display: block !important;
+    }
+
+        .modal h3 {
+            color: #1e293b !important;
+            margin: 0 0 20px 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-size: 20px !important;
+        }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    @@media (max-width: 640px) {
+        .row {
+            grid-template-columns: 1fr;
+        }
+
+        .radio-card-group {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .item-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .modal {
+            padding: 24px !important;
+        }
+    }
+</style>
+
+@Html.Partial("_DonationSubNav")
+
+<div class="page-header">
+    <h1><i class="fas fa-gift" style="color:#10b981;"></i> Donate an Item</h1>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="@Url.Action("RequestDonation")" class="btn-request">
+            <i class="fas fa-hand-holding-heart"></i> Request Instead
+        </a>
+        <a href="@Url.Action("Dashboard")" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+    <div class="form-container">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        @{
+            var publicNeeds = ViewBag.PublicNeeds as List<string> ?? new List<string>();
+            int needsCount = ViewBag.NeedsCount is int ? (int)ViewBag.NeedsCount : publicNeeds.Count;
+        }
+        @if (publicNeeds.Any())
+        {
+            <div class="needs-section">
+                <h4>
+                    <i class="fas fa-hands-helping"></i>
+                    Current Needs (@needsCount request@(needsCount != 1 ? "s" : ""))
+                </h4>
+                <p>Help students by donating items they need. All student information is kept private.</p>
+                @foreach (var need in publicNeeds)
+                {
+                    <div class="need-item">@need</div>
+                }
+            </div>
+        }
+
+        <div class="card" style="background:white;border-radius:16px;padding:30px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+
+            @if (ViewBag.DonorName != null && !string.IsNullOrEmpty((string)ViewBag.DonorName))
+            {
+                <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;color:#059669;">
+                    <i class="fas fa-user"></i> Donor: @ViewBag.DonorName
+                </div>
+            }
+
+            <h3 style="font-size:18px;color:#1e293b;margin-bottom:16px;">
+                <i class="fas fa-box-open" style="color:#10b981;"></i> Your Donations
+            </h3>
+
+            <div id="emptyState" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h4 style="color:#64748b;margin-bottom:4px;">No items yet</h4>
+                <p style="font-size:13px;">Click "Add Item" below to start donating</p>
+            </div>
+
+            <div id="itemsList"></div>
+
+            <button type="button" class="btn-primary" onclick="openAddItemModal()" style="margin-bottom:20px;width:100%;justify-content:center;">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+
+            <div id="submitSection" style="display:none;border-top:2px solid #f1f5f9;padding-top:20px;margin-top:20px;">
+                <p style="font-size:13px;color:#64748b;margin-bottom:12px;">
+                    <i class="fas fa-info-circle"></i> You can add more items before submitting.
+                </p>
+                <button type="button" class="btn-success" onclick="submitAllItems()">
+                    <i class="fas fa-paper-plane"></i> Submit All Donations
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+<form id="donationForm" method="post" action="@Url.Action("AddDonation", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <div id="hiddenFields"></div>
+    <input type="hidden" name="itemCount" id="itemCountInput" value="0" />
+</form>
+
+<div class="modal-overlay" id="itemModal">
+    <div class="modal">
+        <h3 id="modalTitle"><i class="fas fa-plus-circle" style="color:#10b981;"></i> Add Item to Donate</h3>
+
+        <div id="modalStep1">
+            <div class="field-group">
+                <label class="required">What are you donating?</label>
+                <div class="radio-card-group">
+                    <div class="radio-card" onclick="selectCategory(this, 'Textbook', 'Book')">
+                        <span class="emoji">📚</span>
+                        <span class="label">Textbook</span>
+                        <span class="sub-label">School books</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Clothing', 'Clothing')">
+                        <span class="emoji">👕</span>
+                        <span class="label">Clothing</span>
+                        <span class="sub-label">Uniform, Shoes</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Stationery', 'Stationery')">
+                        <span class="emoji">✏️</span>
+                        <span class="label">Stationery</span>
+                        <span class="sub-label">Pens, Books</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Food', 'Food')">
+                        <span class="emoji">🍎</span>
+                        <span class="label">Food</span>
+                        <span class="sub-label">Meals, Snacks</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Other', 'Other')">
+                        <span class="emoji">📦</span>
+                        <span class="label">Other</span>
+                        <span class="sub-label">Other items</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeItemModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="goToModalStep2()" style="width:auto;padding:10px 24px;">
+                    Next: Details →
+                </button>
+            </div>
+        </div>
+
+        <div id="modalStep2" style="display:none;">
+
+            <!-- TEXTBOOK -->
+            <div id="textbookFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-book"></i> Textbook Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Book Title / Item Name</label>
+                        <input type="text" id="itemName_textbook" class="form-control" placeholder="e.g., Study & Master Mathematics Grade 10" />
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Subject</label>
+                            <select id="subject" class="form-control">
+                                <option value="">-- Select Subject --</option>
+                                @{
+                                    var subjectList = ViewBag.Subjects as List<string> ?? new List<string>();
+                                }
+                                @foreach (var subj in subjectList)
+                                {
+                                    <option value="@subj">@subj</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="required">Grade Level</label>
+                            <select id="gradeLevel" class="form-control">
+                                <option value="">-- Select Grade --</option>
+                                <option>Grade 8</option>
+                                <option>Grade 9</option>
+                                <option>Grade 10</option>
+                                <option>Grade 11</option>
+                                <option>Grade 12</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>ISBN (optional)</label>
+                        <input type="text" id="isbn" class="form-control" placeholder="e.g., 978-0-521-12345-6" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLOTHING -->
+            <div id="clothingFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-tshirt"></i> Clothing Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Gender</label>
+                        <select id="gender" class="form-control" onchange="updateClothingTypes()">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Clothing Type</label>
+                        <select id="clothingType" class="form-control">
+                            <option value="">-- Select Gender First --</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Size</label>
+                        <select id="clothingSize" class="form-control">
+                            <option value="">-- Select Size --</option>
+                            <option>XS</option>
+                            <option>S</option>
+                            <option>M</option>
+                            <option>L</option>
+                            <option>XL</option>
+                            <option>2XL</option>
+                            <option>3XL</option>
+                            <option>4XL</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATIONERY -->
+            <div id="stationeryFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-pencil-alt"></i> Stationery Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Item Name</label>
+                        <input type="text" id="itemName_stationery" class="form-control" placeholder="e.g., Pens, Notebooks, Ruler Set" />
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Stationery Type</label>
+                            <select id="stationeryType" class="form-control">
+                                <option value="">-- Select Type --</option>
+                                <option>Pens</option>
+                                <option>Pencils</option>
+                                <option>Notebooks</option>
+                                <option>Exercise Books</option>
+                                <option>Rulers</option>
+                                <option>Erasers</option>
+                                <option>Sharpeners</option>
+                                <option>Calculators</option>
+                                <option>Geometry Sets</option>
+                                <option>Files/Folders</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Brand</label>
+                            <input type="text" id="brandPreference" class="form-control" placeholder="e.g., Bic, Faber-Castell" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOD FIELDS -->
+            <div id="foodFields" class="dynamic-fields" style="display:none;">
+
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-utensils"></i> Food Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Food Item Name</label>
+                        <input type="text" id="itemName_food" class="form-control" placeholder="e.g., Canned beans, Bread, Rice" />
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Food Type</label>
+                            <select id="foodType" class="form-control">
+                                <option value="">-- Select Food Type --</option>
+                                <option>Canned Food</option>
+                                <option>Dry Goods</option>
+                                <option>Fresh Produce</option>
+                                <option>Bread & Bakery</option>
+                                <option>Snacks</option>
+                                <option>Beverages</option>
+                                <option>Ready Meals</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="required">Dietary Info</label>
+                            <select id="dietaryRequirements" class="form-control">
+                                <option value="">-- None --</option>
+                                <option>Halal</option>
+                                <option>Kosher</option>
+                                <option>Vegetarian</option>
+                                <option>Vegan</option>
+                                <option>Gluten-Free</option>
+                                <option>Dairy-Free</option>
+                                <option>Nut-Free</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dynamic-section" style="background:rgba(239,68,68,0.03);border-color:rgba(239,68,68,0.12);">
+                    <h4 style="color:#dc2626;"><i class="fas fa-shield-alt"></i> Food Safety Questionnaire</h4>
+                    <p style="font-size:12px;color:#64748b;margin:0 0 14px 0;">
+                        The system uses these answers to decide automatically whether the food is safe
+                        to distribute to students. Please answer honestly.
+                    </p>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Expiry Date (on packaging)</label>
+                            <input type="date" id="foodExpiryDate" class="form-control" />
+                        </div>
+                        <div class="field-group">
+                            <label>Production Date (optional)</label>
+                            <input type="date" id="foodProductionDate" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Storage Type</label>
+                            <select id="foodStorageType" class="form-control">
+                                <option value="">-- Select Storage --</option>
+                                <option value="ShelfStable">Shelf-stable (room temperature)</option>
+                                <option value="Refrigerated">Refrigerated</option>
+                                <option value="Frozen">Frozen</option>
+                                <option value="DryStorage">Dry storage</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="required">Quality Grade</label>
+                            <select id="foodQualityGrade" class="form-control">
+                                <option value="">-- Select Grade --</option>
+                                <option>Excellent</option>
+                                <option>Good</option>
+                                <option>Fair</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Allergens</label>
+                            <select id="foodAllergens" class="form-control">
+                                <option value="">-- Select Allergen --</option>
+                                <option value="None">None</option>
+                                <option value="Nuts">Nuts</option>
+                                <option value="Dairy">Dairy</option>
+                                <option value="Gluten">Gluten</option>
+                                <option value="Soy">Soy</option>
+                                <option value="Eggs">Eggs</option>
+                                <option value="Shellfish">Shellfish</option>
+                                <option value="Peanuts">Peanuts</option>
+                                <option value="Sesame">Sesame</option>
+                                <option value="Mustard">Mustard</option>
+                                <option value="Sulphites">Sulphites</option>
+                                <option value="Multiple">Multiple</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Allergen Details (optional)</label>
+                            <input type="text" id="foodAllergenDetails" class="form-control" placeholder="e.g., May contain traces of nuts" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label>Batch / Lot Number (optional)</label>
+                            <input type="text" id="foodBatchNumber" class="form-control" placeholder="e.g., B23456" />
+                        </div>
+                        <div class="field-group">
+                            <label>Storage Notes (optional)</label>
+                            <input type="text" id="foodStorageNotes" class="form-control" placeholder="e.g., Keep in a cool dry place" />
+                        </div>
+                    </div>
+
+                    <label style="display:block;margin-top:12px;font-weight:600;color:#1e293b;font-size:13px;">
+                        Please confirm each of the following:
+                    </label>
+
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodPackagingSealed" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodPackagingSealed" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Packaging is sealed and intact
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodNoDamage" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodNoDamage" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            No tears, holes, or damage to packaging
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodNoBulging" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodNoBulging" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Cans are not bulging or dented
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodNoPestDamage" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodNoPestDamage" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            No signs of pest damage
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodAppearancePassed" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodAppearancePassed" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Food looks fresh (no discoloration or mold)
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodSmellPassed" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodSmellPassed" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Food smells normal (no off odours)
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodIsCommercialSource" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodIsCommercialSource" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            From a commercial source (not home-prepared)
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodProperlyLabeled" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodProperlyLabeled" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Properly labelled with ingredients and expiry
+                        </label>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+                        <input type="checkbox" id="foodNutritionInfoPresent" style="width:18px;height:18px;accent-color:#10b981;" />
+                        <label for="foodNutritionInfoPresent" style="font-size:13px;color:#1e293b;cursor:pointer;margin:0;">
+                            Nutrition information is present
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTHER -->
+            <div id="otherFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-box"></i> Item Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Item Name</label>
+                        <input type="text" id="itemName_other" class="form-control" placeholder="e.g., School Bag, Water Bottle" />
+                    </div>
+
+                    <div class="field-group">
+                        <label>Item Category</label>
+                        <select id="itemSubCategory" class="form-control">
+                            <option value="">-- Select Sub-Category --</option>
+                            <option>School Bag</option>
+                            <option>Water Bottle</option>
+                            <option>Lunch Box</option>
+                            <option>Sports Equipment</option>
+                            <option>Art Supplies</option>
+                            <option>Musical Instrument</option>
+                            <option>Electronics</option>
+                            <option>Personal Care</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div class="field-group">
+                <label class="required">Quantity</label>
+                <input type="number" id="quantity" class="form-control" min="1" max="100" value="1" />
+            </div>
+
+            <!-- Condition -->
+            <div class="dynamic-section" style="background:rgba(139,92,246,0.03);border-color:rgba(139,92,246,0.1);">
+                <h4 style="color:#7c3aed;"><i class="fas fa-clipboard-check"></i> Item Condition</h4>
+
+                <div class="field-group">
+                    <label class="required">Condition</label>
+                    <select id="condition" class="form-control">
+                        <option value="">-- Select Condition --</option>
+                        <option>New (Never used)</option>
+                        <option>Like New (Barely used)</option>
+                        <option>Good (Minor wear)</option>
+                        <option>Fair (Visible wear but usable)</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label>Condition Notes (Optional)</label>
+                    <textarea id="conditionNotes" class="form-control" rows="2" placeholder="e.g., Small tear on page 45, cover slightly bent..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="goToModalStep1()">← Back</button>
+                <button type="button" class="btn-success" onclick="saveItem()" style="width:auto;padding:10px 24px;">
+                    <i class="fas fa-check"></i> Save Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function moveModalsToBody() {
+            var modal = document.getElementById('itemModal');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', moveModalsToBody);
+        } else {
+            moveModalsToBody();
+        }
+    })();
+
+    var items = [];
+    var currentCategory = '';
+    var currentItemType = '';
+    var editingIndex = -1;
+
+    var clothingByGender = {
+        'Male': ['Shirt', 'Trousers', 'Shorts', 'Jacket', 'Tie', 'Shoes', 'Socks', 'Blazer', 'Jersey'],
+        'Female': ['Blouse', 'Skirt', 'Trousers', 'Dress', 'Jacket', 'Shoes', 'Socks', 'Blazer', 'Jersey']
+    };
+
+    function selectCategory(el, category, itemType) {
+        var cards = document.querySelectorAll('#itemModal .radio-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('selected');
+        }
+        el.classList.add('selected');
+        currentCategory = category;
+        currentItemType = itemType;
+    }
+
+    function goToModalStep2() {
+        if (!currentCategory) { alert('Please select a category first.'); return; }
+        document.getElementById('modalStep1').style.display = 'none';
+        document.getElementById('modalStep2').style.display = 'block';
+
+        document.getElementById('textbookFields').style.display = currentCategory === 'Textbook' ? 'block' : 'none';
+        document.getElementById('clothingFields').style.display = currentCategory === 'Clothing' ? 'block' : 'none';
+        document.getElementById('stationeryFields').style.display = currentCategory === 'Stationery' ? 'block' : 'none';
+        document.getElementById('foodFields').style.display = currentCategory === 'Food' ? 'block' : 'none';
+        document.getElementById('otherFields').style.display = currentCategory === 'Other' ? 'block' : 'none';
+    }
+
+    function goToModalStep1() {
+        document.getElementById('modalStep2').style.display = 'none';
+        document.getElementById('modalStep1').style.display = 'block';
+    }
+
+    function updateClothingTypes() {
+        var gender = document.getElementById('gender').value;
+        var select = document.getElementById('clothingType');
+        select.innerHTML = '<option value="">-- Select Clothing --</option>';
+        if (gender && clothingByGender[gender]) {
+            var list = clothingByGender[gender];
+            for (var i = 0; i < list.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = list[i];
+                opt.textContent = list[i];
+                select.appendChild(opt);
+            }
+        } else {
+            select.innerHTML = '<option value="">-- Select Gender First --</option>';
+        }
+    }
+
+    function saveItem() {
+        var quantity = parseInt(document.getElementById('quantity').value, 10);
+        var condition = document.getElementById('condition').value;
+        var conditionNotes = document.getElementById('conditionNotes').value.trim();
+
+        if (!quantity || quantity < 1) { alert('Please enter a valid quantity.'); return; }
+        if (!condition) { alert('Please select the condition.'); return; }
+
+        var item = {
+            Category: currentCategory,
+            ItemType: currentItemType,
+            Quantity: quantity,
+            Condition: condition,
+            ConditionNotes: conditionNotes
+        };
+
+        if (currentCategory === 'Textbook') {
+            item.ItemName = document.getElementById('itemName_textbook').value.trim();
+            item.Subject = document.getElementById('subject').value;
+            item.GradeLevel = document.getElementById('gradeLevel').value;
+            item.ISBN = document.getElementById('isbn').value.trim();
+
+            if (!item.ItemName) { alert('Please enter the book title.'); return; }
+            if (!item.Subject) { alert('Please select a subject.'); return; }
+            if (!item.GradeLevel) { alert('Please select a grade level.'); return; }
+        }
+        else if (currentCategory === 'Clothing') {
+            var gender = document.getElementById('gender').value;
+            var clothingType = document.getElementById('clothingType').value;
+            var clothingSize = document.getElementById('clothingSize').value;
+
+            item.Gender = gender;
+            item.ClothingType = clothingType;
+            item.ClothingSize = clothingSize;
+            item.ItemName = clothingType ? (gender + ' ' + clothingType) : '';
+
+            if (!gender) { alert('Please select a gender.'); return; }
+            if (!clothingType) { alert('Please select a clothing type.'); return; }
+            if (!clothingSize) { alert('Please select a size.'); return; }
+        }
+        else if (currentCategory === 'Stationery') {
+            item.ItemName = document.getElementById('itemName_stationery').value.trim();
+            item.StationeryType = document.getElementById('stationeryType').value;
+            item.BrandPreference = document.getElementById('brandPreference').value.trim();
+
+            if (!item.ItemName) { alert('Please enter the item name.'); return; }
+            if (!item.StationeryType) { alert('Please select a stationery type.'); return; }
+        }
+        else if (currentCategory === 'Food') {
+            item.ItemName = document.getElementById('itemName_food').value.trim();
+            item.FoodType = document.getElementById('foodType').value;
+            item.DietaryRequirements = document.getElementById('dietaryRequirements').value;
+
+            if (!item.ItemName) { alert('Please enter the food item name.'); return; }
+            if (!item.FoodType) { alert('Please select a food type.'); return; }
+
+            item.FoodExpiryDate = document.getElementById('foodExpiryDate').value;
+            item.FoodProductionDate = document.getElementById('foodProductionDate').value;
+            item.FoodStorageType = document.getElementById('foodStorageType').value;
+            item.FoodQualityGrade = document.getElementById('foodQualityGrade').value;
+            item.FoodAllergens = document.getElementById('foodAllergens').value;
+            item.FoodAllergenDetails = document.getElementById('foodAllergenDetails').value.trim();
+            item.FoodBatchNumber = document.getElementById('foodBatchNumber').value.trim();
+            item.FoodStorageNotes = document.getElementById('foodStorageNotes').value.trim();
+            item.FoodPackagingSealed = document.getElementById('foodPackagingSealed').checked;
+            item.FoodNoDamage = document.getElementById('foodNoDamage').checked;
+            item.FoodNoBulging = document.getElementById('foodNoBulging').checked;
+            item.FoodNoPestDamage = document.getElementById('foodNoPestDamage').checked;
+            item.FoodAppearancePassed = document.getElementById('foodAppearancePassed').checked;
+            item.FoodSmellPassed = document.getElementById('foodSmellPassed').checked;
+            item.FoodIsCommercialSource = document.getElementById('foodIsCommercialSource').checked;
+            item.FoodProperlyLabeled = document.getElementById('foodProperlyLabeled').checked;
+            item.FoodNutritionInfoPresent = document.getElementById('foodNutritionInfoPresent').checked;
+
+            if (!item.FoodExpiryDate) { alert('Please enter the expiry date.'); return; }
+            if (!item.FoodStorageType) { alert('Please select a storage type.'); return; }
+            if (!item.FoodQualityGrade) { alert('Please select a quality grade.'); return; }
+            if (!item.FoodAllergens) { alert('Please select the allergen information.'); return; }
+        }
+        else if (currentCategory === 'Other') {
+            item.ItemName = document.getElementById('itemName_other').value.trim();
+            item.ItemSubCategory = document.getElementById('itemSubCategory').value;
+
+            if (!item.ItemName) { alert('Please enter the item name.'); return; }
+        }
+
+        if (editingIndex >= 0) {
+            items[editingIndex] = item;
+        } else {
+            items.push(item);
+        }
+
+        renderItems();
+        closeItemModal();
+    }
+
+    function renderItems() {
+        var list = document.getElementById('itemsList');
+        var empty = document.getElementById('emptyState');
+        var submitSection = document.getElementById('submitSection');
+
+        list.innerHTML = '';
+
+        if (items.length === 0) {
+            empty.style.display = 'block';
+            submitSection.style.display = 'none';
+            return;
+        }
+
+        empty.style.display = 'none';
+        submitSection.style.display = 'block';
+
+        for (var idx = 0; idx < items.length; idx++) {
+            var item = items[idx];
+            var emoji = '📦';
+            if (item.Category === 'Textbook') emoji = '📚';
+            else if (item.Category === 'Clothing') emoji = '👕';
+            else if (item.Category === 'Stationery') emoji = '✏️';
+            else if (item.Category === 'Food') emoji = '🍎';
+
+            var details = getItemDetails(item);
+
+            var card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML =
+                '<div class="item-card-info">' +
+                '<div class="title">' +
+                emoji + ' ' + escapeHtml(item.ItemName) +
+                ' <span class="category-badge">' + item.Category + '</span>' +
+                '</div>' +
+                '<div class="meta">' +
+                'Qty: ' + item.Quantity +
+                ' | ' + details +
+                ' | ' + escapeHtml(item.Condition) +
+                '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;align-items:center;">' +
+                '<button type="button" class="btn-danger" onclick="removeItem(' + idx + ')" title="Remove">' +
+                '<i class="fas fa-trash"></i>' +
+                '</button>' +
+                '</div>';
+            list.appendChild(card);
+        }
+    }
+
+    function getItemDetails(item) {
+        var parts = [];
+        if (item.Subject) parts.push(item.Subject);
+        if (item.GradeLevel) parts.push(item.GradeLevel);
+        if (item.Gender && item.ClothingType) parts.push(item.Gender + ' ' + item.ClothingType);
+        if (item.ClothingSize) parts.push('Size ' + item.ClothingSize);
+        if (item.StationeryType) parts.push(item.StationeryType);
+        if (item.FoodType) parts.push(item.FoodType);
+        if (item.ItemSubCategory) parts.push(item.ItemSubCategory);
+        return parts.join(' • ');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function removeItem(index) {
+        if (confirm('Remove this item from your donation?')) {
+            items.splice(index, 1);
+            renderItems();
+        }
+    }
+
+    function openAddItemModal() {
+        editingIndex = -1;
+        currentCategory = '';
+        currentItemType = '';
+
+        document.getElementById('modalStep1').style.display = 'block';
+        document.getElementById('modalStep2').style.display = 'none';
+
+        var cards = document.querySelectorAll('#itemModal .radio-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('selected');
+        }
+        resetModalFields();
+        document.getElementById('itemModal').classList.add('active');
+    }
+
+    function resetModalFields() {
+        var ids = [
+            'itemName_textbook', 'subject', 'gradeLevel', 'isbn',
+            'gender', 'clothingType', 'clothingSize',
+            'itemName_stationery', 'stationeryType', 'brandPreference',
+            'itemName_food', 'foodType', 'dietaryRequirements',
+            'foodExpiryDate', 'foodProductionDate', 'foodStorageType',
+            'foodQualityGrade', 'foodAllergens', 'foodAllergenDetails',
+            'foodBatchNumber', 'foodStorageNotes',
+            'itemName_other', 'itemSubCategory',
+            'condition', 'conditionNotes'
+        ];
+        for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (el) el.value = '';
+        }
+
+        var checkIds = [
+            'foodPackagingSealed', 'foodNoDamage', 'foodNoBulging', 'foodNoPestDamage',
+            'foodAppearancePassed', 'foodSmellPassed',
+            'foodIsCommercialSource', 'foodProperlyLabeled', 'foodNutritionInfoPresent'
+        ];
+        for (var j = 0; j < checkIds.length; j++) {
+            var cb = document.getElementById(checkIds[j]);
+            if (cb) cb.checked = false;
+        }
+
+        document.getElementById('quantity').value = 1;
+    }
+
+    function closeItemModal() {
+        document.getElementById('itemModal').classList.remove('active');
+    }
+
+    function submitAllItems() {
+        if (items.length === 0) {
+            alert('Please add at least one item before submitting.');
+            return;
+        }
+
+        var container = document.getElementById('hiddenFields');
+        container.innerHTML = '';
+
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            for (var key in item) {
+                if (!item.hasOwnProperty(key)) continue;
+                var value = item[key];
+                if (value === null || value === undefined) continue;
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'Items[' + i + '].' + key;
+                input.value = value;
+                container.appendChild(input);
+            }
+        }
+
+        document.getElementById('itemCountInput').value = items.length;
+        document.getElementById('donationForm').submit();
+    }
+
+    document.getElementById('itemModal').addEventListener('click', function (e) {
+        if (e.target === this) closeItemModal();
+    });
+</script>
