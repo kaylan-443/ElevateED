@@ -1,5 +1,6 @@
 ﻿@model ElevateED.ViewModels.TeacherLabDashboardViewModel
 @using ElevateED.Models
+@using System.Web
 
 @{
     ViewBag.Title = "Virtual Lab Management - Teacher";
@@ -347,7 +348,119 @@
             .assignment-note a:hover {
                 text-decoration: underline;
             }
+
+    /* Edit Tasks modal */
+    .task-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+        .task-modal-overlay.show {
+            display: flex;
+        }
+
+    .task-modal {
+        background: white;
+        border-radius: 20px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    .task-modal-header {
+        padding: 22px 26px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+        .task-modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4f46e5;
+            margin: 0;
+        }
+
+        .task-modal-header button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+    .task-modal-body {
+        padding: 22px 26px;
+        overflow-y: auto;
+    }
+
+    .task-modal-footer {
+        padding: 18px 26px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .task-modal-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+        .task-modal-row.selected {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+
+        .task-modal-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .task-modal-row label {
+            flex: 1;
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .task-modal-row .task-marks-input {
+            width: 90px;
+            padding: 8px 10px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .task-modal-row .task-marks-input:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
 </style>
+
+@Html.AntiForgeryToken()
 
 <div class="content-area">
     <div class="page-header">
@@ -371,33 +484,47 @@
             <div class="stat-lbl">Active Assignments</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number pending">@Model.PendingSubmissions.Count</div>
+            <div class="stat-number pending">@Model.RecentResults.Count(r => r.Status == "Submitted")</div>
             <div class="stat-lbl">Pending Grading</div>
         </div>
     </div>
 
-    <!-- Pending Submissions Section (Most Urgent) -->
-    @if (Model.PendingSubmissions.Any())
+    <!-- Recent Results Section - most are auto-graded on submit; any still
+         "Submitted" have no graded tasks configured and need manual grading -->
+    @if (Model.RecentResults.Any())
     {
         <div class="section-title">
-            <i class="fas fa-clock"></i> Pending Submissions
+            <i class="fas fa-clipboard-check"></i> Recent Results
         </div>
-        foreach (var sub in Model.PendingSubmissions)
+        foreach (var sub in Model.RecentResults)
         {
-            <div class="lab-card pending-card">
+            var needsGrading = sub.Status == "Submitted";
+            <div class="lab-card @(needsGrading ? "pending-card" : "")">
                 <div class="lab-title">
-                    <i class="fas fa-flask" style="color: #f59e0b; margin-right: 8px;"></i>
+                    <i class="fas fa-flask" style="color: @(needsGrading ? "#f59e0b" : "#10b981"); margin-right: 8px;"></i>
                     @sub.Assignment.Experiment.Title
                 </div>
                 <div class="lab-meta">
                     <span class="badge-lab badge-@sub.Assignment.Experiment.LabType.ToString().ToLower()">@sub.Assignment.Experiment.LabType Lab</span>
                     <span><i class="fas fa-user"></i> Student: @sub.Student?.FullName</span>
                     <span><i class="fas fa-calendar-check"></i> Submitted: @sub.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</span>
+                    @if (needsGrading)
+                    {
+                        <span class="badge-lab" style="background:#f59e0b;color:white;">Awaiting Grading</span>
+                    }
+                    else if (sub.AutoGraded)
+                    {
+                        <span class="badge-lab" style="background:#10b981;color:white;">Auto-Graded: @sub.Score / @sub.MaxScore</span>
+                    }
+                    else
+                    {
+                        <span class="badge-lab" style="background:#3b82f6;color:white;">Graded: @sub.Score</span>
+                    }
                 </div>
                 <p><strong>Observations:</strong> @(sub.Observations?.Length > 100 ? sub.Observations.Substring(0, 100) + "..." : sub.Observations ?? "No observations recorded")</p>
                 <div>
-                    <a href="@Url.Action("GradeSubmissions", "VirtualLab", new { experimentId = sub.Assignment.ExperimentId })" class="btn-launch btn-warning-custom">
-                        <i class="fas fa-check-double"></i> Grade Submission
+                    <a href="@Url.Action("GradeSubmissions", "VirtualLab", new { experimentId = sub.Assignment.ExperimentId })" class="btn-launch @(needsGrading ? "btn-warning-custom" : "btn-outline-custom")">
+                        <i class="fas fa-@(needsGrading ? "check-double" : "eye")"></i> @(needsGrading ? "Grade Submission" : "Review")
                     </a>
                 </div>
             </div>
@@ -472,10 +599,36 @@
                     <a href="@Url.Action("GradeSubmissions", "VirtualLab", new { experimentId = exp.Id })" class="btn-launch btn-warning-custom">
                         <i class="fas fa-graduation-cap"></i> Grade Submissions
                     </a>
+                    <button type="button" class="btn-launch btn-outline-custom" onclick="openTaskModal(@exp.Id, '@exp.LabType', '@Html.Raw(HttpUtility.JavaScriptStringEncode(exp.Title))')">
+                        <i class="fas fa-list-check"></i> Edit Graded Tasks
+                    </button>
                 </div>
             </div>
         }
     }
+</div>
+
+<!-- Edit Graded Tasks modal -->
+<div class="task-modal-overlay" id="taskModalOverlay">
+    <div class="task-modal">
+        <div class="task-modal-header">
+            <h3 id="taskModalTitle">Edit Graded Tasks</h3>
+            <button type="button" onclick="closeTaskModal()">&times;</button>
+        </div>
+        <div class="task-modal-body">
+            <p style="color:#6b7280; font-size: 13px; margin-top: 0;">
+                Choose which checkpoints the simulation should grade for this experiment and how many
+                marks each is worth. Students only need to complete the tasks selected here.
+            </p>
+            <div id="taskModalList">
+                <p style="color:#94a3b8;">Loading...</p>
+            </div>
+        </div>
+        <div class="task-modal-footer">
+            <button type="button" class="btn-cancel-modal" onclick="closeTaskModal()" style="background:#e2e8f0;color:#1e293b;padding:10px 20px;border-radius:30px;border:none;font-weight:600;cursor:pointer;">Cancel</button>
+            <button type="button" class="btn-save-modal" onclick="saveTaskModal()" style="background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px 24px;border-radius:30px;border:none;font-weight:700;cursor:pointer;">Save Tasks</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -492,4 +645,131 @@
             dropdown.classList.remove('show');
         }
     });
+
+    // ---------- Edit Graded Tasks modal ----------
+    var currentTaskModalExperimentId = null;
+
+    function getAntiForgeryHeaders() {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' };
+        if (tokenInput) {
+            headers['RequestVerificationToken'] = tokenInput.value;
+        }
+        return headers;
+    }
+
+    function openTaskModal(experimentId, labType, title) {
+        currentTaskModalExperimentId = experimentId;
+        document.getElementById('taskModalTitle').textContent = 'Edit Graded Tasks - ' + title;
+        document.getElementById('taskModalList').innerHTML = '<p style="color:#94a3b8;">Loading...</p>';
+        document.getElementById('taskModalOverlay').classList.add('show');
+
+        fetch('@Url.Action("GetExperimentTasks", "VirtualLab")?experimentId=' + experimentId, {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    document.getElementById('taskModalList').innerHTML = '<p style="color:#ef4444;">' + (data.message || 'Could not load tasks.') + '</p>';
+                    return;
+                }
+                renderTaskModalList(data.tasks);
+            })
+            .catch(function () {
+                document.getElementById('taskModalList').innerHTML = '<p style="color:#ef4444;">Network error loading tasks.</p>';
+            });
+    }
+
+    function renderTaskModalList(tasks) {
+        var list = document.getElementById('taskModalList');
+        list.innerHTML = '';
+
+        if (!tasks || !tasks.length) {
+            list.innerHTML = '<p style="color:#94a3b8;">No gradable checkpoints are defined for this lab type.</p>';
+            return;
+        }
+
+        tasks.forEach(function (task) {
+            var row = document.createElement('div');
+            row.className = 'task-modal-row' + (task.selected ? ' selected' : '');
+            row.setAttribute('data-key', task.key);
+            row.setAttribute('data-label', task.label);
+
+            var checkboxId = 'modalTaskChk_' + task.key;
+
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = checkboxId;
+            checkbox.checked = !!task.selected;
+
+            var label = document.createElement('label');
+            label.setAttribute('for', checkboxId);
+            label.textContent = task.label;
+
+            var marksInput = document.createElement('input');
+            marksInput.type = 'number';
+            marksInput.className = 'task-marks-input';
+            marksInput.min = '1';
+            marksInput.max = '100';
+            marksInput.value = task.maxMarks && task.maxMarks > 0 ? task.maxMarks : 10;
+            marksInput.disabled = !task.selected;
+
+            checkbox.addEventListener('change', function () {
+                marksInput.disabled = !checkbox.checked;
+                row.classList.toggle('selected', checkbox.checked);
+            });
+
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            row.appendChild(marksInput);
+            list.appendChild(row);
+        });
+    }
+
+    function closeTaskModal() {
+        document.getElementById('taskModalOverlay').classList.remove('show');
+        currentTaskModalExperimentId = null;
+    }
+
+    function saveTaskModal() {
+        if (!currentTaskModalExperimentId) return;
+
+        var picks = [];
+        document.querySelectorAll('#taskModalList .task-modal-row').forEach(function (row) {
+            var checkbox = row.querySelector('input[type="checkbox"]');
+            var marksInput = row.querySelector('.task-marks-input');
+            if (checkbox && checkbox.checked) {
+                var marks = parseFloat(marksInput.value);
+                if (!isNaN(marks) && marks > 0) {
+                    picks.push({
+                        key: row.getAttribute('data-key'),
+                        label: row.getAttribute('data-label'),
+                        maxMarks: marks
+                    });
+                }
+            }
+        });
+
+        var body = 'experimentId=' + encodeURIComponent(currentTaskModalExperimentId) +
+            '&tasksJson=' + encodeURIComponent(JSON.stringify(picks));
+
+        fetch('@Url.Action("SaveExperimentTasks", "VirtualLab")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: getAntiForgeryHeaders(),
+            body: body
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    closeTaskModal();
+                } else {
+                    alert(data.message || 'Could not save tasks.');
+                }
+            })
+            .catch(function () {
+                alert('Network error saving tasks.');
+            });
+    }
 </script>

@@ -243,6 +243,52 @@
             transform: none;
         }
 
+    /* Graded task picker */
+    .task-picker-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+    }
+
+        .task-picker-row.selected {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+
+        .task-picker-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .task-picker-row label {
+            flex: 1;
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .task-picker-row .task-marks-input {
+            width: 90px;
+            padding: 8px 10px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .task-picker-row .task-marks-input:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+
     /* Responsive */
     @@media (max-width: 768px) {
         .content-area {
@@ -372,6 +418,17 @@
                 <small class="text-muted">JSON array format - leave empty to use default equipment for this lab type</small>
             </div>
 
+            <div class="form-group" id="taskPickerSection" style="display: none;">
+                <label class="form-label">Graded Tasks</label>
+                <small class="text-muted" style="margin-bottom: 10px;">
+                    Choose which checkpoints the simulation should grade and how many marks each is worth.
+                    Students only need to complete the tasks you select here - the system grades them
+                    automatically as soon as the experiment is submitted.
+                </small>
+                <div id="taskPickerList"></div>
+                <small class="text-muted" id="taskPickerTotal"></small>
+            </div>
+
             <div id="message" class="alert" style="display: none;"></div>
 
             <div class="row mt-4">
@@ -391,9 +448,105 @@
 </div>
 
 <script>
+    var TASK_CATALOG = @Html.Raw(ViewBag.TaskCatalogJson ?? "{}");
+
+    function renderTaskPicker(labType) {
+        var section = document.getElementById('taskPickerSection');
+        var list = document.getElementById('taskPickerList');
+        list.innerHTML = '';
+
+        var tasks = TASK_CATALOG[labType];
+        if (!labType || !tasks || !tasks.length) {
+            section.style.display = 'none';
+            updateTaskPickerTotal();
+            return;
+        }
+
+        section.style.display = 'block';
+
+        tasks.forEach(function (task) {
+            var row = document.createElement('div');
+            row.className = 'task-picker-row';
+            row.setAttribute('data-key', task.key);
+            row.setAttribute('data-label', task.label);
+
+            var checkboxId = 'taskChk_' + task.key;
+
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = checkboxId;
+
+            var label = document.createElement('label');
+            label.setAttribute('for', checkboxId);
+            label.textContent = task.label;
+
+            var marksInput = document.createElement('input');
+            marksInput.type = 'number';
+            marksInput.className = 'task-marks-input';
+            marksInput.min = '1';
+            marksInput.max = '100';
+            marksInput.value = '10';
+            marksInput.disabled = true;
+
+            checkbox.addEventListener('change', function () {
+                marksInput.disabled = !checkbox.checked;
+                row.classList.toggle('selected', checkbox.checked);
+                updateTaskPickerTotal();
+            });
+            marksInput.addEventListener('input', updateTaskPickerTotal);
+
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            row.appendChild(marksInput);
+            list.appendChild(row);
+        });
+
+        updateTaskPickerTotal();
+    }
+
+    function collectTaskPicks() {
+        var picks = [];
+        document.querySelectorAll('#taskPickerList .task-picker-row').forEach(function (row) {
+            var checkbox = row.querySelector('input[type="checkbox"]');
+            var marksInput = row.querySelector('.task-marks-input');
+            if (checkbox && checkbox.checked) {
+                var marks = parseFloat(marksInput.value);
+                if (!isNaN(marks) && marks > 0) {
+                    picks.push({
+                        key: row.getAttribute('data-key'),
+                        label: row.getAttribute('data-label'),
+                        maxMarks: marks
+                    });
+                }
+            }
+        });
+        return picks;
+    }
+
+    function updateTaskPickerTotal() {
+        var totalEl = document.getElementById('taskPickerTotal');
+        var picks = collectTaskPicks();
+        if (!picks.length) {
+            totalEl.textContent = 'No graded tasks selected yet - the submission will need to be graded manually.';
+            return;
+        }
+        var total = picks.reduce(function (sum, p) { return sum + p.maxMarks; }, 0);
+        totalEl.textContent = picks.length + ' task(s) selected - ' + total + ' marks total.';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var labTypeSelect = document.querySelector('[name="LabType"]');
+        if (labTypeSelect) {
+            labTypeSelect.addEventListener('change', function () {
+                renderTaskPicker(labTypeSelect.value);
+            });
+        }
+    });
+
     function createExperiment() {
         var form = document.getElementById('experimentForm');
         var formData = new FormData(form);
+        formData.append('TasksJson', JSON.stringify(collectTaskPicks()));
 
         var title = form.querySelector('[name="Title"]').value;
         var description = form.querySelector('[name="Description"]').value;

@@ -469,6 +469,10 @@
     <Compile Include="Migrations\202609121553379_AddRequestItemStatus.Designer.cs">
       <DependentUpon>202609121553379_AddRequestItemStatus.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202609301244345_AddVirtualLabGrading.cs" />
+    <Compile Include="Migrations\202609301244345_AddVirtualLabGrading.Designer.cs">
+      <DependentUpon>202609301244345_AddVirtualLabGrading.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AIStudySession.cs" />
     <Compile Include="Models\Announcement.cs" />
@@ -882,6 +886,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202609121553379_AddRequestItemStatus.resx">
       <DependentUpon>202609121553379_AddRequestItemStatus.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202609301244345_AddVirtualLabGrading.resx">
+      <DependentUpon>202609301244345_AddVirtualLabGrading.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

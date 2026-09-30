@@ -1,5 +1,6 @@
 ﻿@model List<ElevateED.Models.VirtualLabResult>
 @using ElevateED.Models
+@using Newtonsoft.Json.Linq
 
 @{
     ViewBag.Title = "Grade Submissions - " + ViewBag.Experiment.Title;
@@ -57,6 +58,58 @@
         border-radius: 16px;
         border: 1px solid var(--gray-200);
     }
+
+    .autograde-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .pending-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .task-breakdown {
+        margin: 15px 0;
+        padding: 12px;
+        background: var(--gray-50);
+        border-radius: 10px;
+    }
+
+    .task-breakdown-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+        .task-breakdown-row:last-child {
+            border-bottom: none;
+        }
+
+        .task-breakdown-row .task-status-done {
+            color: #10b981;
+        }
+
+        .task-breakdown-row .task-status-missed {
+            color: #ef4444;
+        }
 </style>
 
 <div class="content-area">
@@ -74,15 +127,23 @@
     {
         <div class="empty-state">
             <i class="fas fa-check-circle" style="color: var(--success);"></i>
-            <h4>No Pending Submissions</h4>
-            <p>All submissions have been graded.</p>
+            <h4>No Submissions Yet</h4>
+            <p>No students have submitted this experiment yet.</p>
         </div>
     }
     else
     {
         foreach (var submission in Model)
         {
-            <div class="submission-card" id="submission-@submission.Id">
+            var isGraded = submission.Status == "Graded";
+            JArray breakdown = null;
+            if (submission.AutoGraded && !string.IsNullOrEmpty(submission.TaskScoresJson))
+            {
+                try { breakdown = JArray.Parse(submission.TaskScoresJson); } catch { breakdown = null; }
+            }
+            var maxForInput = submission.MaxScore ?? 100;
+
+            <div class="submission-card" id="submission-@submission.Id" style="@(isGraded ? "border-left-color: var(--success);" : "")">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
                     <div>
                         <h3 style="margin: 0;">@submission.Student?.FullName</h3>
@@ -90,10 +151,40 @@
                             Student #: @submission.Student?.User?.StudentNumber
                         </p>
                     </div>
-                    <div>
-                        <small>Submitted: @submission.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</small>
+                    <div style="text-align: right;">
+                        <small>Submitted: @submission.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</small><br />
+                        @if (submission.AutoGraded)
+                        {
+                            <span class="autograde-badge"><i class="fas fa-robot"></i> Auto-Graded: @submission.Score / @submission.MaxScore</span>
+                        }
+                        else if (isGraded)
+                        {
+                            <span class="autograde-badge"><i class="fas fa-user-check"></i> Graded: @submission.Score</span>
+                        }
+                        else
+                        {
+                            <span class="pending-badge"><i class="fas fa-clock"></i> Awaiting Grading</span>
+                        }
                     </div>
                 </div>
+
+                @if (breakdown != null && breakdown.Count > 0)
+                {
+                    <div class="task-breakdown">
+                        <strong><i class="fas fa-list-check"></i> Task Breakdown:</strong>
+                        @foreach (var task in breakdown)
+                        {
+                            var done = task["completed"] != null && task["completed"].Value<bool>();
+                            <div class="task-breakdown-row">
+                                <span>@task["label"]?.ToString()</span>
+                                <span class="@(done ? "task-status-done" : "task-status-missed")">
+                                    <i class="fas fa-@(done ? "check-circle" : "times-circle")"></i>
+                                    @(done ? task["maxMarks"] + " / " + task["maxMarks"] : "0 / " + task["maxMarks"])
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
 
                 @if (!string.IsNullOrEmpty(submission.Observations))
                 {
@@ -112,15 +203,19 @@
                 }
 
                 <div style="margin-top: 15px;">
-                    <label style="font-weight: 600;">Score (0-100):</label>
-                    <input type="number" id="score-@submission.Id" class="grade-input" min="0" max="100" step="1" />
+                    <label style="font-weight: 600;">
+                        Score (0-@maxForInput)@(submission.AutoGraded ? " - override if needed:" : ":")
+                    </label>
+                    <input type="number" id="score-@submission.Id" class="grade-input" min="0" max="@maxForInput" step="1"
+                           value="@(submission.Score.HasValue ? submission.Score.Value.ToString("0.##") : "")" />
+                    <input type="hidden" id="maxscore-@submission.Id" value="@maxForInput" />
 
                     <label style="font-weight: 600; margin-top: 10px; display: block;">Feedback:</label>
                     <textarea id="feedback-@submission.Id" class="feedback-textarea" rows="3"
-                              placeholder="Provide feedback to the student..."></textarea>
+                              placeholder="Provide feedback to the student...">@submission.TeacherFeedback</textarea>
 
                     <button class="btn-save" onclick="saveGrade(@submission.Id)">
-                        <i class="fas fa-save"></i> Save Grade
+                        <i class="fas fa-save"></i> @(isGraded ? "Update Grade" : "Save Grade")
                     </button>
                 </div>
             </div>
@@ -131,15 +226,16 @@
 <script>
     function saveGrade(resultId) {
         var score = document.getElementById('score-' + resultId).value;
+        var maxScore = document.getElementById('maxscore-' + resultId).value;
         var feedback = document.getElementById('feedback-' + resultId).value;
 
-        if (!score) {
+        if (score === '') {
             alert('Please enter a score');
             return;
         }
 
-        if (score < 0 || score > 100) {
-            alert('Score must be between 0 and 100');
+        if (score < 0 || score > maxScore) {
+            alert('Score must be between 0 and ' + maxScore);
             return;
         }
 
@@ -151,7 +247,8 @@
             },
             body: JSON.stringify({
                 resultId: resultId,
-                score: parseInt(score),
+                score: parseFloat(score),
+                maxScore: parseFloat(maxScore),
                 feedback: feedback
             })
         })

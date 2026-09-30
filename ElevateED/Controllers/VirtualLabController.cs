@@ -1,4 +1,5 @@
-﻿using ElevateED.Models;
+﻿using ElevateED.Filters;
+using ElevateED.Models;
 using ElevateED.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -191,6 +192,7 @@ namespace ElevateED.Controllers
             ViewBag.SessionId = result.SessionId ?? 0;
             ViewBag.IsAssigned = true;
             ViewBag.DueDate = assignment.DueDate;
+            ViewBag.RemainingSeconds = Math.Max(0, (int)(experiment.DurationMinutes * 60 - (DateTime.Now - result.StartedAt).TotalSeconds));
 
             return View("BiologyLab");
         }
@@ -272,6 +274,7 @@ namespace ElevateED.Controllers
             ViewBag.SessionId = result.SessionId ?? 0;
             ViewBag.IsAssigned = true;
             ViewBag.DueDate = assignment.DueDate;
+            ViewBag.RemainingSeconds = Math.Max(0, (int)(experiment.DurationMinutes * 60 - (DateTime.Now - result.StartedAt).TotalSeconds));
 
             return View("ChemistryLab");
         }
@@ -353,6 +356,7 @@ namespace ElevateED.Controllers
             ViewBag.SessionId = result.SessionId ?? 0;
             ViewBag.IsAssigned = true;
             ViewBag.DueDate = assignment.DueDate;
+            ViewBag.RemainingSeconds = Math.Max(0, (int)(experiment.DurationMinutes * 60 - (DateTime.Now - result.StartedAt).TotalSeconds));
 
             return View("PhysicsLab");
         }
@@ -435,20 +439,83 @@ namespace ElevateED.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Student")]
-        public JsonResult SubmitLab(int resultId)
+        public JsonResult SubmitLab(int resultId, string tasksJson)
         {
             var student = GetCurrentStudent();
             if (student == null) return Json(new { success = false, message = "Unauthorized" });
 
             var result = _context.VirtualLabResults
                 .Include(r => r.Session)
+                .Include(r => r.Assignment)
+                .Include(r => r.Assignment.Experiment)
                 .FirstOrDefault(r => r.Id == resultId && r.StudentId == student.Id);
 
             if (result == null)
                 return Json(new { success = false, message = "Result not found" });
 
-            result.Status = "Submitted";
+            // Already submitted/graded - e.g. the timer's forced auto-submit
+            // raced a manual submit. Don't re-grade or overwrite the result.
+            if (result.Status == "Submitted" || result.Status == "Graded")
+                return Json(new { success = true, message = "Lab submitted successfully!" });
+
+            Dictionary<string, bool> completedTasks;
+            try
+            {
+                completedTasks = string.IsNullOrWhiteSpace(tasksJson)
+                    ? new Dictionary<string, bool>()
+                    : JsonConvert.DeserializeObject<Dictionary<string, bool>>(tasksJson) ?? new Dictionary<string, bool>();
+            }
+            catch
+            {
+                completedTasks = new Dictionary<string, bool>();
+            }
+
+            var experiment = result.Assignment?.Experiment;
+            var configuredTasks = experiment != null
+                ? _context.VirtualLabExperimentTasks
+                    .Where(t => t.ExperimentId == experiment.Id)
+                    .OrderBy(t => t.SortOrder)
+                    .ToList()
+                : new List<VirtualLabExperimentTask>();
+
             result.CompletedAt = DateTime.Now;
+
+            if (configuredTasks.Any())
+            {
+                // Teacher has configured graded tasks for this experiment -
+                // auto-grade from whatever the client reported as completed.
+                decimal score = 0;
+                decimal maxScore = 0;
+                var breakdown = new List<object>();
+
+                foreach (var task in configuredTasks)
+                {
+                    bool done = completedTasks.ContainsKey(task.TaskKey) && completedTasks[task.TaskKey];
+                    maxScore += task.MaxMarks;
+                    if (done) score += task.MaxMarks;
+
+                    breakdown.Add(new
+                    {
+                        key = task.TaskKey,
+                        label = task.TaskLabel,
+                        maxMarks = task.MaxMarks,
+                        completed = done
+                    });
+                }
+
+                result.Score = score;
+                result.MaxScore = maxScore;
+                result.AutoGraded = true;
+                result.TaskScoresJson = JsonConvert.SerializeObject(breakdown);
+                result.Status = "Graded";
+                result.GradedAt = DateTime.Now;
+            }
+            else
+            {
+                // No graded tasks configured for this experiment - fall back
+                // to manual teacher grading via the Grade Submissions screen.
+                result.Status = "Submitted";
+            }
 
             if (result.Session != null)
             {
@@ -504,19 +571,26 @@ namespace ElevateED.Controllers
                 .OrderByDescending(a => a.AssignedAt)
                 .ToList();
 
-            var pendingSubmissions = _context.VirtualLabResults
+            var assignmentIds = assignments.Select(a => a.Id).ToList();
+
+            // Most results now skip straight to "Graded" (auto-graded on
+            // submit from the configured tasks); anything still "Submitted"
+            // has no graded tasks configured and needs manual grading.
+            var recentResults = _context.VirtualLabResults
                 .Include(r => r.Assignment)
                 .Include(r => r.Assignment.Experiment)
                 .Include(r => r.Student)
-                .Where(r => r.Status == "Submitted")
-                .OrderBy(r => r.CompletedAt)
+                .Where(r => r.AssignmentId.HasValue && assignmentIds.Contains(r.AssignmentId.Value)
+                    && (r.Status == "Submitted" || r.Status == "Graded"))
+                .OrderByDescending(r => r.CompletedAt)
+                .Take(50)
                 .ToList();
 
             var viewModel = new TeacherLabDashboardViewModel
             {
                 Experiments = experiments,
                 Assignments = assignments,
-                PendingSubmissions = pendingSubmissions,
+                RecentResults = recentResults,
                 TeacherName = teacher.FullName
             };
 
@@ -534,6 +608,7 @@ namespace ElevateED.Controllers
             ViewBag.LabTypes = new SelectList(new[] { "Biology", "Chemistry", "Physics" });
             ViewBag.Difficulties = new SelectList(new[] { "Beginner", "Intermediate", "Advanced" });
             ViewBag.Grades = _context.Grades.OrderBy(g => g.Level).Select(g => g.Name).ToList();
+            ViewBag.TaskCatalogJson = JsonConvert.SerializeObject(BuildTaskCatalogForClient());
 
             return View();
         }
@@ -577,7 +652,133 @@ namespace ElevateED.Controllers
                 _context.VirtualLabExperiments.Add(experiment);
                 _context.SaveChanges();
 
+                if (!string.IsNullOrWhiteSpace(model.TasksJson))
+                {
+                    ApplyExperimentTasks(experiment.Id, model.TasksJson);
+                }
+
                 return Json(new { success = true, message = "Experiment created successfully!", experimentId = experiment.Id });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
+        }
+
+        // Returns the fixed task catalog for every lab type, keyed by the
+        // enum name ("Biology"/"Chemistry"/"Physics") so the create-experiment
+        // page's JS can render the right checkbox list once the teacher picks
+        // a lab type.
+        private Dictionary<string, List<object>> BuildTaskCatalogForClient()
+        {
+            var result = new Dictionary<string, List<object>>();
+            foreach (var kvp in VirtualLabTaskCatalog.Tasks)
+            {
+                result[kvp.Key.ToString()] = kvp.Value
+                    .Select(t => (object)new { key = t.Key, label = t.Label })
+                    .ToList();
+            }
+            return result;
+        }
+
+        // Replaces an experiment's configured graded tasks from a JSON array
+        // of { key, label, maxMarks }. Silently drops any key that isn't in
+        // that lab type's fixed catalog, so a tampered request can't inject
+        // an arbitrary task that the simulation could never actually report.
+        private void ApplyExperimentTasks(int experimentId, string tasksJson)
+        {
+            var experiment = _context.VirtualLabExperiments.Find(experimentId);
+            if (experiment == null) return;
+
+            List<ExperimentTaskPickInput> picks;
+            try
+            {
+                picks = JsonConvert.DeserializeObject<List<ExperimentTaskPickInput>>(tasksJson) ?? new List<ExperimentTaskPickInput>();
+            }
+            catch
+            {
+                picks = new List<ExperimentTaskPickInput>();
+            }
+
+            var catalog = VirtualLabTaskCatalog.Tasks.ContainsKey(experiment.LabType)
+                ? VirtualLabTaskCatalog.Tasks[experiment.LabType]
+                : new List<LabTaskDefinition>();
+            var validKeys = catalog.Select(t => t.Key).ToList();
+
+            var existing = _context.VirtualLabExperimentTasks.Where(t => t.ExperimentId == experimentId).ToList();
+            foreach (var old in existing)
+            {
+                _context.VirtualLabExperimentTasks.Remove(old);
+            }
+
+            int order = 0;
+            foreach (var pick in picks)
+            {
+                if (pick == null || string.IsNullOrWhiteSpace(pick.Key) || !validKeys.Contains(pick.Key)) continue;
+                if (pick.MaxMarks <= 0) continue;
+
+                var def = catalog.First(t => t.Key == pick.Key);
+                _context.VirtualLabExperimentTasks.Add(new VirtualLabExperimentTask
+                {
+                    ExperimentId = experimentId,
+                    TaskKey = def.Key,
+                    TaskLabel = def.Label,
+                    MaxMarks = pick.MaxMarks,
+                    SortOrder = order++
+                });
+            }
+
+            _context.SaveChanges();
+        }
+
+        // GET: current task/marks configuration for an experiment this
+        // teacher owns, plus the full catalog for that lab type so the
+        // "Edit Tasks" modal can show unpicked tasks too.
+        [Authorize(Roles = "Teacher")]
+        public JsonResult GetExperimentTasks(int experimentId)
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return Json(new { success = false, message = "Unauthorized" }, JsonRequestBehavior.AllowGet);
+
+            var experiment = _context.VirtualLabExperiments.Find(experimentId);
+            if (experiment == null || experiment.CreatedBy != teacher.Id)
+                return Json(new { success = false, message = "Experiment not found" }, JsonRequestBehavior.AllowGet);
+
+            var catalog = VirtualLabTaskCatalog.Tasks.ContainsKey(experiment.LabType)
+                ? VirtualLabTaskCatalog.Tasks[experiment.LabType]
+                : new List<LabTaskDefinition>();
+
+            var configured = _context.VirtualLabExperimentTasks
+                .Where(t => t.ExperimentId == experimentId)
+                .ToDictionary(t => t.TaskKey, t => t.MaxMarks);
+
+            var tasks = catalog.Select(t => new
+            {
+                key = t.Key,
+                label = t.Label,
+                selected = configured.ContainsKey(t.Key),
+                maxMarks = configured.ContainsKey(t.Key) ? configured[t.Key] : 0
+            }).ToList();
+
+            return Json(new { success = true, labType = experiment.LabType.ToString(), tasks = tasks }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Teacher")]
+        [ValidateJsonAntiForgeryToken]
+        public JsonResult SaveExperimentTasks(int experimentId, string tasksJson)
+        {
+            var teacher = GetCurrentTeacher();
+            if (teacher == null) return Json(new { success = false, message = "Unauthorized" });
+
+            var experiment = _context.VirtualLabExperiments.Find(experimentId);
+            if (experiment == null || experiment.CreatedBy != teacher.Id)
+                return Json(new { success = false, message = "Experiment not found" });
+
+            try
+            {
+                ApplyExperimentTasks(experimentId, tasksJson ?? "[]");
+                return Json(new { success = true, message = "Tasks and marks saved." });
             }
             catch (Exception ex)
             {
@@ -654,11 +855,15 @@ namespace ElevateED.Controllers
                 .Select(a => a.Id)
                 .ToList();
 
+            // Includes auto-graded results too, so the teacher can review the
+            // task-by-task breakdown and override the computed score, not
+            // just grade the (now rare) submissions with no configured tasks.
             var submissions = _context.VirtualLabResults
     .Include(r => r.Student)
     .Include(r => r.Student.User)
-    .Where(r => r.AssignmentId.HasValue && assignments.Contains(r.AssignmentId.Value) && r.Status == "Submitted")
-    .OrderBy(r => r.CompletedAt)
+    .Where(r => r.AssignmentId.HasValue && assignments.Contains(r.AssignmentId.Value)
+        && (r.Status == "Submitted" || r.Status == "Graded"))
+    .OrderByDescending(r => r.CompletedAt)
     .ToList();
 
             ViewBag.Experiment = experiment;
@@ -666,9 +871,12 @@ namespace ElevateED.Controllers
             return View(submissions);
         }
 
+        // Also used by the teacher to override an auto-computed score (the
+        // AutoGraded flag and TaskScoresJson breakdown are left in place as
+        // a record of how the score originated - only Score/MaxScore change).
         [HttpPost]
         [Authorize(Roles = "Teacher")]
-        public JsonResult SaveGrade(int resultId, int score, string feedback)
+        public JsonResult SaveGrade(int resultId, decimal score, decimal? maxScore, string feedback)
         {
             var teacher = GetCurrentTeacher();
             if (teacher == null) return Json(new { success = false, message = "Unauthorized" });
@@ -678,6 +886,8 @@ namespace ElevateED.Controllers
                 return Json(new { success = false, message = "Result not found" });
 
             result.Score = score;
+            if (maxScore.HasValue && maxScore.Value > 0)
+                result.MaxScore = maxScore.Value;
             result.TeacherFeedback = feedback;
             result.GradedBy = teacher.Id;
             result.GradedAt = DateTime.Now;

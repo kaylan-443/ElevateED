@@ -772,6 +772,7 @@
     <script>
         var experimentId = @ViewBag.Experiment.Id;
         var resultId = @ViewBag.ResultId;
+        var REMAINING_SECONDS = @ViewBag.RemainingSeconds;
 
         var SAVE_URL = '@Url.Action("SaveLabProgress", "VirtualLab")';
         var SUBMIT_URL = '@Url.Action("SubmitLab", "VirtualLab")';
@@ -1334,24 +1335,37 @@
             toast('Progress saved.');
         }
 
-        function submitLab() {
-            var allComplete = TASK_KEYS.every(function (k) { return state.tasks[k]; });
-            if (!allComplete) { toast('Please complete all tasks before submitting!', 'warn'); return; }
-            if (!confirm('Submit this lab for grading?')) return;
+        var submitted = false;
+        function doSubmit(auto) {
+            if (submitted) return;
+            submitted = true;
 
             fetch(SUBMIT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ resultId: resultId })
+                body: JSON.stringify({ resultId: resultId, tasksJson: JSON.stringify(state.tasks) })
             }).then(function (response) { return response.json(); })
               .then(function (data) {
                   if (data.success) {
-                      toast('Lab submitted successfully!');
+                      toast(auto ? "Time's up — lab submitted automatically!" : 'Lab submitted successfully!');
                       setTimeout(function () { window.location.href = INDEX_URL; }, 900);
                   } else {
+                      submitted = false;
                       toast(data.message || 'Submission failed.', 'warn');
                   }
-              }).catch(function () { toast('Network error while submitting.', 'warn'); });
+              }).catch(function () { submitted = false; toast('Network error while submitting.', 'warn'); });
+        }
+        function submitLab() {
+            var allComplete = TASK_KEYS.every(function (k) { return state.tasks[k]; });
+            if (!allComplete) { toast('Please complete all tasks before submitting!', 'warn'); return; }
+            if (!confirm('Submit this lab for grading?')) return;
+            doSubmit(false);
+        }
+        // Called only by the timer when time runs out - skips the
+        // completeness guard and confirmation so it always submits.
+        function forceSubmitLab() {
+            toast("Time's up! Submitting your work now...", 'warn');
+            doSubmit(true);
         }
 
         function exitLab() {
@@ -1419,14 +1433,32 @@
         // ============================================================
         // Timers: session clock + ambient temperature simulation
         // ============================================================
-        var seconds = 0;
-        setInterval(function () {
-            seconds++;
-            var m = String(Math.floor(seconds / 60)).padStart(2, '0');
-            var s = String(seconds % 60).padStart(2, '0');
+        // Session clock counts DOWN from the server-computed remaining time
+        // (duration minus time already elapsed since the attempt started),
+        // so it stays correct across page reloads without parsing a
+        // timestamp client-side. Auto-submits once when it reaches zero.
+        var remainingSeconds = REMAINING_SECONDS;
+        (function () {
             var el = document.getElementById('sessionTimer');
-            if (el) el.textContent = m + ':' + s;
-        }, 1000);
+            function render() {
+                var clamped = Math.max(0, remainingSeconds);
+                var m = String(Math.floor(clamped / 60)).padStart(2, '0');
+                var s = String(clamped % 60).padStart(2, '0');
+                if (el) {
+                    el.textContent = m + ':' + s;
+                    el.style.color = clamped <= 60 ? '#fb7185' : '';
+                }
+            }
+            render();
+            var timerInterval = setInterval(function () {
+                remainingSeconds--;
+                render();
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    forceSubmitLab();
+                }
+            }, 1000);
+        })();
 
         setInterval(function () {
             if (state.heating) {

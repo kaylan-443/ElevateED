@@ -34,14 +34,18 @@ namespace ElevateED.ViewModels
     {
         public List<VirtualLabExperiment> Experiments { get; set; }
         public List<VirtualLabAssignment> Assignments { get; set; }
-        public List<VirtualLabResult> PendingSubmissions { get; set; }
+
+        // Recently submitted results for this teacher's experiments - most
+        // are already auto-graded ("Graded"); any still "Submitted" have no
+        // graded tasks configured and are waiting on manual grading.
+        public List<VirtualLabResult> RecentResults { get; set; }
         public string TeacherName { get; set; }
 
         public TeacherLabDashboardViewModel()
         {
             Experiments = new List<VirtualLabExperiment>();
             Assignments = new List<VirtualLabAssignment>();
-            PendingSubmissions = new List<VirtualLabResult>();
+            RecentResults = new List<VirtualLabResult>();
         }
     }
 
@@ -73,6 +77,21 @@ namespace ElevateED.ViewModels
         public string PreLabQuestions { get; set; }
         public string PostLabQuestions { get; set; }
         public string EquipmentList { get; set; }
-        
+
+        // JSON array built client-side from the task/marks picker, e.g.
+        // [{"key":"beaker","label":"Mix at least two chemicals...","maxMarks":5}, ...]
+        // Optional — an experiment can be created with no graded tasks configured yet.
+        public string TasksJson { get; set; }
+    }
+
+    // One entry from the teacher's task/marks picker, deserialized from
+    // CreateExperimentViewModel.TasksJson / SaveExperimentTasks' tasksJson.
+    // Newtonsoft.Json matches JSON property names case-insensitively, so the
+    // client's lowercase "key"/"label"/"maxMarks" bind here without attributes.
+    public class ExperimentTaskPickInput
+    {
+        public string Key { get; set; }
+        public string Label { get; set; }
+        public decimal MaxMarks { get; set; }
     }
 }

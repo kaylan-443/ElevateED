@@ -93,6 +93,7 @@ namespace ElevateED.Models
         public DbSet<VirtualLabAssignment> VirtualLabAssignments { get; set; }
         public DbSet<VirtualLabResult> VirtualLabResults { get; set; }
         public DbSet<VirtualLabSession> VirtualLabSessions { get; set; }
+        public DbSet<VirtualLabExperimentTask> VirtualLabExperimentTasks { get; set; }
         // Add these DbSets inside your ElevateEDContext class
         public DbSet<DonationRequest> DonationRequests { get; set; }
         public DbSet<DonationItem> DonationItems { get; set; }
@@ -492,6 +493,12 @@ namespace ElevateED.Models
                 .HasRequired(r => r.Student)
                 .WithMany()
                 .HasForeignKey(r => r.StudentId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<VirtualLabExperimentTask>()
+                .HasRequired(t => t.Experiment)
+                .WithMany(e => e.Tasks)
+                .HasForeignKey(t => t.ExperimentId)
                 .WillCascadeOnDelete(false);
 
             // ============================================
