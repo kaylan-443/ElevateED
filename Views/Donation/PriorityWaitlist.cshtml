@@ -1,0 +1,164 @@
+@model List<ElevateED.Models.PriorityMatchViewModel>
+@{
+    ViewBag.Title = "Priority Waitlist";
+    ViewBag.ActiveTab = "waitlist";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .waitlist-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .waitlist-item:hover {
+            border-color: rgba(34,211,238,0.4);
+        }
+
+        .waitlist-item .position {
+            font-size: 20px;
+            font-weight: 800;
+            color: #94a3b8;
+            min-width: 40px;
+        }
+
+        .waitlist-item .info .name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .waitlist-item .info .details {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+    .priority-urgent {
+        color: #dc2626;
+    }
+
+    .priority-high {
+        color: #b45309;
+    }
+
+    .priority-medium {
+        color: #059669;
+    }
+
+    .priority-low {
+        color: #64748b;
+    }
+
+    .score-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #cffafe;
+        color: #0e7490;
+    }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-list-ol"></i> Priority Waitlist</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4 style="color:#1e293b;">No Pending Requests</h4>
+            <p style="color:#64748b;">All donation requests have been fulfilled.</p>
+        </div>
+    }
+    else
+    {
+        <div style="margin-bottom:16px;color:#64748b;font-size:13px;">
+            <i class="fas fa-info-circle"></i> Students are prioritized based on urgency, grade level, and wait time.
+        </div>
+
+        foreach (var item in Model.OrderBy(m => m.WaitListPosition))
+        {
+            var priorityClass = item.Priority == ElevateED.Models.RequestPriority.Urgent ? "priority-urgent" :
+                               item.Priority == ElevateED.Models.RequestPriority.High ? "priority-high" :
+                               item.Priority == ElevateED.Models.RequestPriority.Medium ? "priority-medium" : "priority-low";
+            <div class="waitlist-item">
+                <div class="position">#@item.WaitListPosition</div>
+                <div class="info" style="flex:1;">
+                    <div class="name">@item.StudentName <span style="font-size:12px;color:#94a3b8;">(@item.StudentNumber)</span></div>
+                    <div class="details">
+                        <span>Needs: @item.ItemNeeded</span> |
+                        <span class="@priorityClass">@item.Priority</span> |
+                        <span>Score: @item.PriorityScore</span> |
+                        <span>Requested: @item.RequestDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="score-badge">@item.PriorityScore pts</span>
+                </div>
+            </div>
+        }
+    }
+</div>

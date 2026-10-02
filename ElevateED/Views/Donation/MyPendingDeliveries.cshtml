@@ -1,126 +1,108 @@
-﻿@model List<ElevateED.Models.DonationItem>
+@model List<ElevateED.Models.DonationItem>
+@using ElevateED.Models
 @{
-    ViewBag.Title = "My Pending Deliveries";
+    ViewBag.Title = "My Donations";
+    Layout = (User.IsInRole("Teacher")) ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
     ViewBag.ActivePage = "donations";
-    ViewBag.ActiveTab = "mydeliveries";
-    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.ActiveTab = "mydonations";
+
+    Func<DonationStatus, int> stepOf = s =>
+        s == DonationStatus.PendingApproval ? 0
+        : s == DonationStatus.ApprovedAwaitingIntake ? 1
+        : (s == DonationStatus.Available || s == DonationStatus.Reserved) ? 2
+        : s == DonationStatus.AwaitingCollection ? 3
+        : s == DonationStatus.Collected ? 4
+        : -1;
 }
 
 <style>
-    .delivery-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
+    .page-header { margin-bottom: 20px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
 
-        .delivery-card .info .title {
-            font-weight: 600;
-            color: #111827;
-        }
+    .donation-card { background: white; border: 1.5px solid var(--gray-300, #d1d5db); border-radius: 16px; padding: 22px 24px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .donation-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-200, #e5e7eb); flex-wrap: wrap; gap: 10px; }
+    .donation-title { font-weight: 700; font-size: 15px; color: var(--gray-900, #111827); }
+    .donation-ref { font-size: 11px; color: var(--gray-400, #9ca3af); font-family: monospace; }
 
-        .delivery-card .info .meta {
-            font-size: 12px;
-            color: #6b7280;
-        }
+    .tracker { display: flex; align-items: center; margin: 16px 0; }
+    .tracker-step { flex: 1; text-align: center; position: relative; }
+    .tracker-step .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--gray-200, #e5e7eb); border: 2px solid var(--gray-400, #9ca3af); color: var(--gray-500, #6b7280); display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 11px; font-weight: 700; box-sizing: border-box; }
+    .tracker-step.done .dot { background: #10b981; border-color: #059669; color: white; }
+    .tracker-step.current .dot { background: var(--primary, #4f46e5); border-color: var(--primary-dark, #4338ca); color: white; }
+    .tracker-step .label { font-size: 10px; color: var(--gray-500, #6b7280); }
+    .tracker-line { position: absolute; top: 13px; left: -50%; width: 100%; height: 3px; background: var(--gray-400, #9ca3af); z-index: -1; }
+    .tracker-step.done .tracker-line, .tracker-step.current .tracker-line { background: #10b981; }
+    .tracker-step:first-child .tracker-line { display: none; }
 
-        .delivery-card .info .tracking {
-            font-family: monospace;
-            font-size: 13px;
-            color: #4f46e5;
-            margin-top: 4px;
-            letter-spacing: 1px;
-        }
+    .terminal-box { padding: 12px 16px; border-radius: 10px; font-size: 12px; margin-top: 8px; }
+    .terminal-rejected { background: #fee2e2; color: #991b1b; }
+    .terminal-collected { background: #d1fae5; color: #065f46; }
 
-    .btn-confirm {
-        background: #ecfdf5;
-        color: #059669;
-        border: 1px solid rgba(5,150,105,0.3);
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-weight: 600;
-        text-decoration: none;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-
-        .btn-confirm:hover {
-            background: #d1fae5;
-            color: #059669;
-            text-decoration: none;
-        }
-
-    .btn-back {
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 10px 20px;
-        border-radius: 30px;
-        border: 1px solid #e5e7eb;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-
-        .btn-back:hover {
-            background: #e5e7eb;
-            color: #111827;
-            text-decoration: none;
-        }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-    }
-
-        .empty-state i {
-            font-size: 48px;
-            color: #9ca3af;
-            margin-bottom: 16px;
-        }
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); }
+    .empty-state i { font-size: 48px; color: var(--gray-300, #d1d5db); margin-bottom: 15px; }
 </style>
 
-@Html.Partial("_DonationSubNav")
+@{ Html.RenderPartial("_DonationSubNav"); }
 
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-    <h1 style="font-size:24px;font-weight:700;color:#111827;display:flex;align-items:center;gap:12px;">
-        <i class="fas fa-truck"></i> My Pending Deliveries
-    </h1>
-    <a href="@Url.Action("Dashboard")" class="btn-back">
-        <i class="fas fa-arrow-left"></i> Back
-    </a>
+<div class="page-header">
+    <h1><i class="fas fa-truck" style="color: var(--primary, #4f46e5);"></i> My Donations</h1>
 </div>
 
-@if (!Model.Any())
+@if (TempData["Success"] != null)
 {
-    <div class="card empty-state">
-        <i class="fas fa-check-circle"></i>
-        <h4 style="color:#4b5563;">Nothing to Deliver</h4>
-        <p style="color:#9ca3af;">You have no donations awaiting delivery confirmation.</p>
+    <div style="background:#d1fae5;color:#065f46;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-gift"></i>
+        <h4>No donations yet</h4>
+        <p style="color:var(--gray-500,#6b7280);">Items you donate will show their progress here.</p>
     </div>
 }
-    else
+else
+{
+    foreach (var item in Model)
     {
-        foreach (var item in Model)
-        {
-            <div class="delivery-card">
-                <div class="info">
-                    <div class="title">@item.ItemName <span style="font-size:12px;color:#6b7280;">x @item.Quantity</span></div>
-                    <div class="meta">
-                        Category: @item.Category |
-                        Submitted: @item.DonationDate.ToString("dd MMM yyyy HH:mm")
-                    </div>
-                    <div class="tracking">🔑 @item.TrackingCode</div>
+        <div class="donation-card">
+            <div class="donation-head">
+                <div>
+                    <div class="donation-title">@item.ItemName <span style="color:var(--gray-400,#9ca3af); font-weight:400;">(@item.Category)</span></div>
+                    <div class="donation-ref">Ref: @item.TrackingCode &middot; Submitted @item.DonationDate.ToString("dd MMM yyyy")</div>
                 </div>
-                <a href="@Url.Action("ConfirmDelivery", new { trackingCode = item.TrackingCode })" class="btn-confirm">
-                    <i class="fas fa-check"></i> Confirm Delivery
-                </a>
+                <a href="@Url.Action("DonationDetails", "Donation", new { id = item.Id })" style="color:var(--primary,#4f46e5); font-size:12px; font-weight:600; text-decoration:none;">View Timeline <i class="fas fa-arrow-right"></i></a>
             </div>
-        }
+
+            @if (item.Status == DonationStatus.Rejected || item.Status == DonationStatus.NotReceived)
+            {
+                <div class="terminal-box terminal-rejected"><i class="fas fa-times-circle"></i> @item.Status @(string.IsNullOrEmpty(item.RejectionReason) ? "" : ("\u2014 " + item.RejectionReason))</div>
+            }
+            else
+            {
+                var step = stepOf(item.Status);
+                <div class="tracker">
+                    @{ var labels = new[] { "Submitted", "Approved", "Received", "Matched", "Collected" }; }
+                    @for (var i = 0; i < labels.Length; i++)
+                    {
+                        var cls = i < step ? "done" : i == step ? "current" : "";
+                        <div class="tracker-step @cls">
+                            <div class="tracker-line"></div>
+                            <div class="dot">@(i < step ? "\u2713" : (i + 1).ToString())</div>
+                            <div class="label">@labels[i]</div>
+                        </div>
+                    }
+                </div>
+
+                if (item.Status == DonationStatus.ApprovedAwaitingIntake && item.ScheduledIntakeDate.HasValue)
+                {
+                    <div style="font-size:12px;color:var(--gray-500,#6b7280);"><i class="fas fa-calendar-day"></i> Intake booked for @item.ScheduledIntakeDate.Value.ToString("dd MMM yyyy")</div>
+                }
+                if (item.Status == DonationStatus.Collected)
+                {
+                    <div class="terminal-box terminal-collected"><i class="fas fa-check-circle"></i> Collected on @(item.CollectionDate?.ToString("dd MMM yyyy") ?? "\u2014") &mdash; thank you for your donation!</div>
+                }
+            }
+        </div>
     }
+}

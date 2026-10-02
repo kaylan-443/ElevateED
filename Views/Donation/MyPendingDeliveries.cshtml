@@ -1,0 +1,199 @@
+@model List<ElevateED.Models.DonationItem>
+@{
+    ViewBag.Title = "My Donations";
+    ViewBag.ActiveTab = "mydeliveries";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml"
+        : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml"
+        : "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .delivery-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .delivery-card .info .title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .delivery-card .info .meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .delivery-card .info .tracking {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #0891b2;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+    .status-pill {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-awaiting-approval {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-intake-booked {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-food {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(16,185,129,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h4 {
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .empty-state p {
+            color: #64748b;
+        }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-box-open" style="color:#10b981;"></i> My Donations</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4>Nothing pending</h4>
+            <p>You have no donations awaiting approval, intake, or delivery.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="delivery-card">
+                <div class="info">
+                    <div class="title">@item.ItemName <span style="font-size:12px;color:#64748b;font-weight:400;">x @item.Quantity</span></div>
+                    <div class="meta">
+                        Category: @item.Category &nbsp;•&nbsp;
+                        Submitted: @item.DonationDate.ToString("dd MMM yyyy HH:mm")
+                        @if (item.Status == ElevateED.Models.DonationStatus.ApprovedAwaitingIntake && item.ScheduledIntakeDate.HasValue)
+                        {
+                            <span> &nbsp;•&nbsp; Drop-off date: <strong>@item.ScheduledIntakeDate.Value.ToString("dd MMM yyyy")</strong></span>
+                        }
+                    </div>
+                    <div class="tracking">🔑 @item.TrackingCode</div>
+                </div>
+
+                @if (item.Status == ElevateED.Models.DonationStatus.PendingApproval)
+                {
+                    <span class="status-pill status-awaiting-approval"><i class="fas fa-hourglass-half"></i> Awaiting admin approval</span>
+                }
+                else if (item.Status == ElevateED.Models.DonationStatus.ApprovedAwaitingIntake)
+                {
+                    <span class="status-pill status-intake-booked"><i class="fas fa-calendar-check"></i> Intake scheduled — bring it in on the date above</span>
+                }
+            </div>
+        }
+    }
+</div>

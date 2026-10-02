@@ -1,32 +1,53 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using ElevateED.Filters;
 using ElevateED.Models;
 using ElevateED.Services;
 using Newtonsoft.Json;
 
 namespace ElevateED.Controllers
 {
+    // ────────────────────────────────────────────────────────────────
+    //  Smart Donation Management System (UC01-UC09) — see
+    //  Smart_Donation_System_Redesign.docx for the full specification
+    //  this controller implements. Action regions below are grouped by
+    //  use case; the exact flow-of-activities steps are referenced in
+    //  comments at each step so the code can be checked against the doc.
+    // ────────────────────────────────────────────────────────────────
     [Authorize]
     public class DonationController : Controller
     {
         private readonly ElevateEDContext _context = new ElevateEDContext();
-        private AIDonationMatcher _aiMatcher;
-        private FoodEligibilityService _foodService;
-        private FoodSafetyEvaluator _foodSafetyEvaluator;
-        private FoodAllocationEngine _foodAllocationEngine;
+        private readonly EmailService _emailService = new EmailService();
+        private readonly DonationAutomationEngine _engine = new DonationAutomationEngine();
 
-        public DonationController()
+        private static int IntakeDailyCapacity
         {
-            _aiMatcher = new AIDonationMatcher(_context);
-            _foodService = new FoodEligibilityService(_context);
-            _foodSafetyEvaluator = new FoodSafetyEvaluator();
-            _foodAllocationEngine = new FoodAllocationEngine();
+            get
+            {
+                var raw = System.Configuration.ConfigurationManager.AppSettings["DonationIntakeDailyCapacity"];
+                int parsed;
+                return int.TryParse(raw, out parsed) && parsed > 0 ? parsed : 10;
+            }
         }
+
+        // Guided urgency list (UC01 step 4) — short and consistent, rather
+        // than free text, so Priority Score stays comparable across requests.
+        public static readonly List<KeyValuePair<string, RequestPriority>> UrgencyContexts = new List<KeyValuePair<string, RequestPriority>>
+        {
+            new KeyValuePair<string, RequestPriority>("I have no usable item at all (daily essential)", RequestPriority.Urgent),
+            new KeyValuePair<string, RequestPriority>("Needed for an upcoming exam or assessment", RequestPriority.High),
+            new KeyValuePair<string, RequestPriority>("My current item is damaged or worn out", RequestPriority.Medium),
+            new KeyValuePair<string, RequestPriority>("I'd like a spare / backup item", RequestPriority.Low),
+        };
+
+        public static readonly List<string> CollectionTimeWindows = new List<string>
+        {
+            "08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00", "14:00 - 15:30"
+        };
 
         #region Helper Methods
 
@@ -48,11 +69,9 @@ namespace ElevateED.Controllers
                 var student = GetCurrentStudent();
                 return student?.Id ?? 0;
             }
-            else
-            {
-                var user = _context.Users.FirstOrDefault(u => u.Email == User.Identity.Name || u.StudentNumber == User.Identity.Name);
-                return user?.Id ?? 0;
-            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == User.Identity.Name || u.StudentNumber == User.Identity.Name);
+            return user?.Id ?? 0;
         }
 
         private string GetCurrentPersonType()
@@ -69,13 +88,11 @@ namespace ElevateED.Controllers
                 var student = GetCurrentStudent();
                 return student?.FullName ?? "Guest";
             }
-            else
-            {
-                var user = _context.Users.FirstOrDefault(u => u.Email == User.Identity.Name || u.StudentNumber == User.Identity.Name);
-                if (user == null) return "Guest";
-                var teacher = _context.Teachers.FirstOrDefault(t => t.UserId == user.Id);
-                return teacher?.FullName ?? user.Email ?? "Guest";
-            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == User.Identity.Name || u.StudentNumber == User.Identity.Name);
+            if (user == null) return "Guest";
+            var teacher = _context.Teachers.FirstOrDefault(t => t.UserId == user.Id);
+            return teacher?.FullName ?? user.Email ?? "Guest";
         }
 
         private string GetCurrentPersonEmail()
@@ -84,2153 +101,926 @@ namespace ElevateED.Controllers
             return user?.Email ?? User.Identity.Name;
         }
 
-        private static DateTime? ParseDate(string s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return null;
-            DateTime d;
-            return DateTime.TryParse(s, out d) ? d : (DateTime?)null;
-        }
-
-        private static bool ParseBool(string s)
-        {
-            return !string.IsNullOrWhiteSpace(s) &&
-                   (s == "true" || s == "True" || s == "on" || s == "1");
-        }
-
         private static T ParseEnum<T>(string s, T fallback) where T : struct
         {
             T result;
             return !string.IsNullOrWhiteSpace(s) && Enum.TryParse(s, out result) ? result : fallback;
         }
 
-        #endregion
-
-        #region Index (Redirect)
-
-        public ActionResult Index()
+        // Live queue position within a category: rank among Waitlisted
+        // request items, highest Priority Score first (UC01 step 9).
+        private int ComputeQueuePosition(DonationRequestItem item)
         {
-            return RedirectToAction("Dashboard");
+            var waitlisted = _context.DonationRequestItems
+                .Include(ri => ri.DonationRequest)
+                .Where(ri => ri.Category == item.Category && ri.Status == RequestItemStatus.Waitlisted && ri.DonationRequest.IsActive)
+                .ToList();
+
+            var ranked = waitlisted
+                .OrderByDescending(ri => ri.DonationRequest.PriorityScore)
+                .ThenByDescending(ri => ri.CalculateItemScore())
+                .ToList();
+
+            var position = ranked.FindIndex(ri => ri.Id == item.Id);
+            return position >= 0 ? position + 1 : ranked.Count + 1;
+        }
+
+        private void LogHistory(int donationItemId, string action, string description, string additionalData = null)
+        {
+            _context.DonationHistories.Add(new DonationHistory
+            {
+                DonationItemId = donationItemId,
+                Action = action,
+                Description = description,
+                ActorId = GetCurrentPersonId(),
+                ActorType = GetCurrentPersonType(),
+                AdditionalData = additionalData
+            });
         }
 
         #endregion
 
-        #region Dashboard
+        #region Index / Dashboard
+
+        public ActionResult Index() => RedirectToAction("Dashboard");
 
         public async Task<ActionResult> Dashboard()
         {
-            var viewModel = new DonationDashboardViewModel();
-
-            if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+            var model = new DonationDashboardViewModel
             {
-                viewModel.TotalRequests = _context.DonationRequests.Count(r => r.IsActive);
-                viewModel.PendingRequests = _context.DonationRequests.Count(r => r.IsActive && !r.IsFulfilled);
-                viewModel.FulfilledRequests = _context.DonationRequests.Count(r => r.IsActive && r.IsFulfilled);
-                viewModel.TotalDonations = _context.DonationItems.Count(d => d.IsActive);
-                viewModel.PendingVerifications = _context.DonationItems.Count(d => d.Status == DonationStatus.PendingVerification && d.IsActive);
-                viewModel.AvailableDonations = _context.DonationItems.Count(d => d.Status == DonationStatus.Verified && d.QuantityRemaining > 0);
-                viewModel.TotalAllocations = _context.DonationAllocations.Count(a => a.IsActive);
-                viewModel.PendingCollection = _context.DonationAllocations.Count(a => a.Status == "Pending" && a.IsActive);
-
-                viewModel.PendingFoodEligibility = 0;
-                viewModel.ApprovedFoodItems = _context.FoodDonationChecks.Count(f => f.Status == FoodDonationStatus.Approved);
-                viewModel.RejectedFoodItems = _context.FoodDonationChecks.Count(f => f.Status == FoodDonationStatus.Rejected);
-                viewModel.ExpiredFoodItems = _context.FoodDonationChecks.Count(f => f.Status == FoodDonationStatus.Expired);
-
-                viewModel.RecentRequests = await _context.DonationRequests
-                    .Include(r => r.Student)
-                    .Include(r => r.Items)
-                    .Where(r => r.IsActive)
-                    .OrderByDescending(r => r.RequestDate)
-                    .Take(10)
-                    .ToListAsync();
-
-                viewModel.RecentDonations = await _context.DonationItems
-                    .Include(d => d.FoodChecks)
-                    .Where(d => d.IsActive)
-                    .OrderByDescending(d => d.DonationDate)
-                    .Take(10)
-                    .ToListAsync();
-
-                viewModel.RecentAllocations = await _context.DonationAllocations
-                    .Include(a => a.Student)
-                    .Include(a => a.DonationItem)
-                    .Where(a => a.IsActive)
-                    .OrderByDescending(a => a.AllocationDate)
-                    .Take(10)
-                    .ToListAsync();
-
-                viewModel.ActiveCampaigns = await _context.DonationCampaigns
-                    .Where(c => c.Status == CampaignStatus.Active && c.IsActive)
-                    .OrderBy(c => c.EndDate)
-                    .Take(5)
-                    .ToListAsync();
-
-                ViewBag.AwaitingDeliveryCount = _context.DonationItems
-                    .Count(d => d.Status == DonationStatus.AwaitingDelivery && d.IsActive);
-
-                ViewBag.FoodReadyToAllocate = _context.DonationItems
-                    .Count(d => d.IsActive
-                                && d.IsFoodItem
-                                && d.Status == DonationStatus.Verified
-                                && d.QuantityRemaining > 0);
-            }
-            else if (User.IsInRole("Student"))
-            {
-                var student = GetCurrentStudent();
-                if (student != null)
-                {
-                    viewModel.TotalRequests = _context.DonationRequests.Count(r => r.StudentId == student.Id && r.IsActive);
-                    viewModel.PendingRequests = _context.DonationRequests.Count(r => r.StudentId == student.Id && r.IsActive && !r.IsFulfilled);
-                    viewModel.FulfilledRequests = _context.DonationRequests.Count(r => r.StudentId == student.Id && r.IsActive && r.IsFulfilled);
-                    viewModel.TotalAllocations = _context.DonationAllocations.Count(a => a.StudentId == student.Id && a.IsActive);
-                    viewModel.PendingCollection = _context.DonationAllocations.Count(a => a.StudentId == student.Id && a.Status == "Pending" && a.IsActive);
-
-                    viewModel.RecentRequests = await _context.DonationRequests
-                        .Include(r => r.Student)
-                        .Include(r => r.Items)
-                        .Where(r => r.StudentId == student.Id && r.IsActive)
-                        .OrderByDescending(r => r.RequestDate)
-                        .Take(10)
-                        .ToListAsync();
-
-                    ViewBag.AwaitingDeliveryCount = _context.DonationItems
-                        .Count(d => d.DonorId == student.Id
-                                    && d.Status == DonationStatus.AwaitingDelivery
-                                    && d.IsActive);
-                }
-            }
-
-            ViewBag.UserRole = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Teacher") ? "Teacher" : "Student";
-            return View(viewModel);
-        }
-
-        #endregion
-
-        #region Request Donation (Multi-Item)
-
-        public ActionResult RequestDonation()
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return RedirectToAction("Login", "Account");
-
-            ViewBag.StudentName = student.FullName;
-            ViewBag.StudentNumber = student.User?.StudentNumber;
-            ViewBag.Grade = student.Grade;
-            ViewBag.Subjects = _context.Subjects.OrderBy(s => s.Name).Select(s => s.Name).ToList();
-
-            return View(new DonationRequestViewModel());
-        }
-
-        // POST — receives a standard form post. Uses FormCollection (not a
-        // bound model) so the multi-item payload can't be lost — the same
-        // technique that fixed Add Donation.
-        //
-        // Food items are treated specially: the student only registers a
-        // need, so we normalise the item name, quantity, and type here.
-        // The allocation engine decides the actual amount later.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> RequestDonation(FormCollection form)
-        {
-            try
-            {
-                var student = GetCurrentStudent();
-                if (student == null)
-                {
-                    TempData["ErrorMessage"] = "Student not found. Please log in again.";
-                    return RedirectToAction("RequestDonation");
-                }
-
-                int itemCount;
-                if (!int.TryParse(form["itemCount"], out itemCount) || itemCount < 1)
-                {
-                    TempData["ErrorMessage"] = "Please add at least one item before submitting.";
-                    return RedirectToAction("RequestDonation");
-                }
-
-                var request = new DonationRequest
-                {
-                    StudentId = student.Id,
-                    RequestDate = DateTime.Now,
-                    IsActive = true,
-                    IsFulfilled = false
-                };
-
-                int savedItems = 0;
-
-                for (int i = 0; i < itemCount; i++)
-                {
-                    var prefix = "Items[" + i + "].";
-
-                    var categoryStr = form[prefix + "Category"];
-                    var itemTypeStr = form[prefix + "ItemType"];
-                    var itemName = form[prefix + "ItemName"];
-                    var quantityStr = form[prefix + "QuantityRequested"];
-                    var priorityStr = form[prefix + "Priority"];
-
-                    if (string.IsNullOrWhiteSpace(categoryStr))
-                        continue;
-
-                    DonationCategory category;
-                    DonationItemType itemType;
-                    RequestPriority priority;
-                    int quantity;
-
-                    if (!Enum.TryParse(categoryStr, out category)) continue;
-                    if (!Enum.TryParse(itemTypeStr, out itemType)) itemType = DonationItemType.Other;
-                    if (!Enum.TryParse(priorityStr, out priority)) priority = RequestPriority.Medium;
-                    if (!int.TryParse(quantityStr, out quantity) || quantity < 1) quantity = 1;
-
-                    // ── Food special case ─────────────────────────────────
-                    // The student only registers a need. We override the
-                    // item name, type, and quantity. The allocation engine
-                    // decides how much food they actually get, when
-                    // donations are matched.
-                    if (category == DonationCategory.Food)
-                    {
-                        itemName = "Food assistance";
-                        itemType = DonationItemType.Food;
-                        quantity = 1;    // placeholder — engine decides the real amount
-                    }
-                    else
-                    {
-                        // Non-food: must have an item name.
-                        if (string.IsNullOrWhiteSpace(itemName))
-                            continue;
-                    }
-
-                    var item = new DonationRequestItem
-                    {
-                        Category = category,
-                        ItemType = itemType,
-                        ItemName = itemName,
-                        Description = form[prefix + "Description"],
-                        BookTitle = form[prefix + "BookTitle"],
-                        Subject = form[prefix + "Subject"],
-                        GradeLevel = form[prefix + "GradeLevel"],
-                        ISBN = form[prefix + "ISBN"],
-                        ClothingSize = form[prefix + "ClothingSize"],
-                        ClothingType = form[prefix + "ClothingType"],
-                        Gender = form[prefix + "Gender"],
-                        StationeryType = form[prefix + "StationeryType"],
-                        BrandPreference = form[prefix + "BrandPreference"],
-                        FoodType = form[prefix + "FoodType"],
-                        DietaryRequirements = form[prefix + "DietaryRequirements"],
-                        ItemSubCategory = form[prefix + "ItemSubCategory"],
-                        SizeSpecifications = form[prefix + "SizeSpecifications"],
-                        QuantityRequested = quantity,
-                        QuantityReceived = 0,
-                        Priority = priority,
-                        UrgencyReason = form[prefix + "UrgencyReason"],
-                        IsFulfilled = false,
-                        CreatedAt = DateTime.Now
-                    };
-
-                    request.Items.Add(item);
-                    savedItems++;
-                }
-
-                if (savedItems == 0)
-                {
-                    TempData["ErrorMessage"] = "No valid items were submitted.";
-                    return RedirectToAction("RequestDonation");
-                }
-
-                request.PriorityScore = request.CalculatePriorityScore();
-
-                _context.DonationRequests.Add(request);
-                await _context.SaveChangesAsync();
-
-                var waitlistPos = _context.DonationRequests
-                    .Count(r => r.IsActive
-                                && !r.IsFulfilled
-                                && r.PriorityScore > request.PriorityScore
-                                && r.Id != request.Id) + 1;
-
-                request.WaitListPosition = waitlistPos;
-                request.WaitlistedDate = DateTime.Now;
-                await _context.SaveChangesAsync();
-
-                try { await _aiMatcher.ProcessMatchingAsync(); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine("AI matching error: " + ex.Message); }
-
-                TempData["SuccessMessage"] =
-                    $"Thank you! Your request with {savedItems} item(s) has been submitted. " +
-                    $"You are at position #{waitlistPos} on the waitlist.";
-
-                return RedirectToAction("MyRequests");
-            }
-            catch (Exception ex)
-            {
-                var innerMsg = ex.InnerException?.InnerException?.Message
-                               ?? ex.InnerException?.Message
-                               ?? ex.Message;
-                TempData["ErrorMessage"] = "Error saving request: " + innerMsg;
-                return RedirectToAction("RequestDonation");
-            }
-        }
-
-        public ActionResult MyRequests()
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return RedirectToAction("Login", "Account");
-
-            var requests = _context.DonationRequests
-                .Include(r => r.Student)
-                .Include(r => r.Items)
-                .Include(r => r.Allocations.Select(a => a.DonationItem))
-                .Where(r => r.StudentId == student.Id)
-                .OrderByDescending(r => r.RequestDate)
-                .ToList();
-
-            // Per-item tracking info for the "Track" modal. DonationAllocation
-            // links to a request as a whole (not a specific item), so we match
-            // an item to its best allocation by category — good enough since a
-            // request rarely has two open items in the same category at once.
-            var tracking = new Dictionary<int, object>();
-            foreach (var request in requests)
-            {
-                if (request.Items == null) continue;
-
-                foreach (var item in request.Items)
-                {
-                    var matchingAllocation = request.Allocations != null
-                        ? request.Allocations
-                            .Where(a => a.IsActive && a.DonationItem != null && a.DonationItem.Category == item.Category)
-                            .OrderByDescending(a => a.AllocationDate)
-                            .FirstOrDefault()
-                        : null;
-
-                    tracking[item.Id] = new
-                    {
-                        status = item.Status.ToString(),
-                        declineReason = item.DeclineReason,
-                        declinedDate = item.DeclinedDate.HasValue ? item.DeclinedDate.Value.ToString("dd MMM yyyy") : null,
-                        allocationStatus = matchingAllocation?.Status,
-                        scheduledDate = matchingAllocation != null && matchingAllocation.ScheduledCollectionDate.HasValue
-                            ? matchingAllocation.ScheduledCollectionDate.Value.ToString("dd MMM yyyy")
-                            : null,
-                        collectedDate = matchingAllocation != null && matchingAllocation.CollectionDate.HasValue
-                            ? matchingAllocation.CollectionDate.Value.ToString("dd MMM yyyy")
-                            : null,
-                        pinCode = matchingAllocation != null && matchingAllocation.Status == "Ready" ? matchingAllocation.PinCode : null,
-                        quantityRequested = item.QuantityRequested,
-                        quantityReceived = item.QuantityReceived
-                    };
-                }
-            }
-
-            ViewBag.TrackingDataJson = JsonConvert.SerializeObject(tracking);
-
-            return View(requests);
-        }
-
-        [HttpPost]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> CancelRequest(int id)
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return Json(new { success = false, message = "Unauthorized" });
-
-            var request = await _context.DonationRequests
-                .FirstOrDefaultAsync(r => r.Id == id && r.StudentId == student.Id);
-
-            if (request == null)
-                return Json(new { success = false, message = "Request not found" });
-
-            if (request.IsFulfilled)
-                return Json(new { success = false, message = "Cannot cancel a fulfilled request" });
-
-            request.IsActive = false;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Request cancelled successfully" });
-        }
-
-        // Student-facing collection tracker: every donation allocated to
-        // them, with the collection token/PIN surfaced once it's Ready for
-        // pickup and a record of what's already been collected.
-        public async Task<ActionResult> MyCollections()
-        {
-            var student = GetCurrentStudent();
-            if (student == null) return RedirectToAction("Login", "Account");
-
-            var allocations = await _context.DonationAllocations
-                .Include(a => a.DonationItem)
-                .Where(a => a.StudentId == student.Id && a.IsActive)
-                .OrderByDescending(a => a.AllocationDate)
-                .ToListAsync();
-
-            var viewModel = allocations.Select(a => new DonationDistributionViewModel
-            {
-                AllocationId = a.Id,
-                StudentName = student.FullName,
-                StudentNumber = student.User?.StudentNumber,
-                ItemName = a.DonationItem?.ItemName,
-                ItemType = a.DonationItem?.ItemType.ToString(),
-                Quantity = a.QuantityAllocated,
-                CollectionToken = a.CollectionToken,
-                QRCode = a.QRCode,
-                PinCode = a.PinCode,
-                ScheduledDate = a.ScheduledCollectionDate,
-                Status = a.Status,
-                IsFoodItem = a.DonationItem?.IsFoodItem ?? false
-            }).ToList();
-
-            return View(viewModel);
-        }
-
-        #endregion
-
-        #region Add Donation (Multi-Item, with automatic food safety evaluation)
-
-        [HttpGet]
-        public ActionResult AddDonation()
-        {
-            ViewBag.DonorName = GetCurrentPersonName();
-
-            ViewBag.Subjects = _context.Subjects
-                .OrderBy(s => s.Name)
-                .Select(s => s.Name)
-                .ToList();
-
-            ViewBag.NeedsCount = _context.DonationRequestItems
-                .Count(i => i.DonationRequest.IsActive && !i.IsFulfilled);
-
-            ViewBag.PublicNeeds = _context.DonationRequestItems
-                .Include(i => i.DonationRequest)
-                .Where(i => i.DonationRequest.IsActive && !i.IsFulfilled)
-                .OrderByDescending(i => i.DonationRequest.PriorityScore)
-                .Take(10)
-                .ToList()
-                .Select(i =>
-                    $"{i.QuantityRequested} {i.ItemName} needed ({i.Category})" +
-                    (string.IsNullOrEmpty(i.GradeLevel) ? "" : $" for {i.GradeLevel}"))
-                .ToList();
-
-            return View(new DonationItemFormViewModel());
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AddDonation(FormCollection form)
-        {
-            try
-            {
-                int itemCount;
-                if (!int.TryParse(form["itemCount"], out itemCount) || itemCount < 1)
-                {
-                    TempData["ErrorMessage"] = "Please add at least one item before submitting.";
-                    return RedirectToAction("AddDonation");
-                }
-
-                var personId = GetCurrentPersonId();
-                var personType = GetCurrentPersonType();
-                var personName = GetCurrentPersonName();
-                var personEmail = GetCurrentPersonEmail();
-
-                if (personId == 0)
-                {
-                    TempData["ErrorMessage"] = "Could not identify the current user. Please log in again.";
-                    return RedirectToAction("AddDonation");
-                }
-
-                int savedCount = 0;
-                int autoApprovedFood = 0;
-                int autoRejectedFood = 0;
-                var trackingCodesAwaiting = new List<string>();
-                var trackingCodesRejected = new List<string>();
-
-                for (int i = 0; i < itemCount; i++)
-                {
-                    var prefix = "Items[" + i + "].";
-
-                    var categoryStr = form[prefix + "Category"];
-                    var itemTypeStr = form[prefix + "ItemType"];
-                    var itemName = form[prefix + "ItemName"];
-                    var quantityStr = form[prefix + "Quantity"];
-                    var condition = form[prefix + "Condition"];
-
-                    if (string.IsNullOrWhiteSpace(itemName) ||
-                        string.IsNullOrWhiteSpace(categoryStr) ||
-                        string.IsNullOrWhiteSpace(condition))
-                        continue;
-
-                    DonationCategory category;
-                    DonationItemType itemType;
-                    int quantity;
-
-                    if (!Enum.TryParse(categoryStr, out category)) continue;
-                    if (!Enum.TryParse(itemTypeStr, out itemType)) itemType = DonationItemType.Other;
-                    if (!int.TryParse(quantityStr, out quantity) || quantity < 1) quantity = 1;
-
-                    var donation = new DonationItem
-                    {
-                        DonorId = personId,
-                        DonorType = personType,
-                        DonorName = personName,
-                        DonorEmail = personEmail,
-                        Category = category,
-                        ItemType = itemType,
-                        ItemName = itemName,
-                        BookTitle = form[prefix + "BookTitle"],
-                        Subject = form[prefix + "Subject"],
-                        GradeLevel = form[prefix + "GradeLevel"],
-                        ISBN = form[prefix + "ISBN"],
-                        ClothingSize = form[prefix + "ClothingSize"],
-                        ClothingType = form[prefix + "ClothingType"],
-                        Gender = form[prefix + "Gender"],
-                        Quantity = quantity,
-                        QuantityRemaining = quantity,
-                        AllocationType = AllocationType.OpenDonation,
-                        Condition = condition,
-                        ConditionNotes = form[prefix + "ConditionNotes"],
-                        Status = DonationStatus.AwaitingDelivery,
-                        DonationDate = DateTime.Now,
-                        IsActive = true,
-                        IsFoodItem = category == DonationCategory.Food
-                    };
-
-                    _context.DonationItems.Add(donation);
-                    await _context.SaveChangesAsync();
-
-                    if (donation.IsFoodItem)
-                    {
-                        var foodCheck = new FoodDonationCheck
-                        {
-                            DonationItemId = donation.Id,
-                            ExpiryDate = ParseDate(form[prefix + "FoodExpiryDate"]) ?? DateTime.Now.AddMonths(6),
-                            ProductionDate = ParseDate(form[prefix + "FoodProductionDate"]),
-                            StorageType = ParseEnum<FoodStorageType>(form[prefix + "FoodStorageType"], FoodStorageType.ShelfStable),
-                            StorageNotes = form[prefix + "FoodStorageNotes"],
-                            Allergens = ParseEnum<FoodAllergen>(form[prefix + "FoodAllergens"], FoodAllergen.None),
-                            AllergenDetails = form[prefix + "FoodAllergenDetails"],
-                            BatchNumber = form[prefix + "FoodBatchNumber"],
-                            QualityGrade = form[prefix + "FoodQualityGrade"] ?? "Good",
-                            PackagingSealed = ParseBool(form[prefix + "FoodPackagingSealed"]),
-                            NoDamage = ParseBool(form[prefix + "FoodNoDamage"]),
-                            NoBulging = ParseBool(form[prefix + "FoodNoBulging"]),
-                            NoPestDamage = ParseBool(form[prefix + "FoodNoPestDamage"]),
-                            AppearancePassed = ParseBool(form[prefix + "FoodAppearancePassed"]),
-                            SmellPassed = ParseBool(form[prefix + "FoodSmellPassed"]),
-                            IsCommercialSource = ParseBool(form[prefix + "FoodIsCommercialSource"]),
-                            ProperlyLabeled = ParseBool(form[prefix + "FoodProperlyLabeled"]),
-                            NutritionInfoPresent = ParseBool(form[prefix + "FoodNutritionInfoPresent"]),
-                            CheckedAt = DateTime.Now,
-                            CheckerName = "System (automatic)"
-                        };
-
-                        var decision = _foodSafetyEvaluator.Evaluate(foodCheck);
-
-                        foodCheck.Status = decision.Status;
-                        foodCheck.RejectionReason = decision.IsSafe
-                            ? null
-                            : string.Join(" ", decision.Reasons);
-
-                        _context.FoodDonationChecks.Add(foodCheck);
-
-                        if (decision.Status == FoodDonationStatus.Approved)
-                        {
-                            donation.Status = DonationStatus.AwaitingDelivery;
-                            autoApprovedFood++;
-                            trackingCodesAwaiting.Add(donation.TrackingCode);
-
-                            _context.DonationHistories.Add(new DonationHistory
-                            {
-                                DonationItemId = donation.Id,
-                                Action = "FoodSafetyDecision",
-                                Description = decision.Summary,
-                                ActorType = "System",
-                                ActorId = personId,
-                                ActionDate = DateTime.Now
-                            });
-                        }
-                        else
-                        {
-                            donation.Status = decision.Status == FoodDonationStatus.Expired
-                                ? DonationStatus.Expired
-                                : DonationStatus.Rejected;
-                            donation.IsActive = false;
-                            autoRejectedFood++;
-                            trackingCodesRejected.Add(donation.TrackingCode);
-
-                            _context.DonationHistories.Add(new DonationHistory
-                            {
-                                DonationItemId = donation.Id,
-                                Action = "FoodSafetyDecision",
-                                Description = decision.Summary +
-                                              (decision.Reasons.Any() ? " " + string.Join(" ", decision.Reasons) : ""),
-                                ActorType = "System",
-                                ActorId = personId,
-                                ActionDate = DateTime.Now
-                            });
-                        }
-
-                        await _context.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        trackingCodesAwaiting.Add(donation.TrackingCode);
-
-                        _context.DonationHistories.Add(new DonationHistory
-                        {
-                            DonationItemId = donation.Id,
-                            Action = "DonationCreated",
-                            Description = $"{personName} submitted {quantity} {itemName}(s). " +
-                                          $"Tracking code: {donation.TrackingCode}. Awaiting delivery confirmation.",
-                            ActorId = personId,
-                            ActorType = personType,
-                            AdditionalData = JsonConvert.SerializeObject(new { DonationId = donation.Id, TrackingCode = donation.TrackingCode })
-                        });
-                        await _context.SaveChangesAsync();
-                    }
-
-                    savedCount++;
-                }
-
-                if (savedCount == 0)
-                {
-                    TempData["ErrorMessage"] = "No valid items were submitted.";
-                    return RedirectToAction("AddDonation");
-                }
-
-                var parts = new List<string>();
-                parts.Add($"Thank you! {savedCount} donation(s) submitted.");
-
-                if (autoApprovedFood > 0)
-                    parts.Add($"{autoApprovedFood} food item(s) passed the automatic safety check and are ready for delivery.");
-
-                if (autoRejectedFood > 0)
-                    parts.Add($"{autoRejectedFood} food item(s) were auto-rejected and will not be delivered.");
-
-                if (trackingCodesAwaiting.Any())
-                    parts.Add("Please deliver the item(s) to the school and confirm delivery using the tracking code(s).");
-
-                TempData["SuccessMessage"] = string.Join(" ", parts);
-                TempData["TrackingCodesToConfirm"] = string.Join(", ", trackingCodesAwaiting);
-
-                if (trackingCodesRejected.Any())
-                {
-                    TempData["RejectedTrackingCodes"] = string.Join(", ", trackingCodesRejected);
-                }
-
-                return RedirectToAction("Dashboard");
-            }
-            catch (Exception ex)
-            {
-                var innerMsg = ex.InnerException?.InnerException?.Message
-                               ?? ex.InnerException?.Message
-                               ?? ex.Message;
-                TempData["ErrorMessage"] = "Error saving donation: " + innerMsg;
-                return RedirectToAction("AddDonation");
-            }
-        }
-
-        #endregion
-
-        #region Delivery Confirmation
-
-        [HttpGet]
-        public ActionResult ConfirmDelivery(string trackingCode)
-        {
-            ViewBag.InitialTrackingCode = trackingCode ?? "";
-            return View();
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> CheckDeliveryProximity(
-            string trackingCode,
-            double? lat,
-            double? lng)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(trackingCode))
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "no-code",
-                        message = "Enter your tracking code to begin."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                if (!lat.HasValue || !lng.HasValue)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "no-gps",
-                        message = "Waiting for your GPS location."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                var code = trackingCode.Trim().ToUpperInvariant();
-
-                var donation = await _context.DonationItems
-                    .FirstOrDefaultAsync(d => d.TrackingCode == code && d.IsActive);
-
-                if (donation == null)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "invalid-code",
-                        message = "No active donation found with that tracking code."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                if (donation.Status == DonationStatus.Rejected)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "rejected",
-                        message = "This donation was auto-rejected by the food safety check."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                if (donation.Status == DonationStatus.Expired)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "expired",
-                        message = "This donation has been marked expired."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                if (donation.Status != DonationStatus.AwaitingDelivery)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "already-processed",
-                        message = $"This donation has already been processed (status: {donation.Status})."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                var personId = GetCurrentPersonId();
-                var isAdminOrTeacher = User.IsInRole("Admin") || User.IsInRole("Teacher");
-                if (donation.DonorId != personId && !isAdminOrTeacher)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        stage = "forbidden",
-                        message = "You are not allowed to confirm delivery of this donation."
-                    },
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                var distanceMeters = SchoolLocation.DistanceInMeters(
-                    lat.Value, lng.Value,
-                    SchoolLocation.Latitude, SchoolLocation.Longitude);
-
-                var distanceDisplay = distanceMeters < 1000
-                    ? $"{distanceMeters:F0} m"
-                    : $"{(distanceMeters / 1000):F2} km";
-
-                var inside = distanceMeters <= SchoolLocation.RadiusMeters;
-
-                return Json(new
-                {
-                    success = true,
-                    stage = inside ? "inside" : "outside",
-                    insideGeofence = inside,
-                    distanceMeters = Math.Round(distanceMeters, 1),
-                    distanceDisplay = distanceDisplay,
-                    radiusMeters = SchoolLocation.RadiusMeters,
-                    itemName = donation.ItemName,
-                    trackingCode = donation.TrackingCode,
-                    message = inside
-                        ? $"You are {distanceDisplay} from the school. You're within " +
-                          $"{SchoolLocation.RadiusMeters} m — you can confirm delivery."
-                        : $"You appear to be {distanceDisplay} away from the school. " +
-                          $"Delivery can only be confirmed within {SchoolLocation.RadiusMeters} m."
-                }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    success = false,
-                    stage = "error",
-                    message = "Server error: " + ex.Message
-                },
-                    JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ConfirmDeliverySubmit(FormCollection form)
-        {
-            try
-            {
-                var trackingCode = form["trackingCode"];
-                var deliveryNotes = form["deliveryNotes"];
-                var latStr = form["deliveryLatitude"];
-                var lngStr = form["deliveryLongitude"];
-
-                double? lat = null;
-                double? lng = null;
-
-                if (!string.IsNullOrWhiteSpace(latStr))
-                {
-                    double parsed;
-                    if (double.TryParse(latStr,
-                            System.Globalization.NumberStyles.Float,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out parsed))
-                    {
-                        lat = parsed;
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(lngStr))
-                {
-                    double parsed;
-                    if (double.TryParse(lngStr,
-                            System.Globalization.NumberStyles.Float,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out parsed))
-                    {
-                        lng = parsed;
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(trackingCode))
-                {
-                    TempData["ErrorMessage"] = "Please enter the tracking code.";
-                    return RedirectToAction("ConfirmDelivery");
-                }
-
-                if (!lat.HasValue || !lng.HasValue)
-                {
-                    TempData["ErrorMessage"] =
-                        "We couldn't read your GPS location. Please allow location access in your browser and try again.";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                var code = trackingCode.Trim().ToUpperInvariant();
-
-                var donation = await _context.DonationItems
-                    .Include(d => d.FoodChecks)
-                    .FirstOrDefaultAsync(d => d.TrackingCode == code && d.IsActive);
-
-                if (donation == null)
-                {
-                    TempData["ErrorMessage"] = "No active donation found with that tracking code.";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                if (donation.Status == DonationStatus.Rejected)
-                {
-                    TempData["ErrorMessage"] =
-                        "This donation was auto-rejected by the food safety check and cannot be delivered.";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                if (donation.Status == DonationStatus.Expired)
-                {
-                    TempData["ErrorMessage"] =
-                        "This donation has been marked expired and cannot be delivered.";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                if (donation.Status != DonationStatus.AwaitingDelivery)
-                {
-                    TempData["ErrorMessage"] =
-                        $"This donation has already been processed (current status: {donation.Status}).";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                var personId = GetCurrentPersonId();
-                var personName = GetCurrentPersonName();
-                var isAdminOrTeacher = User.IsInRole("Admin") || User.IsInRole("Teacher");
-
-                if (donation.DonorId != personId && !isAdminOrTeacher)
-                {
-                    TempData["ErrorMessage"] = "You are not allowed to confirm delivery of this donation.";
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                var distanceMeters = SchoolLocation.DistanceInMeters(
-                    lat.Value, lng.Value,
-                    SchoolLocation.Latitude, SchoolLocation.Longitude);
-
-                var distanceDisplay = distanceMeters < 1000
-                    ? $"{distanceMeters:F0} m"
-                    : $"{(distanceMeters / 1000):F2} km";
-
-                if (distanceMeters > SchoolLocation.RadiusMeters)
-                {
-                    TempData["ErrorMessage"] =
-                        $"You appear to be {distanceDisplay} away from the school. " +
-                        $"Delivery can only be confirmed within {SchoolLocation.RadiusMeters} m. " +
-                        $"Please try again once you're at the school.";
-
-                    _context.DonationHistories.Add(new DonationHistory
-                    {
-                        DonationItemId = donation.Id,
-                        Action = "DeliveryAttemptOutsideGeofence",
-                        Description = $"{personName} attempted delivery confirmation " +
-                                      $"from {distanceDisplay} away (max allowed: {SchoolLocation.RadiusMeters} m). " +
-                                      $"Coordinates: {lat.Value:F6}, {lng.Value:F6}.",
-                        ActorId = personId,
-                        ActorType = GetCurrentPersonType(),
-                        ActionDate = DateTime.Now
-                    });
-                    await _context.SaveChangesAsync();
-
-                    return RedirectToAction("ConfirmDelivery", new { trackingCode });
-                }
-
-                donation.DeliveryLocation = $"Confirmed via GPS at {distanceDisplay} from school";
-                donation.DeliveryConfirmedBy = personName;
-                donation.DeliveryConfirmedDate = DateTime.Now;
-                donation.DeliveryNotes = string.IsNullOrWhiteSpace(deliveryNotes)
-                    ? null : deliveryNotes.Trim();
-                donation.DeliveryLatitude = lat;
-                donation.DeliveryLongitude = lng;
-                donation.Status = DonationStatus.Verified;
-                donation.VerificationDate = DateTime.Now;
-
-                _context.DonationHistories.Add(new DonationHistory
-                {
-                    DonationItemId = donation.Id,
-                    Action = "DeliveryConfirmed",
-                    Description = $"{personName} confirmed delivery via GPS " +
-                                  $"({lat.Value:F6}, {lng.Value:F6}); " +
-                                  $"distance to school: {distanceDisplay}.",
-                    ActorId = personId,
-                    ActorType = GetCurrentPersonType(),
-                    ActionDate = DateTime.Now
-                });
-
-                await _context.SaveChangesAsync();
-
-                try { await _aiMatcher.ProcessMatchingAsync(); } catch { }
-
-                TempData["SuccessMessage"] =
-                    $"Delivery confirmed for {donation.ItemName} ({distanceDisplay} from school). " +
-                    $"It is now available for matching.";
-
-                return RedirectToAction("Dashboard");
-            }
-            catch (Exception ex)
-            {
-                var innerMsg = ex.InnerException?.InnerException?.Message
-                               ?? ex.InnerException?.Message
-                               ?? ex.Message;
-                TempData["ErrorMessage"] = "Error confirming delivery: " + innerMsg;
-                return RedirectToAction("ConfirmDelivery");
-            }
-        }
-
-        [HttpGet]
-        public async Task<ActionResult> MyPendingDeliveries()
-        {
-            var personId = GetCurrentPersonId();
-            if (personId == 0) return RedirectToAction("Login", "Account");
-
-            var pending = await _context.DonationItems
-                .Where(d => d.DonorId == personId
-                            && d.IsActive
-                            && d.Status == DonationStatus.AwaitingDelivery)
-                .OrderByDescending(d => d.DonationDate)
-                .ToListAsync();
-
-            return View(pending);
-        }
-
-        #endregion
-
-        #region Food Eligibility (read-only report)
-
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> FoodEligibilityList()
-        {
-            var foodItems = await _context.DonationItems
-                .Include(d => d.FoodChecks)
-                .Where(d => d.IsFoodItem)
-                .OrderByDescending(d => d.DonationDate)
-                .ToListAsync();
-
-            var viewModel = foodItems.Select(d =>
-            {
-                var latestCheck = d.FoodChecks?.OrderByDescending(f => f.CheckedAt).FirstOrDefault();
-                var status = latestCheck?.Status ?? FoodDonationStatus.PendingEligibilityCheck;
-
-                return new FoodEligibilityListViewModel
-                {
-                    Id = latestCheck?.Id ?? 0,
-                    DonationItemId = d.Id,
-                    ItemName = d.ItemName,
-                    DonorName = d.DonorName,
-                    Quantity = d.Quantity,
-                    FoodType = latestCheck?.FoodType ?? "Unknown",
-                    ExpiryDate = latestCheck?.ExpiryDate ?? d.DonationDate.AddMonths(6),
-                    ExpiryStatus = latestCheck != null && latestCheck.IsExpired ? "Expired"
-                                 : latestCheck != null && latestCheck.IsExpiringSoon ? "Expiring Soon"
-                                 : "OK",
-                    Status = status,
-                    StatusDisplay = GetFoodStatusDisplay(status),
-                    StatusBadgeClass = GetFoodStatusBadgeClass(status),
-                    CheckedAt = latestCheck?.CheckedAt ?? d.DonationDate,
-                    CheckerName = latestCheck?.CheckerName ?? "System (automatic)",
-                    IsFoodItem = true
-                };
-            }).ToList();
-
-            ViewBag.ApprovedCount = viewModel.Count(v => v.Status == FoodDonationStatus.Approved);
-            ViewBag.RejectedCount = viewModel.Count(v => v.Status == FoodDonationStatus.Rejected);
-            ViewBag.ExpiredCount = viewModel.Count(v => v.Status == FoodDonationStatus.Expired);
-            ViewBag.PendingCount = viewModel.Count(v => v.Status == FoodDonationStatus.PendingEligibilityCheck);
-            ViewBag.TotalCount = viewModel.Count;
-
-            return View(viewModel);
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> FoodEligibilityCheck(int id)
-        {
-            var donation = await _context.DonationItems
-                .Include(d => d.FoodChecks)
-                .FirstOrDefaultAsync(d => d.Id == id && d.IsFoodItem);
-
-            if (donation == null) return HttpNotFound();
-
-            var foodCheck = donation.FoodChecks?
-                .OrderByDescending(f => f.CheckedAt)
-                .FirstOrDefault();
-
-            if (foodCheck == null)
-            {
-                TempData["ErrorMessage"] = "No safety evaluation was recorded for this donation.";
-                return RedirectToAction("FoodEligibilityList");
-            }
-
-            var decision = _foodSafetyEvaluator.Evaluate(foodCheck);
-
-            var viewModel = new FoodEligibilityViewModel
-            {
-                Id = foodCheck.Id,
-                DonationItemId = donation.Id,
-                DonationItemName = donation.ItemName,
-                DonorName = donation.DonorName,
-                Quantity = donation.Quantity,
-                DonationDate = donation.DonationDate,
-                FoodType = foodCheck.FoodType,
-                ExpiryDate = foodCheck.ExpiryDate,
-                ProductionDate = foodCheck.ProductionDate,
-                StorageType = foodCheck.StorageType,
-                StorageNotes = foodCheck.StorageNotes,
-                Allergens = foodCheck.Allergens,
-                AllergenDetails = foodCheck.AllergenDetails,
-                PackagingSealed = foodCheck.PackagingSealed,
-                NoDamage = foodCheck.NoDamage,
-                NoBulging = foodCheck.NoBulging,
-                NoPestDamage = foodCheck.NoPestDamage,
-                QualityGrade = foodCheck.QualityGrade,
-                ConditionNotes = foodCheck.ConditionNotes,
-                AppearancePassed = foodCheck.AppearancePassed,
-                SmellPassed = foodCheck.SmellPassed,
-                IsCommercialSource = foodCheck.IsCommercialSource,
-                ProperlyLabeled = foodCheck.ProperlyLabeled,
-                NutritionInfoPresent = foodCheck.NutritionInfoPresent,
-                Status = foodCheck.Status,
-                RejectionReason = foodCheck.RejectionReason,
-                PhotoPath = donation.PhotoEvidence
+                PersonName = GetCurrentPersonName(),
+                PersonRole = GetCurrentPersonType()
             };
-
-            ViewBag.DecisionSummary = decision.Summary;
-            ViewBag.DecisionReasons = decision.Reasons;
-            ViewBag.DecisionWarnings = decision.Warnings;
-
-            return View(viewModel);
-        }
-
-        private string GetFoodStatusDisplay(FoodDonationStatus status)
-        {
-            switch (status)
-            {
-                case FoodDonationStatus.PendingEligibilityCheck: return "⏳ Pending Review";
-                case FoodDonationStatus.Approved: return "✅ Auto-Approved";
-                case FoodDonationStatus.Rejected: return "❌ Auto-Rejected";
-                case FoodDonationStatus.Expired: return "⚠️ Expired";
-                default: return "Unknown";
-            }
-        }
-
-        private string GetFoodStatusBadgeClass(FoodDonationStatus status)
-        {
-            switch (status)
-            {
-                case FoodDonationStatus.PendingEligibilityCheck: return "badge-warning";
-                case FoodDonationStatus.Approved: return "badge-success";
-                case FoodDonationStatus.Rejected: return "badge-danger";
-                case FoodDonationStatus.Expired: return "badge-secondary";
-                default: return "badge-secondary";
-            }
-        }
-
-        #endregion
-
-        #region Donation History
-
-        public async Task<ActionResult> DonationHistory()
-        {
-            IQueryable<DonationItem> query = _context.DonationItems
-                .Include(d => d.Allocations)
-                .Include(d => d.FoodChecks)
-                .Where(d => d.IsActive);
 
             if (User.IsInRole("Student"))
             {
                 var student = GetCurrentStudent();
                 if (student != null)
                 {
-                    query = query.Where(d => d.Allocations.Any(a => a.StudentId == student.Id) ||
-                                            (d.DonorId == student.Id && d.DonorType == "Student"));
+                    model.MyOpenRequests = await _context.DonationRequestItems
+                        .CountAsync(ri => ri.DonationRequest.StudentId == student.Id && ri.DonationRequest.IsActive
+                                           && (ri.Status == RequestItemStatus.Waitlisted || ri.Status == RequestItemStatus.Reserved));
+
+                    model.MyAwaitingCollection = await _context.DonationAllocations
+                        .CountAsync(a => a.StudentId == student.Id && a.IsActive && a.Status == "AwaitingCollection");
+
+                    model.MyPendingDonations = await _context.DonationItems
+                        .CountAsync(i => i.DonorId == student.Id && i.DonorType == "Student" && i.IsActive
+                                          && (i.Status == DonationStatus.PendingApproval || i.Status == DonationStatus.ApprovedAwaitingIntake));
                 }
             }
 
-            var donations = await query
-                .OrderByDescending(d => d.DonationDate)
-                .ToListAsync();
-
-            return View(donations);
-        }
-
-        public async Task<ActionResult> DonationDetails(int id)
-        {
-            var donation = await _context.DonationItems
-                .Include(d => d.Allocations)
-                .Include(d => d.Allocations.Select(a => a.Student))
-                .Include(d => d.Campaign)
-                .Include(d => d.FoodChecks)
-                .FirstOrDefaultAsync(d => d.Id == id);
-
-            if (donation == null) return HttpNotFound();
-
-            var latestCheck = donation.FoodChecks?.OrderByDescending(f => f.CheckedAt).FirstOrDefault();
-
-            var history = await _context.DonationHistories
-                .Where(h => h.DonationItemId == id)
-                .OrderByDescending(h => h.ActionDate)
-                .ToListAsync();
-
-            ViewBag.History = history;
-            ViewBag.IsFoodItem = donation.IsFoodItem;
-            ViewBag.FoodCheck = latestCheck;
-            return View(donation);
-        }
-
-        #endregion
-
-        #region Verify Donation
-
-        [HttpPost]
-        [Authorize(Roles = "Admin,Teacher")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> VerifyDonation(int id)
-        {
-            var donation = await _context.DonationItems
-                .Include(d => d.FoodChecks)
-                .FirstOrDefaultAsync(d => d.Id == id);
-
-            if (donation == null)
-                return Json(new { success = false, message = "Donation not found" });
-
-            if (donation.Status != DonationStatus.PendingVerification
-                && donation.Status != DonationStatus.PendingEligibilityCheck)
+            if (User.IsInRole("Teacher"))
             {
-                return Json(new { success = false, message = "Donation is not pending verification" });
+                var personId = GetCurrentPersonId();
+                model.MyPendingDonations = await _context.DonationItems
+                    .CountAsync(i => i.DonorId == personId && i.DonorType == "Teacher" && i.IsActive
+                                      && (i.Status == DonationStatus.PendingApproval || i.Status == DonationStatus.ApprovedAwaitingIntake));
             }
 
-            var personId = GetCurrentPersonId();
-
-            if (donation.IsFoodItem)
+            if (User.IsInRole("Admin") || User.IsInRole("Principal"))
             {
-                var latestCheck = donation.FoodChecks?.OrderByDescending(f => f.CheckedAt).FirstOrDefault();
-                if (latestCheck == null || latestCheck.Status != FoodDonationStatus.Approved)
-                {
-                    return Json(new { success = false, message = "Food item was not approved by the safety evaluator." });
-                }
+                model.PendingApprovals = await _context.DonationItems.CountAsync(i => i.IsActive && i.Status == DonationStatus.PendingApproval);
+                model.AwaitingIntakeToday = await _context.DonationItems.CountAsync(i => i.IsActive && i.Status == DonationStatus.ApprovedAwaitingIntake
+                                                                                           && i.ScheduledIntakeDate.HasValue && DbFunctions.TruncateTime(i.ScheduledIntakeDate) == DateTime.Today);
+                model.AvailableItems = await _context.DonationItems.CountAsync(i => i.IsActive && i.Status == DonationStatus.Available);
+                model.PendingMatchReview = await _context.DonationAllocations.CountAsync(a => a.IsActive && a.Status == "PendingReview");
+                model.AwaitingCollectionTotal = await _context.DonationAllocations.CountAsync(a => a.IsActive && a.Status == "AwaitingCollection");
+                model.WaitlistedRequests = await _context.DonationRequestItems.CountAsync(ri => ri.Status == RequestItemStatus.Waitlisted && ri.DonationRequest.IsActive);
+
+                model.RecentActivity = await _context.DonationHistories.OrderByDescending(h => h.ActionDate).Take(10).ToListAsync();
             }
 
-            donation.Status = DonationStatus.Verified;
-            donation.VerificationDate = DateTime.Now;
-            donation.VerifiedBy = personId;
+            model.RecentDonations = await _context.DonationItems.Where(i => i.IsActive).OrderByDescending(i => i.DonationDate).Take(5).ToListAsync();
+            model.RecentRequests = await _context.DonationRequests.Where(r => r.IsActive).OrderByDescending(r => r.RequestDate).Take(5).ToListAsync();
 
-            await _context.SaveChangesAsync();
-
-            _context.DonationHistories.Add(new DonationHistory
-            {
-                DonationItemId = donation.Id,
-                Action = "Verified",
-                Description = $"Donation verified by {GetCurrentPersonName()}",
-                ActorId = personId,
-                ActorType = GetCurrentPersonType()
-            });
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Donation verified successfully" });
+            return View(model);
         }
 
         #endregion
 
-        #region Match Donations
+        #region UC01 — Request Donation Item
 
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<ActionResult> MatchDonations()
+        [Authorize(Roles = "Student")]
+        public ActionResult RequestDonation()
         {
-            var pendingItems = await _context.DonationRequestItems
-                .Include(i => i.DonationRequest)
-                .Include(i => i.DonationRequest.Student)
-                .Where(i => i.DonationRequest.IsActive && !i.IsFulfilled && i.Status != RequestItemStatus.Declined)
-                .OrderByDescending(i => i.Priority)
-                .ThenByDescending(i => i.DonationRequest.PriorityScore)
-                .ToListAsync();
-
-            var availableDonations = await _context.DonationItems
-                .Where(d => d.IsActive && d.Status == DonationStatus.Verified && d.QuantityRemaining > 0)
-                .ToListAsync();
-
-            var matches = new List<PriorityMatchViewModel>();
-
-            foreach (var item in pendingItems)
-            {
-                var compatibleDonation = availableDonations
-                    .FirstOrDefault(d => d.Category == item.Category && d.QuantityRemaining > 0);
-
-                if (compatibleDonation != null)
-                {
-                    matches.Add(new PriorityMatchViewModel
-                    {
-                        RequestId = item.DonationRequestId,
-                        RequestItemId = item.Id,
-                        Category = item.Category,
-                        StudentName = item.DonationRequest.Student?.FullName,
-                        StudentNumber = item.DonationRequest.Student?.User?.StudentNumber,
-                        ItemNeeded = item.ItemName,
-                        PriorityScore = item.DonationRequest.PriorityScore,
-                        WaitListPosition = item.DonationRequest.WaitListPosition,
-                        RequestDate = item.DonationRequest.RequestDate,
-                        Priority = item.Priority,
-                        DonationItemId = compatibleDonation.Id,
-                        DonationItemName = compatibleDonation.ItemName,
-                        MatchScore = 80
-                    });
-                }
-                else
-                {
-                    matches.Add(new PriorityMatchViewModel
-                    {
-                        RequestId = item.DonationRequestId,
-                        RequestItemId = item.Id,
-                        Category = item.Category,
-                        StudentName = item.DonationRequest.Student?.FullName,
-                        StudentNumber = item.DonationRequest.Student?.User?.StudentNumber,
-                        ItemNeeded = item.ItemName,
-                        PriorityScore = item.DonationRequest.PriorityScore,
-                        WaitListPosition = item.DonationRequest.WaitListPosition,
-                        RequestDate = item.DonationRequest.RequestDate,
-                        Priority = item.Priority,
-                        DonationItemId = null,
-                        MatchScore = 0
-                    });
-                }
-            }
-
-            ViewBag.PendingRequests = pendingItems.Count;
-            ViewBag.AvailableDonations = availableDonations.Count;
-
-            return View(matches);
+            ViewBag.Categories = Enum.GetValues(typeof(DonationCategory)).Cast<DonationCategory>().Where(c => c != DonationCategory.Food).ToList();
+            ViewBag.UrgencyContexts = UrgencyContexts;
+            return View();
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AllocateDonation(int requestId, int donationItemId, int quantity)
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult> RequestDonation(string itemsJson)
         {
+            var student = GetCurrentStudent();
+            if (student == null) return RedirectToAction("RequestDonation");
+
+            List<DonationRequestItemViewModel> items;
+            try { items = JsonConvert.DeserializeObject<List<DonationRequestItemViewModel>>(itemsJson) ?? new List<DonationRequestItemViewModel>(); }
+            catch { items = new List<DonationRequestItemViewModel>(); }
+
+            if (!items.Any())
+            {
+                TempData["Error"] = "Please add at least one item to your request.";
+                return RedirectToAction("RequestDonation");
+            }
+
+            // Step 6 — reject duplicate open requests for the same item/category.
+            var openCategories = await _context.DonationRequestItems
+                .Where(ri => ri.DonationRequest.StudentId == student.Id && ri.DonationRequest.IsActive
+                             && (ri.Status == RequestItemStatus.Waitlisted || ri.Status == RequestItemStatus.Reserved || ri.Status == RequestItemStatus.AwaitingCollection))
+                .Select(ri => ri.Category)
+                .ToListAsync();
+
+            items = items.Where(i => !openCategories.Contains(i.Category)).ToList();
+            if (!items.Any())
+            {
+                TempData["Error"] = "You already have an open request in the same category — see My Requests.";
+                return RedirectToAction("MyRequests");
+            }
+
+            var request = new DonationRequest { StudentId = student.Id };
+            foreach (var vm in items)
+            {
+                request.Items.Add(new DonationRequestItem
+                {
+                    Category = vm.Category,
+                    ItemType = vm.ItemType,
+                    ItemName = vm.ItemName,
+                    Description = vm.Description,
+                    BookTitle = vm.BookTitle,
+                    Subject = vm.Subject,
+                    GradeLevel = vm.GradeLevel,
+                    ISBN = vm.ISBN,
+                    ClothingSize = vm.ClothingSize,
+                    ClothingType = vm.ClothingType,
+                    Gender = vm.Gender,
+                    StationeryType = vm.StationeryType,
+                    BrandPreference = vm.BrandPreference,
+                    ItemSubCategory = vm.ItemSubCategory,
+                    SizeSpecifications = vm.SizeSpecifications,
+                    QuantityRequested = vm.QuantityRequested,
+                    Priority = vm.Priority,
+                    UrgencyReason = vm.UrgencyReason,
+                    Status = RequestItemStatus.Waitlisted
+                });
+            }
+
+            // Step 7 — Priority Score. Step 8 — Waitlisted.
+            request.PriorityScore = request.CalculatePriorityScore();
+            request.WaitlistedDate = DateTime.Now;
+            _context.DonationRequests.Add(request);
+            await _context.SaveChangesAsync();
+
+            // Step 10 — confirmation with reference number; step 9 — queue position.
+            var firstItem = request.Items.First();
+            var queuePosition = ComputeQueuePosition(firstItem);
             try
             {
-                var request = await _context.DonationRequests
-                    .Include(r => r.Items)
-                    .Include(r => r.Student)
-                    .FirstOrDefaultAsync(r => r.Id == requestId);
-
-                if (request == null || !request.IsActive)
-                {
-                    TempData["ErrorMessage"] = "Invalid request.";
-                    return RedirectToAction("MatchDonations");
-                }
-
-                var donation = await _context.DonationItems.FindAsync(donationItemId);
-                if (donation == null || donation.QuantityRemaining < quantity)
-                {
-                    TempData["ErrorMessage"] = "Insufficient donation quantity or donation not found.";
-                    return RedirectToAction("MatchDonations");
-                }
-
-                var allocation = new DonationAllocation
-                {
-                    DonationItemId = donation.Id,
-                    StudentId = request.StudentId,
-                    RequestId = request.Id,
-                    QuantityAllocated = quantity,
-                    Status = "Pending",
-                    AllocationDate = DateTime.Now,
-                    IsActive = true,
-                    Notes = "Manually matched"
-                };
-
-                _context.DonationAllocations.Add(allocation);
-
-                donation.QuantityRemaining -= quantity;
-                if (donation.QuantityRemaining == 0)
-                    donation.Status = DonationStatus.Allocated;
-
-                var matchingItems = request.Items
-                    .Where(i => i.Category == donation.Category && !i.IsFulfilled && i.Status != RequestItemStatus.Declined)
-                    .ToList();
-
-                foreach (var item in matchingItems)
-                {
-                    var remaining = item.QuantityRequested - item.QuantityReceived;
-                    var toApply = Math.Min(remaining, quantity);
-                    item.QuantityReceived += toApply;
-
-                    if (toApply > 0)
-                    {
-                        item.Status = RequestItemStatus.Allocated;
-                    }
-
-                    if (item.QuantityReceived >= item.QuantityRequested)
-                    {
-                        item.IsFulfilled = true;
-                        item.FulfilledDate = DateTime.Now;
-                    }
-                }
-
-                if (request.Items.All(i => i.IsFulfilled))
-                {
-                    request.IsFulfilled = true;
-                    request.FulfilledDate = DateTime.Now;
-                }
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] =
-                    $"Allocation created successfully — {quantity} item(s) assigned to {request.Student?.FullName ?? "student"}.";
-
-                return RedirectToAction("MatchDonations");
+                _emailService.SendDonationRequestConfirmedEmail(GetCurrentPersonEmail(), student.FullName,
+                    string.Join(", ", items.Select(i => i.ItemName)), $"REQ-{request.Id:D6}", queuePosition);
             }
-            catch (Exception ex)
-            {
-                var innerMsg = ex.InnerException?.InnerException?.Message
-                               ?? ex.InnerException?.Message
-                               ?? ex.Message;
-                TempData["ErrorMessage"] = "Error creating allocation: " + innerMsg;
-                return RedirectToAction("MatchDonations");
-            }
+            catch { /* don't block the request on a flaky SMTP server */ }
+
+            TempData["Success"] = $"Request submitted — reference REQ-{request.Id:D6}. You're currently #{queuePosition} in the queue for {firstItem.Category}.";
+            return RedirectToAction("MyRequests");
         }
 
-        // Lets Admin/Teacher explicitly decline a single request item (e.g. it
-        // can't realistically be sourced) so the student sees an honest status
-        // instead of it sitting on the waitlist forever. Declined items are
-        // excluded from MatchDonations/PriorityWaitlist going forward.
-        [HttpPost]
-        [ValidateJsonAntiForgeryToken]
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<JsonResult> DeclineRequestItem(int id, string reason)
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult> MyRequests()
         {
-            var item = await _context.DonationRequestItems
-                .Include(i => i.DonationRequest)
-                .FirstOrDefaultAsync(i => i.Id == id);
+            var student = GetCurrentStudent();
+            var requests = student == null
+                ? new List<DonationRequest>()
+                : await _context.DonationRequests.Include(r => r.Items).Where(r => r.StudentId == student.Id).OrderByDescending(r => r.RequestDate).ToListAsync();
 
-            if (item == null)
-                return Json(new { success = false, message = "Request item not found." });
+            ViewBag.QueuePositions = requests
+                .SelectMany(r => r.Items)
+                .Where(i => i.Status == RequestItemStatus.Waitlisted)
+                .ToDictionary(i => i.Id, i => ComputeQueuePosition(i));
 
-            if (item.IsFulfilled || item.Status == RequestItemStatus.Allocated)
-                return Json(new { success = false, message = "This item has already been allocated and can no longer be declined." });
+            return View(requests);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Student")]
+        public async Task<JsonResult> CancelRequestItem(int id)
+        {
+            var student = GetCurrentStudent();
+            var item = await _context.DonationRequestItems.Include(i => i.DonationRequest)
+                .FirstOrDefaultAsync(i => i.Id == id && i.DonationRequest.StudentId == student.Id);
+            if (item == null || item.Status != RequestItemStatus.Waitlisted)
+                return Json(new { success = false, message = "Only waitlisted items can be cancelled." });
 
             item.Status = RequestItemStatus.Declined;
-            item.DeclineReason = string.IsNullOrWhiteSpace(reason) ? "No reason provided." : reason.Trim();
+            item.DeclineReason = "Cancelled by learner";
             item.DeclinedDate = DateTime.Now;
-            item.DeclinedBy = GetCurrentPersonId();
-
             await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Item declined." });
+            return Json(new { success = true });
         }
 
         #endregion
 
-        #region Priority Waitlist
+        #region UC02 — Donate an Item
 
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<ActionResult> PriorityWaitlist()
+        public async Task<ActionResult> AddDonation()
         {
-            var pendingRequests = await _context.DonationRequests
-                .Include(r => r.Student)
-                .Include(r => r.Items)
-                .Where(r => r.IsActive && !r.IsFulfilled)
-                .OrderByDescending(r => r.PriorityScore)
-                .ThenBy(r => r.RequestDate)
+            ViewBag.Categories = Enum.GetValues(typeof(DonationCategory)).Cast<DonationCategory>().Where(c => c != DonationCategory.Food).ToList();
+
+            // UC02 step 5 (Named Allocation) — a plain, searchable-by-eye
+            // dropdown of active learners, so nothing needs to be typed.
+            // Projected into a named public class (DonationStudentOption),
+            // not an anonymous type — see that class's comment for why.
+            ViewBag.Students = await _context.Students
+                .Include(s => s.User)
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.FirstName).ThenBy(s => s.LastName)
+                .Select(s => new DonationStudentOption { Name = s.FirstName + " " + s.LastName, StudentNumber = s.User.StudentNumber })
                 .ToListAsync();
 
-            int position = 1;
-            foreach (var req in pendingRequests)
-            {
-                req.WaitListPosition = position++;
-            }
-            await _context.SaveChangesAsync();
-
-            var viewModel = new List<PriorityMatchViewModel>();
-            foreach (var r in pendingRequests)
-            {
-                foreach (var item in r.Items.Where(i => !i.IsFulfilled && i.Status != RequestItemStatus.Declined))
-                {
-                    viewModel.Add(new PriorityMatchViewModel
-                    {
-                        RequestId = r.Id,
-                        RequestItemId = item.Id,
-                        Category = item.Category,
-                        StudentName = r.Student?.FullName,
-                        StudentNumber = r.Student?.User?.StudentNumber,
-                        ItemNeeded = item.ItemName,
-                        PriorityScore = item.CalculateItemScore(),
-                        WaitListPosition = r.WaitListPosition,
-                        RequestDate = r.RequestDate,
-                        Priority = item.Priority
-                    });
-                }
-            }
-
-            return View(viewModel);
-        }
-
-        #endregion
-
-        #region Auto-Match Food
-
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<ActionResult> AutoMatchFood()
-        {
-            var donations = await _context.DonationItems
-                .Include(d => d.FoodChecks)
-                .Where(d => d.IsActive
-                            && d.IsFoodItem
-                            && d.Status == DonationStatus.Verified
-                            && d.QuantityRemaining > 0)
-                .OrderBy(d => d.DonationDate)
-                .ToListAsync();
-
-            var pendingFoodRequestCount = await _context.DonationRequestItems
-                .CountAsync(i => i.Category == DonationCategory.Food
-                                 && i.DonationRequest.IsActive
-                                 && !i.IsFulfilled);
-
-            var donationChecks = new Dictionary<int, FoodDonationCheck>();
-            foreach (var d in donations)
-            {
-                var check = d.FoodChecks?
-                    .OrderByDescending(f => f.CheckedAt)
-                    .FirstOrDefault();
-                if (check != null) donationChecks[d.Id] = check;
-            }
-
-            ViewBag.DonationChecks = donationChecks;
-            ViewBag.PendingFoodRequestCount = pendingFoodRequestCount;
-
-            return View(donations);
-        }
-
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<ActionResult> PreviewFoodAllocation(int id)
-        {
-            var donation = await _context.DonationItems
-                .Include(d => d.FoodChecks)
-                .FirstOrDefaultAsync(d => d.Id == id && d.IsFoodItem && d.IsActive);
-
-            if (donation == null)
-            {
-                TempData["ErrorMessage"] = "Food donation not found.";
-                return RedirectToAction("AutoMatchFood");
-            }
-
-            if (donation.Status != DonationStatus.Verified || donation.QuantityRemaining <= 0)
-            {
-                TempData["ErrorMessage"] =
-                    "This donation is not available for allocation " +
-                    $"(status: {donation.Status}, remaining: {donation.QuantityRemaining}).";
-                return RedirectToAction("AutoMatchFood");
-            }
-
-            var foodCheck = donation.FoodChecks?
-                .OrderByDescending(f => f.CheckedAt)
-                .FirstOrDefault();
-
-            var candidates = await _foodAllocationEngine.BuildCandidatesAsync(_context);
-            var plan = _foodAllocationEngine.ComputePlanForDonation(donation, foodCheck, candidates);
-
-            ViewBag.DonationItem = donation;
-            ViewBag.FoodCheck = foodCheck;
-
-            return View(plan);
+            return View();
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Teacher")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CommitFoodAllocation(FormCollection form)
+        public async Task<ActionResult> AddDonation(string itemsJson)
         {
-            try
+            List<DonationItemEntry> entries;
+            try { entries = JsonConvert.DeserializeObject<List<DonationItemEntry>>(itemsJson) ?? new List<DonationItemEntry>(); }
+            catch { entries = new List<DonationItemEntry>(); }
+
+            if (!entries.Any())
             {
-                int donationId;
-                if (!int.TryParse(form["donationItemId"], out donationId))
+                TempData["Error"] = "Please add at least one item to donate.";
+                return RedirectToAction("AddDonation");
+            }
+
+            var donorId = GetCurrentPersonId();
+            var donorType = GetCurrentPersonType();
+            var donorName = GetCurrentPersonName();
+            var donorEmail = GetCurrentPersonEmail();
+            var referenceCodes = new List<string>();
+
+            foreach (var entry in entries)
+            {
+                int? targetStudentId = null;
+                if (entry.AllocationType == AllocationType.NamedAllocation && !string.IsNullOrWhiteSpace(entry.TargetStudentNumber))
                 {
-                    TempData["ErrorMessage"] = "Missing donation id.";
-                    return RedirectToAction("AutoMatchFood");
+                    var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.StudentNumber == entry.TargetStudentNumber);
+                    if (targetUser != null)
+                        targetStudentId = (await _context.Students.FirstOrDefaultAsync(s => s.UserId == targetUser.Id))?.Id;
                 }
 
-                var donation = await _context.DonationItems
-                    .Include(d => d.FoodChecks)
-                    .FirstOrDefaultAsync(d => d.Id == donationId && d.IsFoodItem && d.IsActive);
-
-                if (donation == null)
+                var item = new DonationItem
                 {
-                    TempData["ErrorMessage"] = "Food donation not found.";
-                    return RedirectToAction("AutoMatchFood");
-                }
-
-                if (donation.Status != DonationStatus.Verified || donation.QuantityRemaining <= 0)
-                {
-                    TempData["ErrorMessage"] =
-                        "This donation has already been fully allocated or is no longer available.";
-                    return RedirectToAction("AutoMatchFood");
-                }
-
-                var inputs = new List<CommitLineInput>();
-                int totalRequested = 0;
-
-                for (int i = 0; ; i++)
-                {
-                    var studentIdStr = form["Lines[" + i + "].StudentId"];
-                    if (string.IsNullOrWhiteSpace(studentIdStr)) break;
-
-                    int studentId, requestId, requestItemId, qty;
-
-                    if (!int.TryParse(studentIdStr, out studentId)) continue;
-                    if (!int.TryParse(form["Lines[" + i + "].RequestId"], out requestId)) requestId = 0;
-                    if (!int.TryParse(form["Lines[" + i + "].RequestItemId"], out requestItemId)) continue;
-                    if (!int.TryParse(form["Lines[" + i + "].Quantity"], out qty)) qty = 0;
-
-                    if (qty <= 0) continue;
-
-                    totalRequested += qty;
-
-                    inputs.Add(new CommitLineInput
-                    {
-                        StudentId = studentId,
-                        RequestId = requestId,
-                        RequestItemId = requestItemId,
-                        Quantity = qty
-                    });
-                }
-
-                if (!inputs.Any())
-                {
-                    TempData["ErrorMessage"] = "No allocations were submitted.";
-                    return RedirectToAction("PreviewFoodAllocation", new { id = donation.Id });
-                }
-
-                if (totalRequested > donation.QuantityRemaining)
-                {
-                    TempData["ErrorMessage"] =
-                        $"The submitted total ({totalRequested}) exceeds the " +
-                        $"available stock ({donation.QuantityRemaining}). " +
-                        $"Please adjust the quantities and try again.";
-                    return RedirectToAction("PreviewFoodAllocation", new { id = donation.Id });
-                }
-
-                var staffId = GetCurrentPersonId();
-                var staffName = GetCurrentPersonName();
-
-                var decision = new FoodAllocationDecision
-                {
-                    DonationItemId = donation.Id,
-                    DecidedAt = DateTime.Now,
-                    TotalUnitsAvailable = donation.QuantityRemaining,
-                    TotalUnitsAllocated = totalRequested,
-                    EligibleStudentCount = inputs.Count,
-                    DecidedBy = staffId,
-                    DecidedByName = staffName
+                    DonorId = donorId,
+                    DonorType = donorType,
+                    DonorName = donorName,
+                    DonorEmail = donorEmail,
+                    Category = entry.Category,
+                    ItemType = entry.ItemType,
+                    ItemName = entry.ItemName,
+                    BookTitle = entry.BookTitle,
+                    Subject = entry.Subject,
+                    GradeLevel = entry.GradeLevel,
+                    ISBN = entry.ISBN,
+                    ClothingSize = entry.ClothingSize,
+                    ClothingType = entry.ClothingType,
+                    Gender = entry.Gender,
+                    Quantity = entry.Quantity,
+                    QuantityRemaining = entry.Quantity,
+                    AllocationType = entry.AllocationType,
+                    TargetStudentId = targetStudentId,
+                    Condition = entry.Condition,
+                    ConditionNotes = entry.ConditionNotes,
+                    PhotoEvidence = entry.PhotoEvidence,
+                    Status = DonationStatus.PendingApproval,
+                    IsFoodItem = false
                 };
+                _context.DonationItems.Add(item);
+                await _context.SaveChangesAsync(); // need item.Id for history
 
-                int.TryParse(form["excludedCount"], out int excludedCount);
-                decision.ExcludedStudentCount = excludedCount;
-                decision.ExcludedReasonSummary = form["excludedSummary"];
+                LogHistory(item.Id, "Submitted", $"Donated by {donorName} ({donorType}).");
+                referenceCodes.Add(item.TrackingCode);
 
-                _context.FoodAllocationDecisions.Add(decision);
-                await _context.SaveChangesAsync();
-
-                foreach (var input in inputs)
-                {
-                    var alloc = new DonationAllocation
-                    {
-                        DonationItemId = donation.Id,
-                        StudentId = input.StudentId,
-                        RequestId = input.RequestId > 0 ? (int?)input.RequestId : null,
-                        QuantityAllocated = input.Quantity,
-                        Status = "Pending",
-                        AllocationDate = DateTime.Now,
-                        IsActive = true,
-                        Notes = "Auto-allocated from food donation"
-                    };
-                    _context.DonationAllocations.Add(alloc);
-
-                    decision.Lines.Add(new FoodAllocationDecisionLine
-                    {
-                        FoodAllocationDecisionId = decision.Id,
-                        StudentId = input.StudentId,
-                        RequestItemId = input.RequestItemId,
-                        AllocatedQuantity = input.Quantity,
-                        Priority = "Auto"
-                    });
-
-                    var reqItem = await _context.DonationRequestItems
-                        .Include(i => i.DonationRequest)
-                        .FirstOrDefaultAsync(i => i.Id == input.RequestItemId);
-
-                    if (reqItem != null)
-                    {
-                        reqItem.QuantityReceived += input.Quantity;
-                        reqItem.Status = RequestItemStatus.Allocated;
-
-                        if (reqItem.Category == DonationCategory.Food)
-                        {
-                            reqItem.IsFulfilled = true;
-                            reqItem.FulfilledDate = DateTime.Now;
-                        }
-                        else if (reqItem.QuantityReceived >= reqItem.QuantityRequested)
-                        {
-                            reqItem.IsFulfilled = true;
-                            reqItem.FulfilledDate = DateTime.Now;
-                        }
-
-                        if (reqItem.DonationRequest != null)
-                        {
-                            var anyOpen = await _context.DonationRequestItems
-                                .AnyAsync(i => i.DonationRequestId == reqItem.DonationRequestId
-                                               && !i.IsFulfilled
-                                               && i.Id != reqItem.Id);
-
-                            if (!anyOpen)
-                            {
-                                reqItem.DonationRequest.IsFulfilled = true;
-                                reqItem.DonationRequest.FulfilledDate = DateTime.Now;
-                            }
-                        }
-                    }
-                }
-
-                donation.QuantityRemaining -= totalRequested;
-                if (donation.QuantityRemaining <= 0)
-                {
-                    donation.Status = DonationStatus.Allocated;
-                }
-
-                _context.DonationHistories.Add(new DonationHistory
-                {
-                    DonationItemId = donation.Id,
-                    Action = "FoodAutoAllocated",
-                    Description = $"{staffName} auto-allocated {totalRequested} unit(s) " +
-                                  $"of {donation.ItemName} to {inputs.Count} student(s).",
-                    ActorId = staffId,
-                    ActorType = GetCurrentPersonType(),
-                    ActionDate = DateTime.Now
-                });
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] =
-                    $"Allocated {totalRequested} × {donation.ItemName} to {inputs.Count} student(s). " +
-                    $"These allocations are now pending and ready to be scheduled.";
-
-                return RedirectToAction("AutoMatchFood");
+                try { _emailService.SendDonationSubmittedEmail(donorEmail, donorName, item.ItemName, item.TrackingCode); }
+                catch { /* don't block submission on a flaky SMTP server */ }
             }
-            catch (Exception ex)
-            {
-                var innerMsg = ex.InnerException?.InnerException?.Message
-                               ?? ex.InnerException?.Message
-                               ?? ex.Message;
-                TempData["ErrorMessage"] = "Error committing allocation: " + innerMsg;
-                return RedirectToAction("AutoMatchFood");
-            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"Thank you! {entries.Count} item(s) submitted for approval. Reference code(s): {string.Join(", ", referenceCodes)}.";
+            return RedirectToAction("MyPendingDeliveries");
         }
 
-        private class CommitLineInput
+        [HttpGet]
+        public async Task<JsonResult> SearchStudents(string query)
         {
-            public int StudentId { get; set; }
-            public int RequestId { get; set; }
-            public int RequestItemId { get; set; }
-            public int Quantity { get; set; }
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2) return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+
+            var matches = await _context.Students
+                .Include(s => s.User)
+                .Where(s => s.IsActive && (s.FirstName.Contains(query) || s.LastName.Contains(query) || s.User.StudentNumber.Contains(query)))
+                .Take(10)
+                .Select(s => new { s.Id, Name = s.FirstName + " " + s.LastName, StudentNumber = s.User.StudentNumber })
+                .ToListAsync();
+
+            return Json(matches, JsonRequestBehavior.AllowGet);
+        }
+
+        public async Task<ActionResult> MyPendingDeliveries()
+        {
+            var donorId = GetCurrentPersonId();
+            var donorType = GetCurrentPersonType();
+            var items = await _context.DonationItems
+                .Where(i => i.DonorId == donorId && i.DonorType == donorType)
+                .OrderByDescending(i => i.DonationDate)
+                .ToListAsync();
+            return View(items);
         }
 
         #endregion
 
-        #region Distribution
+        #region UC03 — Approve Donation & Schedule Intake
 
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<ActionResult> Distribution()
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ApproveDonation()
         {
-            var pendingAllocations = await _context.DonationAllocations
-                .Include(a => a.Student)
-                .Include(a => a.DonationItem)
-                .Where(a => a.Status == "Pending" && a.IsActive)
-                .OrderBy(a => a.AllocationDate)
+            // Step 1 — oldest first, Named Allocations flagged separately.
+            var pending = await _context.DonationItems
+                .Where(i => i.IsActive && i.Status == DonationStatus.PendingApproval)
+                .OrderBy(i => i.DonationDate)
                 .ToListAsync();
 
-            var viewModel = pendingAllocations.Select(a => new DonationDistributionViewModel
+            var targetIds = pending.Where(i => i.TargetStudentId.HasValue).Select(i => i.TargetStudentId.Value).Distinct().ToList();
+            var genuineRequestCategories = await _context.DonationRequestItems
+                .Where(ri => targetIds.Contains(ri.DonationRequest.StudentId) && ri.Status == RequestItemStatus.Waitlisted)
+                .Select(ri => new { ri.DonationRequest.StudentId, ri.Category })
+                .ToListAsync();
+
+            ViewBag.GenuineNamedRequest = pending
+                .Where(i => i.TargetStudentId.HasValue)
+                .ToDictionary(i => i.Id, i => genuineRequestCategories.Any(g => g.StudentId == i.TargetStudentId.Value && g.Category == i.Category));
+
+            ViewBag.DailyIntakeCapacity = IntakeDailyCapacity;
+            return View(pending);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> IntakeCapacity(string date)
+        {
+            DateTime parsed;
+            if (!DateTime.TryParse(date, out parsed)) return Json(new { remaining = IntakeDailyCapacity }, JsonRequestBehavior.AllowGet);
+
+            var booked = await _context.DonationItems.CountAsync(i => i.IsActive && i.Status == DonationStatus.ApprovedAwaitingIntake
+                                                                        && i.ScheduledIntakeDate.HasValue && DbFunctions.TruncateTime(i.ScheduledIntakeDate) == parsed.Date);
+            return Json(new { remaining = Math.Max(0, IntakeDailyCapacity - booked), capacity = IntakeDailyCapacity }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ApproveDonationSubmit(int id, string decision, string rejectionReason, string intakeDate)
+        {
+            var item = await _context.DonationItems.FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null || item.Status != DonationStatus.PendingApproval) return RedirectToAction("ApproveDonation");
+
+            if (decision == "reject")
+            {
+                // Step 3 — rejection requires a reason, emailed to the donor.
+                item.Status = DonationStatus.Rejected;
+                item.RejectionReason = rejectionReason;
+                item.IsActive = false;
+                LogHistory(item.Id, "Rejected", rejectionReason);
+                await _context.SaveChangesAsync();
+
+                try { _emailService.SendDonationRejectedEmail(item.DonorEmail, item.DonorName, item.ItemName, item.TrackingCode, rejectionReason); }
+                catch { }
+
+                TempData["Success"] = $"{item.ItemName} rejected and the donor notified.";
+                return RedirectToAction("ApproveDonation");
+            }
+
+            // Step 4 — capacity-limited intake date.
+            DateTime date;
+            if (!DateTime.TryParse(intakeDate, out date))
+            {
+                TempData["Error"] = "Please choose a valid intake date.";
+                return RedirectToAction("ApproveDonation");
+            }
+
+            var booked = await _context.DonationItems.CountAsync(i => i.IsActive && i.Status == DonationStatus.ApprovedAwaitingIntake
+                                                                        && i.ScheduledIntakeDate.HasValue && DbFunctions.TruncateTime(i.ScheduledIntakeDate) == date.Date);
+            if (booked >= IntakeDailyCapacity)
+            {
+                TempData["Error"] = $"{date:dd MMM yyyy} is fully booked ({IntakeDailyCapacity}/day) — please choose another date.";
+                return RedirectToAction("ApproveDonation");
+            }
+
+            // Step 5 — status + scheduled date.
+            item.Status = DonationStatus.ApprovedAwaitingIntake;
+            item.ScheduledIntakeDate = date;
+            LogHistory(item.Id, "Approved", $"Approved — intake booked for {date:dd MMM yyyy}.");
+            await _context.SaveChangesAsync();
+
+            // Step 6 — email the donor.
+            try { _emailService.SendDonationApprovedEmail(item.DonorEmail, item.DonorName, item.ItemName, item.TrackingCode, date); }
+            catch { }
+
+            TempData["Success"] = $"{item.ItemName} approved — intake booked for {date:dd MMM yyyy}.";
+            return RedirectToAction("ApproveDonation");
+        }
+
+        #endregion
+
+        #region UC04 — Confirm Intake & Generate QR Tag
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> IntakeCalendar(string date)
+        {
+            DateTime parsed;
+            var selectedDate = DateTime.TryParse(date, out parsed) ? parsed.Date : DateTime.Today;
+
+            var scheduled = await _context.DonationItems
+                .Where(i => i.IsActive && i.Status == DonationStatus.ApprovedAwaitingIntake
+                            && i.ScheduledIntakeDate.HasValue && DbFunctions.TruncateTime(i.ScheduledIntakeDate) == selectedDate)
+                .ToListAsync();
+
+            return View(new IntakeCalendarViewModel { SelectedDate = selectedDate, ScheduledForDate = scheduled, DailyIntakeCapacity = IntakeDailyCapacity });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ConfirmIntake(int id)
+        {
+            var item = await _context.DonationItems.FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null || item.Status != DonationStatus.ApprovedAwaitingIntake) return RedirectToAction("IntakeCalendar");
+
+            // Step 4-6 — mark Received, generate QR tag (TrackingCode + Id
+            // encode the tag — see PrintTag), add to Available Inventory.
+            item.Status = DonationStatus.Available;
+            item.VerificationDate = DateTime.Now;
+            item.VerifiedBy = GetCurrentPersonId();
+            LogHistory(item.Id, "IntakeConfirmed", $"Physical intake confirmed by {GetCurrentPersonName()}. QR tag: {item.TrackingCode}.");
+            await _context.SaveChangesAsync();
+
+            // Step 9 — eligible for matching; trigger a sweep immediately
+            // rather than waiting for the scheduled run (UC05's triggering
+            // event explicitly includes "a new item becomes Available").
+            try { _engine.RunMatchingSweep(); } catch { }
+
+            TempData["Success"] = $"{item.ItemName} received — print its QR tag and attach it to the item.";
+            return RedirectToAction("PrintTag", new { id = item.Id });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> DeclineIntake(int id, string reason)
+        {
+            var item = await _context.DonationItems.FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null || item.Status != DonationStatus.ApprovedAwaitingIntake) return RedirectToAction("IntakeCalendar");
+
+            // Step 3 — item doesn't match / condition changed materially.
+            item.Status = DonationStatus.NotReceived;
+            item.RejectionReason = reason;
+            item.IsActive = false;
+            LogHistory(item.Id, "NotReceived", reason);
+            await _context.SaveChangesAsync();
+
+            try { _emailService.SendDonationRejectedEmail(item.DonorEmail, item.DonorName, item.ItemName, item.TrackingCode, reason); }
+            catch { }
+
+            TempData["Success"] = $"{item.ItemName} marked Not Received and the donor notified.";
+            return RedirectToAction("IntakeCalendar");
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> PrintTag(int id)
+        {
+            var item = await _context.DonationItems.FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null) return RedirectToAction("IntakeCalendar");
+            return View(item);
+        }
+
+        #endregion
+
+        #region UC05 — Auto-Match Donations to Requests
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> MatchDonations()
+        {
+            var pending = await _context.DonationAllocations
+                .Include(a => a.DonationItem)
+                .Include(a => a.Student)
+                .Include(a => a.Request)
+                .Where(a => a.IsActive && a.Status == "PendingReview")
+                .OrderByDescending(a => a.AllocationDate)
+                .ToListAsync();
+
+            var vms = pending.Select(a => new MatchReviewItemViewModel
             {
                 AllocationId = a.Id,
+                DonationItemId = a.DonationItemId,
+                ItemName = a.DonationItem.ItemName,
+                ItemPhoto = a.DonationItem.PhotoEvidence,
+                Condition = a.DonationItem.Condition,
+                Category = a.DonationItem.Category,
+                RequestId = a.RequestId ?? 0,
                 StudentName = a.Student?.FullName,
-                StudentNumber = a.Student?.User?.StudentNumber,
-                ItemName = a.DonationItem?.ItemName,
-                ItemType = a.DonationItem?.ItemType.ToString(),
-                Quantity = a.QuantityAllocated,
-                CollectionToken = a.CollectionToken,
-                QRCode = a.QRCode,
-                PinCode = a.PinCode,
-                ScheduledDate = a.ScheduledCollectionDate,
-                Status = a.Status,
-                IsFoodItem = a.DonationItem?.IsFoodItem ?? false
+                MatchScore = a.MatchScore ?? 0,
+                MatchReason = a.MatchReason,
+                ProposedDate = a.AllocationDate
             }).ToList();
 
-            return View(viewModel);
+            ViewBag.CollectionTimeWindows = CollectionTimeWindows;
+            return View(vms);
         }
 
-        [Authorize(Roles = "Admin,Teacher")]
-        public ActionResult ProcessCollection(string token)
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult RunMatchingNow()
         {
-            if (string.IsNullOrEmpty(token))
-                return View(new DonationDistributionViewModel());
+            var result = _engine.RunMatchingSweep();
+            TempData["Success"] = result.ProposalsCreated > 0
+                ? $"Matching run complete — {result.ProposalsCreated} new proposal(s) created."
+                : "Matching run complete — no new pairs found.";
+            return RedirectToAction("MatchDonations");
+        }
 
-            var allocation = _context.DonationAllocations
-                .Include(a => a.Student)
-                .Include(a => a.DonationItem)
-                .FirstOrDefault(a => a.CollectionToken == token && a.IsActive);
+        #endregion
 
-            if (allocation == null)
+        #region UC06 — Confirm Match & Schedule Collection
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ConfirmMatch(int allocationId, string collectionDate, string timeWindow)
+        {
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem).Include(a => a.Student)
+                .FirstOrDefaultAsync(a => a.Id == allocationId && a.Status == "PendingReview");
+            if (allocation == null) return RedirectToAction("MatchDonations");
+
+            DateTime date;
+            if (!DateTime.TryParse(collectionDate, out date))
             {
-                ViewBag.ErrorMessage = "Invalid collection token.";
-                return View(new DonationDistributionViewModel());
+                TempData["Error"] = "Please choose a valid collection date.";
+                return RedirectToAction("MatchDonations");
             }
 
-            var viewModel = new DonationDistributionViewModel
+            var requestItem = await _context.DonationRequestItems
+                .FirstOrDefaultAsync(ri => ri.DonationRequestId == allocation.RequestId && ri.Status == RequestItemStatus.Reserved);
+
+            // Step 3-4 — collection date/window, Collection Code already
+            // generated when the allocation was created; status moves on.
+            allocation.Status = "AwaitingCollection";
+            allocation.ScheduledCollectionDate = date;
+            allocation.CollectionTimeWindow = timeWindow;
+            allocation.DonationItem.Status = DonationStatus.AwaitingCollection;
+            if (requestItem != null) requestItem.Status = RequestItemStatus.AwaitingCollection;
+
+            LogHistory(allocation.DonationItemId, "MatchConfirmed", $"Collection booked for {date:dd MMM yyyy} ({timeWindow}).");
+            await _context.SaveChangesAsync();
+
+            // Step 5 — email the learner the match, date, window, and code.
+            try
             {
+                var email = allocation.Student?.User?.Email;
+                if (!string.IsNullOrEmpty(email))
+                    _emailService.SendDonationMatchConfirmedEmail(email, allocation.Student.FullName, allocation.DonationItem.ItemName, date, timeWindow, allocation.CollectionToken);
+            }
+            catch { }
+
+            TempData["Success"] = "Match confirmed and the learner notified.";
+            return RedirectToAction("MatchDonations");
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<JsonResult> GetAlternativeRequests(int allocationId)
+        {
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem).FirstOrDefaultAsync(a => a.Id == allocationId);
+            if (allocation == null) return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+
+            var alternatives = await _context.DonationRequestItems
+                .Include(ri => ri.DonationRequest).Include(ri => ri.DonationRequest.Student)
+                .Where(ri => ri.Category == allocation.DonationItem.Category && ri.Status == RequestItemStatus.Waitlisted && ri.Id != allocation.RequestId)
+                .OrderByDescending(ri => ri.DonationRequest.PriorityScore)
+                .Select(ri => new { ri.Id, RequestId = ri.DonationRequestId, StudentName = ri.DonationRequest.Student.FirstName + " " + ri.DonationRequest.Student.LastName, ri.DonationRequest.PriorityScore })
+                .Take(20)
+                .ToListAsync();
+
+            return Json(alternatives, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ReassignMatch(int allocationId, int newRequestItemId)
+        {
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem)
+                .FirstOrDefaultAsync(a => a.Id == allocationId && a.Status == "PendingReview");
+            var newRequestItem = await _context.DonationRequestItems.Include(ri => ri.DonationRequest)
+                .FirstOrDefaultAsync(ri => ri.Id == newRequestItemId && ri.Status == RequestItemStatus.Waitlisted);
+            if (allocation == null || newRequestItem == null) return RedirectToAction("MatchDonations");
+
+            // Release the originally-proposed request back to Waitlisted
+            // (same item, different request — UC06 step 2).
+            var oldRequestItem = await _context.DonationRequestItems
+                .FirstOrDefaultAsync(ri => ri.DonationRequestId == allocation.RequestId && ri.Status == RequestItemStatus.Reserved);
+            if (oldRequestItem != null) oldRequestItem.Status = RequestItemStatus.Waitlisted;
+
+            allocation.RequestId = newRequestItem.DonationRequestId;
+            allocation.StudentId = newRequestItem.DonationRequest.StudentId;
+            allocation.MatchReason = $"Reassigned by admin to {newRequestItem.DonationRequest.StudentId} — manual override.";
+            newRequestItem.Status = RequestItemStatus.Reserved;
+
+            LogHistory(allocation.DonationItemId, "MatchReassigned", allocation.MatchReason);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Match reassigned to the selected request.";
+            return RedirectToAction("MatchDonations");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> ReleaseMatch(int allocationId)
+        {
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem)
+                .FirstOrDefaultAsync(a => a.Id == allocationId && a.Status == "PendingReview");
+            if (allocation == null) return RedirectToAction("MatchDonations");
+
+            // Step 6 — item back to Available, request back to Waitlisted
+            // at its original position (WaitlistedDate untouched).
+            allocation.DonationItem.Status = DonationStatus.Available;
+            allocation.Status = "Released";
+            allocation.IsActive = false;
+
+            var requestItem = await _context.DonationRequestItems
+                .FirstOrDefaultAsync(ri => ri.DonationRequestId == allocation.RequestId && ri.Status == RequestItemStatus.Reserved);
+            if (requestItem != null) requestItem.Status = RequestItemStatus.Waitlisted;
+
+            LogHistory(allocation.DonationItemId, "MatchReleased", "Released back to Available pool by admin.");
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Match released — item returned to the pool.";
+            return RedirectToAction("MatchDonations");
+        }
+
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult> MyCollections()
+        {
+            var student = GetCurrentStudent();
+            var allocations = student == null
+                ? new List<DonationAllocation>()
+                : await _context.DonationAllocations.Include(a => a.DonationItem)
+                    .Where(a => a.StudentId == student.Id)
+                    .OrderByDescending(a => a.AllocationDate)
+                    .ToListAsync();
+
+            var vms = allocations.Select(a => new DonationDistributionViewModel
+            {
+                AllocationId = a.Id,
+                StudentName = student.FullName,
+                ItemName = a.DonationItem.ItemName,
+                ItemType = a.DonationItem.ItemType.ToString(),
+                Quantity = a.QuantityAllocated,
+                CollectionToken = a.CollectionToken,
+                ScheduledDate = a.ScheduledCollectionDate,
+                Status = a.Status
+            }).ToList();
+
+            return View(vms);
+        }
+
+        #endregion
+
+        #region UC07 — Verify & Issue Item (Dual-Verification Collection)
+
+        [Authorize(Roles = "Admin")]
+        public ActionResult ProcessCollection() => View();
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<JsonResult> LookupCollectionCode(string code)
+        {
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem).Include(a => a.Student)
+                .FirstOrDefaultAsync(a => a.CollectionToken == code && a.Status == "AwaitingCollection");
+
+            // Step 4 — not found / expired.
+            if (allocation == null)
+                return Json(new CollectionLookupViewModel { Found = false, Message = "Invalid or expired Collection Code." }, JsonRequestBehavior.AllowGet);
+
+            // Step 3 — item details, requester identity, condition photo, due date.
+            return Json(new CollectionLookupViewModel
+            {
+                Found = true,
                 AllocationId = allocation.Id,
-                StudentName = allocation.Student?.FullName,
-                StudentNumber = allocation.Student?.User?.StudentNumber,
-                ItemName = allocation.DonationItem?.ItemName,
-                ItemType = allocation.DonationItem?.ItemType.ToString(),
-                Quantity = allocation.QuantityAllocated,
                 CollectionToken = allocation.CollectionToken,
-                PinCode = allocation.PinCode,
-                Status = allocation.Status,
-                IsFoodItem = allocation.DonationItem?.IsFoodItem ?? false
-            };
-
-            return View(viewModel);
+                StudentName = allocation.Student?.FullName,
+                ItemName = allocation.DonationItem.ItemName,
+                ItemPhoto = allocation.DonationItem.PhotoEvidence,
+                Condition = allocation.DonationItem.Condition,
+                Quantity = allocation.QuantityAllocated,
+                ScheduledCollectionDate = allocation.ScheduledCollectionDate,
+                Status = allocation.Status
+            }, JsonRequestBehavior.AllowGet);
         }
 
-        // Scheduling always leaves the allocation collection-ready: it sets
-        // the date, flips status to Ready, and makes sure a collection
-        // token/QR/PIN exist (they're set when the allocation is first
-        // created, but we refresh them here so a freshly-scheduled pickup
-        // always has a clean code) — no separate "generate token" step is
-        // required before collection can happen.
         [HttpPost]
-        [Authorize(Roles = "Admin,Teacher")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> ScheduleDistribution(int allocationId, DateTime scheduleDate)
+        [Authorize(Roles = "Admin")]
+        public async Task<JsonResult> VerifyItemTag(int allocationId, string scannedCode)
         {
-            var allocation = await _context.DonationAllocations
-                .Include(a => a.Student)
-                .FirstOrDefaultAsync(a => a.Id == allocationId && a.IsActive);
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem).Include(a => a.Student)
+                .FirstOrDefaultAsync(a => a.Id == allocationId && a.Status == "AwaitingCollection");
+            if (allocation == null) return Json(new { success = false, message = "Allocation not found." });
 
-            if (allocation == null)
-                return Json(new { success = false, message = "Allocation not found" });
+            var expected = allocation.DonationItem.TrackingCode;
+            var matches = !string.IsNullOrWhiteSpace(scannedCode) &&
+                          (scannedCode.Trim().Equals(expected, StringComparison.OrdinalIgnoreCase) || scannedCode.Contains(expected));
 
-            allocation.ScheduledCollectionDate = scheduleDate;
-            allocation.Status = "Ready";
+            if (!matches)
+            {
+                // Step 7 — mismatch logged against admin and item for audit.
+                LogHistory(allocation.DonationItemId, "CollectionMismatch", $"Scanned '{scannedCode}' did not match expected tag '{expected}'.");
+                await _context.SaveChangesAsync();
+                return Json(new { success = false, message = "Invalid Item — scanned tag does not match this allocation." });
+            }
 
-            if (string.IsNullOrEmpty(allocation.CollectionToken))
-                allocation.CollectionToken = "COL-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
-            allocation.QRCode = "QR:" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(allocation.CollectionToken));
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Distribution scheduled successfully" });
-        }
-
-        // Re-issues a fresh token/QR/PIN for an allocation (e.g. the
-        // student lost their PIN, or it needs to be reissued for security).
-        [HttpPost]
-        [Authorize(Roles = "Admin,Teacher")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> GenerateCollectionToken(int allocationId)
-        {
-            var allocation = await _context.DonationAllocations.FindAsync(allocationId);
-            if (allocation == null)
-                return Json(new { success = false, message = "Allocation not found" });
-
-            allocation.CollectionToken = "COL-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
-            allocation.QRCode = "QR:" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(allocation.CollectionToken));
-            allocation.PinCode = new Random().Next(1000, 9999).ToString();
-            await _context.SaveChangesAsync();
-
+            // Step 8 — ready for the Confirm Delivery window.
             return Json(new
             {
                 success = true,
-                token = allocation.CollectionToken,
-                qrCode = allocation.QRCode,
-                pin = allocation.PinCode
+                itemName = allocation.DonationItem.ItemName,
+                itemPhoto = allocation.DonationItem.PhotoEvidence,
+                studentName = allocation.Student?.FullName
             });
         }
 
-        // Matches on the allocation's CollectionToken (always populated —
-        // set the moment the allocation is created) plus the 4-digit PIN.
-        // The QRCode field just encodes the token for a scannable image;
-        // it isn't a second independent secret.
         [HttpPost]
-        [Authorize(Roles = "Admin,Teacher")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> ConfirmCollection(int allocationId, string token, string pinCode)
+        [Authorize(Roles = "Admin")]
+        public async Task<JsonResult> ConfirmCollection(int allocationId)
         {
-            var allocation = await _context.DonationAllocations
-                .Include(a => a.Student)
-                .Include(a => a.DonationItem)
-                .FirstOrDefaultAsync(a => a.Id == allocationId && a.IsActive);
+            var allocation = await _context.DonationAllocations.Include(a => a.DonationItem).Include(a => a.Student)
+                .FirstOrDefaultAsync(a => a.Id == allocationId && a.Status == "AwaitingCollection");
+            if (allocation == null) return Json(new { success = false, message = "Allocation not found." });
 
-            if (allocation == null)
-                return Json(new { success = false, message = "Allocation not found" });
+            var item = allocation.DonationItem;
+            var adminId = GetCurrentPersonId();
+            var adminName = GetCurrentPersonName();
 
-            if (string.IsNullOrEmpty(allocation.CollectionToken) || allocation.CollectionToken != (token ?? "").Trim().ToUpper())
-                return Json(new { success = false, message = "Invalid collection token" });
-
-            if (string.IsNullOrEmpty(allocation.PinCode) || allocation.PinCode != (pinCode ?? "").Trim())
-                return Json(new { success = false, message = "Invalid PIN" });
-
-            if (allocation.Status != "Ready")
-                return Json(new { success = false, message = "Not ready for collection" });
+            // Step 10 — atomically mark Collected / Fulfilled, write receipt,
+            // remove from active inventory.
+            item.Status = DonationStatus.Collected;
+            item.IsActive = false;
+            item.CollectionDate = DateTime.Now;
 
             allocation.Status = "Collected";
             allocation.CollectionDate = DateTime.Now;
-            allocation.CollectedBy = GetCurrentPersonId();
+            allocation.CollectedBy = adminId;
+            allocation.CollectionConfirmation = $"Confirmed by {adminName} at {DateTime.Now:dd MMM yyyy HH:mm}";
 
-            var donation = await _context.DonationItems.FindAsync(allocation.DonationItemId);
-            if (donation != null && donation.QuantityRemaining == 0)
+            var requestItem = await _context.DonationRequestItems
+                .FirstOrDefaultAsync(ri => ri.DonationRequestId == allocation.RequestId && ri.Status == RequestItemStatus.AwaitingCollection);
+            if (requestItem != null)
             {
-                donation.Status = DonationStatus.Collected;
-            }
+                requestItem.Status = RequestItemStatus.Fulfilled;
+                requestItem.IsFulfilled = true;
+                requestItem.FulfilledDate = DateTime.Now;
 
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Collection confirmed!" });
-        }
-
-        #endregion
-
-        #region Campaigns
-
-        [Authorize(Roles = "Admin")]
-        public ActionResult Campaigns()
-        {
-            var campaigns = _context.DonationCampaigns
-                .Where(c => c.IsActive)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToList();
-
-            ViewBag.Statuses = Enum.GetNames(typeof(CampaignStatus));
-            return View(campaigns);
-        }
-
-        [Authorize(Roles = "Admin")]
-        public ActionResult CreateCampaign()
-        {
-            return View(new CampaignViewModel());
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CreateCampaign(CampaignViewModel model)
-        {
-            var personId = GetCurrentPersonId();
-            if (personId == 0) return RedirectToAction("Login", "Account");
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            try
-            {
-                var campaign = new DonationCampaign
+                var parentRequest = await _context.DonationRequests.FirstOrDefaultAsync(r => r.Id == requestItem.DonationRequestId);
+                if (parentRequest != null && !parentRequest.Items.Any(i => i.Status != RequestItemStatus.Fulfilled && i.Status != RequestItemStatus.Declined))
                 {
-                    Name = model.Name,
-                    Description = model.Description,
-                    Category = model.Category,
-                    Status = CampaignStatus.Draft,
-                    StartDate = model.StartDate,
-                    EndDate = model.EndDate,
-                    TargetQuantity = model.TargetQuantity,
-                    TargetGroup = model.TargetGroup,
-                    IsExternal = model.IsExternal,
-                    ExternalPortalUrl = model.ExternalPortalUrl,
-                    CreatedBy = personId,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true
-                };
-
-                _context.DonationCampaigns.Add(campaign);
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Campaign created successfully!";
-                return RedirectToAction("CampaignDetails", new { id = campaign.Id });
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Error: " + ex.Message);
-                return View(model);
-            }
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> CampaignDetails(int id)
-        {
-            var campaign = await _context.DonationCampaigns
-                .Include(c => c.Donations)
-                .Include(c => c.Pledges)
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
-
-            if (campaign == null) return HttpNotFound();
-
-            ViewBag.Donations = _context.DonationItems
-                .Where(d => d.CampaignId == id)
-                .ToList();
-
-            return View(campaign);
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> ActivateCampaign(int id)
-        {
-            var campaign = await _context.DonationCampaigns.FindAsync(id);
-            if (campaign == null)
-                return Json(new { success = false, message = "Campaign not found" });
-
-            campaign.Status = CampaignStatus.Active;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Campaign activated successfully" });
-        }
-
-        #endregion
-
-        #region Bulk Pledge
-
-        [Authorize(Roles = "Admin")]
-        public ActionResult BulkPledge(int campaignId)
-        {
-            var campaign = _context.DonationCampaigns.Find(campaignId);
-            if (campaign == null) return HttpNotFound();
-
-            ViewBag.CampaignName = campaign.Name;
-            ViewBag.CampaignId = campaignId;
-            return View(new BulkPledgeViewModel { CampaignId = campaignId });
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> BulkPledge(BulkPledgeViewModel model)
-        {
-            var personId = GetCurrentPersonId();
-            if (personId == 0) return RedirectToAction("Login", "Account");
-
-            if (!ModelState.IsValid)
-            {
-                var campaign = _context.DonationCampaigns.Find(model.CampaignId);
-                ViewBag.CampaignName = campaign?.Name;
-                ViewBag.CampaignId = model.CampaignId;
-                return View(model);
-            }
-
-            try
-            {
-                var pledge = new BulkPledge
-                {
-                    CampaignId = model.CampaignId,
-                    DonorName = model.DonorName,
-                    DonorEmail = model.DonorEmail,
-                    DonorOrganization = model.DonorOrganization,
-                    DonorPhone = model.DonorPhone,
-                    Category = model.Category,
-                    ItemType = model.ItemType,
-                    ItemName = model.ItemName,
-                    Description = model.Description,
-                    QuantityPledged = model.QuantityPledged,
-                    QuantityDelivered = 0,
-                    Status = PledgeStatus.PendingApproval,
-                    ExpectedDeliveryDate = model.ExpectedDeliveryDate,
-                    DeliveryNotes = model.DeliveryNotes,
-                    CreatedBy = personId,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true
-                };
-
-                _context.BulkPledges.Add(pledge);
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Bulk pledge submitted for approval!";
-                return RedirectToAction("CampaignDetails", new { id = model.CampaignId });
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Error: " + ex.Message);
-                var campaign = _context.DonationCampaigns.Find(model.CampaignId);
-                ViewBag.CampaignName = campaign?.Name;
-                ViewBag.CampaignId = model.CampaignId;
-                return View(model);
-            }
-        }
-
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> Pledges()
-        {
-            var pledges = await _context.BulkPledges
-                .Include(p => p.Campaign)
-                .Where(p => p.IsActive)
-                .OrderByDescending(p => p.CreatedAt)
-                .ToListAsync();
-
-            return View(pledges);
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> ApprovePledge(int id)
-        {
-            var personId = GetCurrentPersonId();
-            if (personId == 0) return Json(new { success = false, message = "Unauthorized" });
-
-            var pledge = await _context.BulkPledges.FindAsync(id);
-            if (pledge == null)
-                return Json(new { success = false, message = "Pledge not found" });
-
-            pledge.Status = PledgeStatus.Approved;
-            pledge.ApprovedAt = DateTime.Now;
-            pledge.ApprovedBy = personId;
-            pledge.UpdatedAt = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Pledge approved successfully" });
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateJsonAntiForgeryToken]
-        public async Task<JsonResult> RecordPledgeDelivery(int id, int quantityDelivered)
-        {
-            var personId = GetCurrentPersonId();
-            if (personId == 0) return Json(new { success = false, message = "Unauthorized" });
-
-            var pledge = await _context.BulkPledges.FindAsync(id);
-            if (pledge == null)
-                return Json(new { success = false, message = "Pledge not found" });
-
-            pledge.QuantityDelivered += quantityDelivered;
-            pledge.UpdatedAt = DateTime.Now;
-
-            if (pledge.QuantityDelivered >= pledge.QuantityPledged)
-            {
-                pledge.Status = PledgeStatus.FullyDelivered;
-                pledge.ActualDeliveryDate = DateTime.Now;
-
-                var donation = new DonationItem
-                {
-                    DonorId = personId,
-                    DonorType = "External",
-                    DonorName = pledge.DonorName,
-                    DonorEmail = pledge.DonorEmail,
-                    Category = pledge.Category,
-                    ItemType = pledge.ItemType,
-                    ItemName = pledge.ItemName,
-                    Description = pledge.Description,
-                    Quantity = quantityDelivered,
-                    QuantityRemaining = quantityDelivered,
-                    AllocationType = AllocationType.OpenDonation,
-                    Condition = "New",
-                    Status = DonationStatus.AwaitingDelivery,
-                    DonationDate = DateTime.Now,
-                    CampaignId = pledge.CampaignId,
-                    IsActive = true,
-                    IsFoodItem = pledge.Category == DonationCategory.Food
-                };
-
-                _context.DonationItems.Add(donation);
-                await _context.SaveChangesAsync();
-
-                if (donation.IsFoodItem)
-                {
-                    var foodCheck = new FoodDonationCheck
-                    {
-                        DonationItemId = donation.Id,
-                        ExpiryDate = DateTime.Now.AddMonths(6),
-                        CheckedAt = DateTime.Now,
-                        CheckerName = "System (awaiting donor questionnaire)"
-                    };
-                    _context.FoodDonationChecks.Add(foodCheck);
-                    donation.Status = DonationStatus.PendingEligibilityCheck;
-                    await _context.SaveChangesAsync();
+                    parentRequest.IsFulfilled = true;
+                    parentRequest.FulfilledDate = DateTime.Now;
                 }
             }
-            else
-            {
-                pledge.Status = PledgeStatus.PartiallyDelivered;
-            }
+
+            LogHistory(item.Id, "Collected",
+                $"Collection receipt — item: {item.ItemName}, learner: {allocation.Student?.FullName}, admin: {adminName}, scan result: match.",
+                $"AllocationId={allocation.Id};CollectedBy={adminId};Timestamp={DateTime.Now:O}");
 
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, message = "Delivery recorded successfully" });
+            // Step 11 — digital receipt email.
+            try
+            {
+                var email = allocation.Student?.User?.Email;
+                if (!string.IsNullOrEmpty(email))
+                    _emailService.SendCollectionReceiptEmail(email, allocation.Student.FullName, item.ItemName, allocation.CollectionDate.Value);
+            }
+            catch { }
+
+            return Json(new { success = true, message = $"{item.ItemName} collected by {allocation.Student?.FullName}." });
         }
 
         #endregion
 
-        #region Dispose
+        #region History, Details, Waitlist (supporting transparency views)
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> DonationHistory()
+        {
+            var history = await _context.DonationHistories.Include(h => h.DonationItem).OrderByDescending(h => h.ActionDate).Take(200).ToListAsync();
+            return View(history);
+        }
+
+        public async Task<ActionResult> DonationDetails(int? id)
+        {
+            if (!id.HasValue) return RedirectToAction("Dashboard");
+
+            var item = await _context.DonationItems.FirstOrDefaultAsync(i => i.Id == id.Value);
+            if (item == null) return RedirectToAction("Dashboard");
+
+            ViewBag.History = await _context.DonationHistories.Where(h => h.DonationItemId == id.Value).OrderBy(h => h.ActionDate).ToListAsync();
+            ViewBag.Allocation = await _context.DonationAllocations.Include(a => a.Student).FirstOrDefaultAsync(a => a.DonationItemId == id.Value && a.IsActive);
+            return View(item);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> PriorityWaitlist()
+        {
+            var waitlisted = await _context.DonationRequestItems
+                .Include(ri => ri.DonationRequest).Include(ri => ri.DonationRequest.Student)
+                .Where(ri => ri.Status == RequestItemStatus.Waitlisted && ri.DonationRequest.IsActive)
+                .ToListAsync();
+
+            var ranked = waitlisted
+                .GroupBy(ri => ri.Category)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(ri => ri.DonationRequest.PriorityScore).ThenByDescending(ri => ri.CalculateItemScore()).ToList());
+
+            return View(ranked);
+        }
+
+        #endregion
+
+        #region UC09 — View Donation Insights
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> Insights(DateTime? fromDate, DateTime? toDate, string category, string grade)
+        {
+            var from = fromDate ?? DateTime.Today.AddMonths(-3);
+            var to = toDate ?? DateTime.Today;
+
+            var requestsQuery = _context.DonationRequestItems.Include(ri => ri.DonationRequest)
+                .Where(ri => ri.CreatedAt >= from && ri.CreatedAt <= to);
+            if (!string.IsNullOrEmpty(category)) requestsQuery = requestsQuery.Where(ri => ri.Category.ToString() == category);
+            if (!string.IsNullOrEmpty(grade)) requestsQuery = requestsQuery.Where(ri => ri.GradeLevel == grade);
+            var requests = await requestsQuery.ToListAsync();
+
+            var itemsQuery = _context.DonationItems.Where(i => i.DonationDate >= from && i.DonationDate <= to);
+            if (!string.IsNullOrEmpty(category)) itemsQuery = itemsQuery.Where(i => i.Category.ToString() == category);
+            var items = await itemsQuery.ToListAsync();
+
+            var allocationsQuery = _context.DonationAllocations.Include(a => a.DonationItem).Where(a => a.AllocationDate >= from && a.AllocationDate <= to);
+            var allocations = await allocationsQuery.ToListAsync();
+
+            var model = new DonationInsightsViewModel
+            {
+                FromDate = from,
+                ToDate = to,
+                CategoryFilter = category,
+                GradeFilter = grade,
+                TotalRequests = requests.Count,
+                TotalFulfilled = requests.Count(r => r.IsFulfilled),
+                TotalDonationsReceived = items.Count(i => i.Status != DonationStatus.PendingApproval && i.Status != DonationStatus.Rejected),
+                TotalUnclaimed = allocations.Count(a => a.Status == "Unclaimed")
+            };
+
+            model.FulfilmentRatePercent = model.TotalRequests > 0 ? Math.Round(100.0 * model.TotalFulfilled / model.TotalRequests, 1) : 0;
+            model.UnclaimedRatePercent = allocations.Count > 0 ? Math.Round(100.0 * model.TotalUnclaimed / allocations.Count, 1) : 0;
+
+            var waitTimes = requests.Where(r => r.IsFulfilled && r.FulfilledDate.HasValue)
+                .Select(r => (r.FulfilledDate.Value - r.CreatedAt).TotalDays).ToList();
+            model.AverageWaitDays = waitTimes.Any() ? Math.Round(waitTimes.Average(), 1) : 0;
+
+            // Step 3 — supply/demand gaps per category.
+            foreach (DonationCategory cat in Enum.GetValues(typeof(DonationCategory)))
+            {
+                if (cat == DonationCategory.Food) continue;
+                model.CategoryGaps.Add(new CategoryGapViewModel
+                {
+                    Category = cat.ToString(),
+                    OpenRequests = requests.Count(r => r.Category == cat && (r.Status == RequestItemStatus.Waitlisted || r.Status == RequestItemStatus.Reserved)),
+                    AvailableItems = items.Count(i => i.Category == cat && i.Status == DonationStatus.Available)
+                });
+            }
+
+            // Step 5 — where unclaimed items cluster, as a proxy for "most
+            // common logged reasons" (every unclaimed event has the same
+            // system reason — a lapsed collection window — so the
+            // actionable signal is which categories it clusters in).
+            model.TopUnclaimedReasons = allocations.Where(a => a.Status == "Unclaimed")
+                .GroupBy(a => a.DonationItem.Category.ToString())
+                .Select(g => new KeyValuePair<string, int>(g.Key, g.Count()))
+                .OrderByDescending(kv => kv.Value)
+                .Take(5)
+                .ToList();
+
+            return View(model);
+        }
+
+        #endregion
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _context.Dispose();
-            }
+            if (disposing) _context.Dispose();
             base.Dispose(disposing);
         }
-
-        #endregion
     }
 }

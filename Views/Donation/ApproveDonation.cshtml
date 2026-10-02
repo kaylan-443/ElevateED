@@ -1,0 +1,403 @@
+@model List<ElevateED.Models.DonationItem>
+@{
+    ViewBag.Title = "Approve Donations";
+    ViewBag.ActiveTab = "approvedonation";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #059669; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #dc2626; }
+
+    .approval-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+        .approval-card .title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .approval-card .meta {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .approval-card .tracking {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #0891b2;
+            margin-top: 6px;
+        }
+
+        .approval-card .photo-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+    .capacity-note {
+        font-size: 12px;
+        margin-top: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+        .capacity-note.full { background: #fee2e2; color: #991b1b; }
+        .capacity-note.tight { background: #fef3c7; color: #92400e; }
+
+    .btn-approve {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-reject {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.25);
+        padding: 9px 20px;
+        border-radius: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15,23,42,0.6);
+        z-index: 2147483647;
+        padding: 40px 20px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+        .modal-overlay.active { display: block; }
+
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 30px;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+        .modal-box h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-box label {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .modal-box input, .modal-box textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-cancel-modal {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 10px 22px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> Approve Donations</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4 style="color:#1e293b;">Nothing awaiting approval</h4>
+            <p style="color:#64748b;">New non-food donations will show up here (UC03).</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="approval-card">
+                @if (!string.IsNullOrEmpty(item.PhotoEvidence))
+                {
+                    <img src="@Url.Content(item.PhotoEvidence)" class="photo-thumb" alt="Condition photo"
+                         onclick="window.open('@Url.Content(item.PhotoEvidence)', '_blank')" />
+                }
+                else
+                {
+                    <div class="photo-thumb" style="display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#cbd5e1;">
+                        <i class="fas fa-image"></i>
+                    </div>
+                }
+                <div style="flex:1;">
+                    <div class="title">@item.ItemName <span style="font-weight:400;color:#64748b;font-size:12px;">x @item.Quantity</span></div>
+                    <div class="meta">
+                        Category: @item.Category &nbsp;•&nbsp; Condition: @item.Condition &nbsp;•&nbsp;
+                        Donor: @item.DonorName (@item.DonorType) &nbsp;•&nbsp;
+                        Submitted: @item.DonationDate.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                    @if (item.AllocationType == ElevateED.Models.AllocationType.NamedAllocation && item.TargetStudent != null)
+                    {
+                        <div class="meta"><i class="fas fa-route"></i> Named Allocation: @item.TargetStudent.FullName</div>
+                    }
+                    @if (!string.IsNullOrEmpty(item.ConditionNotes))
+                    {
+                        <div class="meta">Notes: @item.ConditionNotes</div>
+                    }
+                    <div class="tracking">🔑 @item.TrackingCode</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button type="button" class="btn-approve" data-id="@item.Id" data-name="@item.ItemName" onclick="openApproveModal(this)">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button type="button" class="btn-reject" data-id="@item.Id" data-name="@item.ItemName" onclick="openRejectModal(this)">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<form id="actionForm" method="post" action="@Url.Action("ApproveDonationSubmit", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="actionId" value="" />
+    <input type="hidden" name="approve" id="actionApprove" value="" />
+    <input type="hidden" name="intakeDate" id="actionIntakeDate" value="" />
+    <input type="hidden" name="reason" id="actionReason" value="" />
+</form>
+
+<!-- Approve Modal -->
+<div class="modal-overlay" id="approveModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-calendar-check" style="color:#10b981;"></i> Approve &amp; Schedule Intake</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Approving <strong id="approveItemName" style="color:#1e293b;"></strong> emails the donor a drop-off date (UC03).
+        </p>
+        <label>Intake Date</label>
+        <input type="date" id="intakeDateInput" min="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="checkIntakeCapacity()" />
+        <div id="capacityNote" class="capacity-note" style="display:none;"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel-modal" onclick="closeApproveModal()">Cancel</button>
+            <button type="button" class="btn-approve" onclick="submitApprove()"><i class="fas fa-check"></i> Approve</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#ef4444;"></i> Reject Donation</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Rejecting <strong id="rejectItemName" style="color:#1e293b;"></strong> removes it from the pipeline.
+        </p>
+        <label>Reason (optional)</label>
+        <textarea id="rejectReasonInput" rows="3"></textarea>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel-modal" onclick="closeRejectModal()">Cancel</button>
+            <button type="button" class="btn-reject" onclick="submitReject()"><i class="fas fa-times"></i> Reject</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        ['approveModal', 'rejectModal'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && el.parentNode !== document.body) document.body.appendChild(el);
+        });
+    })();
+
+    var currentId = 0;
+
+    function openApproveModal(btn) {
+        currentId = btn.getAttribute('data-id');
+        document.getElementById('approveItemName').textContent = btn.getAttribute('data-name');
+        document.getElementById('intakeDateInput').value = '';
+        document.getElementById('capacityNote').style.display = 'none';
+        document.getElementById('approveModal').classList.add('active');
+    }
+    function closeApproveModal() { document.getElementById('approveModal').classList.remove('active'); }
+
+    var capacityIsFull = false;
+
+    function checkIntakeCapacity() {
+        var date = document.getElementById('intakeDateInput').value;
+        var note = document.getElementById('capacityNote');
+        capacityIsFull = false;
+        if (!date) { note.style.display = 'none'; return; }
+
+        fetch('@Url.Action("IntakeCapacity")?date=' + encodeURIComponent(date), { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) { note.style.display = 'none'; return; }
+                note.style.display = 'block';
+                note.className = 'capacity-note' + (data.remaining <= 0 ? ' full' : data.remaining <= 2 ? ' tight' : '');
+                if (data.remaining <= 0) {
+                    capacityIsFull = true;
+                    note.textContent = 'Fully booked (' + data.booked + '/' + data.capacity + ') — please choose another date.';
+                } else {
+                    note.textContent = data.remaining + ' of ' + data.capacity + ' intake slots left on this date.';
+                }
+            })
+            .catch(function () { note.style.display = 'none'; });
+    }
+
+    function submitApprove() {
+        var date = document.getElementById('intakeDateInput').value;
+        if (!date) { alert('Please choose an intake date.'); return; }
+        if (capacityIsFull) { alert('That date is fully booked — please choose another date.'); return; }
+        document.getElementById('actionId').value = currentId;
+        document.getElementById('actionApprove').value = 'true';
+        document.getElementById('actionIntakeDate').value = date;
+        document.getElementById('actionReason').value = '';
+        document.getElementById('actionForm').submit();
+    }
+
+    function openRejectModal(btn) {
+        currentId = btn.getAttribute('data-id');
+        document.getElementById('rejectItemName').textContent = btn.getAttribute('data-name');
+        document.getElementById('rejectReasonInput').value = '';
+        document.getElementById('rejectModal').classList.add('active');
+    }
+    function closeRejectModal() { document.getElementById('rejectModal').classList.remove('active'); }
+
+    function submitReject() {
+        document.getElementById('actionId').value = currentId;
+        document.getElementById('actionApprove').value = 'false';
+        document.getElementById('actionIntakeDate').value = '';
+        document.getElementById('actionReason').value = document.getElementById('rejectReasonInput').value;
+        document.getElementById('actionForm').submit();
+    }
+
+    document.getElementById('approveModal').addEventListener('click', function (e) { if (e.target === this) closeApproveModal(); });
+    document.getElementById('rejectModal').addEventListener('click', function (e) { if (e.target === this) closeRejectModal(); });
+</script>

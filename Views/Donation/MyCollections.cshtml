@@ -1,0 +1,225 @@
+@model List<ElevateED.Models.DonationDistributionViewModel>
+@{
+    ViewBag.Title = "My Collections";
+    ViewBag.ActiveTab = "mycollections";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .collection-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .collection-card.ready {
+            border: 1px solid rgba(34,211,238,0.35);
+            background: linear-gradient(135deg, rgba(34,211,238,0.04), #ffffff);
+        }
+
+        .collection-card .title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .collection-card .meta {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-ready, .status-awaitingcollection { background: #cffafe; color: #0e7490; }
+    .status-collected { background: #d1fae5; color: #065f46; }
+    .status-unclaimed { background: #fee2e2; color: #991b1b; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+
+    .code-box {
+        margin-top: 14px;
+        background: #eef2ff;
+        border: 1px solid rgba(79,70,229,0.2);
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+        .code-box .piece {
+            text-align: center;
+        }
+
+        .code-box .piece .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6366f1;
+            margin-bottom: 2px;
+        }
+
+        .code-box .piece .value {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #4338ca;
+            letter-spacing: 2px;
+        }
+
+    .hint-text {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-box-open" style="color:#f59e0b;"></i> My Collections</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <h4 style="color:#1e293b;">Nothing here yet</h4>
+            <p style="color:#64748b;">Once a donation is matched and confirmed to you, it'll show up here with your collection code.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            var isReady = item.Status == "Ready" || item.Status == "AwaitingCollection";
+            <div class="collection-card @(isReady ? "ready" : "")">
+                <div class="title">
+                    📦 @item.ItemName
+                    <span class="status-badge status-@(item.Status.ToLower())">
+                        @(item.Status == "AwaitingCollection" ? "Ready for Collection" : item.Status)
+                    </span>
+                </div>
+                <div class="meta">Quantity: @item.Quantity &nbsp;•&nbsp; Type: @item.ItemType</div>
+
+                @if (item.Status == "AwaitingCollection")
+                {
+                    <div class="code-box">
+                        <div class="piece">
+                            <div class="label">Collection Code</div>
+                            <div class="value">@item.CollectionToken</div>
+                        </div>
+                        @if (item.ScheduledDate.HasValue)
+                        {
+                            <div class="piece">
+                                <div class="label">Pickup Date</div>
+                                <div class="value" style="font-size:14px;">@item.ScheduledDate.Value.ToString("dd MMM yyyy")</div>
+                            </div>
+                        }
+                    </div>
+                    <div class="hint-text"><i class="fas fa-info-circle"></i> Show this code to the admin/teacher on your pickup date — they'll scan the item's tag to confirm it's yours.</div>
+                }
+                else if (item.Status == "Ready")
+                {
+                    <div class="code-box">
+                        <div class="piece">
+                            <div class="label">Collection Token</div>
+                            <div class="value">@item.CollectionToken</div>
+                        </div>
+                        <div class="piece">
+                            <div class="label">PIN</div>
+                            <div class="value">@item.PinCode</div>
+                        </div>
+                        @if (item.ScheduledDate.HasValue)
+                        {
+                            <div class="piece">
+                                <div class="label">Pickup Date</div>
+                                <div class="value" style="font-size:14px;">@item.ScheduledDate.Value.ToString("dd MMM yyyy")</div>
+                            </div>
+                        }
+                    </div>
+                    <div class="hint-text"><i class="fas fa-info-circle"></i> Bring this token and PIN with you on your pickup date.</div>
+                }
+                else if (item.Status == "Collected")
+                {
+                    <div class="hint-text" style="color:#059669;"><i class="fas fa-check-circle"></i> Collected — thank you!</div>
+                }
+                else if (item.Status == "Unclaimed")
+                {
+                    <div class="hint-text" style="color:#991b1b;"><i class="fas fa-exclamation-circle"></i> The collection window passed and this item was released back to the pool. A new match will be proposed automatically.</div>
+                }
+                else
+                {
+                    <div class="hint-text"><i class="fas fa-hourglass-half"></i> Awaiting the next step.</div>
+                }
+            </div>
+        }
+    }
+</div>

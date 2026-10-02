@@ -16,13 +16,14 @@ namespace ElevateED
 {
     public class MvcApplication : System.Web.HttpApplication
     {
-        // Smart Donation Management System — background sweeps (UC05 Auto-Match
-        // and UC08 Reassign Unclaimed Donation). A plain System.Threading.Timer
-        // is used since the app has no job scheduler (Hangfire/Quartz) anywhere
-        // else; both sweeps are also reachable on demand via the "Run Matching
-        // Now" admin button, so the system is demoable without waiting on this.
-        private static Timer _donationSweepTimer;
-        private static readonly TimeSpan DonationSweepInterval = TimeSpan.FromMinutes(10);
+        // ── Donation redesign automation (UC05/UC08) ──
+        // There's no job scheduler anywhere in this app (no Hangfire/Quartz),
+        // so a plain BCL Timer runs the matching + unclaimed-reassignment
+        // sweeps periodically. Wrapped in try/catch so one bad tick can
+        // never take the app pool down; an admin can also trigger a sweep
+        // on demand from the Match Review page ("Run Matching Now").
+        private static Timer _donationAutomationTimer;
+        private static readonly TimeSpan DonationAutomationInterval = TimeSpan.FromMinutes(5);
 
         protected void Application_Start()
         {
@@ -34,32 +35,30 @@ namespace ElevateED
             // Initialize database with admin account
             DatabaseConfig.Initialize();
 
-            _donationSweepTimer = new Timer(RunDonationSweeps, null, DonationSweepInterval, DonationSweepInterval);
+            _donationAutomationTimer = new Timer(
+                RunDonationAutomationSweeps,
+                null,
+                DonationAutomationInterval,
+                DonationAutomationInterval);
         }
 
-        private static void RunDonationSweeps(object state)
+        private static void RunDonationAutomationSweeps(object state)
         {
             try
             {
-                var engine = new DonationAutomationEngine();
-                engine.ReassignUnclaimedSweep(); // UC08 — also re-runs matching for any freed items
-                engine.RunMatchingSweep();       // UC05 — catches anything not covered by UC08's internal re-run
+                DonationAutomationEngine.RunMatchingSweep();
+                DonationAutomationEngine.ReassignUnclaimedSweep();
             }
-            catch
+            catch (Exception ex)
             {
-                // A bad tick must never take down the app pool — the next
-                // scheduled tick, or the admin's "Run Matching Now" button,
-                // will simply try again.
+                System.Diagnostics.Debug.WriteLine("Donation automation sweep failed: " + ex.Message);
             }
         }
 
         protected void Application_End()
         {
-            if (_donationSweepTimer != null)
-            {
-                _donationSweepTimer.Dispose();
-                _donationSweepTimer = null;
-            }
+            _donationAutomationTimer?.Dispose();
+            _donationAutomationTimer = null;
         }
         protected void Application_AuthenticateRequest(object sender, EventArgs e)
         {

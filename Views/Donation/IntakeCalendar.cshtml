@@ -1,0 +1,339 @@
+@model List<ElevateED.Models.DonationItem>
+@{
+    ViewBag.Title = "Intake Calendar";
+    ViewBag.ActiveTab = "intakecalendar";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #059669; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #dc2626; }
+
+    .intake-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+        .intake-card.overdue {
+            border-color: rgba(239,68,68,0.3);
+            background: linear-gradient(135deg, rgba(239,68,68,0.03), #ffffff);
+        }
+
+        .intake-card .title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .intake-card .meta {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .intake-card .photo-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+    .intake-date-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+        .intake-date-pill.overdue {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    .btn-received {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-not-received {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.25);
+        padding: 9px 20px;
+        border-radius: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15,23,42,0.6);
+        z-index: 2147483647;
+        padding: 40px 20px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+        .modal-overlay.active { display: block; }
+
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 30px;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+        .modal-box h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-box label {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .modal-box textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-cancel-modal {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 10px 22px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-calendar-check" style="color:#3b82f6;"></i> Intake Calendar</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4 style="color:#1e293b;">Nothing scheduled</h4>
+            <p style="color:#64748b;">Approved donations booked for drop-off (UC04) will appear here.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            var isOverdue = item.ScheduledIntakeDate.HasValue && item.ScheduledIntakeDate.Value.Date < DateTime.Now.Date;
+            <div class="intake-card @(isOverdue ? "overdue" : "")">
+                @if (!string.IsNullOrEmpty(item.PhotoEvidence))
+                {
+                    <img src="@Url.Content(item.PhotoEvidence)" class="photo-thumb" alt="Condition photo"
+                         onclick="window.open('@Url.Content(item.PhotoEvidence)', '_blank')" />
+                }
+                else
+                {
+                    <div class="photo-thumb" style="display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#cbd5e1;">
+                        <i class="fas fa-image"></i>
+                    </div>
+                }
+                <div style="flex:1;">
+                    <div class="title">@item.ItemName <span style="font-weight:400;color:#64748b;font-size:12px;">x @item.Quantity</span></div>
+                    <div class="meta">
+                        Category: @item.Category &nbsp;•&nbsp; Donor: @item.DonorName &nbsp;•&nbsp;
+                        <span class="intake-date-pill @(isOverdue ? "overdue" : "")">
+                            <i class="fas fa-calendar"></i> @(item.ScheduledIntakeDate.HasValue ? item.ScheduledIntakeDate.Value.ToString("dd MMM yyyy") : "No date")
+                        </span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button type="button" class="btn-received" data-id="@item.Id" onclick="confirmReceived(this)">
+                        <i class="fas fa-check"></i> Confirm Received
+                    </button>
+                    <button type="button" class="btn-not-received" data-id="@item.Id" onclick="openNotReceivedModal(this)">
+                        <i class="fas fa-times"></i> Not Received
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<form id="actionForm" method="post" action="@Url.Action("ConfirmIntake", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="actionId" value="" />
+    <input type="hidden" name="received" id="actionReceived" value="" />
+    <input type="hidden" name="reason" id="actionReason" value="" />
+</form>
+
+<!-- Not Received Modal -->
+<div class="modal-overlay" id="notReceivedModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#ef4444;"></i> Mark Not Received</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            The donor didn't bring the item in on the scheduled date.
+        </p>
+        <label>Notes (optional)</label>
+        <textarea id="notReceivedReason" rows="3"></textarea>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel-modal" onclick="closeNotReceivedModal()">Cancel</button>
+            <button type="button" class="btn-not-received" onclick="submitNotReceived()"><i class="fas fa-times"></i> Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.getElementById('notReceivedModal');
+        if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
+    })();
+
+    var currentId = 0;
+
+    function confirmReceived(btn) {
+        if (!confirm('Confirm this item was physically received? This issues its QR tag and opens it for matching.')) return;
+        document.getElementById('actionId').value = btn.getAttribute('data-id');
+        document.getElementById('actionReceived').value = 'true';
+        document.getElementById('actionReason').value = '';
+        document.getElementById('actionForm').submit();
+    }
+
+    function openNotReceivedModal(btn) {
+        currentId = btn.getAttribute('data-id');
+        document.getElementById('notReceivedReason').value = '';
+        document.getElementById('notReceivedModal').classList.add('active');
+    }
+    function closeNotReceivedModal() { document.getElementById('notReceivedModal').classList.remove('active'); }
+
+    function submitNotReceived() {
+        document.getElementById('actionId').value = currentId;
+        document.getElementById('actionReceived').value = 'false';
+        document.getElementById('actionReason').value = document.getElementById('notReceivedReason').value;
+        document.getElementById('actionForm').submit();
+    }
+
+    document.getElementById('notReceivedModal').addEventListener('click', function (e) {
+        if (e.target === this) closeNotReceivedModal();
+    });
+</script>

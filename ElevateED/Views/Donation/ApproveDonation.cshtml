@@ -1,0 +1,189 @@
+@model List<ElevateED.Models.DonationItem>
+@using ElevateED.Models
+@{
+    ViewBag.Title = "Approve Donations";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.ActiveTab = "approve";
+    var genuineNamedRequest = (Dictionary<int, bool>)ViewBag.GenuineNamedRequest;
+    var dailyCapacity = (int)ViewBag.DailyIntakeCapacity;
+}
+
+<style>
+    .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
+    .capacity-pill { background: #eef2ff; color: #4338ca; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+
+    .approval-card { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .approval-photo { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: var(--gray-100, #f3f4f6); flex-shrink: 0; }
+    .approval-photo-placeholder { width: 72px; height: 72px; border-radius: 12px; background: var(--gray-100, #f3f4f6); display: flex; align-items: center; justify-content: center; color: var(--gray-400, #9ca3af); font-size: 22px; flex-shrink: 0; }
+    .approval-body { flex: 1; min-width: 220px; }
+    .approval-title { font-weight: 700; font-size: 15px; color: var(--gray-900, #111827); }
+    .approval-meta { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 4px; }
+    .approval-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+    .badge-named { background: #ede9fe; color: #5b21b6; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+    .badge-genuine { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+    .badge-ungenuine { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+
+    .btn-approve { background: #10b981; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .btn-reject { background: #fee2e2; color: #991b1b; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: white; border-radius: 18px; padding: 28px; width: 420px; max-width: 90vw; }
+    .modal-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--gray-900, #111827); }
+    .modal-box label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600, #4b5563); margin-bottom: 6px; }
+    .modal-box input, .modal-box textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300, #d1d5db); border-radius: 10px; font-size: 13px; margin-bottom: 14px; font-family: inherit; }
+    .capacity-note { font-size: 12px; color: var(--gray-500, #6b7280); margin-bottom: 14px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-modal-cancel { background: white; border: 1px solid var(--gray-300, #d1d5db); padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .btn-modal-confirm { border: none; padding: 10px 22px; border-radius: 10px; font-weight: 700; color: white; cursor: pointer; }
+
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); }
+    .empty-state i { font-size: 48px; color: var(--gray-300, #d1d5db); margin-bottom: 15px; }
+</style>
+
+@{ Html.RenderPartial("_DonationSubNav"); }
+
+<div class="page-header">
+    <h1><i class="fas fa-clipboard-check" style="color: #f59e0b;"></i> Approve Donations</h1>
+    <span class="capacity-pill"><i class="fas fa-calendar-day"></i> Daily intake capacity: @dailyCapacity</span>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:#d1fae5;color:#065f46;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="background:#fee2e2;color:#991b1b;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-clipboard-check"></i>
+        <h4>Nothing pending approval</h4>
+        <p style="color:var(--gray-500,#6b7280);">New donations will appear here, oldest first.</p>
+    </div>
+}
+else
+{
+    foreach (var item in Model)
+    {
+        var isNamed = item.AllocationType == AllocationType.NamedAllocation;
+        var isGenuine = isNamed && genuineNamedRequest.ContainsKey(item.Id) && genuineNamedRequest[item.Id];
+        <div class="approval-card">
+            @if (!string.IsNullOrEmpty(item.PhotoEvidence))
+            {
+                <img src="@item.PhotoEvidence" class="approval-photo" />
+            }
+            else
+            {
+                <div class="approval-photo-placeholder"><i class="fas fa-box"></i></div>
+            }
+            <div class="approval-body">
+                <div class="approval-title">@item.ItemName <span style="color:var(--gray-400,#9ca3af); font-weight:400;">(@item.Category)</span></div>
+                <div class="approval-meta">
+                    Donor: @item.DonorName (@item.DonorType) &middot; Qty @item.Quantity &middot; Condition: @item.Condition &middot; Submitted @item.DonationDate.ToString("dd MMM yyyy")
+                </div>
+                @if (isNamed)
+                {
+                    <div style="margin-top:8px;">
+                        <span class="badge-named"><i class="fas fa-user"></i> Named Allocation</span>
+                        @if (isGenuine)
+                        {
+                            <span class="badge-genuine"><i class="fas fa-check"></i> Genuine open request</span>
+                        }
+                        else
+                        {
+                            <span class="badge-ungenuine"><i class="fas fa-exclamation-triangle"></i> No matching open request</span>
+                        }
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(item.ConditionNotes))
+                {
+                    <div style="font-size:12px;color:var(--gray-500,#6b7280);margin-top:6px;">"@item.ConditionNotes"</div>
+                }
+            </div>
+            <div class="approval-actions">
+                <button class="btn-approve" onclick="openApproveModal(@item.Id, '@Html.Raw(item.ItemName.Replace("'", "\\'"))')"><i class="fas fa-check"></i> Approve</button>
+                <button class="btn-reject" onclick="openRejectModal(@item.Id, '@Html.Raw(item.ItemName.Replace("'", "\\'"))')"><i class="fas fa-times"></i> Reject</button>
+            </div>
+        </div>
+    }
+}
+
+<!-- Approve Modal -->
+<div class="modal-overlay" id="approveModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-calendar-day"></i> Schedule Intake</h3>
+        <form method="post" action="@Url.Action("ApproveDonationSubmit", "Donation")" id="approveForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="approveItemId" />
+            <input type="hidden" name="decision" value="approve" />
+            <label>Intake date for <span id="approveItemName"></span></label>
+            <input type="date" name="intakeDate" id="approveIntakeDate" required />
+            <div class="capacity-note" id="capacityNote">Choose a date to see remaining slots.</div>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeModals()">Cancel</button>
+                <button type="submit" class="btn-modal-confirm" style="background:#10b981;">Confirm Approval</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle"></i> Reject Donation</h3>
+        <form method="post" action="@Url.Action("ApproveDonationSubmit", "Donation")" id="rejectForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="rejectItemId" />
+            <input type="hidden" name="decision" value="reject" />
+            <label>Reason for rejecting <span id="rejectItemName"></span></label>
+            <textarea name="rejectionReason" rows="3" required placeholder="This is shared with the donor"></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeModals()">Cancel</button>
+                <button type="submit" class="btn-modal-confirm" style="background:#ef4444;">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var DAILY_CAPACITY = @dailyCapacity;
+
+    function openApproveModal(id, name) {
+        document.getElementById('approveItemId').value = id;
+        document.getElementById('approveItemName').textContent = name;
+        document.getElementById('capacityNote').textContent = 'Choose a date to see remaining slots.';
+        document.getElementById('approveModal').classList.add('show');
+    }
+    function openRejectModal(id, name) {
+        document.getElementById('rejectItemId').value = id;
+        document.getElementById('rejectItemName').textContent = name;
+        document.getElementById('rejectModal').classList.add('show');
+    }
+    function closeModals() {
+        document.getElementById('approveModal').classList.remove('show');
+        document.getElementById('rejectModal').classList.remove('show');
+    }
+
+    document.getElementById('approveIntakeDate').addEventListener('change', function () {
+        var date = this.value;
+        if (!date) return;
+        fetch('@Url.Action("IntakeCapacity", "Donation")?date=' + encodeURIComponent(date))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var note = document.getElementById('capacityNote');
+                if (data.remaining <= 0) {
+                    note.textContent = 'Fully booked (' + data.capacity + '/day) \u2014 please choose another date.';
+                    note.style.color = '#991b1b';
+                } else {
+                    note.textContent = data.remaining + ' of ' + data.capacity + ' slots remaining on this date.';
+                    note.style.color = '#6b7280';
+                }
+            });
+    });
+</script>

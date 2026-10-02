@@ -1,370 +1,74 @@
 @model List<ElevateED.Models.DonationDistributionViewModel>
 @{
     ViewBag.Title = "My Collections";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
     ViewBag.ActivePage = "donations";
     ViewBag.ActiveTab = "mycollections";
-    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml"
-           : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml"
-           : "~/Views/Shared/_StudentLayout.cshtml";
 }
 
 <style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
+    .page-header { margin-bottom: 20px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
 
-        .page-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #111827;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    .collection-card { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px; padding: 22px 24px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .collection-title { font-weight: 700; font-size: 15px; color: var(--gray-900, #111827); }
+    .collection-meta { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 4px; }
 
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 10px 20px;
-        border-radius: 30px;
-        border: 1px solid #e5e7eb;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s;
-        font-size: 14px;
-    }
+    .code-box { text-align: center; background: linear-gradient(135deg, var(--primary, #4f46e5), #8b5cf6); color: white; border-radius: 14px; padding: 14px 24px; }
+    .code-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; }
+    .code-value { font-size: 20px; font-weight: 800; font-family: monospace; letter-spacing: 2px; margin-top: 4px; }
 
-        .btn-secondary:hover {
-            background: #e5e7eb;
-            color: #111827;
-            text-decoration: none;
-        }
+    .badge { padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-awaiting { background: #dbeafe; color: #1e40af; }
+    .badge-collected { background: #d1fae5; color: #065f46; }
+    .badge-unclaimed { background: #fee2e2; color: #991b1b; }
 
-    .collect-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-
-    .collect-card.is-ready {
-        border-color: rgba(79,70,229,0.35);
-        background: linear-gradient(135deg, #eef2ff 0%, #ffffff 60%);
-    }
-
-    .collect-info .name {
-        font-weight: 700;
-        color: #111827;
-        font-size: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .collect-info .meta {
-        font-size: 12.5px;
-        color: #6b7280;
-        margin-top: 4px;
-    }
-
-    .status-badge {
-        padding: 4px 14px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .status-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .status-ready {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
-
-    .status-collected {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .btn-view {
-        background: linear-gradient(135deg, #6366f1, #4f46e5);
-        color: white;
-        padding: 9px 20px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-
-        .btn-view:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79,70,229,0.3);
-        }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #9ca3af;
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #e5e7eb;
-    }
-
-        .empty-state i {
-            font-size: 44px;
-            color: #d1d5db;
-            margin-bottom: 16px;
-        }
-
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(17,24,39,0.55);
-        z-index: 2147483647;
-        overflow-y: auto;
-        padding: 40px 20px;
-        box-sizing: border-box;
-    }
-
-        .modal-overlay.active {
-            display: block;
-        }
-
-    .modal-box {
-        background: #ffffff;
-        border-radius: 20px;
-        padding: 32px;
-        max-width: 420px;
-        width: 100%;
-        margin: 0 auto;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        position: relative;
-        box-sizing: border-box;
-        text-align: center;
-    }
-
-        .modal-box .btn-close-modal {
-            position: absolute;
-            top: 18px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: #9ca3af;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .modal-box h3 {
-            color: #111827;
-            margin: 0 0 4px 0;
-            font-size: 19px;
-        }
-
-        .modal-box .sub {
-            color: #6b7280;
-            font-size: 13px;
-            margin-bottom: 20px;
-        }
-
-    #qrCanvasWrap {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 16px;
-        display: inline-block;
-        margin-bottom: 16px;
-    }
-
-    .pin-display {
-        font-family: 'Courier New', monospace;
-        font-size: 30px;
-        font-weight: 700;
-        letter-spacing: 6px;
-        color: #4f46e5;
-        background: #eef2ff;
-        border-radius: 12px;
-        padding: 12px 20px;
-        margin: 12px 0;
-    }
-
-    .modal-detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px dashed #f1f5f9;
-        font-size: 13px;
-        text-align: left;
-    }
-
-        .modal-detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .modal-detail-row .label {
-            color: #6b7280;
-        }
-
-        .modal-detail-row .value {
-            color: #111827;
-            font-weight: 600;
-        }
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); }
+    .empty-state i { font-size: 48px; color: var(--gray-300, #d1d5db); margin-bottom: 15px; }
 </style>
 
-@Html.Partial("_DonationSubNav")
+@{ Html.RenderPartial("_DonationSubNav"); }
 
 <div class="page-header">
-    <h1><i class="fas fa-box-open" style="color:#4f46e5;"></i> My Collections</h1>
-    <a href="@Url.Action("MyRequests")" class="btn-secondary"><i class="fas fa-arrow-left"></i> Back to Requests</a>
+    <h1><i class="fas fa-box-open" style="color: var(--primary, #4f46e5);"></i> My Collections</h1>
 </div>
 
-@if (!Model.Any())
+@if (Model == null || !Model.Any())
 {
     <div class="empty-state">
         <i class="fas fa-box-open"></i>
-        <h4 style="color:#4b5563;">Nothing to Collect Yet</h4>
-        <p>Once a donation is allocated to you, it'll show up here.</p>
+        <h4>Nothing matched yet</h4>
+        <p style="color:var(--gray-500,#6b7280);">When a donated item is matched to one of your requests, it'll show up here with a collection code.</p>
     </div>
 }
 else
 {
-    foreach (var item in Model)
+    foreach (var c in Model)
     {
-        var statusClass = "status-" + item.Status.ToLower();
-        var isReady = item.Status == "Ready";
-        var isCollected = item.Status == "Collected";
-
-        <div class="collect-card @(isReady ? "is-ready" : "")">
-            <div class="collect-info">
-                <div class="name">
-                    @(item.IsFoodItem ? "🍎" : "📦") @item.ItemName
-                    <span class="status-badge @statusClass">@item.Status</span>
-                </div>
-                <div class="meta">
-                    Qty: @item.Quantity
-                    @if (item.ScheduledDate.HasValue)
+        var badgeClass = c.Status == "AwaitingCollection" ? "badge-awaiting"
+                        : c.Status == "Collected" ? "badge-collected"
+                        : c.Status == "Unclaimed" ? "badge-unclaimed"
+                        : "badge-pending";
+        <div class="collection-card">
+            <div>
+                <div class="collection-title">@c.ItemName <span style="color:var(--gray-400,#9ca3af); font-weight:400;">(@c.ItemType)</span></div>
+                <div class="collection-meta">
+                    Qty @c.Quantity
+                    @if (c.ScheduledDate.HasValue)
                     {
-                        <span> • Scheduled: @item.ScheduledDate.Value.ToString("dd MMM yyyy HH:mm")</span>
+                        <text> &middot; Collection date: @c.ScheduledDate.Value.ToString("dd MMM yyyy")</text>
                     }
+                    <br /><span class="badge @badgeClass">@c.Status</span>
                 </div>
             </div>
-            @if (isReady)
+            @if (c.Status == "AwaitingCollection" && !string.IsNullOrEmpty(c.CollectionToken))
             {
-                <button type="button" class="btn-view"
-                        data-item-name="@item.ItemName"
-                        data-quantity="@item.Quantity"
-                        data-token="@item.CollectionToken"
-                        data-pin="@item.PinCode"
-                        onclick="openCollectModal(this)">
-                    <i class="fas fa-qrcode"></i> Show My Pickup Code
-                </button>
-            }
-            else if (isCollected)
-            {
-                <span style="color:#059669;font-size:13px;font-weight:600;"><i class="fas fa-check-circle"></i> Collected</span>
-            }
-            else
-            {
-                <span style="color:#92400e;font-size:13px;">Waiting to be scheduled by staff</span>
+                <div class="code-box">
+                    <div class="code-label">Collection Code</div>
+                    <div class="code-value">@c.CollectionToken</div>
+                </div>
             }
         </div>
     }
 }
-
-<!-- Collection code modal -->
-<div class="modal-overlay" id="collectModal">
-    <div class="modal-box">
-        <button type="button" class="btn-close-modal" onclick="closeCollectModal()">&times;</button>
-        <h3 id="modalItemName">Item</h3>
-        <div class="sub">Show this to staff when you collect your donation.</div>
-
-        <div id="qrCanvasWrap"><canvas id="qrCanvas" width="180" height="180"></canvas></div>
-
-        <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Your PIN</div>
-        <div class="pin-display" id="modalPin">----</div>
-
-        <div>
-            <div class="modal-detail-row"><span class="label">Quantity</span><span class="value" id="modalQty"></span></div>
-            <div class="modal-detail-row"><span class="label">Collection code</span><span class="value" id="modalToken" style="font-family:monospace;"></span></div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-    var qrInstance = null;
-
-    function moveCollectModalToBody() {
-        var modal = document.getElementById('collectModal');
-        if (modal && modal.parentNode !== document.body) {
-            document.body.appendChild(modal);
-        }
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', moveCollectModalToBody);
-    } else {
-        moveCollectModalToBody();
-    }
-
-    function openCollectModal(btn) {
-        var name = btn.getAttribute('data-item-name');
-        var qty = btn.getAttribute('data-quantity');
-        var token = btn.getAttribute('data-token');
-        var pin = btn.getAttribute('data-pin');
-
-        document.getElementById('modalItemName').textContent = name;
-        document.getElementById('modalQty').textContent = qty;
-        document.getElementById('modalToken').textContent = token;
-        document.getElementById('modalPin').textContent = pin;
-
-        var qrWrap = document.getElementById('qrCanvasWrap');
-        qrWrap.innerHTML = '';
-        try {
-            if (typeof QRCode !== 'undefined') {
-                new QRCode(qrWrap, {
-                    text: token,
-                    width: 180,
-                    height: 180,
-                    colorDark: '#111827',
-                    colorLight: '#ffffff'
-                });
-            } else {
-                qrWrap.innerHTML = '<div style="padding:30px;color:#6b7280;font-size:12px;">QR unavailable — show staff the code below</div>';
-            }
-        } catch (e) {
-            qrWrap.innerHTML = '<div style="padding:30px;color:#6b7280;font-size:12px;">QR unavailable — show staff the code below</div>';
-        }
-
-        document.getElementById('collectModal').classList.add('active');
-    }
-
-    function closeCollectModal() {
-        document.getElementById('collectModal').classList.remove('active');
-    }
-
-    document.getElementById('collectModal').addEventListener('click', function (e) {
-        if (e.target === this) closeCollectModal();
-    });
-</script>

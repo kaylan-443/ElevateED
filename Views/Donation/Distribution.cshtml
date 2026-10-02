@@ -1,0 +1,433 @@
+@model List<ElevateED.Models.DonationDistributionViewModel>
+@{
+    ViewBag.Title = "Collection Worklist";
+    ViewBag.ActiveTab = "distribution";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin: 24px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .section-title .count-pill {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+    .distribution-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .distribution-card .title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .distribution-card .meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+    .btn-schedule {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-collect {
+        background: linear-gradient(135deg, #22d3ee, #0891b2);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-collect:hover {
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-token {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        color: #64748b;
+    }
+
+        .empty-state i {
+            font-size: 36px;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-ready { background: #dbeafe; color: #1e40af; }
+    .status-awaitingcollection { background: #cffafe; color: #0e7490; }
+
+    .food-badge {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        margin-left: 6px;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15,23,42,0.6);
+        z-index: 2147483647;
+        padding: 40px 20px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+        .modal-overlay.active { display: block; }
+
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 30px;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+        .modal-box h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-box label {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .modal-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .btn-cancel-modal {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 10px 22px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-dolly" style="color:#22d3ee;"></i> Collection Worklist</h1>
+        <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @{
+        var needsScheduling = Model.Where(i => i.Status == "Pending").ToList();
+        var readyForCollection = Model.Where(i => i.Status == "Ready" || i.Status == "AwaitingCollection").ToList();
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            Nothing on the worklist right now.
+        </div>
+    }
+    else
+    {
+        <div class="section-title">
+            <i class="fas fa-calendar-plus"></i> Needs Scheduling <span class="count-pill">@needsScheduling.Count</span>
+        </div>
+        @if (!needsScheduling.Any())
+        {
+            <div class="empty-state"><i class="fas fa-check-circle"></i> Nothing waiting to be scheduled.</div>
+        }
+        else
+        {
+            foreach (var item in needsScheduling)
+            {
+                <div class="distribution-card">
+                    <div>
+                        <div class="title">
+                            @item.StudentName <span style="font-size:12px;color:#64748b;font-weight:400;">(@item.StudentNumber)</span>
+                            @if (item.IsFoodItem)
+                            {
+                                <span class="food-badge"><i class="fas fa-utensils"></i> Food</span>
+                            }
+                        </div>
+                        <div class="meta">📦 @item.ItemName &nbsp;•&nbsp; Qty: @item.Quantity &nbsp;•&nbsp; Type: @item.ItemType</div>
+                        <div class="meta"><span class="status-badge status-pending">Pending</span></div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                        <button type="button" class="btn-schedule" onclick="openScheduleModal(@item.AllocationId)">
+                            <i class="fas fa-calendar-plus"></i> Schedule
+                        </button>
+                        <button type="button" class="btn-token" onclick="generateToken(@item.AllocationId)">
+                            <i class="fas fa-key"></i> Resend Code
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+
+        <div class="section-title">
+            <i class="fas fa-box-open"></i> Ready for Collection <span class="count-pill">@readyForCollection.Count</span>
+        </div>
+        @if (!readyForCollection.Any())
+        {
+            <div class="empty-state"><i class="fas fa-check-circle"></i> Nothing waiting to be collected.</div>
+        }
+        else
+        {
+            foreach (var item in readyForCollection)
+            {
+                <div class="distribution-card">
+                    <div>
+                        <div class="title">
+                            @item.StudentName <span style="font-size:12px;color:#64748b;font-weight:400;">(@item.StudentNumber)</span>
+                            @if (item.IsFoodItem)
+                            {
+                                <span class="food-badge"><i class="fas fa-utensils"></i> Food</span>
+                            }
+                        </div>
+                        <div class="meta">📦 @item.ItemName &nbsp;•&nbsp; Qty: @item.Quantity</div>
+                        <div class="meta">
+                            <span class="status-badge status-@(item.Status.ToLower())">@(item.Status == "AwaitingCollection" ? "Awaiting Collection" : item.Status)</span>
+                            @if (item.ScheduledDate.HasValue)
+                            {
+                                <span style="color:#64748b;font-size:11px;margin-left:8px;">📅 @item.ScheduledDate.Value.ToString("dd MMM yyyy")</span>
+                            }
+                            @if (!string.IsNullOrEmpty(item.CollectionToken))
+                            {
+                                <span style="color:#64748b;font-size:11px;margin-left:8px;">🔑 @item.CollectionToken</span>
+                            }
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                        <a href="@Url.Action("ProcessCollection", new { token = item.CollectionToken })" class="btn-collect">
+                            <i class="fas fa-qrcode"></i> Collect
+                        </a>
+                        <button type="button" class="btn-token" onclick="generateToken(@item.AllocationId)">
+                            <i class="fas fa-key"></i> Resend Code
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-calendar-plus" style="color:#f59e0b;"></i> Schedule Collection</h3>
+        <label>Collection Date &amp; Time</label>
+        <input type="datetime-local" id="scheduleDateInput" />
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel-modal" onclick="closeScheduleModal()">Cancel</button>
+            <button type="button" class="btn-schedule" onclick="submitSchedule()"><i class="fas fa-check"></i> Schedule</button>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    (function () {
+        var modal = document.getElementById('scheduleModal');
+        if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
+    })();
+
+    function headersWithToken() {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+        if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+        return headers;
+    }
+
+    var currentScheduleAllocationId = 0;
+
+    function openScheduleModal(allocationId) {
+        currentScheduleAllocationId = allocationId;
+        document.getElementById('scheduleDateInput').value = '';
+        document.getElementById('scheduleModal').classList.add('active');
+    }
+
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.remove('active');
+    }
+
+    function submitSchedule() {
+        var raw = document.getElementById('scheduleDateInput').value;
+        if (!raw) { alert('Please choose a date and time.'); return; }
+
+        var scheduleDate = new Date(raw);
+        if (isNaN(scheduleDate)) { alert('Invalid date.'); return; }
+
+        fetch('@Url.Action("ScheduleDistribution")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headersWithToken(),
+            body: JSON.stringify({
+                allocationId: currentScheduleAllocationId,
+                scheduleDate: scheduleDate.toISOString()
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) { location.reload(); }
+            else { alert(data.message); }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    function generateToken(allocationId) {
+        if (!confirm('Generate a fresh collection code for this allocation? Any previously shared code will stop working.')) return;
+
+        fetch('@Url.Action("GenerateCollectionToken")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headersWithToken(),
+            body: JSON.stringify({ allocationId: allocationId })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                alert('New collection code: ' + data.token + (data.pin ? ('\nPIN: ' + data.pin) : ''));
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    document.getElementById('scheduleModal').addEventListener('click', function (e) {
+        if (e.target === this) closeScheduleModal();
+    });
+</script>

@@ -1,0 +1,1170 @@
+﻿@model ElevateED.Models.DonationItemFormViewModel
+@{
+    ViewBag.Title = "Donate an Item";
+    ViewBag.ActiveTab = "adddonation";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml"
+        : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml"
+        : "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .btn-request {
+        background: linear-gradient(135deg, #22d3ee, #0891b2);
+        color: white;
+        padding: 10px 24px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+        .btn-request:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34,211,238,0.35);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        justify-content: center;
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+        }
+
+    .btn-danger {
+        background: rgba(239,68,68,0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.3);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+        }
+
+    .field-group {
+        margin-bottom: 16px;
+    }
+
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        .field-group .required {
+            color: #ef4444;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        color: #1e293b;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #10b981;
+            background: white;
+        }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .dynamic-section {
+        background: rgba(16,185,129,0.03);
+        border: 1px solid rgba(16,185,129,0.1);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 20px;
+    }
+
+        .dynamic-section h4 {
+            font-size: 13px;
+            color: #059669;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+    .radio-card-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin: 8px 0 4px;
+    }
+
+    .radio-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+        .radio-card:hover {
+            border-color: #10b981;
+            transform: translateY(-2px);
+            background: white;
+        }
+
+        .radio-card .emoji {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .radio-card .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .radio-card .sub-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .radio-card.selected {
+            border-color: #10b981;
+            background: rgba(16,185,129,0.08);
+            box-shadow: 0 0 20px rgba(16,185,129,0.15);
+        }
+
+            .radio-card.selected .label {
+                color: #059669;
+            }
+
+    .item-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s;
+    }
+
+        .item-card:hover {
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+    .item-card-info {
+        flex: 1;
+    }
+
+        .item-card-info .title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-card-info .meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+    .category-badge {
+        background: rgba(16,185,129,0.15);
+        color: #059669;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #94a3b8;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+        margin-bottom: 16px;
+    }
+
+        .empty-state i {
+            font-size: 40px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+
+    .needs-section {
+        background: rgba(34,211,238,0.05);
+        border: 1px solid rgba(34,211,238,0.15);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+
+        .needs-section h4 {
+            color: #0891b2;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .needs-section p {
+            color: #64748b;
+            font-size: 13px;
+            margin: 0 0 12px 0;
+        }
+
+    .need-item {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(148,163,184,0.08);
+        font-size: 13px;
+        color: #1e293b;
+    }
+
+        .need-item:last-child {
+            border-bottom: none;
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(15, 23, 42, 0.85) !important;
+        z-index: 2147483647 !important;
+        overflow-y: auto !important;
+        padding: 40px 20px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+        .modal-overlay.active {
+            display: block !important;
+        }
+
+    .modal {
+        background: white !important;
+        border-radius: 20px !important;
+        padding: 32px !important;
+        max-width: 700px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+        position: relative !important;
+        z-index: 2147483647 !important;
+        display: block !important;
+    }
+
+        .modal h3 {
+            color: #1e293b !important;
+            margin: 0 0 20px 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-size: 20px !important;
+        }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    @@media (max-width: 640px) {
+        .row {
+            grid-template-columns: 1fr;
+        }
+
+        .radio-card-group {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .item-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .modal {
+            padding: 24px !important;
+        }
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-gift" style="color:#10b981;"></i> Donate an Item</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="@Url.Action("RequestDonation")" class="btn-request">
+                <i class="fas fa-hand-holding-heart"></i> Request Instead
+            </a>
+            <a href="@Url.Action("Dashboard")" class="btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    <div class="form-container">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        @{
+            var publicNeeds = ViewBag.PublicNeeds as List<string> ?? new List<string>();
+            int needsCount = ViewBag.NeedsCount is int ? (int)ViewBag.NeedsCount : publicNeeds.Count;
+        }
+        @if (publicNeeds.Any())
+        {
+            <div class="needs-section">
+                <h4>
+                    <i class="fas fa-hands-helping"></i>
+                    Current Needs (@needsCount request@(needsCount != 1 ? "s" : ""))
+                </h4>
+                <p>Help students by donating items they need. All student information is kept private.</p>
+                @foreach (var need in publicNeeds)
+                {
+                    <div class="need-item">@need</div>
+                }
+            </div>
+        }
+
+        <div class="card" style="background:white;border-radius:16px;padding:30px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+
+            @if (ViewBag.DonorName != null && !string.IsNullOrEmpty((string)ViewBag.DonorName))
+            {
+                <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;color:#059669;">
+                    <i class="fas fa-user"></i> Donor: @ViewBag.DonorName
+                </div>
+            }
+
+            <h3 style="font-size:18px;color:#1e293b;margin-bottom:16px;">
+                <i class="fas fa-box-open" style="color:#10b981;"></i> Your Donations
+            </h3>
+
+            <div id="emptyState" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h4 style="color:#64748b;margin-bottom:4px;">No items yet</h4>
+                <p style="font-size:13px;">Click "Add Item" below to start donating</p>
+            </div>
+
+            <div id="itemsList"></div>
+
+            <button type="button" class="btn-primary" onclick="openAddItemModal()" style="margin-bottom:20px;width:100%;justify-content:center;">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+
+            <div id="submitSection" style="display:none;border-top:2px solid #f1f5f9;padding-top:20px;margin-top:20px;">
+                <p style="font-size:13px;color:#64748b;margin-bottom:12px;">
+                    <i class="fas fa-info-circle"></i> You can add more items before submitting.
+                </p>
+                <button type="button" class="btn-success" onclick="submitAllItems()">
+                    <i class="fas fa-paper-plane"></i> Submit All Donations
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<form id="donationForm" method="post" action="@Url.Action("AddDonation", "Donation")" enctype="multipart/form-data" style="display:none;">
+    @Html.AntiForgeryToken()
+    <div id="hiddenFields"></div>
+    <input type="hidden" name="itemCount" id="itemCountInput" value="0" />
+</form>
+
+<div class="modal-overlay" id="itemModal">
+    <div class="modal">
+        <h3 id="modalTitle"><i class="fas fa-plus-circle" style="color:#10b981;"></i> Add Item to Donate</h3>
+
+        <div id="modalStep1">
+            <div class="field-group">
+                <label class="required">What are you donating?</label>
+                <div class="radio-card-group">
+                    <div class="radio-card" onclick="selectCategory(this, 'Textbook', 'Book')">
+                        <span class="emoji">📚</span>
+                        <span class="label">Textbook</span>
+                        <span class="sub-label">School books</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Clothing', 'Clothing')">
+                        <span class="emoji">👕</span>
+                        <span class="label">Clothing</span>
+                        <span class="sub-label">Uniform</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Footwear', 'Footwear')">
+                        <span class="emoji">👟</span>
+                        <span class="label">Footwear</span>
+                        <span class="sub-label">Shoes, Takkies</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Stationery', 'Stationery')">
+                        <span class="emoji">✏️</span>
+                        <span class="label">Stationery</span>
+                        <span class="sub-label">Pens, Books</span>
+                    </div>
+                    <div class="radio-card" onclick="selectCategory(this, 'Other', 'Other')">
+                        <span class="emoji">📦</span>
+                        <span class="label">Other</span>
+                        <span class="sub-label">Other items</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeItemModal()">Cancel</button>
+                <button type="button" class="btn-success" onclick="goToModalStep2()" style="width:auto;padding:10px 24px;">
+                    Next: Details →
+                </button>
+            </div>
+        </div>
+
+        <div id="modalStep2" style="display:none;">
+
+            <!-- TEXTBOOK -->
+            <div id="textbookFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-book"></i> Textbook Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Book Title / Item Name</label>
+                        <input type="text" id="itemName_textbook" class="form-control" placeholder="e.g., Study & Master Mathematics Grade 10" />
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Subject</label>
+                            <select id="subject" class="form-control">
+                                <option value="">-- Select Subject --</option>
+                                @{
+                                    var subjectList = ViewBag.Subjects as List<string> ?? new List<string>();
+                                }
+                                @foreach (var subj in subjectList)
+                                {
+                                    <option value="@subj">@subj</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="required">Grade Level</label>
+                            <select id="gradeLevel" class="form-control">
+                                <option value="">-- Select Grade --</option>
+                                <option>Grade 8</option>
+                                <option>Grade 9</option>
+                                <option>Grade 10</option>
+                                <option>Grade 11</option>
+                                <option>Grade 12</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>ISBN (optional)</label>
+                        <input type="text" id="isbn" class="form-control" placeholder="e.g., 978-0-521-12345-6" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLOTHING -->
+            <div id="clothingFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-tshirt"></i> Clothing Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Gender</label>
+                        <select id="gender" class="form-control" onchange="updateClothingTypes()">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Clothing Type</label>
+                        <select id="clothingType" class="form-control">
+                            <option value="">-- Select Gender First --</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Size</label>
+                        <select id="clothingSize" class="form-control">
+                            <option value="">-- Select Size --</option>
+                            <option>XS</option>
+                            <option>S</option>
+                            <option>M</option>
+                            <option>L</option>
+                            <option>XL</option>
+                            <option>2XL</option>
+                            <option>3XL</option>
+                            <option>4XL</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTWEAR -->
+            <div id="footwearFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-shoe-prints"></i> Footwear Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Gender</label>
+                        <select id="gender_footwear" class="form-control">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Footwear Type</label>
+                        <select id="footwearType" class="form-control">
+                            <option value="">-- Select Type --</option>
+                            <option>School Shoes</option>
+                            <option>Sneakers/Takkies</option>
+                            <option>Sandals</option>
+                            <option>Boots</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="required">Shoe Size</label>
+                        <select id="footwearSize" class="form-control">
+                            <option value="">-- Select Size --</option>
+                            @for (int sz = 1; sz <= 13; sz++)
+                            {
+                                <option>@sz</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATIONERY -->
+            <div id="stationeryFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-pencil-alt"></i> Stationery Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Item Name</label>
+                        <input type="text" id="itemName_stationery" class="form-control" placeholder="e.g., Pens, Notebooks, Ruler Set" />
+                    </div>
+
+                    <div class="row">
+                        <div class="field-group">
+                            <label class="required">Stationery Type</label>
+                            <select id="stationeryType" class="form-control">
+                                <option value="">-- Select Type --</option>
+                                <option>Pens</option>
+                                <option>Pencils</option>
+                                <option>Notebooks</option>
+                                <option>Exercise Books</option>
+                                <option>Rulers</option>
+                                <option>Erasers</option>
+                                <option>Sharpeners</option>
+                                <option>Calculators</option>
+                                <option>Geometry Sets</option>
+                                <option>Files/Folders</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Brand</label>
+                            <input type="text" id="brandPreference" class="form-control" placeholder="e.g., Bic, Faber-Castell" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTHER -->
+            <div id="otherFields" class="dynamic-fields" style="display:none;">
+                <div class="dynamic-section">
+                    <h4><i class="fas fa-box"></i> Item Details</h4>
+
+                    <div class="field-group">
+                        <label class="required">Item Name</label>
+                        <input type="text" id="itemName_other" class="form-control" placeholder="e.g., School Bag, Water Bottle" />
+                    </div>
+
+                    <div class="field-group">
+                        <label>Item Category</label>
+                        <select id="itemSubCategory" class="form-control">
+                            <option value="">-- Select Sub-Category --</option>
+                            <option>School Bag</option>
+                            <option>Water Bottle</option>
+                            <option>Lunch Box</option>
+                            <option>Sports Equipment</option>
+                            <option>Art Supplies</option>
+                            <option>Musical Instrument</option>
+                            <option>Electronics</option>
+                            <option>Personal Care</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div class="field-group">
+                <label class="required">Quantity</label>
+                <input type="number" id="quantity" class="form-control" min="1" max="100" value="1" />
+            </div>
+
+            <!-- Condition -->
+            <div class="dynamic-section" style="background:rgba(139,92,246,0.03);border-color:rgba(139,92,246,0.1);">
+                <h4 style="color:#7c3aed;"><i class="fas fa-clipboard-check"></i> Item Condition</h4>
+
+                <div class="field-group">
+                    <label class="required">Condition</label>
+                    <select id="condition" class="form-control">
+                        <option value="">-- Select Condition --</option>
+                        <option>New</option>
+                        <option>Good</option>
+                        <option>Fair</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label>Condition Notes (Optional)</label>
+                    <textarea id="conditionNotes" class="form-control" rows="2" placeholder="e.g., Small tear on page 45, cover slightly bent..."></textarea>
+                </div>
+
+                <div class="field-group">
+                    <label class="required">Condition Photo</label>
+                    <input type="file" id="itemPhoto" class="form-control" accept="image/*" style="padding:8px;" />
+                    <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">
+                        At least one photo is required — it's shown to the admin at approval/intake, and again to the
+                        learner at collection for a final visual check.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Allocation Preference -->
+            <div class="dynamic-section" style="background:rgba(99,102,241,0.03);border-color:rgba(99,102,241,0.1);">
+                <h4 style="color:#4f46e5;"><i class="fas fa-route"></i> Allocation Preference</h4>
+
+                <div class="field-group">
+                    <label class="required">Who should this item go to?</label>
+                    <select id="allocationType" class="form-control" onchange="toggleNamedAllocation()">
+                        <option value="OpenDonation">Open Donation — join the general matching pool</option>
+                        <option value="NamedAllocation">Named Allocation — I have a specific learner in mind</option>
+                    </select>
+                </div>
+
+                <div class="field-group" id="namedAllocationField" style="display:none;">
+                    <label class="required">Learner's Student Number</label>
+                    <input type="text" id="targetStudentNumber" class="form-control" placeholder="e.g., ST2024001" />
+                    <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">
+                        Subject to admin confirming a genuine open request exists for this learner in this category.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="goToModalStep1()">← Back</button>
+                <button type="button" class="btn-success" onclick="saveItem()" style="width:auto;padding:10px 24px;">
+                    <i class="fas fa-check"></i> Save Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function moveModalsToBody() {
+            var modal = document.getElementById('itemModal');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', moveModalsToBody);
+        } else {
+            moveModalsToBody();
+        }
+    })();
+
+    var items = [];
+    var itemPhotos = [];
+    var currentCategory = '';
+    var currentItemType = '';
+    var editingIndex = -1;
+
+    function toggleNamedAllocation() {
+        var isNamed = document.getElementById('allocationType').value === 'NamedAllocation';
+        document.getElementById('namedAllocationField').style.display = isNamed ? 'block' : 'none';
+    }
+
+    var clothingByGender = {
+        'Male': ['Shirt', 'Trousers', 'Shorts', 'Jacket', 'Tie', 'Shoes', 'Socks', 'Blazer', 'Jersey'],
+        'Female': ['Blouse', 'Skirt', 'Trousers', 'Dress', 'Jacket', 'Shoes', 'Socks', 'Blazer', 'Jersey']
+    };
+
+    function selectCategory(el, category, itemType) {
+        var cards = document.querySelectorAll('#itemModal .radio-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('selected');
+        }
+        el.classList.add('selected');
+        currentCategory = category;
+        currentItemType = itemType;
+    }
+
+    function goToModalStep2() {
+        if (!currentCategory) { alert('Please select a category first.'); return; }
+        document.getElementById('modalStep1').style.display = 'none';
+        document.getElementById('modalStep2').style.display = 'block';
+
+        document.getElementById('textbookFields').style.display = currentCategory === 'Textbook' ? 'block' : 'none';
+        document.getElementById('clothingFields').style.display = currentCategory === 'Clothing' ? 'block' : 'none';
+        document.getElementById('footwearFields').style.display = currentCategory === 'Footwear' ? 'block' : 'none';
+        document.getElementById('stationeryFields').style.display = currentCategory === 'Stationery' ? 'block' : 'none';
+        document.getElementById('otherFields').style.display = currentCategory === 'Other' ? 'block' : 'none';
+    }
+
+    function goToModalStep1() {
+        document.getElementById('modalStep2').style.display = 'none';
+        document.getElementById('modalStep1').style.display = 'block';
+    }
+
+    function updateClothingTypes() {
+        var gender = document.getElementById('gender').value;
+        var select = document.getElementById('clothingType');
+        select.innerHTML = '<option value="">-- Select Clothing --</option>';
+        if (gender && clothingByGender[gender]) {
+            var list = clothingByGender[gender];
+            for (var i = 0; i < list.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = list[i];
+                opt.textContent = list[i];
+                select.appendChild(opt);
+            }
+        } else {
+            select.innerHTML = '<option value="">-- Select Gender First --</option>';
+        }
+    }
+
+    function saveItem() {
+        var quantity = parseInt(document.getElementById('quantity').value, 10);
+        var condition = document.getElementById('condition').value;
+        var conditionNotes = document.getElementById('conditionNotes').value.trim();
+        var photoInput = document.getElementById('itemPhoto');
+        var photoFile = photoInput.files && photoInput.files.length ? photoInput.files[0] : null;
+        var allocationType = document.getElementById('allocationType').value;
+        var targetStudentNumber = document.getElementById('targetStudentNumber').value.trim();
+
+        if (!quantity || quantity < 1) { alert('Please enter a valid quantity.'); return; }
+        if (!condition) { alert('Please select the condition.'); return; }
+        if (!photoFile && editingIndex < 0) { alert('Please upload at least one condition photo.'); return; }
+        if (allocationType === 'NamedAllocation' && !targetStudentNumber) {
+            alert("Please enter the learner's student number for a Named Allocation.");
+            return;
+        }
+
+        var item = {
+            Category: currentCategory,
+            ItemType: currentItemType,
+            Quantity: quantity,
+            Condition: condition,
+            ConditionNotes: conditionNotes,
+            AllocationType: allocationType,
+            TargetStudentNumber: allocationType === 'NamedAllocation' ? targetStudentNumber : ''
+        };
+
+        if (currentCategory === 'Textbook') {
+            item.ItemName = document.getElementById('itemName_textbook').value.trim();
+            item.Subject = document.getElementById('subject').value;
+            item.GradeLevel = document.getElementById('gradeLevel').value;
+            item.ISBN = document.getElementById('isbn').value.trim();
+
+            if (!item.ItemName) { alert('Please enter the book title.'); return; }
+            if (!item.Subject) { alert('Please select a subject.'); return; }
+            if (!item.GradeLevel) { alert('Please select a grade level.'); return; }
+        }
+        else if (currentCategory === 'Clothing') {
+            var gender = document.getElementById('gender').value;
+            var clothingType = document.getElementById('clothingType').value;
+            var clothingSize = document.getElementById('clothingSize').value;
+
+            item.Gender = gender;
+            item.ClothingType = clothingType;
+            item.ClothingSize = clothingSize;
+            item.ItemName = clothingType ? (gender + ' ' + clothingType) : '';
+
+            if (!gender) { alert('Please select a gender.'); return; }
+            if (!clothingType) { alert('Please select a clothing type.'); return; }
+            if (!clothingSize) { alert('Please select a size.'); return; }
+        }
+        else if (currentCategory === 'Footwear') {
+            var genderF = document.getElementById('gender_footwear').value;
+            var footwearType = document.getElementById('footwearType').value;
+            var footwearSize = document.getElementById('footwearSize').value;
+
+            // Reuses the Clothing columns on the model — footwear has no
+            // dedicated fields, and the semantics line up (type + size).
+            item.Gender = genderF;
+            item.ClothingType = footwearType;
+            item.ClothingSize = footwearSize;
+            item.ItemName = footwearType ? (genderF + ' ' + footwearType) : '';
+
+            if (!genderF) { alert('Please select a gender.'); return; }
+            if (!footwearType) { alert('Please select a footwear type.'); return; }
+            if (!footwearSize) { alert('Please select a shoe size.'); return; }
+        }
+        else if (currentCategory === 'Stationery') {
+            item.ItemName = document.getElementById('itemName_stationery').value.trim();
+            item.StationeryType = document.getElementById('stationeryType').value;
+            item.BrandPreference = document.getElementById('brandPreference').value.trim();
+
+            if (!item.ItemName) { alert('Please enter the item name.'); return; }
+            if (!item.StationeryType) { alert('Please select a stationery type.'); return; }
+        }
+        else if (currentCategory === 'Other') {
+            item.ItemName = document.getElementById('itemName_other').value.trim();
+            item.ItemSubCategory = document.getElementById('itemSubCategory').value;
+
+            if (!item.ItemName) { alert('Please enter the item name.'); return; }
+        }
+
+        if (editingIndex >= 0) {
+            items[editingIndex] = item;
+            if (photoFile) itemPhotos[editingIndex] = photoFile;
+        } else {
+            items.push(item);
+            itemPhotos.push(photoFile);
+        }
+
+        renderItems();
+        closeItemModal();
+    }
+
+    function renderItems() {
+        var list = document.getElementById('itemsList');
+        var empty = document.getElementById('emptyState');
+        var submitSection = document.getElementById('submitSection');
+
+        list.innerHTML = '';
+
+        if (items.length === 0) {
+            empty.style.display = 'block';
+            submitSection.style.display = 'none';
+            return;
+        }
+
+        empty.style.display = 'none';
+        submitSection.style.display = 'block';
+
+        for (var idx = 0; idx < items.length; idx++) {
+            var item = items[idx];
+            var emoji = '📦';
+            if (item.Category === 'Textbook') emoji = '📚';
+            else if (item.Category === 'Clothing') emoji = '👕';
+            else if (item.Category === 'Footwear') emoji = '👟';
+            else if (item.Category === 'Stationery') emoji = '✏️';
+
+            var details = getItemDetails(item);
+
+            var card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML =
+                '<div class="item-card-info">' +
+                '<div class="title">' +
+                emoji + ' ' + escapeHtml(item.ItemName) +
+                ' <span class="category-badge">' + item.Category + '</span>' +
+                '</div>' +
+                '<div class="meta">' +
+                'Qty: ' + item.Quantity +
+                ' | ' + details +
+                ' | ' + escapeHtml(item.Condition) +
+                '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;align-items:center;">' +
+                '<button type="button" class="btn-danger" onclick="removeItem(' + idx + ')" title="Remove">' +
+                '<i class="fas fa-trash"></i>' +
+                '</button>' +
+                '</div>';
+            list.appendChild(card);
+        }
+    }
+
+    function getItemDetails(item) {
+        var parts = [];
+        if (item.Subject) parts.push(item.Subject);
+        if (item.GradeLevel) parts.push(item.GradeLevel);
+        if (item.Gender && item.ClothingType) parts.push(item.Gender + ' ' + item.ClothingType);
+        if (item.ClothingSize) parts.push('Size ' + item.ClothingSize);
+        if (item.StationeryType) parts.push(item.StationeryType);
+        if (item.AllocationType === 'NamedAllocation') parts.push('Named: ' + item.TargetStudentNumber);
+        if (item.ItemSubCategory) parts.push(item.ItemSubCategory);
+        return parts.join(' • ');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function removeItem(index) {
+        if (confirm('Remove this item from your donation?')) {
+            items.splice(index, 1);
+            itemPhotos.splice(index, 1);
+            renderItems();
+        }
+    }
+
+    function openAddItemModal() {
+        editingIndex = -1;
+        currentCategory = '';
+        currentItemType = '';
+
+        document.getElementById('modalStep1').style.display = 'block';
+        document.getElementById('modalStep2').style.display = 'none';
+
+        var cards = document.querySelectorAll('#itemModal .radio-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('selected');
+        }
+        resetModalFields();
+        document.getElementById('itemModal').classList.add('active');
+    }
+
+    function resetModalFields() {
+        var ids = [
+            'itemName_textbook', 'subject', 'gradeLevel', 'isbn',
+            'gender', 'clothingType', 'clothingSize',
+            'gender_footwear', 'footwearType', 'footwearSize',
+            'itemName_stationery', 'stationeryType', 'brandPreference',
+            'itemName_other', 'itemSubCategory',
+            'condition', 'conditionNotes', 'targetStudentNumber'
+        ];
+        for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (el) el.value = '';
+        }
+
+        var photoInput = document.getElementById('itemPhoto');
+        if (photoInput) photoInput.value = '';
+
+        document.getElementById('quantity').value = 1;
+        document.getElementById('allocationType').value = 'OpenDonation';
+        toggleNamedAllocation();
+    }
+
+    function closeItemModal() {
+        document.getElementById('itemModal').classList.remove('active');
+    }
+
+    function submitAllItems() {
+        if (items.length === 0) {
+            alert('Please add at least one item before submitting.');
+            return;
+        }
+
+        var container = document.getElementById('hiddenFields');
+        container.innerHTML = '';
+
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            for (var key in item) {
+                if (!item.hasOwnProperty(key)) continue;
+                var value = item[key];
+                if (value === null || value === undefined) continue;
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'Items[' + i + '].' + key;
+                input.value = value;
+                container.appendChild(input);
+            }
+
+            // Condition photo: a plain hidden input can't carry a File, so a real
+            // file input is built here and its .files assigned via DataTransfer —
+            // moving/cloning the selected file this way is supported in all
+            // current browsers without re-prompting the user to pick it again.
+            var photoFile = itemPhotos[i];
+            if (photoFile) {
+                var photoInput = document.createElement('input');
+                photoInput.type = 'file';
+                photoInput.name = 'Items[' + i + '].Photo';
+                photoInput.style.display = 'none';
+                var dt = new DataTransfer();
+                dt.items.add(photoFile);
+                photoInput.files = dt.files;
+                container.appendChild(photoInput);
+            }
+        }
+
+        document.getElementById('itemCountInput').value = items.length;
+        document.getElementById('donationForm').submit();
+    }
+
+    document.getElementById('itemModal').addEventListener('click', function (e) {
+        if (e.target === this) closeItemModal();
+    });
+</script>

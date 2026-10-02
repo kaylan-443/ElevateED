@@ -293,223 +293,199 @@ namespace ElevateED.Services
             SendEmail(toEmail, subject, body);
         }
 
-        // ────────────────────────────────────────────────────────────
-        //  Smart Donation Management System (UC01-UC09)
-        // ────────────────────────────────────────────────────────────
+        // ────────────────────────────────────────────────────────────────
+        //  Donation system (redesigned) — UC03, UC06, UC07, UC08
+        // ────────────────────────────────────────────────────────────────
 
-        // UC02 step 8 — donation submitted, pending admin approval.
-        public void SendDonationSubmittedEmail(string toEmail, string donorName, string itemName, string referenceCode)
+        public void SendDonationApprovedEmail(string toEmail, string donorName, string itemName, DateTime intakeDate)
         {
-            var subject = "Donation Received - ElevateED";
+            var subject = "Your Donation Has Been Approved - ElevateED";
             var body = @"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
-                        <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
+                        <div style='background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+                            <h1 style='margin: 0;'>Donation Approved</h1>
+                            <p style='margin: 5px 0 0 0;'>Mpiyakhe High School</p>
                         </div>
+
                         <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #059669;'>Thank you, " + donorName + @"</h2>
-                            <p>Your donation has been received and is now awaiting admin approval.</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
-                                <p><strong>Reference Code:</strong> " + referenceCode + @"</p>
-                                <p><strong>Status:</strong> <span style='color: #b45309; font-weight: bold;'>Pending Approval</span></p>
+                            <h2 style='color: #28a745;'>Thank you, " + donorName + @"</h2>
+
+                            <p>Your donation of <strong>" + itemName + @"</strong> has been reviewed and approved.</p>
+
+                            <div style='background: white; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;'>
+                                <h3 style='margin-top: 0; color: #28a745;'>Next Step: Bring It In</h3>
+                                <p>Please drop the item off at the school office on:</p>
+                                <p style='font-size: 20px; font-weight: 700; color: #1e3c72;'>" + intakeDate.ToString("dddd, dd MMMM yyyy") + @"</p>
                             </div>
-                            <p>We'll email you again once it's been reviewed, along with a drop-off date if approved.</p>
+
+                            <p>When you arrive, an admin will confirm the item and it will be added to the donation pool for matching.</p>
+
                             <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
+
+                            <p style='font-size: 12px; color: #666;'>
+                                This is an automated message from ElevateED's Donation System.<br/>
+                                Mpiyakhe High School
+                            </p>
                         </div>
                     </div>
                 </body>
                 </html>";
+
             SendEmail(toEmail, subject, body);
         }
 
-        // UC03 step 6 — donation approved, intake date booked.
-        public void SendDonationApprovedEmail(string toEmail, string donorName, string itemName, string referenceCode, DateTime intakeDate)
+        public void SendDonationRejectedEmail(string toEmail, string donorName, string itemName, string reason)
         {
-            var subject = "Donation Approved — Drop-off Date Scheduled - ElevateED";
-            var body = @"
-                <html>
-                <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
-                        <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
-                        </div>
-                        <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #059669;'>Great news, " + donorName + @"!</h2>
-                            <p>Your donation has been approved. Please bring the item in on the date below.</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
-                                <p><strong>Reference Code:</strong> " + referenceCode + @"</p>
-                                <p><strong>Drop-off Date:</strong> <span style='color: #059669; font-weight: bold;'>" + intakeDate.ToString("dddd, dd MMMM yyyy") + @"</span></p>
-                            </div>
-                            <p>Please bring the item to the school office on the scheduled date, quoting your reference code.</p>
-                            <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
-                        </div>
-                    </div>
-                </body>
-                </html>";
-            SendEmail(toEmail, subject, body);
-        }
-
-        // UC03 step 3 — donation rejected at approval, with the admin's reason.
-        public void SendDonationRejectedEmail(string toEmail, string donorName, string itemName, string referenceCode, string reason)
-        {
-            var subject = "Donation Not Accepted - ElevateED";
+            var subject = "About Your Donation - ElevateED";
             var body = @"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
                         <div style='background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
                             <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
+                            <p style='margin: 5px 0 0 0;'>Mpiyakhe High School</p>
                         </div>
+
                         <div style='padding: 20px; background: #f9f9f9;'>
                             <h2 style='color: #dc3545;'>Dear " + donorName + @"</h2>
-                            <p>Thank you for offering to donate. Unfortunately, we're not able to accept this item at this time.</p>
+
+                            <p>Thank you for offering to donate <strong>" + itemName + @"</strong> to Mpiyakhe High School.</p>
+
                             <div style='background: white; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
-                                <p><strong>Reference Code:</strong> " + referenceCode + @"</p>
+                                <h3 style='margin-top: 0; color: #dc3545;'>This donation wasn't approved</h3>
+                                <p>After review, we're not able to accept this item at this time.</p>
                             </div>
+
                             <div style='background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545;'>
                                 <strong style='color: #721c24;'>Reason:</strong>
-                                <p style='margin: 10px 0 0 0;'>" + (string.IsNullOrEmpty(reason) ? "No specific reason provided." : reason) + @"</p>
+                                <p style='margin: 10px 0 0 0;'>" + (string.IsNullOrEmpty(reason) ? "No specific reason was provided. Please contact the school office if you'd like more information." : reason) + @"</p>
                             </div>
-                            <p>We'd still love your support — please consider donating a different item in the future.</p>
+
+                            <p>We're grateful for your willingness to donate, and you're welcome to offer other items in the future.</p>
+
                             <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
+
+                            <p style='font-size: 12px; color: #666;'>
+                                This is an automated message from ElevateED's Donation System.<br/>
+                                Mpiyakhe High School
+                            </p>
                         </div>
                     </div>
                 </body>
                 </html>";
+
             SendEmail(toEmail, subject, body);
         }
 
-        // UC01 step 10 — request confirmation with reference number and queue position.
-        public void SendDonationRequestConfirmedEmail(string toEmail, string learnerName, string itemDescription, string referenceNumber, int queuePosition)
+        public void SendDonationMatchConfirmedEmail(string toEmail, string studentName, string itemName, DateTime collectionDate, string collectionCode)
         {
-            var subject = "Request Received - ElevateED";
+            var subject = "Good News - A Donation Match Was Found! - ElevateED";
             var body = @"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
-                        <div style='background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
+                        <div style='background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+                            <h1 style='margin: 0;'>🎉 You've Been Matched!</h1>
+                            <p style='margin: 5px 0 0 0;'>Mpiyakhe High School Donation System</p>
                         </div>
-                        <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #0e7490;'>Hi " + learnerName + @"</h2>
-                            <p>Your request has been received and added to the matching queue.</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #0891b2; margin: 20px 0;'>
-                                <p><strong>Item requested:</strong> " + itemDescription + @"</p>
-                                <p><strong>Reference Number:</strong> " + referenceNumber + @"</p>
-                                <p><strong>Current Queue Position:</strong> " + queuePosition + @"</p>
-                            </div>
-                            <p>You can track your position any time under ""My Requests"". We'll email you the moment a match is confirmed.</p>
-                            <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
-                        </div>
-                    </div>
-                </body>
-                </html>";
-            SendEmail(toEmail, subject, body);
-        }
 
-        // UC06 step 5 — match confirmed, collection date and code issued.
-        public void SendDonationMatchConfirmedEmail(string toEmail, string learnerName, string itemName, DateTime collectionDate, string timeWindow, string collectionCode)
-        {
-            var subject = "Your Item Is Ready for Collection - ElevateED";
-            var body = @"
-                <html>
-                <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
-                        <div style='background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
-                        </div>
                         <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #4338ca;'>Good news, " + learnerName + @"!</h2>
-                            <p>A match has been found for your request. Here's everything you need to collect it:</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #6366f1; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
+                            <h2 style='color: #4f46e5;'>Dear " + studentName + @"</h2>
+
+                            <p>A donated item matching your request is ready for you: <strong>" + itemName + @"</strong>.</p>
+
+                            <div style='background: white; padding: 15px; border-left: 4px solid #4f46e5; margin: 20px 0;'>
+                                <h3 style='margin-top: 0; color: #4f46e5;'>Collection Details</h3>
                                 <p><strong>Collection Date:</strong> " + collectionDate.ToString("dddd, dd MMMM yyyy") + @"</p>
-                                <p><strong>Time Window:</strong> " + timeWindow + @"</p>
+                                <p><strong>Your Collection Code:</strong></p>
+                                <p style='font-family: monospace; font-size: 24px; font-weight: 700; color: #4f46e5; letter-spacing: 2px;'>" + collectionCode + @"</p>
                             </div>
-                            <div style='background: #eef2ff; padding: 18px; border-radius: 8px; margin: 20px 0; text-align: center;'>
-                                <p style='margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6366f1;'>Collection Code</p>
-                                <p style='margin: 6px 0 0 0; font-size: 26px; font-weight: bold; letter-spacing: 3px; color: #4338ca;'>" + collectionCode + @"</p>
+
+                            <div style='background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                                <strong>Important:</strong> Show this code to an admin on the collection date to receive your item. The reservation only holds until then.
                             </div>
-                            <p><strong>Important:</strong> this reservation only holds until the collection date above — bring this code with you.</p>
+
                             <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
+
+                            <p style='font-size: 12px; color: #666;'>
+                                This is an automated message from ElevateED's Donation System.<br/>
+                                Mpiyakhe High School
+                            </p>
                         </div>
                     </div>
                 </body>
                 </html>";
+
             SendEmail(toEmail, subject, body);
         }
 
-        // UC07 step 11 — digital collection receipt.
-        public void SendCollectionReceiptEmail(string toEmail, string learnerName, string itemName, DateTime collectedDate)
+        public void SendCollectionReceiptEmail(string toEmail, string studentName, string itemName, DateTime collectedDate)
         {
             var subject = "Collection Confirmed - ElevateED";
             var body = @"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
-                        <div style='background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
+                        <div style='background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
+                            <h1 style='margin: 0;'>✅ Collection Confirmed</h1>
+                            <p style='margin: 5px 0 0 0;'>Mpiyakhe High School Donation System</p>
                         </div>
+
                         <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #059669;'>All done, " + learnerName + @"!</h2>
-                            <p>This confirms you've collected the following item:</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
-                                <p><strong>Collected On:</strong> " + collectedDate.ToString("dddd, dd MMMM yyyy 'at' HH:mm") + @"</p>
-                                <p><strong>Status:</strong> <span style='color: #059669; font-weight: bold;'>Collected</span></p>
-                            </div>
-                            <p>Keep this email as your receipt. Thank you for being part of the ElevateED community!</p>
+                            <h2 style='color: #28a745;'>Dear " + studentName + @"</h2>
+
+                            <p>This confirms you collected <strong>" + itemName + @"</strong> on <strong>" + collectedDate.ToString("dddd, dd MMMM yyyy 'at' HH:mm") + @"</strong>.</p>
+
+                            <p>Thank you for being part of the ElevateED donation community — we hope it helps!</p>
+
                             <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
+
+                            <p style='font-size: 12px; color: #666;'>
+                                This is an automated receipt from ElevateED's Donation System.<br/>
+                                Mpiyakhe High School
+                            </p>
                         </div>
                     </div>
                 </body>
                 </html>";
+
             SendEmail(toEmail, subject, body);
         }
 
-        // UC08 step 2 — collection window lapsed, reservation expired.
-        public void SendDonationUnclaimedEmail(string toEmail, string learnerName, string itemName)
+        public void SendDonationUnclaimedEmail(string toEmail, string studentName, string itemName)
         {
-            var subject = "Your Reservation Has Expired - ElevateED";
+            var subject = "Your Donation Reservation Has Expired - ElevateED";
             var body = @"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
                         <div style='background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                            <h1 style='margin: 0;'>ElevateED</h1>
-                            <p style='margin: 5px 0 0 0;'>Smart Donation Management</p>
+                            <h1 style='margin: 0;'>Reservation Expired</h1>
+                            <p style='margin: 5px 0 0 0;'>Mpiyakhe High School Donation System</p>
                         </div>
+
                         <div style='padding: 20px; background: #f9f9f9;'>
-                            <h2 style='color: #b45309;'>Hi " + learnerName + @"</h2>
-                            <p>Your reservation for the item below wasn't collected in time, so it has been returned to the available pool for another learner.</p>
-                            <div style='background: white; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;'>
-                                <p><strong>Item:</strong> " + itemName + @"</p>
-                                <p><strong>Status:</strong> <span style='color: #b45309; font-weight: bold;'>Unclaimed — Returned to Pool</span></p>
+                            <h2 style='color: #d97706;'>Dear " + studentName + @"</h2>
+
+                            <p>Your reserved item, <strong>" + itemName + @"</strong>, was not collected by the scheduled date, so the reservation has expired and the item has been released back to other learners who need it.</p>
+
+                            <div style='background: white; padding: 15px; border-left: 4px solid #d97706; margin: 20px 0;'>
+                                <p>If you still need this item, you're welcome to submit a new request — it will be queued by the same fair, priority-based system.</p>
                             </div>
-                            <p>If you still need this item, you can submit a new request. If you missed this because of a genuine problem (e.g. you never received the notification), let the admin know when you re-submit — they can review it for a priority boost.</p>
+
                             <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;'/>
-                            <p style='font-size: 12px; color: #666;'>This is an automated message from ElevateED School Management System.<br/>Mpiyakhe High School</p>
+
+                            <p style='font-size: 12px; color: #666;'>
+                                This is an automated message from ElevateED's Donation System.<br/>
+                                Mpiyakhe High School
+                            </p>
                         </div>
                     </div>
                 </body>
                 </html>";
+
             SendEmail(toEmail, subject, body);
         }
 

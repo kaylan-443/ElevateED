@@ -1,0 +1,587 @@
+@model List<ElevateED.Models.MatchReviewViewModel>
+@{
+    ViewBag.Title = "Match Review";
+    ViewBag.ActiveTab = "matchdonations";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml" : "~/Views/Shared/_TeacherLayout.cshtml";
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    .btn-back {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+    .btn-run {
+        background: linear-gradient(135deg, #22d3ee, #0891b2);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34,211,238,0.35);
+        }
+
+        .btn-run:disabled {
+            opacity: 0.6;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+    .stats-bar {
+        display: flex;
+        gap: 24px;
+        padding: 16px 20px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        flex-wrap: wrap;
+    }
+
+        .stats-bar .stat {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+            .stats-bar .stat strong {
+                color: #1e293b;
+                font-size: 18px;
+                display: block;
+            }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .alert-success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #059669;
+    }
+
+    .alert-error {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.3);
+        color: #dc2626;
+    }
+
+    .match-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+        .match-card .title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .match-card .meta {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .match-card .reason {
+            font-size: 12px;
+            color: #0891b2;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+    .priority-badge {
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .priority-urgent { background: #fee2e2; color: #991b1b; }
+    .priority-high { background: #fef3c7; color: #92400e; }
+    .priority-medium { background: #dbeafe; color: #1e40af; }
+    .priority-low { background: #f1f5f9; color: #64748b; }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-release {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-reassign {
+        background: rgba(99,102,241,0.08);
+        color: #4f46e5;
+        border: 1px solid rgba(99,102,241,0.25);
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .alt-item-option {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+        .alt-item-option:hover { border-color: #4f46e5; background: rgba(99,102,241,0.04); }
+        .alt-item-option.selected { border-color: #4f46e5; background: rgba(99,102,241,0.08); }
+
+    .btn-decline {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.25);
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15,23,42,0.6);
+        z-index: 2147483647;
+        padding: 40px 20px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+        .modal-overlay.active { display: block; }
+
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 30px;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+        .modal-box h3 {
+            color: #1e293b;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-box label {
+            display: block;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .modal-box input[type="date"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+    }
+</style>
+
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-link" style="color:#22d3ee;"></i> Match Review</h1>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn-run" id="runNowBtn" onclick="runMatchingNow()">
+                <i class="fas fa-bolt"></i> Run Matching Now
+            </button>
+            <a href="@Url.Action("Dashboard")" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    @Html.Partial("_DonationSubNav")
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]</div>
+    }
+
+    <div class="stats-bar">
+        <span class="stat"><strong>@ViewBag.PendingReviewCount</strong> Matches to review</span>
+        <span class="stat"><strong>@ViewBag.UnmatchedWaitingCount</strong> Still waiting (non-food)</span>
+        <span class="stat"><strong>@ViewBag.AvailableItemsCount</strong> Items available</span>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h4 style="color:#1e293b;">Nothing to review right now</h4>
+            <p style="color:#64748b;">The system proposes matches automatically (UC05) — run it now, or check back later.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var m in Model)
+        {
+            var priorityClass = "priority-" + m.Priority.ToString().ToLower();
+            <div class="match-card">
+                <div>
+                    <div class="title">@m.StudentName <span style="font-weight:400;color:#64748b;font-size:12px;">(@m.StudentNumber)</span></div>
+                    <div class="meta">
+                        📦 <strong>@m.ItemName</strong> (@m.Category) from @m.DonorName &nbsp;•&nbsp;
+                        Qty: @m.QuantityAllocated / @m.QuantityAvailableOnItem available &nbsp;•&nbsp;
+                        <span class="priority-badge @priorityClass">@m.Priority</span>
+                    </div>
+                    <div class="meta">Requested: @m.RequestDate.ToString("dd MMM yyyy") &nbsp;•&nbsp; Proposed: @m.ProposedDate.ToString("dd MMM yyyy HH:mm")</div>
+                    @if (!string.IsNullOrEmpty(m.MatchReason))
+                    {
+                        <div class="reason"><i class="fas fa-robot"></i> @m.MatchReason</div>
+                    }
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button type="button" class="btn-confirm" onclick="openConfirmModal(@m.AllocationId)">
+                        <i class="fas fa-check"></i> Confirm &amp; Schedule
+                    </button>
+                    <button type="button" class="btn-reassign" onclick="openReassignModal(@m.AllocationId, '@m.Category', @m.DonationItemId)">
+                        <i class="fas fa-exchange-alt"></i> Reassign
+                    </button>
+                    <button type="button" class="btn-release" onclick="releaseMatch(@m.AllocationId)">
+                        <i class="fas fa-undo"></i> Release
+                    </button>
+                    @if (m.RequestItemId > 0)
+                    {
+                        <button type="button" class="btn-decline" data-item-id="@m.RequestItemId" data-item-name="@m.ItemName" onclick="openDeclineModal(this)">
+                            <i class="fas fa-times"></i> Decline
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Hidden forms — plain POSTs, matching ConfirmMatch/ReleaseMatch's [ValidateAntiForgeryToken] + redirect convention -->
+<form id="confirmForm" method="post" action="@Url.Action("ConfirmMatch", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="allocationId" id="confirmAllocationId" value="" />
+    <input type="hidden" name="collectionDate" id="confirmCollectionDate" value="" />
+</form>
+<form id="releaseForm" method="post" action="@Url.Action("ReleaseMatch", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="allocationId" id="releaseAllocationId" value="" />
+</form>
+<form id="reassignForm" method="post" action="@Url.Action("ReassignMatch", "Donation")" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="allocationId" id="reassignAllocationId" value="" />
+    <input type="hidden" name="newDonationItemId" id="reassignNewItemId" value="" />
+</form>
+
+<!-- Confirm & Schedule Modal -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-calendar-check" style="color:#10b981;"></i> Confirm Match</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Choose a collection date. The student will be emailed their collection code right away (UC06).
+        </p>
+        <label>Collection Date</label>
+        <input type="date" id="collectionDateInput" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+        <div class="modal-actions">
+            <button type="button" class="btn-release" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="btn-confirm" onclick="submitConfirm()"><i class="fas fa-check"></i> Confirm Match</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reassign Modal -->
+<div class="modal-overlay" id="reassignModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-exchange-alt" style="color:#4f46e5;"></i> Reassign Match</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Pick a different available item of the same category for this student (UC06).
+        </p>
+        <div id="altItemsList"><p style="color:#94a3b8;font-size:13px;">Loading...</p></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-release" onclick="closeReassignModal()">Cancel</button>
+            <button type="button" class="btn-reassign" id="confirmReassignBtn" onclick="submitReassign()" disabled>
+                <i class="fas fa-exchange-alt"></i> Reassign
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal-overlay" id="declineModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle" style="color:#ef4444;"></i> Decline Request Item</h3>
+        <p style="color:#64748b;font-size:13px;margin:-8px 0 16px 0;">
+            Declining <strong id="declineItemName" style="color:#1e293b;"></strong> lets the student know it won't be sourced.
+        </p>
+        <label>Reason (optional, shown to the student)</label>
+        <textarea id="declineReason" rows="3" style="width:100%;box-sizing:border-box;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;"></textarea>
+        <div class="modal-actions">
+            <button type="button" class="btn-release" onclick="closeDeclineModal()">Cancel</button>
+            <button type="button" class="btn-decline" onclick="confirmDecline()"><i class="fas fa-times"></i> Decline Item</button>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    (function () {
+        function moveModals() {
+            ['confirmModal', 'declineModal', 'reassignModal'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.parentNode !== document.body) document.body.appendChild(el);
+            });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', moveModals);
+        else moveModals();
+    })();
+
+    function headersWithToken() {
+        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        var headers = { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+        if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+        return headers;
+    }
+
+    function runMatchingNow() {
+        var btn = document.getElementById('runNowBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+
+        fetch('@Url.Action("RunMatchingNow", "Donation")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headersWithToken()
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            alert(data.message || (data.success ? 'Done.' : 'Matching failed.'));
+            if (data.success) location.reload();
+            else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Run Matching Now'; }
+        })
+        .catch(function () {
+            alert('An error occurred.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bolt"></i> Run Matching Now';
+        });
+    }
+
+    var currentConfirmAllocationId = 0;
+
+    function openConfirmModal(allocationId) {
+        currentConfirmAllocationId = allocationId;
+        document.getElementById('collectionDateInput').value = '';
+        document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('active');
+    }
+
+    function submitConfirm() {
+        var date = document.getElementById('collectionDateInput').value;
+        if (!date) { alert('Please choose a collection date.'); return; }
+
+        document.getElementById('confirmAllocationId').value = currentConfirmAllocationId;
+        document.getElementById('confirmCollectionDate').value = date;
+        document.getElementById('confirmForm').submit();
+    }
+
+    function releaseMatch(allocationId) {
+        if (!confirm('Release this proposed match back to the pool?')) return;
+        document.getElementById('releaseAllocationId').value = allocationId;
+        document.getElementById('releaseForm').submit();
+    }
+
+    var currentReassignAllocationId = 0;
+    var currentReassignItemId = 0;
+
+    function openReassignModal(allocationId, category, currentItemId) {
+        currentReassignAllocationId = allocationId;
+        currentReassignItemId = 0;
+        document.getElementById('confirmReassignBtn').disabled = true;
+
+        var list = document.getElementById('altItemsList');
+        list.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Loading...</p>';
+        document.getElementById('reassignModal').classList.add('active');
+
+        fetch('@Url.Action("GetAlternativeItems", "Donation")?category=' + encodeURIComponent(category) + '&excludeItemId=' + currentItemId, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success || !data.items || data.items.length === 0) {
+                    list.innerHTML = '<p style="color:#94a3b8;font-size:13px;">No other available items in this category right now.</p>';
+                    return;
+                }
+                list.innerHTML = '';
+                data.items.forEach(function (item) {
+                    var row = document.createElement('div');
+                    row.className = 'alt-item-option';
+                    row.innerHTML = '<span><strong>' + item.itemName + '</strong> — ' + item.condition + ' · from ' + item.donorName + '</span>' +
+                        '<span style="color:#64748b;">x' + item.quantityRemaining + '</span>';
+                    row.onclick = function () {
+                        document.querySelectorAll('.alt-item-option').forEach(function (el) { el.classList.remove('selected'); });
+                        row.classList.add('selected');
+                        currentReassignItemId = item.id;
+                        document.getElementById('confirmReassignBtn').disabled = false;
+                    };
+                    list.appendChild(row);
+                });
+            })
+            .catch(function () { list.innerHTML = '<p style="color:#dc2626;font-size:13px;">Could not load alternative items.</p>'; });
+    }
+
+    function closeReassignModal() { document.getElementById('reassignModal').classList.remove('active'); }
+
+    function submitReassign() {
+        if (!currentReassignItemId) { alert('Please select an item to reassign to.'); return; }
+        document.getElementById('reassignAllocationId').value = currentReassignAllocationId;
+        document.getElementById('reassignNewItemId').value = currentReassignItemId;
+        document.getElementById('reassignForm').submit();
+    }
+
+    var currentDeclineItemId = 0;
+
+    function openDeclineModal(btn) {
+        currentDeclineItemId = btn.getAttribute('data-item-id');
+        document.getElementById('declineItemName').textContent = btn.getAttribute('data-item-name');
+        document.getElementById('declineReason').value = '';
+        document.getElementById('declineModal').classList.add('active');
+    }
+
+    function closeDeclineModal() {
+        document.getElementById('declineModal').classList.remove('active');
+    }
+
+    function confirmDecline() {
+        var reason = document.getElementById('declineReason').value;
+
+        fetch('@Url.Action("DeclineRequestItem", "Donation")', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: headersWithToken(),
+            body: JSON.stringify({ id: currentDeclineItemId, reason: reason })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) location.reload();
+            else alert((data && data.message) || 'Error declining item');
+        })
+        .catch(function () { alert('An error occurred.'); });
+    }
+
+    document.getElementById('confirmModal').addEventListener('click', function (e) { if (e.target === this) closeConfirmModal(); });
+    document.getElementById('declineModal').addEventListener('click', function (e) { if (e.target === this) closeDeclineModal(); });
+    document.getElementById('reassignModal').addEventListener('click', function (e) { if (e.target === this) closeReassignModal(); });
+</script>

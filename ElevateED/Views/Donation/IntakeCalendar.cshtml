@@ -1,0 +1,112 @@
+@model ElevateED.Models.IntakeCalendarViewModel
+@{
+    ViewBag.Title = "Intake Calendar";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.ActiveTab = "intake";
+}
+
+<style>
+    .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
+
+    .date-nav { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 14px; padding: 10px 16px; margin-bottom: 24px; }
+    .date-nav input { border: none; font-size: 14px; font-weight: 600; color: var(--gray-800, #1f2937); }
+    .date-nav-btn { background: var(--gray-100, #f3f4f6); border: none; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; color: var(--gray-600, #4b5563); }
+    .capacity-chip { margin-left: auto; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 10px; }
+    .capacity-ok { background: #d1fae5; color: #065f46; }
+    .capacity-full { background: #fee2e2; color: #991b1b; }
+
+    .intake-card { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+    .intake-title { font-weight: 700; font-size: 15px; color: var(--gray-900, #111827); }
+    .intake-meta { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 4px; }
+    .intake-actions { display: flex; gap: 10px; }
+    .btn-confirm { background: #10b981; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .btn-decline { background: #fee2e2; color: #991b1b; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); }
+    .empty-state i { font-size: 48px; color: var(--gray-300, #d1d5db); margin-bottom: 15px; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: white; border-radius: 18px; padding: 28px; width: 420px; max-width: 90vw; }
+    .modal-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+    .modal-box textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300, #d1d5db); border-radius: 10px; font-size: 13px; margin-bottom: 14px; font-family: inherit; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-modal-cancel { background: white; border: 1px solid var(--gray-300, #d1d5db); padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .btn-modal-confirm { border: none; padding: 10px 22px; border-radius: 10px; font-weight: 700; color: white; cursor: pointer; background: #ef4444; }
+</style>
+
+@{ Html.RenderPartial("_DonationSubNav"); }
+
+<div class="page-header">
+    <h1><i class="fas fa-calendar-day" style="color: #4f46e5;"></i> Intake Calendar</h1>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div style="background:#d1fae5;color:#065f46;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+}
+
+<div class="date-nav">
+    <button class="date-nav-btn" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
+    <input type="date" id="calDate" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" onchange="goToDate(this.value)" />
+    <button class="date-nav-btn" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
+    @{ var full = Model.ScheduledForDate.Count >= Model.DailyIntakeCapacity; }
+    <span class="capacity-chip @(full ? "capacity-full" : "capacity-ok")">@Model.ScheduledForDate.Count / @Model.DailyIntakeCapacity booked</span>
+</div>
+
+@if (!Model.ScheduledForDate.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-calendar-day"></i>
+        <h4>No intakes booked for this date</h4>
+    </div>
+}
+else
+{
+    foreach (var item in Model.ScheduledForDate)
+    {
+        <div class="intake-card">
+            <div>
+                <div class="intake-title">@item.ItemName <span style="color:var(--gray-400,#9ca3af); font-weight:400;">(@item.Category)</span></div>
+                <div class="intake-meta">Donor: @item.DonorName &middot; Qty @item.Quantity &middot; Tag: @item.TrackingCode</div>
+            </div>
+            <div class="intake-actions">
+                <form method="post" action="@Url.Action("ConfirmIntake", "Donation")" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <button type="submit" class="btn-confirm"><i class="fas fa-check"></i> Confirm Received</button>
+                </form>
+                <button class="btn-decline" onclick="openDeclineModal(@item.Id)"><i class="fas fa-times"></i> Not Received</button>
+            </div>
+        </div>
+    }
+}
+
+<div class="modal-overlay" id="declineModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-times-circle"></i> Mark as Not Received</h3>
+        <form method="post" action="@Url.Action("DeclineIntake", "Donation")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="declineItemId" />
+            <textarea name="reason" rows="3" required placeholder="Why wasn't this item received as expected?"></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="document.getElementById('declineModal').classList.remove('show')">Cancel</button>
+                <button type="submit" class="btn-modal-confirm">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function goToDate(d) { window.location.href = '@Url.Action("IntakeCalendar", "Donation")?date=' + d; }
+    function shiftDate(delta) {
+        var cur = new Date(document.getElementById('calDate').value);
+        cur.setDate(cur.getDate() + delta);
+        goToDate(cur.toISOString().slice(0, 10));
+    }
+    function openDeclineModal(id) {
+        document.getElementById('declineItemId').value = id;
+        document.getElementById('declineModal').classList.add('show');
+    }
+</script>

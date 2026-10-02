@@ -22,26 +22,13 @@ namespace ElevateED.Models
         Textbook,
         Clothing,
         Stationery,
-        Footwear,
         Food,
-        Other
+        Other,
+
+        // Added for the redesigned item donation pipeline (see design doc).
+        Footwear
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Donated Item Lifecycle (Smart Donation Management System redesign,
-    //  Section 3.1 of Smart_Donation_System_Redesign.docx):
-    //
-    //    PendingApproval -> ApprovedAwaitingIntake -> Available -> Reserved
-    //    -> AwaitingCollection -> Collected (terminal)
-    //                          \-> Unclaimed -> (back to Available)
-    //    PendingApproval -> Rejected (terminal)
-    //    ApprovedAwaitingIntake -> NotReceived (terminal)
-    //
-    //  The original values below (PendingVerification...Rejected) predate
-    //  the redesign and are kept only so any existing rows/history keep
-    //  their stored integer values — the new controller no longer writes
-    //  them.
-    // ────────────────────────────────────────────────────────────────
     public enum DonationStatus
     {
         PendingVerification,
@@ -52,15 +39,14 @@ namespace ElevateED.Models
         Collected,
         Expired,
         Rejected,
-        // New lifecycle (redesign) — additive only, appended so existing
-        // stored values above are never renumbered.
-        PendingApproval,
-        ApprovedAwaitingIntake,
-        Available,
-        Reserved,
-        AwaitingCollection,
-        Unclaimed,
-        NotReceived
+
+        // ── Added for the redesigned (non-food) item donation pipeline ──
+        // These are purely additive — existing food/campaign code keeps
+        // using the values above unchanged. See UC02-UC04 in the design doc.
+        PendingApproval,         // UC02: donor has registered the item, awaiting admin review
+        ApprovedAwaitingIntake,  // UC03: admin approved + booked an intake date
+        Available,               // UC04: physical intake confirmed, QR tag issued, open to matching
+        NotReceived              // UC04: donor never delivered on the scheduled intake date
     }
 
     public enum AllocationType
@@ -78,21 +64,15 @@ namespace ElevateED.Models
         Urgent
     }
 
-    // ────────────────────────────────────────────────────────────────
-    //  Request Lifecycle (Section 3.2 of the redesign doc):
-    //    Waitlisted -> Reserved -> AwaitingCollection -> Fulfilled (terminal)
-    //  Pending/Allocated/Declined predate the redesign and are kept for the
-    //  same reason as DonationStatus above.
-    // ────────────────────────────────────────────────────────────────
     public enum RequestItemStatus
     {
         Pending,
         Allocated,
         Declined,
-        Waitlisted,
-        Reserved,
-        AwaitingCollection,
-        Fulfilled
+
+        // Added for the redesigned matching engine (UC05/UC06): a proposed
+        // match exists and is awaiting admin review, but isn't confirmed yet.
+        Reserved
     }
 
     public enum CampaignStatus
@@ -214,8 +194,6 @@ namespace ElevateED.Models
             var daysWaiting = (DateTime.Now - RequestDate).Days;
             score += Math.Min(daysWaiting, 30);
 
-            if (Items.Any(i => i.PriorityBoostGranted)) score += 25;
-
             return score;
         }
     }
@@ -316,13 +294,6 @@ namespace ElevateED.Models
         public DateTime? DeclinedDate { get; set; }
         public int? DeclinedBy { get; set; }
 
-        // UC08 step 3 — a learner who re-submits after a genuinely missed
-        // unclaimed-item notification may, subject to admin review, re-enter
-        // the queue at a priority-boosted position. Admin grants this with a
-        // toggle (there's no separate resubmission-review workflow); when
-        // true, CalculateItemScore() adds the boost.
-        public bool PriorityBoostGranted { get; set; }
-
         public DonationRequestItem()
         {
             CreatedAt = DateTime.Now;
@@ -355,7 +326,6 @@ namespace ElevateED.Models
             if (!string.IsNullOrEmpty(Subject)) score += 10;
             if (!string.IsNullOrEmpty(ClothingSize)) score += 10;
             if (!string.IsNullOrEmpty(UrgencyReason)) score += 5;
-            if (PriorityBoostGranted) score += 25;
 
             return score;
         }
@@ -506,6 +476,12 @@ namespace ElevateED.Models
 
         public string PhotoEvidence { get; set; }
 
+        // ── Redesigned intake flow (UC03/UC04) ──
+        // The date an admin booked, during approval, for the donor to
+        // physically bring the item in. Nothing existing captured this —
+        // it's the one genuinely new column the redesign needs.
+        public DateTime? ScheduledIntakeDate { get; set; }
+
         // Delivery confirmation
         [StringLength(200)]
         public string DeliveryLocation { get; set; }
@@ -527,25 +503,12 @@ namespace ElevateED.Models
         public string TrackingCode { get; set; }
 
         public DateTime DonationDate { get; set; }
-
-        // Reused for the redesigned flow as "intake confirmed by/on" (UC04
-        // step 8's audit log) as well as its original verification meaning.
         public DateTime? VerificationDate { get; set; }
         public int? VerifiedBy { get; set; }
-
         public DateTime? AllocationDate { get; set; }
         public DateTime? CollectionDate { get; set; }
         public bool IsActive { get; set; }
         public int? CampaignId { get; set; }
-
-        // UC03 step 4 — the intake date the admin booked when approving.
-        public DateTime? ScheduledIntakeDate { get; set; }
-
-        // UC03 step 3 (rejection at approval) and UC04 step 3 (decline at
-        // intake, "Not Received") share this single reason field — only one
-        // of those terminal paths ever applies to a given item.
-        [StringLength(500)]
-        public string RejectionReason { get; set; }
 
         public bool IsFoodItem { get; set; }
 
@@ -626,21 +589,6 @@ namespace ElevateED.Models
         public string CollectionConfirmation { get; set; }
         public bool IsActive { get; set; }
         public string Notes { get; set; }
-
-        // UC05 step 8 — the proposed match's score and the admin-facing
-        // reasoning string shown in Match Review (e.g. "Priority 1 of 14 in
-        // Clothing — size and category match").
-        public int? MatchScore { get; set; }
-        [StringLength(500)]
-        public string MatchReason { get; set; }
-
-        // UC08 step 2 — when the collection window lapsed and the item was
-        // released back to Available.
-        public DateTime? UnclaimedDate { get; set; }
-
-        // UC06 step 3 — the time window chosen alongside the collection date.
-        [StringLength(50)]
-        public string CollectionTimeWindow { get; set; }
 
         public DonationAllocation()
         {
@@ -923,18 +871,6 @@ namespace ElevateED.Models
         }
     }
 
-    // UC02 step 5 (Named Allocation) — a plain, public class rather than an
-    // anonymous type, because an anonymous type's properties are internal
-    // to the assembly that declared them; ViewBag exposes it as "object" to
-    // a Razor view (which compiles into a different assembly), and the C#
-    // dynamic binder can't see internal members across that boundary —
-    // hence "'object' does not contain a definition for '...'" at runtime.
-    public class DonationStudentOption
-    {
-        public string Name { get; set; }
-        public string StudentNumber { get; set; }
-    }
-
     public class DonationItemEntry
     {
         [Required]
@@ -993,26 +929,6 @@ namespace ElevateED.Models
 
         [StringLength(500)]
         public string ConditionNotes { get; set; }
-
-        // UC02 step 4 — condition photo (base64 data URI), required per
-        // item so it can be shown again at approval, intake, and collection.
-        public string PhotoEvidence { get; set; }
-
-        // UC02 step 5 — Open Donation (joins the general matching pool) or
-        // Named Allocation (donor nominates a specific learner).
-        [Required]
-        public AllocationType AllocationType { get; set; }
-
-        // Only used when AllocationType == NamedAllocation; resolved
-        // server-side against Users/Students (by student number or email),
-        // subject to admin confirming a genuine request exists (UC02 step 5).
-        [StringLength(50)]
-        public string TargetStudentNumber { get; set; }
-
-        public DonationItemEntry()
-        {
-            AllocationType = AllocationType.OpenDonation;
-        }
     }
 
     // Legacy single-item form view model — kept because it still appears
@@ -1144,130 +1060,34 @@ namespace ElevateED.Models
     //  Dashboard / Distribution / Campaign / Pledge / Match
     // ────────────────────────────────────────────────────────────────
 
-    // Rebuilt for the Smart Donation Management System redesign — tiles
-    // and quick-links map onto the UC01-09 pipeline stages rather than the
-    // old Food/Campaign/Verification stats.
     public class DonationDashboardViewModel
     {
-        public string PersonName { get; set; }
-        public string PersonRole { get; set; }
-
-        // Learner-facing
-        public int MyOpenRequests { get; set; }
-        public int MyAwaitingCollection { get; set; }
-        public int MyPendingDonations { get; set; }
-
-        // Admin-facing pipeline counts
-        public int PendingApprovals { get; set; }
-        public int AwaitingIntakeToday { get; set; }
-        public int AvailableItems { get; set; }
-        public int PendingMatchReview { get; set; }
-        public int AwaitingCollectionTotal { get; set; }
-        public int WaitlistedRequests { get; set; }
-
-        public List<DonationItem> RecentDonations { get; set; }
+        public int TotalRequests { get; set; }
+        public int PendingRequests { get; set; }
+        public int FulfilledRequests { get; set; }
+        public int TotalDonations { get; set; }
+        public int PendingVerifications { get; set; }
+        public int AvailableDonations { get; set; }
+        public int TotalAllocations { get; set; }
+        public int PendingCollection { get; set; }
+        public int PendingFoodEligibility { get; set; }
+        public int ApprovedFoodItems { get; set; }
+        public int RejectedFoodItems { get; set; }
+        public int ExpiredFoodItems { get; set; }
         public List<DonationRequest> RecentRequests { get; set; }
-        public List<DonationHistory> RecentActivity { get; set; }
+        public List<DonationItem> RecentDonations { get; set; }
+        public List<DonationAllocation> RecentAllocations { get; set; }
+        public List<DonationCampaign> ActiveCampaigns { get; set; }
+        public List<FoodEligibilityListViewModel> PendingFoodChecks { get; set; }
 
         public DonationDashboardViewModel()
         {
-            RecentDonations = new List<DonationItem>();
             RecentRequests = new List<DonationRequest>();
-            RecentActivity = new List<DonationHistory>();
+            RecentDonations = new List<DonationItem>();
+            RecentAllocations = new List<DonationAllocation>();
+            ActiveCampaigns = new List<DonationCampaign>();
+            PendingFoodChecks = new List<FoodEligibilityListViewModel>();
         }
-    }
-
-    // ────────────────────────────────────────────────────────────────
-    //  Redesign-specific view models (UC03-UC09)
-    // ────────────────────────────────────────────────────────────────
-
-    public class ApproveDonationListViewModel
-    {
-        public List<DonationItem> PendingApprovals { get; set; }
-        public int DailyIntakeCapacity { get; set; }
-
-        public ApproveDonationListViewModel()
-        {
-            PendingApprovals = new List<DonationItem>();
-        }
-    }
-
-    public class IntakeCalendarViewModel
-    {
-        public DateTime SelectedDate { get; set; }
-        public List<DonationItem> ScheduledForDate { get; set; }
-        public int DailyIntakeCapacity { get; set; }
-
-        public IntakeCalendarViewModel()
-        {
-            ScheduledForDate = new List<DonationItem>();
-        }
-    }
-
-    public class MatchReviewItemViewModel
-    {
-        public int AllocationId { get; set; }
-        public int DonationItemId { get; set; }
-        public string ItemName { get; set; }
-        public string ItemPhoto { get; set; }
-        public string Condition { get; set; }
-        public DonationCategory Category { get; set; }
-        public int RequestId { get; set; }
-        public int RequestItemId { get; set; }
-        public string StudentName { get; set; }
-        public int PriorityScore { get; set; }
-        public int WaitListPosition { get; set; }
-        public int MatchScore { get; set; }
-        public string MatchReason { get; set; }
-        public DateTime ProposedDate { get; set; }
-    }
-
-    public class CollectionLookupViewModel
-    {
-        public bool Found { get; set; }
-        public string Message { get; set; }
-        public int AllocationId { get; set; }
-        public string CollectionToken { get; set; }
-        public string StudentName { get; set; }
-        public string ItemName { get; set; }
-        public string ItemPhoto { get; set; }
-        public string Condition { get; set; }
-        public int Quantity { get; set; }
-        public DateTime? ScheduledCollectionDate { get; set; }
-        public string Status { get; set; }
-    }
-
-    public class DonationInsightsViewModel
-    {
-        public DateTime? FromDate { get; set; }
-        public DateTime? ToDate { get; set; }
-        public string CategoryFilter { get; set; }
-        public string GradeFilter { get; set; }
-
-        public List<CategoryGapViewModel> CategoryGaps { get; set; }
-        public double AverageWaitDays { get; set; }
-        public double FulfilmentRatePercent { get; set; }
-        public double UnclaimedRatePercent { get; set; }
-        public List<KeyValuePair<string, int>> TopUnclaimedReasons { get; set; }
-
-        public int TotalRequests { get; set; }
-        public int TotalFulfilled { get; set; }
-        public int TotalDonationsReceived { get; set; }
-        public int TotalUnclaimed { get; set; }
-
-        public DonationInsightsViewModel()
-        {
-            CategoryGaps = new List<CategoryGapViewModel>();
-            TopUnclaimedReasons = new List<KeyValuePair<string, int>>();
-        }
-    }
-
-    public class CategoryGapViewModel
-    {
-        public string Category { get; set; }
-        public int OpenRequests { get; set; }
-        public int AvailableItems { get; set; }
-        public int Gap => OpenRequests - AvailableItems;
     }
 
     public class DonationDistributionViewModel
@@ -1289,6 +1109,12 @@ namespace ElevateED.Models
         // Extra fields used by the Distribution view for AI match badges.
         public decimal? AiMatchScore { get; set; }
         public string AiMatchReason { get; set; }
+
+        // UC07 dual-verification collection (non-food only): the item's own
+        // id/tracking code, so the collection page can compare a scanned QR
+        // tag against the item this allocation actually points to.
+        public int DonationItemId { get; set; }
+        public string ItemTrackingCode { get; set; }
     }
 
     public class CampaignViewModel
@@ -1394,6 +1220,62 @@ namespace ElevateED.Models
         {
             MatchedFields = new List<string>();
             UnmatchedFields = new List<string>();
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Redesigned item-donation pipeline (UC01-UC09) — new ViewModels
+    // ────────────────────────────────────────────────────────────────
+
+    // UC05/UC06 — one proposed match row in the admin Match Review queue.
+    public class MatchReviewViewModel
+    {
+        public int AllocationId { get; set; }
+        public int DonationItemId { get; set; }
+        public string ItemName { get; set; }
+        public DonationCategory Category { get; set; }
+        public string DonorName { get; set; }
+        public int QuantityAvailableOnItem { get; set; }
+
+        public int RequestId { get; set; }
+        public int RequestItemId { get; set; }
+        public int StudentId { get; set; }
+        public string StudentName { get; set; }
+        public string StudentNumber { get; set; }
+        public RequestPriority Priority { get; set; }
+        public int WaitListPosition { get; set; }
+        public DateTime RequestDate { get; set; }
+
+        public int QuantityAllocated { get; set; }
+        public int MatchScore { get; set; }
+        public string MatchReason { get; set; }
+        public DateTime ProposedDate { get; set; }
+    }
+
+    // UC09 — Donation Insights dashboard.
+    public class DonationCategoryStat
+    {
+        public string Category { get; set; }
+        public int OpenRequests { get; set; }
+        public int AvailableItems { get; set; }
+    }
+
+    public class DonationInsightsViewModel
+    {
+        public List<DonationCategoryStat> CategoryStats { get; set; }
+        public double AverageWaitDays { get; set; }
+        public int TotalRequestsInRange { get; set; }
+        public int FulfilledInRange { get; set; }
+        public double FulfillmentRatePercent { get; set; }
+        public int CollectedInRange { get; set; }
+        public int UnclaimedInRange { get; set; }
+        public double UnclaimedRatePercent { get; set; }
+        public DateTime RangeStart { get; set; }
+        public DateTime RangeEnd { get; set; }
+
+        public DonationInsightsViewModel()
+        {
+            CategoryStats = new List<DonationCategoryStat>();
         }
     }
 
