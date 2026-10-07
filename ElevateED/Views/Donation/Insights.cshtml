@@ -1,4 +1,5 @@
 @model ElevateED.Models.DonationInsightsViewModel
+
 @{
     ViewBag.Title = "Donation Insights";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -6,101 +7,3011 @@
 }
 
 <style>
-    .page-header { margin-bottom: 20px; }
-    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
+    :root {
+        --ei-bg: #070b14;
+        --ei-panel: rgba(13, 19, 33, .86);
+        --ei-panel-2: rgba(18, 25, 43, .92);
+        --ei-border: rgba(148, 163, 184, .13);
+        --ei-cyan: #22d3ee;
+        --ei-blue: #38bdf8;
+        --ei-purple: #8b5cf6;
+        --ei-violet: #a78bfa;
+        --ei-green: #34d399;
+        --ei-amber: #fbbf24;
+        --ei-red: #fb7185;
+        --ei-text: #f4f7ff;
+        --ei-muted: #8493ad;
+    }
 
-    .filter-bar { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
-    .filter-bar .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--gray-500, #6b7280); margin-bottom: 4px; }
-    .filter-bar .form-group input, .filter-bar .form-group select { padding: 9px 12px; border: 1px solid var(--gray-300, #d1d5db); border-radius: 10px; font-size: 13px; }
-    .btn-filter { background: var(--primary, #4f46e5); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    /* =========================================================
+       MAIN
+       ========================================================= */
 
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .stat-card { background: white; border-radius: 16px; padding: 20px; border: 1px solid var(--gray-200, #e5e7eb); }
-    .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; margin-bottom: 12px; }
-    .stat-value { font-size: 26px; font-weight: 700; color: var(--gray-900, #111827); }
-    .stat-label { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 2px; }
+    .insights-centre {
+        position: relative;
+        min-height: 100%;
+        color: var(--ei-text);
+    }
 
-    .panel { background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); padding: 24px; margin-bottom: 24px; }
-    .panel-title { font-size: 15px; font-weight: 700; color: var(--gray-900, #111827); margin-bottom: 16px; }
+        .insights-centre::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background: radial-gradient(circle at 12% 5%, rgba(34,211,238,.075), transparent 27%), radial-gradient(circle at 88% 12%, rgba(139,92,246,.09), transparent 30%), linear-gradient(rgba(255,255,255,.017) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.017) 1px, transparent 1px);
+            background-size: auto, auto, 42px 42px, 42px 42px;
+        }
 
-    .gap-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--gray-100, #f3f4f6); font-size: 13px; }
-    .gap-row:last-child { border-bottom: none; }
-    .gap-positive { color: #991b1b; font-weight: 700; }
-    .gap-negative { color: #065f46; font-weight: 700; }
+    /* =========================================================
+       HERO
+       ========================================================= */
+
+    .insights-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 28px 30px;
+        margin-bottom: 18px;
+        border: 1px solid rgba(34,211,238,.15);
+        border-radius: 24px;
+        background: radial-gradient(circle at 78% 20%, rgba(34,211,238,.12), transparent 25%), radial-gradient(circle at 100% 100%, rgba(139,92,246,.18), transparent 34%), linear-gradient(135deg, #0a1020, #0d1425 55%, #11152a);
+        box-shadow: 0 24px 70px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+        .insights-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(255,255,255,.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.024) 1px, transparent 1px);
+            background-size: 34px 34px;
+            mask-image: linear-gradient(to right, black, transparent 82%);
+        }
+
+        .insights-hero::after {
+            content: "◈";
+            position: absolute;
+            right: 7%;
+            top: 12%;
+            font-size: 120px;
+            line-height: 1;
+            color: rgba(34,211,238,.055);
+            animation: insightFloat 5s ease-in-out infinite;
+        }
+
+    .hero-topline {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+    }
+
+    .hero-brand {
+        color: #8191ab;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 2px;
+    }
+
+    .hero-online {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 11px;
+        border: 1px solid rgba(52,211,153,.18);
+        border-radius: 999px;
+        background: rgba(52,211,153,.055);
+        color: #6ee7b7;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+    }
+
+    .hero-online-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ei-green);
+        box-shadow: 0 0 11px var(--ei-green);
+        animation: onlinePulse 1.8s infinite;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+        .hero-content h1 {
+            margin: 0 0 7px;
+            color: #fff;
+            font-size: clamp(26px, 3vw, 38px);
+            font-weight: 800;
+            letter-spacing: -.8px;
+        }
+
+            .hero-content h1 i {
+                margin-right: 8px;
+                color: var(--ei-cyan);
+                filter: drop-shadow(0 0 12px rgba(34,211,238,.55));
+            }
+
+        .hero-content p {
+            max-width: 700px;
+            margin: 0;
+            color: #8e9db6;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+    .hero-tags {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 17px;
+    }
+
+    .hero-tag {
+        padding: 7px 10px;
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 9px;
+        background: rgba(255,255,255,.035);
+        color: #aebbd0;
+        font-size: 9px;
+    }
+
+        .hero-tag strong {
+            color: #fff;
+        }
+
+    /* =========================================================
+       SECTION HEADINGS
+       ========================================================= */
+
+    .section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin: 24px 2px 11px;
+    }
+
+        .section-heading h2 {
+            margin: 0;
+            color: #f3f6ff;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .section-heading p {
+            margin: 4px 0 0;
+            color: #65748d;
+            font-size: 9px;
+        }
+
+    .section-badge {
+        color: #65748d;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 1.1px;
+    }
+
+    /* =========================================================
+       FILTERS
+       ========================================================= */
+
+    .filter-bar {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px;
+        margin-bottom: 18px;
+        border: 1px solid var(--ei-border);
+        border-radius: 17px;
+        background: rgba(10,15,27,.78);
+        box-shadow: 0 12px 35px rgba(0,0,0,.12);
+    }
+
+        .filter-bar .form-group {
+            margin: 0;
+        }
+
+            .filter-bar .form-group label {
+                display: block;
+                margin: 0 0 5px 2px;
+                color: #73829b;
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: .8px;
+                text-transform: uppercase;
+            }
+
+        .filter-bar input,
+        .filter-bar select {
+            min-height: 38px;
+            padding: 8px 11px;
+            color: #e9effa;
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 10px;
+            outline: none;
+            font-size: 11px;
+        }
+
+            .filter-bar input:focus,
+            .filter-bar select:focus {
+                border-color: rgba(34,211,238,.45);
+                box-shadow: 0 0 0 3px rgba(34,211,238,.06);
+            }
+
+            .filter-bar select option {
+                background: #0d1425;
+                color: #fff;
+            }
+
+    .btn-filter {
+        min-height: 38px;
+        padding: 9px 17px;
+        border: 1px solid rgba(34,211,238,.25);
+        border-radius: 10px;
+        color: #fff;
+        background: linear-gradient( 135deg, rgba(34,211,238,.18), rgba(79,70,229,.28) );
+        box-shadow: 0 8px 25px rgba(34,211,238,.08);
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+        .btn-filter:hover {
+            transform: translateY(-1px);
+            border-color: rgba(34,211,238,.45);
+            box-shadow: 0 10px 30px rgba(34,211,238,.12);
+        }
+
+    /* =========================================================
+       STATISTICS
+       ========================================================= */
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 11px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 145px;
+        padding: 16px;
+        border: 1px solid var(--ei-border);
+        border-radius: 17px;
+        background: linear-gradient( 145deg, rgba(15,23,42,.86), rgba(9,14,25,.94) );
+        box-shadow: 0 12px 35px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.025);
+        transition: .25s ease;
+    }
+
+        .stat-card::after {
+            content: "";
+            position: absolute;
+            right: -50px;
+            bottom: -55px;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: rgba(34,211,238,.08);
+        }
+
+        .stat-card:nth-child(2)::after {
+            background: rgba(52,211,153,.08);
+        }
+
+        .stat-card:nth-child(3)::after {
+            background: rgba(251,191,36,.08);
+        }
+
+        .stat-card:nth-child(4)::after {
+            background: rgba(251,113,133,.08);
+        }
+
+        .stat-card:nth-child(5)::after {
+            background: rgba(139,92,246,.08);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(34,211,238,.25);
+            box-shadow: 0 18px 42px rgba(0,0,0,.22), 0 0 22px rgba(34,211,238,.045);
+        }
+
+    .stat-icon {
+        width: 39px;
+        height: 39px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        border-radius: 11px !important;
+        color: #fff;
+        border: 1px solid rgba(255,255,255,.08);
+        background: linear-gradient( 135deg, rgba(34,211,238,.18), rgba(139,92,246,.2) ) !important;
+        box-shadow: 0 0 18px rgba(34,211,238,.07);
+    }
+
+    .stat-card:nth-child(2) .stat-icon {
+        background: linear-gradient( 135deg, rgba(52,211,153,.18), rgba(34,211,238,.14) ) !important;
+    }
+
+    .stat-card:nth-child(3) .stat-icon {
+        background: linear-gradient( 135deg, rgba(251,191,36,.18), rgba(245,158,11,.12) ) !important;
+    }
+
+    .stat-card:nth-child(4) .stat-icon {
+        background: linear-gradient( 135deg, rgba(251,113,133,.18), rgba(239,68,68,.12) ) !important;
+    }
+
+    .stat-card:nth-child(5) .stat-icon {
+        background: linear-gradient( 135deg, rgba(139,92,246,.2), rgba(167,139,250,.14) ) !important;
+    }
+
+    .stat-value {
+        position: relative;
+        z-index: 1;
+        color: #fff;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .stat-label {
+        position: relative;
+        z-index: 1;
+        margin-top: 7px;
+        color: #7888a1;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .7px;
+        text-transform: uppercase;
+    }
+
+    /* =========================================================
+       CHART
+       ========================================================= */
+
+    .chart-panel {
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin-bottom: 18px;
+        border: 1px solid var(--ei-border);
+        border-radius: 19px;
+        background: linear-gradient( 145deg, rgba(15,23,42,.82), rgba(8,13,24,.92) );
+        box-shadow: 0 12px 35px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 16px;
+        color: #f5f7ff;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .8px;
+        text-transform: uppercase;
+    }
+
+        .panel-title i {
+            color: var(--ei-cyan);
+            filter: drop-shadow( 0 0 8px rgba(34,211,238,.4) );
+        }
+
+    .chart-wrap {
+        position: relative;
+        height: 330px;
+        width: 100%;
+    }
+
+    #gapChart {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .chart-status {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #71819b;
+        font-size: 10px;
+        text-align: center;
+    }
+
+        .chart-status i {
+            margin-right: 7px;
+            color: var(--ei-cyan);
+        }
+
+    /* =========================================================
+       GAP TABLE
+       ========================================================= */
+
+    .gap-panel {
+        padding: 20px;
+        margin-bottom: 18px;
+        border: 1px solid var(--ei-border);
+        border-radius: 19px;
+        background: linear-gradient( 145deg, rgba(15,23,42,.82), rgba(8,13,24,.92) );
+    }
+
+    .gap-list {
+        display: grid;
+        gap: 3px;
+    }
+
+    .gap-row {
+        display: grid;
+        grid-template-columns: minmax(120px,.8fr) minmax(260px,1.4fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 11px 10px;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+        font-size: 10px;
+    }
+
+        .gap-row:last-child {
+            border-bottom: none;
+        }
+
+    .gap-category {
+        color: #e7edf8;
+        font-weight: 700;
+    }
+
+    .gap-data {
+        color: #7888a1;
+    }
+
+    .gap-positive {
+        color: #fb7185;
+        font-weight: 800;
+    }
+
+    .gap-negative {
+        color: #6ee7b7;
+        font-weight: 800;
+    }
+
+    .gap-neutral {
+        color: #9ca8ba;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+       UNCLAIMED
+       ========================================================= */
+
+    .unclaimed-panel {
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--ei-border);
+        border-radius: 19px;
+        background: linear-gradient( 145deg, rgba(15,23,42,.82), rgba(8,13,24,.92) );
+    }
+
+    .unclaimed-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 11px 0;
+        border-bottom: 1px solid rgba(255,255,255,.045);
+        color: #aebbd0;
+        font-size: 10px;
+    }
+
+        .unclaimed-row:last-child {
+            border-bottom: none;
+        }
+
+    .unclaimed-count {
+        min-width: 28px;
+        padding: 4px 7px;
+        border-radius: 7px;
+        background: rgba(251,113,133,.08);
+        color: #fb7185;
+        font-size: 9px;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    /* =========================================================
+       NOTE
+       ========================================================= */
+
+    .insight-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 12px 14px;
+        margin-bottom: 25px;
+        border: 1px solid rgba(34,211,238,.09);
+        border-radius: 12px;
+        background: rgba(34,211,238,.035);
+        color: #71819b;
+        font-size: 9px;
+        line-height: 1.55;
+    }
+
+        .insight-note i {
+            margin-top: 2px;
+            color: var(--ei-cyan);
+        }
+
+    /* =========================================================
+       ELEVATE AI ORB
+       ========================================================= */
+
+    .ei-ai-root {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 9999;
+        font-family: inherit;
+    }
+
+    .ei-ai-window {
+        position: absolute;
+        right: 0;
+        bottom: 72px;
+        width: min(390px, calc(100vw - 30px));
+        overflow: hidden;
+        border: 1px solid rgba(34,211,238,.22);
+        border-radius: 22px;
+        background: radial-gradient( circle at 85% 0%, rgba(139,92,246,.13), transparent 35% ), linear-gradient( 145deg, rgba(10,16,30,.98), rgba(7,12,23,.98) );
+        box-shadow: 0 25px 80px rgba(0,0,0,.48), 0 0 45px rgba(34,211,238,.08), inset 0 1px 0 rgba(255,255,255,.05);
+        opacity: 0;
+        transform: translateY(15px) scale(.97);
+        pointer-events: none;
+        transition: .25s ease;
+    }
+
+    .ei-ai-root.open .ei-ai-window {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    .ei-ai-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 15px;
+        border-bottom: 1px solid rgba(255,255,255,.055);
+        background: rgba(255,255,255,.018);
+    }
+
+    .ei-ai-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .ei-ai-orb-mini {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: radial-gradient( circle at 35% 30%, #fff 0 4%, #67e8f9 12%, #22d3ee 34%, #8b5cf6 67%, #111827 70% );
+        box-shadow: 0 0 20px rgba(34,211,238,.42), 0 0 35px rgba(139,92,246,.22);
+        animation: eiOrbPulse 2.4s ease-in-out infinite;
+    }
+
+    .ei-ai-brand strong {
+        display: block;
+        color: #fff;
+        font-size: 11px;
+        letter-spacing: 1.1px;
+    }
+
+    .ei-ai-brand span {
+        display: block;
+        margin-top: 2px;
+        color: #71819b;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .ei-ai-online {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6ee7b7;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .ei-ai-online-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #34d399;
+        box-shadow: 0 0 8px #34d399;
+    }
+
+    .ei-ai-close {
+        width: 27px;
+        height: 27px;
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 8px;
+        background: rgba(255,255,255,.035);
+        color: #8493ad;
+        cursor: pointer;
+    }
+
+    .ei-ai-body {
+        padding: 17px;
+    }
+
+    .ei-ai-scope {
+        margin-bottom: 12px;
+        color: #71819b;
+        font-size: 8px;
+        line-height: 1.5;
+    }
+
+    .ei-ai-thinking {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 10px;
+        color: #22d3ee;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 1.1px;
+    }
+
+    .ei-ai-dots {
+        display: flex;
+        gap: 3px;
+    }
+
+        .ei-ai-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #22d3ee;
+            animation: eiThinking 1s infinite;
+        }
+
+            .ei-ai-dots span:nth-child(2) {
+                animation-delay: .15s;
+            }
+
+            .ei-ai-dots span:nth-child(3) {
+                animation-delay: .3s;
+            }
+
+    .ei-ai-message {
+        padding: 14px;
+        border: 1px solid rgba(34,211,238,.12);
+        border-radius: 14px;
+        background: rgba(34,211,238,.035);
+        transition: .2s ease;
+    }
+
+        .ei-ai-message.attention {
+            border-color: rgba(251,113,133,.16);
+            background: rgba(251,113,133,.035);
+        }
+
+        .ei-ai-message.good {
+            border-color: rgba(52,211,153,.14);
+            background: rgba(52,211,153,.03);
+        }
+
+        .ei-ai-message.recommendation {
+            border-color: rgba(139,92,246,.18);
+            background: rgba(139,92,246,.04);
+        }
+
+    .ei-ai-label {
+        margin-bottom: 7px;
+        color: #22d3ee;
+        font-size: 7px;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+    }
+
+    .ei-ai-message.attention .ei-ai-label {
+        color: #fb7185;
+    }
+
+    .ei-ai-message.good .ei-ai-label {
+        color: #6ee7b7;
+    }
+
+    .ei-ai-message.recommendation .ei-ai-label {
+        color: #a78bfa;
+    }
+
+    .ei-ai-text {
+        color: #c4cfdf;
+        font-size: 10px;
+        line-height: 1.65;
+    }
+
+    .ei-ai-progress {
+        height: 2px;
+        margin-top: 14px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: rgba(255,255,255,.06);
+    }
+
+    .ei-ai-progress-bar {
+        width: 0;
+        height: 100%;
+        background: linear-gradient( 90deg, #22d3ee, #8b5cf6 );
+        box-shadow: 0 0 10px rgba(34,211,238,.4);
+        transition: width .3s ease;
+    }
+
+    .ei-ai-counter {
+        margin-top: 7px;
+        color: #586981;
+        font-size: 7px;
+        font-weight: 800;
+        text-align: right;
+        letter-spacing: .7px;
+    }
+
+    .ei-ai-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 11px 15px;
+        border-top: 1px solid rgba(255,255,255,.055);
+    }
+
+    .ei-ai-nav {
+        display: flex;
+        gap: 5px;
+    }
+
+    .ei-ai-btn,
+    .ei-ai-action {
+        min-height: 29px;
+        padding: 7px 9px;
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 8px;
+        background: rgba(255,255,255,.035);
+        color: #9eacc0;
+        font-size: 7px;
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+        .ei-ai-btn:hover,
+        .ei-ai-action:hover {
+            color: #fff;
+            border-color: rgba(34,211,238,.24);
+        }
+
+        .ei-ai-btn:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+        }
+
+    .ei-ai-action {
+        color: #67e8f9;
+        border-color: rgba(34,211,238,.14);
+    }
+
+    .ei-ai-orb-button {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(34,211,238,.28);
+        border-radius: 50%;
+        background: radial-gradient( circle at 34% 28%, rgba(255,255,255,.95) 0 3%, rgba(103,232,249,.95) 8%, rgba(34,211,238,.75) 25%, rgba(139,92,246,.8) 55%, rgba(7,11,20,.98) 68% );
+        color: #fff;
+        box-shadow: 0 0 0 5px rgba(34,211,238,.025), 0 0 30px rgba(34,211,238,.24), 0 12px 35px rgba(0,0,0,.35);
+        cursor: pointer;
+        transition: .25s ease;
+    }
+
+        .ei-ai-orb-button:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 0 7px rgba(34,211,238,.035), 0 0 42px rgba(34,211,238,.34), 0 15px 40px rgba(0,0,0,.4);
+        }
+
+    .ei-ai-orb-symbol {
+        font-size: 22px;
+        text-shadow: 0 0 14px rgba(255,255,255,.75);
+    }
+
+    .ei-ai-orb-label {
+        position: absolute;
+        right: 67px;
+        bottom: 14px;
+        white-space: nowrap;
+        padding: 6px 9px;
+        border: 1px solid rgba(34,211,238,.12);
+        border-radius: 8px;
+        background: rgba(7,12,23,.9);
+        color: #8da0bb;
+        font-size: 7px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        opacity: .85;
+    }
+
+    /* =========================================================
+       ANIMATIONS
+       ========================================================= */
+
+    @@keyframes eiOrbPulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.04);
+        }
+    }
+
+    @@keyframes eiThinking {
+        0%, 80%, 100% {
+            opacity: .25;
+            transform: translateY(0);
+        }
+
+        40% {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+    }
+
+    @@keyframes insightFloat {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg);
+        }
+
+        50% {
+            transform: translateY(-8px) rotate(5deg);
+        }
+    }
+
+    @@keyframes onlinePulse {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .35;
+        }
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @@media (max-width: 1150px) {
+
+        .stat-grid {
+            grid-template-columns: repeat(3, minmax(0,1fr));
+        }
+    }
+
+    @@media (max-width: 850px) {
+
+        .gap-row {
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+    }
+
+    @@media (max-width: 620px) {
+
+        .insights-hero {
+            padding: 22px;
+        }
+
+        .hero-brand {
+            display: none;
+        }
+
+        .stat-grid {
+            grid-template-columns: repeat(2, minmax(0,1fr));
+        }
+
+        .filter-bar .form-group {
+            width: 100%;
+        }
+
+        .filter-bar input,
+        .filter-bar select,
+        .btn-filter {
+            width: 100%;
+        }
+
+        .chart-wrap {
+            height: 270px;
+        }
+
+        .ei-ai-root {
+            right: 15px;
+            bottom: 15px;
+        }
+
+        .ei-ai-window {
+            bottom: 68px;
+        }
+
+        .ei-ai-orb-label {
+            display: none;
+        }
+    }
 </style>
+
 
 @{ Html.RenderPartial("_DonationSubNav"); }
 
-<div class="page-header">
-    <h1><i class="fas fa-chart-pie" style="color: #10b981;"></i> Donation Insights</h1>
-</div>
 
-<form class="filter-bar" method="get" action="@Url.Action("Insights", "Donation")">
-    <div class="form-group"><label>From</label><input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></div>
-    <div class="form-group"><label>To</label><input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></div>
-    <div class="form-group">
-        <label>Category</label>
-        <select name="category">
-            <option value="">All</option>
-            @foreach (ElevateED.Models.DonationCategory c in Enum.GetValues(typeof(ElevateED.Models.DonationCategory)))
-            {
-                if (c == ElevateED.Models.DonationCategory.Food) { continue; }
-                <option value="@c" selected="@(Model.CategoryFilter == c.ToString())">@c</option>
-            }
-        </select>
-    </div>
-    <div class="form-group"><label>Grade</label><input type="text" name="grade" value="@Model.GradeFilter" placeholder="e.g. Grade 10" /></div>
-    <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Apply</button>
-</form>
+<div class="insights-centre">
 
-<div class="stat-grid">
-    <div class="stat-card"><div class="stat-icon" style="background:#4f46e5;"><i class="fas fa-hand-paper"></i></div><div class="stat-value">@Model.TotalRequests</div><div class="stat-label">Total Requests</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#10b981;"><i class="fas fa-check-circle"></i></div><div class="stat-value">@Model.FulfilmentRatePercent%</div><div class="stat-label">Fulfilment Rate</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#f59e0b;"><i class="fas fa-clock"></i></div><div class="stat-value">@Model.AverageWaitDays</div><div class="stat-label">Avg. Wait (days)</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#ef4444;"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-value">@Model.UnclaimedRatePercent%</div><div class="stat-label">Unclaimed Rate</div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#8b5cf6;"><i class="fas fa-gift"></i></div><div class="stat-value">@Model.TotalDonationsReceived</div><div class="stat-label">Donations Received</div></div>
-</div>
+    <!-- =====================================================
+         HERO
+         ===================================================== -->
 
-<div class="panel">
-    <div class="panel-title"><i class="fas fa-balance-scale"></i> Supply vs Demand by Category</div>
-    <canvas id="gapChart" height="90"></canvas>
-</div>
+    <div class="insights-hero">
 
-<div class="panel">
-    <div class="panel-title"><i class="fas fa-list"></i> Category Gaps (Open Requests − Available Items)</div>
-    @foreach (var g in Model.CategoryGaps)
-    {
-        <div class="gap-row">
-            <span>@g.Category</span>
-            <span>@g.OpenRequests requested · @g.AvailableItems available ·
-                <span class="@(g.Gap > 0 ? "gap-positive" : "gap-negative")">@(g.Gap > 0 ? "Shortfall of " + g.Gap : "Surplus of " + (-g.Gap))</span>
-            </span>
+        <div class="hero-topline">
+
+            <div class="hero-brand">
+                ELEVATE / DONATION INTELLIGENCE
+            </div>
+
+            <div class="hero-online">
+                <span class="hero-online-dot"></span>
+                ANALYTICS ONLINE
+            </div>
+
         </div>
+
+        <div class="hero-content">
+
+            <h1>
+                <i class="fas fa-brain"></i>
+                Donation Intelligence Centre
+            </h1>
+
+            <p>
+                Turn donation activity into operational decisions.
+                Review supply, learner demand, fulfilment, waiting time
+                and unclaimed items from one command view.
+            </p>
+
+            <div class="hero-tags">
+
+                <div class="hero-tag">
+                    <strong>@Model.TotalRequests</strong>
+                    requests analysed
+                </div>
+
+                <div class="hero-tag">
+                    <strong>@Model.TotalDonationsReceived</strong>
+                    donations received
+                </div>
+
+                <div class="hero-tag">
+                    <strong>@Model.FulfilmentRatePercent%</strong>
+                    fulfilment
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTERS
+         ===================================================== -->
+
+    <div class="section-heading">
+
+        <div>
+            <h2>Analysis Scope</h2>
+            <p>Change the period and segment being analysed.</p>
+        </div>
+
+        <span class="section-badge">
+            DATA FILTERS
+        </span>
+
+    </div>
+
+
+    <form class="filter-bar"
+          method="get"
+          action="@Url.Action("Insights", "Donation")">
+
+        <div class="form-group">
+
+            <label>From</label>
+
+            <input type="date"
+                   name="fromDate"
+                   value="@Model.FromDate?.ToString(" yyyy-MM-dd")" />
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>To</label>
+
+            <input type="date"
+                   name="toDate"
+                   value="@Model.ToDate?.ToString(" yyyy-MM-dd")" />
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Category</label>
+
+            <select name="category">
+
+                <option value="">
+                    All
+                </option>
+
+                @foreach (
+                    ElevateED.Models.DonationCategory c
+                    in Enum.GetValues(
+                        typeof(ElevateED.Models.DonationCategory)
+                    )
+                )
+                {
+                    if (
+                        c ==
+                        ElevateED.Models.DonationCategory.Food
+                    )
+                    {
+                        continue;
+                    }
+
+                    <option value="@c"
+                            @(Model.CategoryFilter == c.ToString() ? "selected" : "")>
+                        @c
+                    </option>
+                }
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Grade</label>
+
+            <input type="text"
+                   name="grade"
+                   value="@Model.GradeFilter"
+                   placeholder="e.g. Grade 10" />
+
+        </div>
+
+
+        <button type="submit"
+                class="btn-filter">
+
+            <i class="fas fa-filter"></i>
+
+            Analyse
+
+        </button>
+
+    </form>
+
+
+    <!-- =====================================================
+         OPERATIONAL READINGS
+         ===================================================== -->
+
+    <div class="section-heading">
+
+        <div>
+            <h2>Operational Readings</h2>
+
+            <p>
+                The key numbers the administrator should know first.
+            </p>
+        </div>
+
+        <span class="section-badge">
+            LIVE SUMMARY
+        </span>
+
+    </div>
+
+
+    <div class="stat-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                <i class="fas fa-hand-paper"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.TotalRequests
+            </div>
+
+            <div class="stat-label">
+                Total Requests
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.FulfilmentRatePercent%
+            </div>
+
+            <div class="stat-label">
+                Fulfilment Rate
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.AverageWaitDays
+            </div>
+
+            <div class="stat-label">
+                Average Wait Days
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.UnclaimedRatePercent%
+            </div>
+
+            <div class="stat-label">
+                Unclaimed Rate
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                <i class="fas fa-gift"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.TotalDonationsReceived
+            </div>
+
+            <div class="stat-label">
+                Donations Received
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SUPPLY VS DEMAND
+         ===================================================== -->
+
+    <div class="section-heading">
+
+        <div>
+            <h2>Supply vs Demand</h2>
+
+            <p>
+                See where the donation network has shortages or surplus.
+            </p>
+        </div>
+
+        <span class="section-badge">
+            CATEGORY ANALYSIS
+        </span>
+
+    </div>
+
+
+    <div class="chart-panel">
+
+        <div class="panel-title">
+
+            <i class="fas fa-balance-scale"></i>
+
+            Supply vs Demand by Category
+
+        </div>
+
+
+        <div class="chart-wrap">
+
+            <canvas id="gapChart"></canvas>
+
+            <div id="chartStatus"
+                 class="chart-status">
+
+                <span>
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading donation intelligence...
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         PRIORITY GAP DETECTION
+         ===================================================== -->
+
+    <div class="gap-panel">
+
+        <div class="panel-title">
+
+            <i class="fas fa-crosshairs"></i>
+
+            Priority Gap Detection
+
+        </div>
+
+
+        <div class="gap-list">
+
+            @if (
+                Model.CategoryGaps != null &&
+                Model.CategoryGaps.Any()
+            )
+            {
+                foreach (var g in Model.CategoryGaps)
+                {
+
+                    <div class="gap-row">
+
+                        <span class="gap-category">
+                            @g.Category
+                        </span>
+
+                        <span class="gap-data">
+
+                            @g.OpenRequests requested
+                            ·
+                            @g.AvailableItems available
+
+                        </span>
+
+
+                        <span class="
+                            @(g.Gap > 0
+                                ? "gap-positive"
+                                : g.Gap < 0
+                                    ? "gap-negative"
+                                    : "gap-neutral")
+                        ">
+
+                            @if (g.Gap > 0)
+                            {
+                                @:SHORTFALL · @g.Gap
+                            }
+                            else if (g.Gap < 0)
+                            {
+                                @:SURPLUS · @(-g.Gap)
+                            }
+                            else
+                            {
+                                @:BALANCED
+                            }
+
+                        </span>
+
+                    </div>
+                }
+            }
+            else
+            {
+
+                <div class="insight-note">
+
+                    <i class="fas fa-info-circle"></i>
+
+                    <span>
+                        No category gap data is available
+                        for the selected analysis scope.
+                    </span>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         UNCLAIMED ITEMS
+         ===================================================== -->
+
+    @if (
+        Model.TopUnclaimedReasons != null &&
+        Model.TopUnclaimedReasons.Any()
+    )
+    {
+
+        <div class="unclaimed-panel">
+
+            <div class="panel-title">
+
+                <i class="fas fa-undo-alt"></i>
+
+                Unclaimed Item Intelligence
+
+            </div>
+
+
+            @foreach (var kv in Model.TopUnclaimedReasons)
+            {
+
+                <div class="unclaimed-row">
+
+                    <span>
+                        @kv.Key
+                    </span>
+
+                    <span class="unclaimed-count">
+                        @kv.Value
+                    </span>
+
+                </div>
+
+            }
+
+        </div>
+
     }
+
+
+    <!-- =====================================================
+         SYSTEM NOTE
+         ===================================================== -->
+
+    <div class="insight-note">
+
+        <i class="fas fa-shield-alt"></i>
+
+        <span>
+
+            These insights are generated from the donation data
+            returned for the selected filters. The intelligence
+            layer interprets the existing readings; it does not
+            invent additional operational data.
+
+        </span>
+
+    </div>
+
 </div>
 
-@if (Model.TopUnclaimedReasons != null && Model.TopUnclaimedReasons.Any())
-{
-    <div class="panel">
-        <div class="panel-title"><i class="fas fa-undo"></i> Where Unclaimed Items Cluster</div>
-        @foreach (var kv in Model.TopUnclaimedReasons)
-        {
-            <div class="gap-row"><span>@kv.Key</span><span>@kv.Value unclaimed item(s)</span></div>
-        }
+
+<!-- =========================================================
+     ELEVATE AI
+     IMPORTANT: OUTSIDE THE INSIGHTS CONTENT
+     ========================================================= -->
+
+<div class="ei-ai-root"
+     id="eiAiRoot">
+
+
+    <div class="ei-ai-window"
+         id="eiAiWindow">
+
+
+        <div class="ei-ai-header">
+
+            <div class="ei-ai-brand">
+
+                <div class="ei-ai-orb-mini"></div>
+
+                <div>
+
+                    <strong>
+                        ELEVATE AI
+                    </strong>
+
+                    <span>
+                        DONATION OPERATIONS INTELLIGENCE
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="ei-ai-online">
+
+                <span class="ei-ai-online-dot"></span>
+
+                ONLINE
+
+            </div>
+
+
+            <button type="button"
+                    id="eiAiClose"
+                    class="ei-ai-close">
+
+                <i class="fas fa-times"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="ei-ai-body">
+
+            <div class="ei-ai-scope">
+
+                Briefing generated from the readings
+                and category data currently displayed
+                on this page.
+
+            </div>
+
+
+            <div class="ei-ai-thinking"
+                 id="eiAiThinking">
+
+                <span id="eiAiThinkingText">
+                    ANALYSING READINGS
+                </span>
+
+                <div class="ei-ai-dots">
+
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+
+            </div>
+
+
+            <div class="ei-ai-message"
+                 id="eiAiMessage">
+
+                <div class="ei-ai-label"
+                     id="eiAiLabel">
+
+                    ELEVATE AI
+
+                </div>
+
+
+                <div class="ei-ai-text"
+                     id="eiAiText">
+
+                    Opening operations briefing...
+
+                </div>
+
+            </div>
+
+
+            <div class="ei-ai-progress">
+
+                <div class="ei-ai-progress-bar"
+                     id="eiAiProgress">
+                </div>
+
+            </div>
+
+
+            <div class="ei-ai-counter"
+                 id="eiAiCounter">
+
+                1 / 1
+
+            </div>
+
+        </div>
+
+
+        <div class="ei-ai-footer">
+
+            <a id="eiAiAction"
+               class="ei-ai-action"
+               href="#"
+               style="display:none;">
+
+                Open action
+                <i class="fas fa-arrow-right"></i>
+
+            </a>
+
+
+            <div class="ei-ai-nav">
+
+                <button type="button"
+                        id="eiAiPrevious"
+                        class="ei-ai-btn">
+
+                    <i class="fas fa-arrow-left"></i>
+
+                    Previous
+
+                </button>
+
+
+                <button type="button"
+                        id="eiAiNext"
+                        class="ei-ai-btn">
+
+                    Next
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </button>
+
+
+                <button type="button"
+                        id="eiAiReplay"
+                        class="ei-ai-btn">
+
+                    <i class="fas fa-redo"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
-}
+
+
+    <button type="button"
+            id="eiAiOrb"
+            class="ei-ai-orb-button"
+            aria-label="Open ELEVATE AI operations briefing">
+
+        <span class="ei-ai-orb-symbol">
+            ✦
+        </span>
+
+        <span class="ei-ai-orb-label">
+            ELEVATE AI
+        </span>
+
+    </button>
+
+</div>
+
+
+<!-- =========================================================
+     CHART.JS
+     ========================================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+
+<!-- =========================================================
+     CHART SCRIPT
+     COMPLETELY SEPARATE FROM AI
+     ========================================================= -->
 
 <script>
-    var ctx = document.getElementById('gapChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: @Html.Raw(Json.Encode(Model.CategoryGaps.Select(g => g.Category).ToList())),
-            datasets: [
-                { label: 'Open Requests', data: @Html.Raw(Json.Encode(Model.CategoryGaps.Select(g => g.OpenRequests).ToList())), backgroundColor: '#ef4444' },
-                { label: 'Available Items', data: @Html.Raw(Json.Encode(Model.CategoryGaps.Select(g => g.AvailableItems).ToList())), backgroundColor: '#10b981' }
-            ]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    var canvas = document.getElementById("gapChart");
+    var status = document.getElementById("chartStatus");
+
+    if (!canvas) {
+
+        console.error(
+            "ELEVATE Insights: gapChart canvas was not found."
+        );
+
+        return;
+    }
+
+
+    /*
+     * Razor converts the database values into JavaScript arrays.
+     *
+     * IMPORTANT:
+     * We use null rather than List<object> here.
+     * This prevents the Razor CS0173 conditional-expression error.
+     */
+
+    var categoryLabels = @Html.Raw(
+        Json.Encode(
+            Model.CategoryGaps == null
+                ? null
+                : Model.CategoryGaps
+                    .Select(g => g.Category)
+                    .ToList()
+        )
+    ) || [];
+
+
+    var openRequests = @Html.Raw(
+        Json.Encode(
+            Model.CategoryGaps == null
+                ? null
+                : Model.CategoryGaps
+                    .Select(g => g.OpenRequests)
+                    .ToList()
+        )
+    ) || [];
+
+
+    var availableItems = @Html.Raw(
+        Json.Encode(
+            Model.CategoryGaps == null
+                ? null
+                : Model.CategoryGaps
+                    .Select(g => g.AvailableItems)
+                    .ToList()
+        )
+    ) || [];
+
+
+    var gaps = @Html.Raw(
+        Json.Encode(
+            Model.CategoryGaps == null
+                ? null
+                : Model.CategoryGaps
+                    .Select(g => g.Gap)
+                    .ToList()
+        )
+    ) || [];
+
+
+    console.log(
+        "ELEVATE Insights - Categories:",
+        categoryLabels
+    );
+
+    console.log(
+        "ELEVATE Insights - Open Requests:",
+        openRequests
+    );
+
+    console.log(
+        "ELEVATE Insights - Available Items:",
+        availableItems
+    );
+
+    console.log(
+        "ELEVATE Insights - Gaps:",
+        gaps
+    );
+
+
+    function showStatus(message) {
+
+        if (!status) {
+            return;
+        }
+
+        status.style.display = "flex";
+
+        status.innerHTML =
+            "<span>" +
+            "<i class='fas fa-info-circle'></i>" +
+            message +
+            "</span>";
+
+    }
+
+
+    function hideStatus() {
+
+        if (status) {
+            status.style.display = "none";
+        }
+
+    }
+
+
+    function createChart() {
+
+        /*
+         * Chart.js has not loaded.
+         */
+
+        if (typeof Chart === "undefined") {
+
+            console.error(
+                "ELEVATE Insights: Chart.js is not available."
+            );
+
+            showStatus(
+                "Chart engine unavailable. Please refresh the page."
+            );
+
+            return false;
+        }
+
+
+        /*
+         * There is no category data.
+         */
+
+        if (
+            !categoryLabels ||
+            categoryLabels.length === 0
+        ) {
+
+            console.warn(
+                "ELEVATE Insights: No CategoryGaps data."
+            );
+
+            showStatus(
+                "No category data is available for the selected filters."
+            );
+
+            return false;
+        }
+
+
+        hideStatus();
+
+
+        /*
+         * Destroy an existing chart if the page
+         * has already created one.
+         */
+
+        var existingChart =
+            Chart.getChart(canvas);
+
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+
+        var ctx =
+            canvas.getContext("2d");
+
+
+        /*
+         * CREATE THE CHART
+         */
+
+        new Chart(ctx, {
+
+            type: "bar",
+
+
+            data: {
+
+                labels: categoryLabels,
+
+
+                datasets: [
+
+                    {
+
+                        label: "Open Requests",
+
+                        data: openRequests,
+
+                        backgroundColor:
+                            "rgba(251,113,133,.72)",
+
+                        borderColor:
+                            "#fb7185",
+
+                        borderWidth: 1,
+
+                        borderRadius: 7,
+
+                        maxBarThickness: 34
+
+                    },
+
+
+                    {
+
+                        label: "Available Items",
+
+                        data: availableItems,
+
+                        backgroundColor:
+                            "rgba(34,211,238,.62)",
+
+                        borderColor:
+                            "#22d3ee",
+
+                        borderWidth: 1,
+
+                        borderRadius: 7,
+
+                        maxBarThickness: 34
+
+                    }
+
+                ]
+
+            },
+
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+
+                interaction: {
+
+                    mode: "index",
+
+                    intersect: false
+
+                },
+
+
+                plugins: {
+
+                    legend: {
+
+                        position: "top",
+
+                        labels: {
+
+                            color: "#aebbd0",
+
+                            boxWidth: 10,
+
+                            boxHeight: 10,
+
+                            padding: 18,
+
+                            font: {
+                                size: 10
+                            }
+
+                        }
+
+                    },
+
+
+                    tooltip: {
+
+                        backgroundColor:
+                            "#0b1020",
+
+                        borderColor:
+                            "rgba(34,211,238,.2)",
+
+                        borderWidth: 1,
+
+                        titleColor: "#fff",
+
+                        bodyColor: "#b9c5d8",
+
+                        padding: 11,
+
+
+                        callbacks: {
+
+                            footer: function (items) {
+
+                                if (
+                                    !items ||
+                                    !items.length
+                                ) {
+                                    return "";
+                                }
+
+
+                                var index =
+                                    items[0].dataIndex;
+
+
+                                var gap =
+                                    Number(gaps[index] || 0);
+
+
+                                if (gap > 0) {
+
+                                    return (
+                                        "Shortfall: " +
+                                        gap
+                                    );
+
+                                }
+
+
+                                if (gap < 0) {
+
+                                    return (
+                                        "Surplus: " +
+                                        Math.abs(gap)
+                                    );
+
+                                }
+
+
+                                return "Balanced";
+
+                            }
+
+                        }
+
+                    }
+
+                },
+
+
+                scales: {
+
+                    x: {
+
+                        grid: {
+                            display: false
+                        },
+
+                        ticks: {
+
+                            color:
+                                "#71819b",
+
+                            font: {
+                                size: 9
+                            }
+
+                        }
+
+                    },
+
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        grid: {
+
+                            color:
+                                "rgba(255,255,255,.055)"
+
+                        },
+
+                        ticks: {
+
+                            color:
+                                "#71819b",
+
+                            precision: 0,
+
+                            font: {
+                                size: 9
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+
+        return true;
+
+    }
+
+
+    /*
+     * Try to create the chart.
+     */
+
+    if (!createChart()) {
+
+        /*
+         * If Chart.js was not loaded by the CDN,
+         * try loading it again dynamically.
+         */
+
+        if (typeof Chart === "undefined") {
+
+            console.log(
+                "ELEVATE Insights: Attempting to load Chart.js again..."
+            );
+
+
+            var retryScript =
+                document.createElement("script");
+
+            retryScript.src =
+                "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js";
+
+
+            retryScript.onload =
+                function () {
+
+                    console.log(
+                        "ELEVATE Insights: Chart.js loaded on retry."
+                    );
+
+                    createChart();
+
+                };
+
+
+            retryScript.onerror =
+                function () {
+
+                    console.error(
+                        "ELEVATE Insights: Chart.js failed to load."
+                    );
+
+                    showStatus(
+                        "Unable to load the chart engine. Check your internet connection."
+                    );
+
+                };
+
+
+            document.head.appendChild(
+                retryScript
+            );
+
+        }
+
+    }
+
+});
+
+</script>
+
+
+<!-- =========================================================
+     ELEVATE AI SCRIPT
+     COMPLETELY SEPARATE FROM CHART
+     ========================================================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    var aiRoot =
+        document.getElementById("eiAiRoot");
+
+    var aiOrb =
+        document.getElementById("eiAiOrb");
+
+    var aiClose =
+        document.getElementById("eiAiClose");
+
+    var aiPrevious =
+        document.getElementById("eiAiPrevious");
+
+    var aiNext =
+        document.getElementById("eiAiNext");
+
+    var aiReplay =
+        document.getElementById("eiAiReplay");
+
+    var aiThinking =
+        document.getElementById("eiAiThinking");
+
+    var aiThinkingText =
+        document.getElementById("eiAiThinkingText");
+
+    var aiMessage =
+        document.getElementById("eiAiMessage");
+
+    var aiLabel =
+        document.getElementById("eiAiLabel");
+
+    var aiText =
+        document.getElementById("eiAiText");
+
+    var aiProgress =
+        document.getElementById("eiAiProgress");
+
+    var aiCounter =
+        document.getElementById("eiAiCounter");
+
+    var aiAction =
+        document.getElementById("eiAiAction");
+
+
+    /*
+     * Safety check.
+     */
+
+    if (
+        !aiRoot ||
+        !aiOrb ||
+        !aiClose ||
+        !aiPrevious ||
+        !aiNext ||
+        !aiReplay ||
+        !aiThinking ||
+        !aiThinkingText ||
+        !aiMessage ||
+        !aiLabel ||
+        !aiText ||
+        !aiProgress ||
+        !aiCounter
+    ) {
+
+        console.error(
+            "ELEVATE AI: One or more AI elements are missing."
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * Read category data from Razor.
+     */
+
+    var categoryGaps = @Html.Raw(
+        Json.Encode(
+            Model.CategoryGaps == null
+                ? null
+                : Model.CategoryGaps
+                    .Select(g => new
+                    {
+                        Category = g.Category,
+                        OpenRequests = g.OpenRequests,
+                        AvailableItems = g.AvailableItems,
+                        Gap = g.Gap
+                    })
+                    .ToList()
+        )
+    ) || [];
+
+
+    /*
+     * Read unclaimed reasons.
+     */
+
+    var unclaimedReasons = @Html.Raw(
+        Json.Encode(
+            Model.TopUnclaimedReasons == null
+                ? null
+                : Model.TopUnclaimedReasons
+                    .Select(kv => new
+                    {
+                        Reason = kv.Key,
+                        Count = kv.Value
+                    })
+                    .ToList()
+        )
+    ) || [];
+
+
+    var facts = [];
+
+    var currentIndex = 0;
+
+    var thinking = false;
+
+    var timer = null;
+
+
+    function addFact(
+        type,
+        label,
+        text,
+        actionUrl
+    ) {
+
+        facts.push({
+
+            type: type,
+
+            label: label,
+
+            text: text,
+
+            actionUrl:
+                actionUrl || null
+
+        });
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * OPENING
+     * ---------------------------------------------------------
+     */
+
+    addFact(
+        "info",
+
+        "ELEVATE AI",
+
+        "I've analysed the donation readings for the current scope. I'll highlight the most important operational signals one at a time.",
+
+        null
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * FULFILMENT
+     * ---------------------------------------------------------
+     */
+
+    var fulfilment =
+        Number("@Model.FulfilmentRatePercent");
+
+
+    if (fulfilment >= 80) {
+
+        addFact(
+            "good",
+            "FULFILMENT · STABLE",
+
+            "Fulfilment is currently " +
+            fulfilment +
+            "%. The operation is converting a strong proportion of requests into successful outcomes.",
+
+            null
+        );
+
+    }
+    else if (fulfilment >= 50) {
+
+        addFact(
+            "info",
+            "FULFILMENT · MONITOR",
+
+            "Fulfilment is currently " +
+            fulfilment +
+            "%. There is room to improve how efficiently available donations reach requesting learners.",
+
+            null
+        );
+
+    }
+    else {
+
+        addFact(
+            "attention",
+            "FULFILMENT · PRIORITY",
+
+            "Only " +
+            fulfilment +
+            "% of requests are currently fulfilled. This is a significant operational signal and should be prioritised.",
+
+            null
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * WAITING TIME
+     * ---------------------------------------------------------
+     */
+
+    var waitDays =
+        Number("@Model.AverageWaitDays");
+
+
+    if (waitDays <= 3) {
+
+        addFact(
+            "good",
+            "WAIT TIME · HEALTHY",
+
+            "Average waiting time is " +
+            waitDays +
+            " day(s), indicating that requests are moving through the process relatively quickly.",
+
+            null
+        );
+
+    }
+    else if (waitDays <= 7) {
+
+        addFact(
+            "info",
+            "WAIT TIME · MONITOR",
+
+            "Average waiting time is " +
+            waitDays +
+            " day(s). Matching and collection queues should be monitored for avoidable delays.",
+
+            null
+        );
+
+    }
+    else {
+
+        addFact(
+            "attention",
+            "WAIT TIME · WARNING",
+
+            "Average waiting time is " +
+            waitDays +
+            " day(s). Requests may be remaining unresolved for too long and deserve administrative attention.",
+
+            null
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * UNCLAIMED
+     * ---------------------------------------------------------
+     */
+
+    var unclaimed =
+        Number("@Model.UnclaimedRatePercent");
+
+
+    if (unclaimed >= 20) {
+
+        addFact(
+            "attention",
+            "UNCLAIMED · HIGH",
+
+            "The unclaimed rate is " +
+            unclaimed +
+            "%. A significant portion of donated items may not be reaching their intended recipients.",
+
+            null
+        );
+
+    }
+    else if (unclaimed > 5) {
+
+        addFact(
+            "info",
+            "UNCLAIMED · REVIEW",
+
+            "The unclaimed rate is " +
+            unclaimed +
+            "%. Review collection follow-ups and the reasons items remain unclaimed.",
+
+            null
+        );
+
+    }
+    else {
+
+        addFact(
+            "good",
+            "UNCLAIMED · LOW",
+
+            "The unclaimed rate is only " +
+            unclaimed +
+            "%. Most allocated items appear to be progressing successfully to collection.",
+
+            null
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * CATEGORY GAP
+     * ---------------------------------------------------------
+     */
+
+    var shortage = null;
+
+
+    categoryGaps.forEach(function (g) {
+
+        var gap =
+            Number(g.Gap || 0);
+
+
+        if (
+            gap > 0 &&
+            (
+                !shortage ||
+                gap > Number(shortage.Gap)
+            )
+        ) {
+
+            shortage = g;
+
+        }
+
     });
+
+
+    if (shortage) {
+
+        addFact(
+            "attention",
+
+            "DEMAND GAP DETECTED",
+
+            shortage.Category +
+            " currently has " +
+            shortage.OpenRequests +
+            " open request(s) against " +
+            shortage.AvailableItems +
+            " available item(s), creating a shortfall of " +
+            shortage.Gap +
+            ".",
+
+            null
+        );
+
+    }
+    else if (categoryGaps.length > 0) {
+
+        addFact(
+            "good",
+
+            "SUPPLY · BALANCED",
+
+            "No category currently shows a positive demand shortfall in the selected data. Continue monitoring the category gaps as new requests and donations arrive.",
+
+            null
+        );
+
+    }
+    else {
+
+        addFact(
+            "info",
+
+            "GAP MONITOR",
+
+            "There is no category gap data for the selected scope, so the system cannot identify a supply shortage from this reading.",
+
+            null
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * UNCLAIMED PATTERN
+     * ---------------------------------------------------------
+     */
+
+    if (
+        unclaimedReasons &&
+        unclaimedReasons.length > 0
+    ) {
+
+        var topReason =
+            unclaimedReasons[0];
+
+
+        addFact(
+            "attention",
+
+            "UNCLAIMED PATTERN",
+
+            "The leading recorded unclaimed reason is \"" +
+            topReason.Reason +
+            "\" with " +
+            topReason.Count +
+            " item(s). This is a useful starting point for collection follow-up.",
+
+            null
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * NEXT BEST ACTION
+     * ---------------------------------------------------------
+     */
+
+    if (shortage) {
+
+        addFact(
+            "recommendation",
+
+            "NEXT BEST ACTION",
+
+            "Prioritise " +
+            shortage.Category +
+            " in donation matching and targeted collection efforts. The current demand gap is the clearest supply-side signal in this analysis.",
+
+            "@Url.Action("MatchDonations", "Donation")"
+        );
+
+    }
+    else if (
+        unclaimed >= 20 ||
+        waitDays > 7
+    ) {
+
+        addFact(
+            "recommendation",
+
+            "NEXT BEST ACTION",
+
+            "Focus on resolving outstanding allocations and collection delays before expanding inventory. Reducing operational friction should improve learner outcomes.",
+
+            "@Url.Action("ProcessCollection", "Donation")"
+        );
+
+    }
+    else {
+
+        addFact(
+            "recommendation",
+
+            "NEXT BEST ACTION",
+
+            "Continue monitoring fulfilment, waiting time and category gaps. The strongest operational gains will come from acting on any new shortfalls as they appear.",
+
+            "@Url.Action("MatchDonations", "Donation")"
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * BUTTON STATE
+     * ---------------------------------------------------------
+     */
+
+    function updateButtons() {
+
+        aiPrevious.disabled =
+            thinking ||
+            currentIndex <= 0;
+
+
+        aiNext.disabled =
+            thinking ||
+            currentIndex >= facts.length - 1;
+
+
+        aiCounter.textContent =
+            (currentIndex + 1) +
+            " / " +
+            facts.length;
+
+
+        aiProgress.style.width =
+            (
+                ((currentIndex + 1) /
+                facts.length) *
+                100
+            ) +
+            "%";
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * DISPLAY FACT
+     * ---------------------------------------------------------
+     */
+
+    function showFact(
+        index,
+        animate
+    ) {
+
+        if (
+            index < 0 ||
+            index >= facts.length
+        ) {
+            return;
+        }
+
+
+        if (thinking) {
+            return;
+        }
+
+
+        currentIndex = index;
+
+
+        var fact =
+            facts[currentIndex];
+
+
+        if (animate) {
+
+            thinking = true;
+
+
+            aiThinking.style.display =
+                "flex";
+
+
+            aiThinkingText.textContent =
+                "ANALYSING " +
+                fact.label;
+
+
+            aiMessage.style.opacity =
+                ".35";
+
+
+            updateButtons();
+
+
+            if (timer) {
+                clearTimeout(timer);
+            }
+
+
+            timer =
+                setTimeout(
+                    function () {
+
+                        renderFact(fact);
+
+                    },
+                    650
+                );
+
+        }
+        else {
+
+            renderFact(fact);
+
+        }
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * RENDER
+     * ---------------------------------------------------------
+     */
+
+    function renderFact(fact) {
+
+        aiLabel.textContent =
+            fact.label;
+
+
+        aiText.textContent =
+            fact.text;
+
+
+        aiMessage.className =
+            "ei-ai-message " +
+            fact.type;
+
+
+        aiMessage.style.opacity =
+            "1";
+
+
+        if (
+            aiAction &&
+            fact.actionUrl
+        ) {
+
+            aiAction.href =
+                fact.actionUrl;
+
+            aiAction.style.display =
+                "inline-flex";
+
+        }
+        else if (aiAction) {
+
+            aiAction.style.display =
+                "none";
+
+        }
+
+
+        aiThinking.style.display =
+            "none";
+
+
+        thinking = false;
+
+
+        updateButtons();
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * OPEN
+     * ---------------------------------------------------------
+     */
+
+    function openAI() {
+
+        aiRoot.classList.add(
+            "open"
+        );
+
+
+        showFact(
+            currentIndex,
+            true
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * CLOSE
+     * ---------------------------------------------------------
+     */
+
+    function closeAI() {
+
+        aiRoot.classList.remove(
+            "open"
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * REPLAY
+     * ---------------------------------------------------------
+     */
+
+    function replayAI() {
+
+        currentIndex = 0;
+
+        showFact(
+            0,
+            true
+        );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * EVENTS
+     * ---------------------------------------------------------
+     */
+
+    aiOrb.addEventListener(
+        "click",
+        function () {
+
+            openAI();
+
+        }
+    );
+
+
+    aiClose.addEventListener(
+        "click",
+        function () {
+
+            closeAI();
+
+        }
+    );
+
+
+    aiPrevious.addEventListener(
+        "click",
+        function () {
+
+            if (
+                currentIndex > 0
+            ) {
+
+                showFact(
+                    currentIndex - 1,
+                    true
+                );
+
+            }
+
+        }
+    );
+
+
+    aiNext.addEventListener(
+        "click",
+        function () {
+
+            if (
+                currentIndex <
+                facts.length - 1
+            ) {
+
+                showFact(
+                    currentIndex + 1,
+                    true
+                );
+
+            }
+
+        }
+    );
+
+
+    aiReplay.addEventListener(
+        "click",
+        function () {
+
+            replayAI();
+
+        }
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * KEYBOARD
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            var tag =
+                document.activeElement
+                    ? document.activeElement.tagName
+                    : "";
+
+
+            if (
+                tag === "INPUT" ||
+                tag === "TEXTAREA" ||
+                tag === "SELECT"
+            ) {
+                return;
+            }
+
+
+            if (
+                !aiRoot.classList.contains(
+                    "open"
+                )
+            ) {
+                return;
+            }
+
+
+            if (
+                event.key === "ArrowLeft"
+            ) {
+
+                if (
+                    currentIndex > 0
+                ) {
+
+                    showFact(
+                        currentIndex - 1,
+                        true
+                    );
+
+                }
+
+            }
+
+
+            if (
+                event.key === "ArrowRight"
+            ) {
+
+                if (
+                    currentIndex <
+                    facts.length - 1
+                ) {
+
+                    showFact(
+                        currentIndex + 1,
+                        true
+                    );
+
+                }
+
+            }
+
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeAI();
+
+            }
+
+        }
+    );
+
+
+    /*
+     * Initial state.
+     *
+     * The orb remains closed.
+     * Only the first briefing is prepared.
+     */
+
+    showFact(
+        0,
+        false
+    );
+
+
+});
+
 </script>

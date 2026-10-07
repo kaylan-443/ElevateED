@@ -1,221 +1,2933 @@
 @model ElevateED.Models.DonationDashboardViewModel
+
 @{
     ViewBag.Title = "Donation Dashboard";
     Layout = (User.IsInRole("Admin") || User.IsInRole("Principal")) ? "~/Views/Shared/_AdminLayout.cshtml"
            : User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml"
            : "~/Views/Shared/_StudentLayout.cshtml";
+
     ViewBag.ActivePage = "donations";
     ViewBag.ActiveTab = "dashboard";
+
+    bool isAdmin = User.IsInRole("Admin") || User.IsInRole("Principal");
 }
 
 <style>
-    .donation-hero {
-        background: linear-gradient(135deg, var(--primary, #4f46e5), #8b5cf6);
-        border-radius: 20px;
-        padding: 32px;
-        color: white;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
-    }
-    .donation-hero::after {
-        content: '';
-        position: absolute;
-        right: -40px; top: -40px;
-        width: 220px; height: 220px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 50%;
-    }
-    .donation-hero h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; position: relative; z-index: 1; }
-    .donation-hero p { opacity: 0.9; font-size: 14px; position: relative; z-index: 1; }
+     /* =========================================================
+    ELEVATE DONATION COMMAND CENTRE
+    ========================================================= */
 
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        border: 1px solid var(--gray-200, #e5e7eb);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .stat-icon {
-        width: 44px; height: 44px; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 18px; color: white; margin-bottom: 12px;
-    }
-    .stat-value { font-size: 28px; font-weight: 700; color: var(--gray-900, #111827); }
-    .stat-label { font-size: 13px; color: var(--gray-500, #6b7280); margin-top: 2px; }
+     :root {
+         --e-cyan: #22d3ee;
+         --e-blue: #38bdf8;
+         --e-purple: #8b5cf6;
+         --e-violet: #a78bfa;
+         --e-green: #34d399;
+         --e-amber: #fbbf24;
+         --e-red: #fb7185;
+         --e-bg: #070b14;
+         --e-panel: rgba(13, 19, 33, .78);
+         --e-panel-2: rgba(18, 25, 43, .82);
+         --e-border: rgba(148, 163, 184, .13);
+         --e-text: #f4f7ff;
+         --e-muted: #8493ad;
+     }
 
-    .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .quick-link {
-        background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px;
-        padding: 20px; text-decoration: none; color: inherit; display: flex; align-items: center; gap: 14px;
-        transition: all 0.2s;
-    }
-    .quick-link:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-decoration: none; }
-    .quick-link-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; flex-shrink: 0; }
-    .quick-link-title { font-weight: 600; color: var(--gray-900, #111827); font-size: 14px; }
-    .quick-link-desc { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 2px; }
+     /* Main dashboard atmosphere */
+     .donation-command-centre {
+         position: relative;
+         color: var(--e-text);
+     }
 
-    .panel { background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); padding: 24px; margin-bottom: 24px; }
-    .panel-title { font-size: 16px; font-weight: 700; color: var(--gray-900, #111827); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .activity-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-100, #f3f4f6); }
-    .activity-row:last-child { border-bottom: none; }
-    .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary, #4f46e5); margin-top: 6px; flex-shrink: 0; }
-    .activity-text { font-size: 13px; color: var(--gray-700, #374151); }
-    .activity-time { font-size: 11px; color: var(--gray-400, #9ca3af); margin-top: 2px; }
+         .donation-command-centre::before {
+             content: "";
+             position: fixed;
+             inset: 0;
+             pointer-events: none;
+             z-index: -1;
+             background: radial-gradient(circle at 15% 8%, rgba(34,211,238,.08), transparent 28%), radial-gradient(circle at 88% 18%, rgba(139,92,246,.09), transparent 30%), linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+             background-size: auto, auto, 42px 42px, 42px 42px;
+             opacity: .8;
+         }
 
-    .mini-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--gray-100, #f3f4f6); font-size: 13px; }
-    .mini-list-item:last-child { border-bottom: none; }
-    .badge-status { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-    .empty-mini { text-align: center; padding: 20px; color: var(--gray-400, #9ca3af); font-size: 13px; }
+     /* Hero */
+     .donation-hero {
+         position: relative;
+         overflow: hidden;
+         min-height: 235px;
+         padding: 30px 32px;
+         margin-bottom: 22px;
+         border-radius: 24px;
+         border: 1px solid rgba(34,211,238,.16);
+         background: radial-gradient(circle at 80% 20%, rgba(34,211,238,.12), transparent 24%), radial-gradient(circle at 100% 100%, rgba(139,92,246,.18), transparent 34%), linear-gradient(135deg, #0a1020, #0d1425 52%, #11152a);
+         box-shadow: 0 24px 70px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.04);
+     }
+
+         .donation-hero::before {
+             content: "";
+             position: absolute;
+             inset: 0;
+             background: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+             background-size: 34px 34px;
+             mask-image: linear-gradient(to right, black, transparent 78%);
+             pointer-events: none;
+         }
+
+         .donation-hero::after {
+             content: "✦";
+             position: absolute;
+             right: 8%;
+             top: 18%;
+             font-size: 125px;
+             line-height: 1;
+             color: rgba(34,211,238,.06);
+             text-shadow: 0 0 50px rgba(34,211,238,.12);
+             animation: commandFloat 5s ease-in-out infinite;
+         }
+
+     .hero-topline {
+         position: relative;
+         z-index: 2;
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+         margin-bottom: 28px;
+     }
+
+     .hero-system {
+         display: inline-flex;
+         align-items: center;
+         gap: 8px;
+         padding: 7px 11px;
+         border: 1px solid rgba(52,211,153,.18);
+         border-radius: 999px;
+         background: rgba(52,211,153,.06);
+         color: #6ee7b7;
+         font-size: 9px;
+         font-weight: 700;
+         letter-spacing: 1.4px;
+     }
+
+     .hero-system-dot {
+         width: 6px;
+         height: 6px;
+         border-radius: 50%;
+         background: var(--e-green);
+         box-shadow: 0 0 12px var(--e-green);
+         animation: onlinePulse 1.8s infinite;
+     }
+
+     .hero-brand {
+         color: #8ea0bd;
+         font-size: 9px;
+         font-weight: 700;
+         letter-spacing: 2px;
+     }
+
+     .hero-content {
+         position: relative;
+         z-index: 2;
+     }
+
+     .donation-hero h1 {
+         margin: 0 0 7px;
+         font-size: clamp(27px, 3vw, 40px);
+         line-height: 1.1;
+         font-weight: 800;
+         letter-spacing: -.8px;
+         color: #fff;
+     }
+
+         .donation-hero h1 i {
+             color: var(--e-cyan);
+             margin-right: 8px;
+             filter: drop-shadow(0 0 12px rgba(34,211,238,.55));
+         }
+
+     .donation-hero p {
+         max-width: 620px;
+         margin: 0;
+         color: #91a0b9;
+         font-size: 13px;
+         line-height: 1.7;
+     }
+
+     .hero-metrics {
+         position: relative;
+         z-index: 2;
+         display: flex;
+         flex-wrap: wrap;
+         gap: 9px;
+         margin-top: 22px;
+     }
+
+     .hero-metric {
+         padding: 8px 11px;
+         border: 1px solid rgba(255,255,255,.07);
+         border-radius: 10px;
+         background: rgba(255,255,255,.035);
+         color: #aebbd0;
+         font-size: 10px;
+     }
+
+         .hero-metric strong {
+             color: #fff;
+             margin-right: 4px;
+         }
+
+     /* Stat cards */
+     .stat-grid {
+         display: grid;
+         grid-template-columns: repeat(6, minmax(0, 1fr));
+         gap: 12px;
+         margin-bottom: 24px;
+     }
+
+     .stat-card {
+         position: relative;
+         overflow: hidden;
+         min-height: 148px;
+         padding: 17px;
+         border: 1px solid var(--e-border);
+         border-radius: 18px;
+         background: linear-gradient(145deg, rgba(15,23,42,.86), rgba(10,15,27,.92));
+         box-shadow: 0 12px 35px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.025);
+         transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+     }
+
+         .stat-card::after {
+             content: "";
+             position: absolute;
+             width: 100px;
+             height: 100px;
+             right: -55px;
+             bottom: -55px;
+             border-radius: 50%;
+             background: rgba(34,211,238,.08);
+             filter: blur(2px);
+         }
+
+         .stat-card:hover {
+             transform: translateY(-4px);
+             border-color: rgba(34,211,238,.24);
+             box-shadow: 0 18px 45px rgba(0,0,0,.24), 0 0 24px rgba(34,211,238,.06);
+         }
+
+         .stat-card:nth-child(2)::after {
+             background: rgba(139,92,246,.09);
+         }
+
+         .stat-card:nth-child(3)::after {
+             background: rgba(52,211,153,.09);
+         }
+
+         .stat-card:nth-child(4)::after {
+             background: rgba(167,139,250,.09);
+         }
+
+         .stat-card:nth-child(5)::after {
+             background: rgba(56,189,248,.09);
+         }
+
+         .stat-card:nth-child(6)::after {
+             background: rgba(251,113,133,.09);
+         }
+
+     .stat-icon {
+         width: 38px;
+         height: 38px;
+         margin-bottom: 15px;
+         border-radius: 11px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         color: white;
+         font-size: 15px;
+         background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(139,92,246,.2)) !important;
+         border: 1px solid rgba(255,255,255,.08);
+         box-shadow: 0 0 18px rgba(34,211,238,.08);
+     }
+
+     .stat-card:nth-child(2) .stat-icon {
+         background: linear-gradient(135deg, rgba(139,92,246,.2), rgba(99,102,241,.2)) !important;
+     }
+
+     .stat-card:nth-child(3) .stat-icon {
+         background: linear-gradient(135deg, rgba(52,211,153,.2), rgba(34,211,238,.16)) !important;
+     }
+
+     .stat-card:nth-child(4) .stat-icon {
+         background: linear-gradient(135deg, rgba(167,139,250,.2), rgba(139,92,246,.2)) !important;
+     }
+
+     .stat-card:nth-child(5) .stat-icon {
+         background: linear-gradient(135deg, rgba(56,189,248,.2), rgba(34,211,238,.16)) !important;
+     }
+
+     .stat-card:nth-child(6) .stat-icon {
+         background: linear-gradient(135deg, rgba(251,113,133,.18), rgba(245,158,11,.14)) !important;
+     }
+
+     .stat-value {
+         position: relative;
+         z-index: 1;
+         color: #fff;
+         font-size: 29px;
+         font-weight: 800;
+         line-height: 1;
+     }
+
+     .stat-label {
+         position: relative;
+         z-index: 1;
+         margin-top: 8px;
+         color: #8493ad;
+         font-size: 10px;
+         line-height: 1.35;
+         text-transform: uppercase;
+         letter-spacing: .75px;
+     }
+
+     /* Section headers */
+     .cc-section-heading {
+         display: flex;
+         align-items: end;
+         justify-content: space-between;
+         margin: 28px 2px 12px;
+     }
+
+         .cc-section-heading h2 {
+             margin: 0;
+             color: #f4f7ff;
+             font-size: 14px;
+             font-weight: 800;
+             letter-spacing: 1px;
+             text-transform: uppercase;
+         }
+
+         .cc-section-heading p {
+             margin: 4px 0 0;
+             color: #66758f;
+             font-size: 10px;
+         }
+
+     .cc-section-badge {
+         color: #6e7f9c;
+         font-size: 9px;
+         letter-spacing: 1px;
+         text-transform: uppercase;
+     }
+
+     /* Command centre quick actions */
+     .quick-links {
+         display: grid;
+         grid-template-columns: repeat(4, minmax(0, 1fr));
+         gap: 12px;
+         margin-bottom: 24px;
+     }
+
+     .quick-link {
+         position: relative;
+         min-height: 96px;
+         overflow: hidden;
+         display: flex;
+         align-items: center;
+         gap: 13px;
+         padding: 16px;
+         border: 1px solid var(--e-border);
+         border-radius: 17px;
+         background: linear-gradient(145deg, rgba(15,23,42,.82), rgba(9,14,25,.9));
+         color: inherit;
+         text-decoration: none;
+         transition: .25s ease;
+     }
+
+         .quick-link::after {
+             content: "↗";
+             position: absolute;
+             right: 14px;
+             top: 12px;
+             color: rgba(255,255,255,.18);
+             font-size: 13px;
+             transition: .25s ease;
+         }
+
+         .quick-link:hover {
+             color: inherit;
+             text-decoration: none;
+             transform: translateY(-3px);
+             border-color: rgba(34,211,238,.3);
+             box-shadow: 0 15px 38px rgba(0,0,0,.2), 0 0 22px rgba(34,211,238,.05);
+         }
+
+             .quick-link:hover::after {
+                 color: var(--e-cyan);
+                 transform: translate(2px,-2px);
+             }
+
+     .quick-link-icon {
+         width: 43px;
+         height: 43px;
+         flex: 0 0 43px;
+         border-radius: 13px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         color: #fff;
+         font-size: 16px;
+         background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(139,92,246,.2)) !important;
+         border: 1px solid rgba(255,255,255,.08);
+     }
+
+     .quick-link:nth-child(2) .quick-link-icon {
+         background: linear-gradient(135deg, rgba(139,92,246,.2), rgba(167,139,250,.18)) !important;
+     }
+
+     .quick-link:nth-child(3) .quick-link-icon {
+         background: linear-gradient(135deg, rgba(56,189,248,.2), rgba(34,211,238,.15)) !important;
+     }
+
+     .quick-link:nth-child(4) .quick-link-icon {
+         background: linear-gradient(135deg, rgba(52,211,153,.2), rgba(34,211,238,.14)) !important;
+     }
+
+     .quick-link-title {
+         color: #f3f6ff;
+         font-size: 12px;
+         font-weight: 800;
+         letter-spacing: .3px;
+     }
+
+     .quick-link-desc {
+         max-width: 180px;
+         margin-top: 4px;
+         color: #71819b;
+         font-size: 10px;
+         line-height: 1.45;
+     }
+
+     /* Overview panels */
+     .command-overview {
+         display: grid;
+         grid-template-columns: 1.5fr .8fr;
+         gap: 14px;
+         margin-bottom: 14px;
+     }
+
+     .panel {
+         position: relative;
+         overflow: hidden;
+         padding: 20px;
+         margin-bottom: 14px;
+         border: 1px solid var(--e-border);
+         border-radius: 19px;
+         background: linear-gradient(145deg, rgba(15,23,42,.8), rgba(8,13,24,.9));
+         box-shadow: 0 12px 35px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.025);
+         color: #dce5f5;
+     }
+
+     .panel-title {
+         display: flex;
+         align-items: center;
+         gap: 9px;
+         margin-bottom: 17px;
+         color: #f5f7ff;
+         font-size: 12px;
+         font-weight: 800;
+         letter-spacing: .9px;
+         text-transform: uppercase;
+     }
+
+         .panel-title i {
+             color: var(--e-cyan);
+             filter: drop-shadow(0 0 8px rgba(34,211,238,.35));
+         }
+
+     /* Pipeline */
+     .pipeline {
+         display: grid;
+         grid-template-columns: repeat(4, 1fr);
+         gap: 8px;
+     }
+
+     .pipeline-step {
+         position: relative;
+         padding: 14px 11px;
+         border: 1px solid rgba(255,255,255,.065);
+         border-radius: 13px;
+         background: rgba(255,255,255,.025);
+     }
+
+         .pipeline-step::after {
+             content: "›";
+             position: absolute;
+             right: -9px;
+             top: 50%;
+             transform: translateY(-50%);
+             color: #52627c;
+             font-size: 18px;
+             z-index: 2;
+         }
+
+         .pipeline-step:last-child::after {
+             display: none;
+         }
+
+     .pipeline-icon {
+         color: var(--e-cyan);
+         font-size: 11px;
+         margin-bottom: 9px;
+     }
+
+     .pipeline-number {
+         color: #fff;
+         font-size: 20px;
+         font-weight: 800;
+     }
+
+     .pipeline-label {
+         margin-top: 3px;
+         color: #71819b;
+         font-size: 9px;
+         text-transform: uppercase;
+         letter-spacing: .65px;
+     }
+
+     /* System health */
+     .system-status {
+         display: grid;
+         gap: 9px;
+     }
+
+     .system-status-row {
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+         padding: 11px 12px;
+         border: 1px solid rgba(255,255,255,.055);
+         border-radius: 12px;
+         background: rgba(255,255,255,.025);
+     }
+
+     .system-status-name {
+         display: flex;
+         align-items: center;
+         gap: 8px;
+         color: #aebbd0;
+         font-size: 10px;
+     }
+
+     .status-light {
+         width: 6px;
+         height: 6px;
+         border-radius: 50%;
+         background: var(--e-green);
+         box-shadow: 0 0 9px rgba(52,211,153,.7);
+     }
+
+     .system-status-value {
+         color: #6ee7b7;
+         font-size: 8px;
+         font-weight: 800;
+         letter-spacing: 1px;
+     }
+
+     /* Two-column feeds */
+     .dashboard-feeds {
+         display: grid;
+         grid-template-columns: 1.15fr .85fr;
+         gap: 14px;
+     }
+
+     .feed-list {
+         display: grid;
+         gap: 2px;
+     }
+
+     .activity-row {
+         display: flex;
+         gap: 11px;
+         padding: 11px 0;
+         border-bottom: 1px solid rgba(255,255,255,.055);
+     }
+
+         .activity-row:last-child {
+             border-bottom: none;
+         }
+
+     .activity-dot {
+         width: 7px;
+         height: 7px;
+         flex: 0 0 7px;
+         margin-top: 5px;
+         border-radius: 50%;
+         background: var(--e-cyan);
+         box-shadow: 0 0 9px rgba(34,211,238,.65);
+     }
+
+     .activity-text {
+         color: #b7c3d7;
+         font-size: 11px;
+         line-height: 1.55;
+     }
+
+         .activity-text strong {
+             color: #fff;
+         }
+
+     .activity-time {
+         margin-top: 3px;
+         color: #5e6d84;
+         font-size: 9px;
+     }
+
+     .mini-list-item {
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+         gap: 12px;
+         padding: 11px 0;
+         border-bottom: 1px solid rgba(255,255,255,.055);
+         color: #b7c3d7;
+         font-size: 10px;
+     }
+
+         .mini-list-item:last-child {
+             border-bottom: none;
+         }
+
+         .mini-list-item a {
+             color: var(--e-cyan) !important;
+             font-size: 9px;
+             text-transform: uppercase;
+             letter-spacing: .5px;
+         }
+
+     .empty-mini {
+         padding: 25px 10px;
+         color: #5e6d84;
+         font-size: 10px;
+         text-align: center;
+     }
+
+     /* =========================================================
+    ELEVATE AI ASSISTANT
+    ========================================================= */
+
+     .elevate-ai {
+         position: fixed;
+         right: 28px;
+         bottom: 28px;
+         width: 390px;
+         max-width: calc(100vw - 32px);
+         z-index: 9999;
+         font-family: inherit;
+         transition: all .4s ease;
+     }
+
+         .elevate-ai.hidden {
+             opacity: 0;
+             pointer-events: none;
+             transform: translateY(25px) scale(.95);
+         }
+
+     .ai-window {
+         position: relative;
+         overflow: hidden;
+         border-radius: 24px;
+         background: radial-gradient(circle at 20% 0%, rgba(79,70,229,.22), transparent 35%), radial-gradient(circle at 100% 100%, rgba(139,92,246,.18), transparent 40%), #0b1020;
+         border: 1px solid rgba(139,92,246,.35);
+         box-shadow: 0 25px 70px rgba(0,0,0,.35), 0 0 50px rgba(79,70,229,.18);
+         color: white;
+     }
+
+         .ai-window::before {
+             content: "";
+             position: absolute;
+             inset: 0;
+             background: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+             background-size: 30px 30px;
+             pointer-events: none;
+         }
+
+     .ai-header {
+         position: relative;
+         z-index: 2;
+         display: flex;
+         align-items: center;
+         justify-content: space-between;
+         padding: 18px 20px;
+         border-bottom: 1px solid rgba(255,255,255,.08);
+     }
+
+     .ai-brand {
+         display: flex;
+         align-items: center;
+         gap: 12px;
+     }
+
+     .ai-mini-orb {
+         width: 42px;
+         height: 42px;
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         background: radial-gradient(circle at 35% 30%, #fff, #8b5cf6 18%, #4f46e5 48%, #111827 75%);
+         box-shadow: 0 0 18px rgba(139,92,246,.8), 0 0 40px rgba(79,70,229,.35);
+         animation: aiPulse 2.4s infinite;
+     }
+
+         .ai-mini-orb::after {
+             content: "";
+             width: 9px;
+             height: 9px;
+             background: #fff;
+             border-radius: 50%;
+             box-shadow: 0 0 12px #fff;
+         }
+
+     .ai-brand-text strong {
+         display: block;
+         font-size: 13px;
+         letter-spacing: 1.4px;
+     }
+
+     .ai-brand-text span {
+         display: block;
+         margin-top: 2px;
+         color: #8ea0bd;
+         font-size: 9px;
+         letter-spacing: 1.8px;
+     }
+
+     .ai-online {
+         display: flex;
+         align-items: center;
+         gap: 6px;
+         color: #6ee7b7;
+         font-size: 9px;
+         letter-spacing: 1px;
+     }
+
+     .ai-online-dot {
+         width: 6px;
+         height: 6px;
+         background: #34d399;
+         border-radius: 50%;
+         box-shadow: 0 0 10px #34d399;
+         animation: onlinePulse 1.8s infinite;
+     }
+
+     .ai-close {
+         position: absolute;
+         right: 12px;
+         top: 10px;
+         border: none;
+         background: transparent;
+         color: rgba(255,255,255,.5);
+         font-size: 15px;
+         cursor: pointer;
+         z-index: 4;
+     }
+
+         .ai-close:hover {
+             color: white;
+         }
+
+     .ai-body {
+         position: relative;
+         z-index: 2;
+         padding: 24px 20px 18px;
+         min-height: 285px;
+     }
+
+     .ai-greeting {
+         margin-bottom: 8px;
+         font-size: 22px;
+         font-weight: 700;
+         line-height: 1.25;
+     }
+
+     .ai-subtitle {
+         margin-bottom: 22px;
+         color: #91a0b9;
+         font-size: 12px;
+         line-height: 1.6;
+     }
+
+     .ai-thinking {
+         display: flex;
+         align-items: center;
+         gap: 10px;
+         margin-bottom: 18px;
+         color: #8493ad;
+         font-size: 10px;
+         letter-spacing: 1.5px;
+     }
+
+     .thinking-dots {
+         display: flex;
+         gap: 4px;
+     }
+
+         .thinking-dots span {
+             width: 5px;
+             height: 5px;
+             border-radius: 50%;
+             background: #8b5cf6;
+             box-shadow: 0 0 8px #8b5cf6;
+             animation: thinking 1.1s infinite;
+         }
+
+             .thinking-dots span:nth-child(2) {
+                 animation-delay: .15s;
+             }
+
+             .thinking-dots span:nth-child(3) {
+                 animation-delay: .3s;
+             }
+
+     .ai-message {
+         position: relative;
+         min-height: 75px;
+         overflow: hidden;
+         padding: 16px;
+         border-radius: 16px;
+         background: rgba(255,255,255,.045);
+         border: 1px solid rgba(255,255,255,.07);
+     }
+
+         .ai-message::before {
+             content: "";
+             position: absolute;
+             left: 0;
+             top: 0;
+             bottom: 0;
+             width: 3px;
+             background: linear-gradient(#8b5cf6, #4f46e5);
+             box-shadow: 0 0 12px rgba(139,92,246,.6);
+         }
+
+         .ai-message.info::before {
+             background: linear-gradient(#22d3ee, #4f46e5);
+         }
+
+         .ai-message.recommendation::before {
+             background: linear-gradient(#34d399, #22d3ee);
+         }
+
+         .ai-message.attention::before {
+             background: linear-gradient(#f59e0b, #ef4444);
+             box-shadow: 0 0 12px rgba(245,158,11,.7);
+         }
+
+         .ai-message.good::before {
+             background: linear-gradient(#10b981, #22d3ee);
+             box-shadow: 0 0 12px rgba(16,185,129,.7);
+         }
+
+     .ai-message-label {
+         margin-bottom: 7px;
+         color: #8b9ab3;
+         font-size: 9px;
+         letter-spacing: 1.4px;
+     }
+
+     .ai-message-text {
+         color: #f4f7ff;
+         font-size: 13px;
+         line-height: 1.6;
+     }
+
+         .ai-message-text.appear {
+             animation: messageAppear .35s ease forwards;
+         }
+
+     .ai-progress {
+         height: 3px;
+         overflow: hidden;
+         margin-top: 20px;
+         border-radius: 5px;
+         background: rgba(255,255,255,.06);
+     }
+
+     .ai-progress-bar {
+         height: 100%;
+         width: 0;
+         border-radius: 5px;
+         background: linear-gradient(90deg, #4f46e5, #8b5cf6, #22d3ee);
+         box-shadow: 0 0 12px rgba(139,92,246,.8);
+         transition: width .5s ease;
+     }
+
+     .ai-counter {
+         margin-top: 9px;
+         color: #71819b;
+         font-size: 9px;
+         text-align: right;
+         letter-spacing: 1px;
+     }
+
+     .ai-footer {
+         position: relative;
+         z-index: 2;
+         padding: 14px 20px 18px;
+         border-top: 1px solid rgba(255,255,255,.06);
+     }
+
+     .ai-action {
+         display: none;
+         width: 100%;
+         padding: 11px 14px;
+         border: none;
+         border-radius: 12px;
+         color: white;
+         background: linear-gradient(135deg, #4f46e5, #7c3aed);
+         box-shadow: 0 8px 25px rgba(79,70,229,.25);
+         font-size: 11px;
+         font-weight: 700;
+         text-align: center;
+         text-decoration: none;
+     }
+
+         .ai-action:hover {
+             color: white;
+             text-decoration: none;
+             transform: translateY(-1px);
+         }
+
+     .ai-footer-buttons {
+         display: flex;
+         gap: 8px;
+         margin-top: 8px;
+     }
+
+     .ai-navigation {
+         display: flex;
+         gap: 8px;
+         margin-top: 8px;
+     }
+
+     .ai-nav-button,
+     .ai-replay {
+         flex: 1;
+         padding: 10px;
+         border: 1px solid rgba(255,255,255,.1);
+         border-radius: 12px;
+         background: rgba(255,255,255,.04);
+         color: #aebbd0;
+         font-size: 10px;
+         cursor: pointer;
+         transition: .2s ease;
+     }
+
+         .ai-nav-button:hover:not(:disabled),
+         .ai-replay:hover {
+             color: white;
+             background: rgba(255,255,255,.08);
+             border-color: rgba(34,211,238,.22);
+         }
+
+         .ai-nav-button:disabled {
+             opacity: .28;
+             cursor: not-allowed;
+         }
+
+         .ai-nav-button.ai-next {
+             background: rgba(139,92,246,.1);
+             border-color: rgba(139,92,246,.22);
+             color: #d8d1ff;
+         }
+
+     .ai-message.transitioning {
+         opacity: .45;
+         transform: translateY(4px);
+     }
+
+     /* Floating AI button */
+     .ai-floating-button {
+         position: fixed;
+         right: 28px;
+         bottom: 28px;
+         width: 68px;
+         height: 68px;
+         border-radius: 50%;
+         border: 1px solid rgba(139,92,246,.55);
+         background: radial-gradient(circle at 35% 25%, #fff, #8b5cf6 18%, #4f46e5 48%, #111827 78%);
+         color: white;
+         display: none;
+         align-items: center;
+         justify-content: center;
+         cursor: pointer;
+         z-index: 9998;
+         box-shadow: 0 0 25px rgba(139,92,246,.65), 0 0 60px rgba(79,70,229,.25);
+         transition: .3s ease;
+     }
+
+         .ai-floating-button:hover {
+             transform: scale(1.08);
+             box-shadow: 0 0 35px rgba(139,92,246,.85), 0 0 80px rgba(79,70,229,.35);
+         }
+
+         .ai-floating-button.active {
+             display: flex;
+         }
+
+     .ai-floating-inner {
+         text-align: center;
+         line-height: 1;
+     }
+
+     .ai-floating-symbol {
+         display: block;
+         margin-bottom: 3px;
+         font-size: 19px;
+     }
+
+     .ai-floating-text {
+         display: block;
+         font-size: 6px;
+         font-weight: 700;
+         letter-spacing: 1px;
+     }
+
+     .ai-notification-ring {
+         position: absolute;
+         inset: -6px;
+         border: 1px solid rgba(139,92,246,.4);
+         border-radius: 50%;
+         animation: ringPulse 2.5s infinite;
+     }
+
+     /* Animations */
+     @@keyframes commandFloat {
+         0%, 100% {
+             transform: translateY(0) rotate(0deg);
+         }
+
+         50% {
+             transform: translateY(-8px) rotate(4deg);
+         }
+     }
+
+     @@keyframes aiPulse {
+         0%, 100% {
+             transform: scale(1);
+             box-shadow: 0 0 18px rgba(139,92,246,.8), 0 0 40px rgba(79,70,229,.35);
+         }
+
+         50% {
+             transform: scale(1.06);
+             box-shadow: 0 0 25px rgba(139,92,246,1), 0 0 55px rgba(79,70,229,.45);
+         }
+     }
+
+     @@keyframes onlinePulse {
+         0%, 100% {
+             opacity: 1;
+         }
+
+         50% {
+             opacity: .35;
+         }
+     }
+
+     @@keyframes thinking {
+         0%, 100% {
+             opacity: .25;
+             transform: translateY(0);
+         }
+
+         50% {
+             opacity: 1;
+             transform: translateY(-3px);
+         }
+     }
+
+     @@keyframes messageAppear {
+         from {
+             opacity: 0;
+             transform: translateY(8px);
+         }
+
+         to {
+             opacity: 1;
+             transform: translateY(0);
+         }
+     }
+
+     @@keyframes ringPulse {
+         0% {
+             transform: scale(.9);
+             opacity: .8;
+         }
+
+         70% {
+             transform: scale(1.25);
+             opacity: 0;
+         }
+
+         100% {
+             opacity: 0;
+         }
+     }
+
+     /* Responsive */
+     @@media (max-width: 1200px) {
+         .stat-grid {
+             grid-template-columns: repeat(3, minmax(0, 1fr));
+         }
+
+         .quick-links {
+             grid-template-columns: repeat(2, minmax(0, 1fr));
+         }
+     }
+
+     @@media (max-width: 850px) {
+         .command-overview,
+         .dashboard-feeds {
+             grid-template-columns: 1fr;
+         }
+
+         .pipeline {
+             grid-template-columns: repeat(2, 1fr);
+         }
+
+         .pipeline-step::after {
+             display: none;
+         }
+     }
+
+     @@media (max-width: 600px) {
+         .donation-hero {
+             padding: 22px;
+             min-height: 220px;
+         }
+
+         .hero-topline {
+             margin-bottom: 22px;
+         }
+
+         .hero-brand {
+             display: none;
+         }
+
+         .stat-grid {
+             grid-template-columns: repeat(2, minmax(0, 1fr));
+             gap: 9px;
+         }
+
+         .quick-links {
+             grid-template-columns: 1fr;
+         }
+
+         .pipeline {
+             grid-template-columns: 1fr 1fr;
+         }
+
+         .elevate-ai {
+             right: 12px;
+             bottom: 12px;
+             width: calc(100vw - 24px);
+         }
+
+         .ai-floating-button {
+             right: 18px;
+             bottom: 18px;
+         }
+     }
 </style>
+
 
 @{ Html.RenderPartial("_DonationSubNav"); }
 
-<div class="donation-hero">
-    <h1><i class="fas fa-hand-holding-heart"></i> Smart Donation Management</h1>
-    <p>Welcome, @Model.PersonName &mdash; here's what's happening across the donation pipeline.</p>
-</div>
+<div class="donation-command-centre">
 
-@if (User.IsInRole("Student"))
-{
-    <div class="stat-grid">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:#4f46e5;"><i class="fas fa-hand-paper"></i></div>
-            <div class="stat-value">@Model.MyOpenRequests</div>
-            <div class="stat-label">Open Requests (waitlisted)</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background:#f59e0b;"><i class="fas fa-box-open"></i></div>
-            <div class="stat-value">@Model.MyAwaitingCollection</div>
-            <div class="stat-label">Awaiting Collection</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background:#10b981;"><i class="fas fa-gift"></i></div>
-            <div class="stat-value">@Model.MyPendingDonations</div>
-            <div class="stat-label">My Donations In Progress</div>
-        </div>
-    </div>
 
-    <div class="quick-links">
-        <a href="@Url.Action("RequestDonation", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#4f46e5;"><i class="fas fa-hand-paper"></i></div>
-            <div><div class="quick-link-title">Request an Item</div><div class="quick-link-desc">Textbooks, clothing, stationery, footwear</div></div>
-        </a>
-        <a href="@Url.Action("AddDonation", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#10b981;"><i class="fas fa-gift"></i></div>
-            <div><div class="quick-link-title">Donate an Item</div><div class="quick-link-desc">Give an item to the pool or a specific learner</div></div>
-        </a>
-        <a href="@Url.Action("MyCollections", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#f59e0b;"><i class="fas fa-box-open"></i></div>
-            <div><div class="quick-link-title">My Collections</div><div class="quick-link-desc">Matched items and your collection code</div></div>
-        </a>
-    </div>
-}
-else if (User.IsInRole("Teacher"))
-{
-    <div class="stat-grid">
-        <div class="stat-card">
-            <div class="stat-icon" style="background:#10b981;"><i class="fas fa-gift"></i></div>
-            <div class="stat-value">@Model.MyPendingDonations</div>
-            <div class="stat-label">My Donations In Progress</div>
+    <!-- =========================================================
+         EXISTING HERO
+         ========================================================= -->
+
+    <div class="donation-hero">
+
+        <div class="hero-topline">
+            <div class="hero-brand">
+                ELEVATE / DONATION OPERATIONS
+            </div>
+
+            <div class="hero-system">
+                <span class="hero-system-dot"></span>
+                SYSTEM ONLINE
+            </div>
         </div>
-    </div>
-    <div class="quick-links">
-        <a href="@Url.Action("AddDonation", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#10b981;"><i class="fas fa-gift"></i></div>
-            <div><div class="quick-link-title">Donate an Item</div><div class="quick-link-desc">Give an item to the pool or a specific learner</div></div>
-        </a>
-        <a href="@Url.Action("MyPendingDeliveries", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#4f46e5;"><i class="fas fa-truck"></i></div>
-            <div><div class="quick-link-title">My Donations</div><div class="quick-link-desc">Track approval, intake and collection</div></div>
-        </a>
-    </div>
-}
-else
-{
-    <div class="stat-grid">
-        <div class="stat-card"><div class="stat-icon" style="background:#f59e0b;"><i class="fas fa-clipboard-check"></i></div><div class="stat-value">@Model.PendingApprovals</div><div class="stat-label">Pending Approval</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:#4f46e5;"><i class="fas fa-calendar-day"></i></div><div class="stat-value">@Model.AwaitingIntakeToday</div><div class="stat-label">Intake Booked Today</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:#10b981;"><i class="fas fa-boxes"></i></div><div class="stat-value">@Model.AvailableItems</div><div class="stat-label">Available Inventory</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:#8b5cf6;"><i class="fas fa-link"></i></div><div class="stat-value">@Model.PendingMatchReview</div><div class="stat-label">Pending Match Review</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:#3b82f6;"><i class="fas fa-box-open"></i></div><div class="stat-value">@Model.AwaitingCollectionTotal</div><div class="stat-label">Awaiting Collection</div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:#ef4444;"><i class="fas fa-sort-amount-down"></i></div><div class="stat-value">@Model.WaitlistedRequests</div><div class="stat-label">Waitlisted Requests</div></div>
+
+        <div class="hero-content">
+            <h1>
+                <i class="fas fa-satellite-dish"></i>
+                Donation Command Centre
+            </h1>
+
+            <p>
+                Welcome, @Model.PersonName &mdash;
+                your real-time overview of the school's donation pipeline,
+                matching activity and learner demand.
+            </p>
+
+            <div class="hero-metrics">
+                <div class="hero-metric">
+                    <strong>@Model.AvailableItems</strong> items available
+                </div>
+
+                <div class="hero-metric">
+                    <strong>@Model.PendingMatchReview</strong> matches awaiting review
+                </div>
+
+                <div class="hero-metric">
+                    <strong>@Model.WaitlistedRequests</strong> learners on waitlist
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="quick-links">
-        <a href="@Url.Action("ApproveDonation", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#f59e0b;"><i class="fas fa-clipboard-check"></i></div>
-            <div><div class="quick-link-title">Approve Donations</div><div class="quick-link-desc">Review and schedule intake</div></div>
-        </a>
-        <a href="@Url.Action("MatchDonations", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#8b5cf6;"><i class="fas fa-link"></i></div>
-            <div><div class="quick-link-title">Review Matches</div><div class="quick-link-desc">Confirm, reassign or release proposals</div></div>
-        </a>
-        <a href="@Url.Action("ProcessCollection", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#3b82f6;"><i class="fas fa-qrcode"></i></div>
-            <div><div class="quick-link-title">Process Collection</div><div class="quick-link-desc">Dual-verification hand-over</div></div>
-        </a>
-        <a href="@Url.Action("Insights", "Donation")" class="quick-link">
-            <div class="quick-link-icon" style="background:#10b981;"><i class="fas fa-chart-pie"></i></div>
-            <div><div class="quick-link-title">View Insights</div><div class="quick-link-desc">Supply, demand and fulfilment trends</div></div>
-        </a>
-    </div>
 
-    <div class="panel">
-        <div class="panel-title"><i class="fas fa-history"></i> Recent Activity</div>
-        @if (Model.RecentActivity != null && Model.RecentActivity.Any())
-        {
-            foreach (var h in Model.RecentActivity)
-            {
-                <div class="activity-row">
-                    <div class="activity-dot"></div>
-                    <div>
-                        <div class="activity-text"><strong>@h.Action</strong> &mdash; @h.Description</div>
-                        <div class="activity-time">@h.ActionDate.ToString("dd MMM yyyy HH:mm")</div>
+    <!-- =========================================================
+         STUDENT DASHBOARD
+         ========================================================= -->
+
+    @if (User.IsInRole("Student"))
+    {
+        <div class="stat-grid">
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#4f46e5;">
+                    <i class="fas fa-hand-paper"></i>
+                </div>
+
+                <div class="stat-value">
+                    @Model.MyOpenRequests
+                </div>
+
+                <div class="stat-label">
+                    Open Requests (waitlisted)
+                </div>
+            </div>
+
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f59e0b;">
+                    <i class="fas fa-box-open"></i>
+                </div>
+
+                <div class="stat-value">
+                    @Model.MyAwaitingCollection
+                </div>
+
+                <div class="stat-label">
+                    Awaiting Collection
+                </div>
+            </div>
+
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#10b981;">
+                    <i class="fas fa-gift"></i>
+                </div>
+
+                <div class="stat-value">
+                    @Model.MyPendingDonations
+                </div>
+
+                <div class="stat-label">
+                    My Donations In Progress
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="cc-section-heading">
+            <div>
+                <h2>Command Centre</h2>
+                <p>Access the operational tools that require your attention.</p>
+            </div>
+            <span class="cc-section-badge">CONTROL PANEL</span>
+        </div>
+
+        <div class="quick-links">
+
+            <a href="@Url.Action("RequestDonation", "Donation")"
+               class="quick-link">
+
+                <div class="quick-link-icon" style="background:#4f46e5;">
+                    <i class="fas fa-hand-paper"></i>
+                </div>
+
+                <div>
+                    <div class="quick-link-title">
+                        Request an Item
+                    </div>
+
+                    <div class="quick-link-desc">
+                        Textbooks, clothing, stationery, footwear
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="empty-mini">No activity yet.</div>
-        }
+
+            </a>
+
+
+            <a href="@Url.Action("AddDonation", "Donation")"
+               class="quick-link">
+
+                <div class="quick-link-icon" style="background:#10b981;">
+                    <i class="fas fa-gift"></i>
+                </div>
+
+                <div>
+                    <div class="quick-link-title">
+                        Donate an Item
+                    </div>
+
+                    <div class="quick-link-desc">
+                        Give an item to the pool or a specific learner
+                    </div>
+                </div>
+
+            </a>
+
+
+            <a href="@Url.Action("MyCollections", "Donation")"
+               class="quick-link">
+
+                <div class="quick-link-icon" style="background:#f59e0b;">
+                    <i class="fas fa-box-open"></i>
+                </div>
+
+                <div>
+                    <div class="quick-link-title">
+                        My Collections
+                    </div>
+
+                    <div class="quick-link-desc">
+                        Matched items and your collection code
+                    </div>
+                </div>
+
+            </a>
+
+        </div>
+    }
+
+
+    <!-- =========================================================
+         TEACHER DASHBOARD
+         ========================================================= -->
+    else if (User.IsInRole("Teacher"))
+    {
+    <div class="stat-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon" style="background:#10b981;">
+                <i class="fas fa-gift"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.MyPendingDonations
+            </div>
+
+            <div class="stat-label">
+                My Donations In Progress
+            </div>
+
+        </div>
+
     </div>
-}
 
-<div class="panel">
-    <div class="panel-title"><i class="fas fa-gift"></i> Recent Donations</div>
-    @if (Model.RecentDonations != null && Model.RecentDonations.Any())
-    {
-        foreach (var d in Model.RecentDonations)
-        {
-            <div class="mini-list-item">
-                <span>@d.ItemName <span style="color:var(--gray-400,#9ca3af);">(@d.Category)</span></span>
-                <a href="@Url.Action("DonationDetails", "Donation", new { id = d.Id })" style="color:var(--primary,#4f46e5); text-decoration:none; font-weight:600;">@d.Status</a>
+
+    <div class="quick-links">
+
+        <a href="@Url.Action("AddDonation", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#10b981;">
+                <i class="fas fa-gift"></i>
             </div>
-        }
+
+            <div>
+                <div class="quick-link-title">
+                    Donate an Item
+                </div>
+
+                <div class="quick-link-desc">
+                    Give an item to the pool or a specific learner
+                </div>
+            </div>
+
+        </a>
+
+
+        <a href="@Url.Action("MyPendingDeliveries", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#4f46e5;">
+                <i class="fas fa-truck"></i>
+            </div>
+
+            <div>
+                <div class="quick-link-title">
+                    My Donations
+                </div>
+
+                <div class="quick-link-desc">
+                    Track approval, intake and collection
+                </div>
+            </div>
+
+        </a>
+
+    </div>
     }
+
+
+    <!-- =========================================================
+         ADMIN / PRINCIPAL DASHBOARD
+         ========================================================= -->
     else
     {
-        <div class="empty-mini">No donations yet.</div>
-    }
-</div>
 
-<div class="panel">
-    <div class="panel-title"><i class="fas fa-hand-paper"></i> Recent Requests</div>
-    @if (Model.RecentRequests != null && Model.RecentRequests.Any())
-    {
-        foreach (var r in Model.RecentRequests)
-        {
-            <div class="mini-list-item">
-                <span>Request #@r.Id <span style="color:var(--gray-400,#9ca3af);">(@(r.Items != null ? r.Items.Count : 0) item(s))</span></span>
-                <span style="color:var(--gray-500,#6b7280);">@r.RequestDate.ToString("dd MMM yyyy")</span>
+    <div class="stat-grid">
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f59e0b;">
+                <i class="fas fa-clipboard-check"></i>
             </div>
+
+            <div class="stat-value">
+                @Model.PendingApprovals
+            </div>
+
+            <div class="stat-label">
+                Pending Approval
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#4f46e5;">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.AwaitingIntakeToday
+            </div>
+
+            <div class="stat-label">
+                Intake Booked Today
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#10b981;">
+                <i class="fas fa-boxes"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.AvailableItems
+            </div>
+
+            <div class="stat-label">
+                Available Inventory
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#8b5cf6;">
+                <i class="fas fa-link"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.PendingMatchReview
+            </div>
+
+            <div class="stat-label">
+                Pending Match Review
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#3b82f6;">
+                <i class="fas fa-box-open"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.AwaitingCollectionTotal
+            </div>
+
+            <div class="stat-label">
+                Awaiting Collection
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#ef4444;">
+                <i class="fas fa-sort-amount-down"></i>
+            </div>
+
+            <div class="stat-value">
+                @Model.WaitlistedRequests
+            </div>
+
+            <div class="stat-label">
+                Waitlisted Requests
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         QUICK LINKS
+         ===================================================== -->
+
+    <div class="quick-links">
+
+        <a href="@Url.Action("ApproveDonation", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#f59e0b;">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+
+            <div>
+                <div class="quick-link-title">
+                    Approve Donations
+                </div>
+
+                <div class="quick-link-desc">
+                    Review and schedule intake
+                </div>
+            </div>
+
+        </a>
+
+
+        <a href="@Url.Action("MatchDonations", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#8b5cf6;">
+                <i class="fas fa-link"></i>
+            </div>
+
+            <div>
+                <div class="quick-link-title">
+                    Review Matches
+                </div>
+
+                <div class="quick-link-desc">
+                    Confirm, reassign or release proposals
+                </div>
+            </div>
+
+        </a>
+
+
+        <a href="@Url.Action("ProcessCollection", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#3b82f6;">
+                <i class="fas fa-qrcode"></i>
+            </div>
+
+            <div>
+                <div class="quick-link-title">
+                    Process Collection
+                </div>
+
+                <div class="quick-link-desc">
+                    Dual-verification hand-over
+                </div>
+            </div>
+
+        </a>
+
+
+        <a href="@Url.Action("Insights", "Donation")"
+           class="quick-link">
+
+            <div class="quick-link-icon" style="background:#10b981;">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+
+            <div>
+                <div class="quick-link-title">
+                    View Insights
+                </div>
+
+                <div class="quick-link-desc">
+                    Supply, demand and fulfilment trends
+                </div>
+            </div>
+
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         OPERATIONS OVERVIEW
+         ===================================================== -->
+
+    <div class="cc-section-heading">
+        <div>
+            <h2>Operations Overview</h2>
+            <p>A quick view of the donation pipeline and system state.</p>
+        </div>
+        <span class="cc-section-badge">LIVE MONITOR</span>
+    </div>
+
+    <div class="command-overview">
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="fas fa-project-diagram"></i>
+                Donation Pipeline
+            </div>
+
+            <div class="pipeline">
+
+                <div class="pipeline-step">
+                    <div class="pipeline-icon"><i class="fas fa-inbox"></i></div>
+                    <div class="pipeline-number">@Model.PendingApprovals</div>
+                    <div class="pipeline-label">Approval Queue</div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="pipeline-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="pipeline-number">@Model.AwaitingIntakeToday</div>
+                    <div class="pipeline-label">Today's Intake</div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="pipeline-icon"><i class="fas fa-link"></i></div>
+                    <div class="pipeline-number">@Model.PendingMatchReview</div>
+                    <div class="pipeline-label">Match Review</div>
+                </div>
+
+                <div class="pipeline-step">
+                    <div class="pipeline-icon"><i class="fas fa-box-open"></i></div>
+                    <div class="pipeline-number">@Model.AwaitingCollectionTotal</div>
+                    <div class="pipeline-label">Collection Queue</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <i class="fas fa-heartbeat"></i>
+                System Status
+            </div>
+
+            <div class="system-status">
+
+                <div class="system-status-row">
+                    <div class="system-status-name">
+                        <span class="status-light"></span>
+                        Donation Engine
+                    </div>
+                    <span class="system-status-value">OPERATIONAL</span>
+                </div>
+
+                <div class="system-status-row">
+                    <div class="system-status-name">
+                        <span class="status-light"></span>
+                        Matching Engine
+                    </div>
+                    <span class="system-status-value">OPERATIONAL</span>
+                </div>
+
+                <div class="system-status-row">
+                    <div class="system-status-name">
+                        <span class="status-light"></span>
+                        Collection Desk
+                    </div>
+                    <span class="system-status-value">READY</span>
+                </div>
+
+                <div class="system-status-row">
+                    <div class="system-status-name">
+                        <span class="status-light"></span>
+                        ELEVATE AI
+                    </div>
+                    <span class="system-status-value">ONLINE</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         RECENT ACTIVITY
+         ===================================================== -->
+
+    <div class="cc-section-heading">
+        <div>
+            <h2>Live Feeds</h2>
+            <p>Recent changes across donations and learner requests.</p>
+        </div>
+        <span class="cc-section-badge">ACTIVITY STREAM</span>
+    </div>
+
+    <div class="dashboard-feeds">
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="fas fa-history"></i>
+                Recent Activity
+            </div>
+
+
+            <div class="feed-list">
+
+                @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+                {
+                    foreach (var h in Model.RecentActivity)
+                    {
+                        <div class="activity-row">
+
+                            <div class="activity-dot"></div>
+
+                            <div>
+
+                                <div class="activity-text">
+                                    <strong>@h.Action</strong>
+                                    &mdash;
+                                    @h.Description
+                                </div>
+
+                                <div class="activity-time">
+                                    @h.ActionDate.ToString("dd MMM yyyy HH:mm")
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-mini">
+                        No activity yet.
+                    </div>
+                }
+
+            </div>
+
+        </div>
         }
-    }
-    else
+
+
+        <!-- =========================================================
+             RECENT DONATIONS
+             ========================================================= -->
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="fas fa-gift"></i>
+                Recent Donations
+            </div>
+
+
+            @if (Model.RecentDonations != null && Model.RecentDonations.Any())
+            {
+                foreach (var d in Model.RecentDonations)
+                {
+                    <div class="mini-list-item">
+
+                        <span>
+                            @d.ItemName
+
+                            <span style="color:var(--gray-400,#9ca3af);">
+                                (@d.Category)
+                            </span>
+                        </span>
+
+                        <a href="@Url.Action("DonationDetails", "Donation", new { id = d.Id })"
+                           style="color:var(--primary,#4f46e5); text-decoration:none; font-weight:600;">
+
+                            @d.Status
+
+                        </a>
+
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-mini">
+                    No donations yet.
+                </div>
+            }
+
+        </div>
+
+
+        <!-- =========================================================
+             RECENT REQUESTS
+             ========================================================= -->
+
+        <div class="panel">
+
+            <div class="panel-title">
+                <i class="fas fa-hand-paper"></i>
+                Recent Requests
+            </div>
+
+
+            @if (Model.RecentRequests != null && Model.RecentRequests.Any())
+            {
+                foreach (var r in Model.RecentRequests)
+                {
+                    <div class="mini-list-item">
+
+                        <span>
+                            Request #@r.Id
+
+                            <span style="color:var(--gray-400,#9ca3af);">
+                                (@(r.Items != null ? r.Items.Count : 0) item(s))
+                            </span>
+                        </span>
+
+                        <span style="color:var(--gray-500,#6b7280);">
+                            @r.RequestDate.ToString("dd MMM yyyy")
+                        </span>
+
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-mini">
+                    No requests yet.
+                </div>
+            }
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================================
+         ELEVATE AI
+         ADMIN / PRINCIPAL ONLY
+         ========================================================= -->
+
+    @if (isAdmin)
     {
-        <div class="empty-mini">No requests yet.</div>
+        <div id="elevateAI" class="elevate-ai">
+
+            <div class="ai-window">
+
+                <!-- HEADER -->
+
+                <div class="ai-header">
+
+                    <div class="ai-brand">
+
+                        <div class="ai-mini-orb"></div>
+
+                        <div class="ai-brand-text">
+
+                            <strong>
+                                ELEVATE AI
+                            </strong>
+
+                            <span>
+                                OPERATIONS ASSISTANT
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ai-online">
+
+                        <span class="ai-online-dot"></span>
+
+                        ONLINE
+
+                    </div>
+
+
+                    <button type="button"
+                            id="aiClose"
+                            class="ai-close"
+                            aria-label="Close assistant">
+
+                        <i class="fas fa-times"></i>
+
+                    </button>
+
+                </div>
+
+
+                <!-- BODY -->
+
+                <div class="ai-body">
+
+                    <div class="ai-greeting">
+                        Good day, @Model.PersonName.
+                    </div>
+
+
+                    <div class="ai-subtitle">
+                        I've analysed the current donation operations.
+                        Let me give you a quick briefing.
+                    </div>
+
+
+                    <div class="ai-thinking" id="aiThinking">
+
+                        <span id="aiThinkingText">
+                            ANALYSING OPERATIONS
+                        </span>
+
+                        <div class="thinking-dots">
+
+                            <span></span>
+                            <span></span>
+                            <span></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ai-message" id="aiMessage">
+
+                        <div class="ai-message-label"
+                             id="aiMessageLabel">
+
+                            ELEVATE AI
+
+                        </div>
+
+
+                        <div class="ai-message-text"
+                             id="aiMessageText">
+
+                            Connecting to the donation operations centre...
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="ai-progress">
+
+                        <div id="aiProgressBar"
+                             class="ai-progress-bar">
+                        </div>
+
+                    </div>
+
+                    <div class="ai-counter" id="aiCounter">
+                        1 / 1
+                    </div>
+
+                </div>
+
+
+                <!-- FOOTER -->
+
+                <div class="ai-footer">
+
+                    <a id="aiAction"
+                       class="ai-action"
+                       href="#">
+
+                        Open recommended action
+                        <i class="fas fa-arrow-right"></i>
+
+                    </a>
+
+
+                    <div class="ai-navigation">
+
+                        <button type="button"
+                                id="aiPrevious"
+                                class="ai-nav-button">
+
+                            <i class="fas fa-arrow-left"></i>
+                            Previous
+
+                        </button>
+
+                        <button type="button"
+                                id="aiNext"
+                                class="ai-nav-button ai-next">
+
+                            Next
+                            <i class="fas fa-arrow-right"></i>
+
+                        </button>
+
+                    </div>
+
+                    <div class="ai-footer-buttons">
+
+                        <button type="button"
+                                id="aiReplay"
+                                class="ai-replay">
+
+                            <i class="fas fa-redo"></i>
+                            Replay Briefing
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FLOATING BUTTON -->
+
+        <button type="button"
+                id="aiFloatingButton"
+                class="ai-floating-button"
+                aria-label="Open Elevate AI">
+
+            <div class="ai-notification-ring"></div>
+
+            <div class="ai-floating-inner">
+
+                <span class="ai-floating-symbol">
+                    ✦
+                </span>
+
+                <span class="ai-floating-text">
+                    ELEVATE AI
+                </span>
+
+            </div>
+
+        </button>
     }
-</div>
+
+
+    @if (isAdmin)
+    {
+        <script>
+
+    /* =========================================================
+       ELEVATE AI DATA
+       ========================================================= */
+
+    var elevateAIData = {
+
+        pendingApprovals: @Model.PendingApprovals,
+
+        intakeToday: @Model.AwaitingIntakeToday,
+
+        availableItems: @Model.AvailableItems,
+
+        pendingMatches: @Model.PendingMatchReview,
+
+        awaitingCollection: @Model.AwaitingCollectionTotal,
+
+        waitlistedRequests: @Model.WaitlistedRequests,
+
+        personName:
+            "@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.PersonName ?? "Admin"))"
+
+    };
+
+
+    /* =========================================================
+       ELEMENTS
+       ========================================================= */
+
+    var aiWindow =
+        document.getElementById("elevateAI");
+
+    var aiFloatingButton =
+        document.getElementById("aiFloatingButton");
+
+    var aiClose =
+        document.getElementById("aiClose");
+
+    var aiReplay =
+        document.getElementById("aiReplay");
+
+    var aiPrevious =
+        document.getElementById("aiPrevious");
+
+    var aiNext =
+        document.getElementById("aiNext");
+
+    var aiThinking =
+        document.getElementById("aiThinking");
+
+    var aiThinkingText =
+        document.getElementById("aiThinkingText");
+
+    var aiMessage =
+        document.getElementById("aiMessage");
+
+    var aiMessageText =
+        document.getElementById("aiMessageText");
+
+    var aiMessageLabel =
+        document.getElementById("aiMessageLabel");
+
+    var aiProgressBar =
+        document.getElementById("aiProgressBar");
+
+    var aiCounter =
+        document.getElementById("aiCounter");
+
+    var aiAction =
+        document.getElementById("aiAction");
+
+
+    if (
+        !aiWindow ||
+        !aiFloatingButton ||
+        !aiClose ||
+        !aiReplay ||
+        !aiPrevious ||
+        !aiNext ||
+        !aiThinking ||
+        !aiThinkingText ||
+        !aiMessage ||
+        !aiMessageText ||
+        !aiMessageLabel ||
+        !aiProgressBar ||
+        !aiCounter ||
+        !aiAction
+    ) {
+        console.error("ELEVATE AI: One or more assistant elements are missing.");
+    }
+    else {
+
+
+    /* =========================================================
+       STATE
+       ========================================================= */
+
+    var aiFacts = [];
+
+    var aiCurrentIndex = 0;
+
+    var aiIsThinking = false;
+
+
+    /* =========================================================
+       BUILD BRIEFING
+       ========================================================= */
+
+    function buildBriefing() {
+
+        var facts = [];
+
+
+        /* -----------------------------------------------------
+           INTRO
+           ----------------------------------------------------- */
+
+        facts.push({
+
+            type: "info",
+
+            label: "ELEVATE AI",
+
+            text:
+                "I've completed my scan of the donation operation. " +
+                "I'll take you through the current situation one item at a time.",
+
+            action: null,
+
+            url: null
+
+        });
+
+
+        /* -----------------------------------------------------
+           APPROVALS
+           ----------------------------------------------------- */
+
+        if (elevateAIData.pendingApprovals > 0) {
+
+            facts.push({
+
+                type: "attention",
+
+                label: "ATTENTION REQUIRED",
+
+                text:
+                    "You currently have " +
+                    elevateAIData.pendingApprovals +
+                    " donation" +
+                    (elevateAIData.pendingApprovals === 1 ? "" : "s") +
+                    " waiting for approval.",
+
+                action: "Review Pending Donations",
+
+                url: "@Url.Action("ApproveDonation", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "good",
+
+                label: "APPROVAL PIPELINE",
+
+                text:
+                    "There are no donations currently waiting for approval. " +
+                    "Your approval queue is clear.",
+
+                action: null,
+
+                url: null
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           INTAKE
+           ----------------------------------------------------- */
+
+        if (elevateAIData.intakeToday > 0) {
+
+            facts.push({
+
+                type: "info",
+
+                label: "TODAY'S OPERATIONS",
+
+                text:
+                    "There are " +
+                    elevateAIData.intakeToday +
+                    " intake booking" +
+                    (elevateAIData.intakeToday === 1 ? "" : "s") +
+                    " scheduled for today.",
+
+                action: "Review Donations",
+
+                url: "@Url.Action("ApproveDonation", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "good",
+
+                label: "TODAY'S OPERATIONS",
+
+                text:
+                    "There are no donation intake bookings scheduled for today.",
+
+                action: null,
+
+                url: null
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           INVENTORY
+           ----------------------------------------------------- */
+
+        if (elevateAIData.availableItems > 0) {
+
+            facts.push({
+
+                type: "info",
+
+                label: "INVENTORY STATUS",
+
+                text:
+                    "The donation pool currently has " +
+                    elevateAIData.availableItems +
+                    " available item" +
+                    (elevateAIData.availableItems === 1 ? "" : "s") +
+                    " ready for allocation.",
+
+                action: "View Insights",
+
+                url: "@Url.Action("Insights", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "attention",
+
+                label: "INVENTORY ALERT",
+
+                text:
+                    "The available donation inventory is currently empty. " +
+                    "You may want to monitor incoming donations closely.",
+
+                action: "View Insights",
+
+                url: "@Url.Action("Insights", "Donation")"
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           MATCHES
+           ----------------------------------------------------- */
+
+        if (elevateAIData.pendingMatches > 0) {
+
+            facts.push({
+
+                type: "attention",
+
+                label: "MATCH REVIEW",
+
+                text:
+                    "There are " +
+                    elevateAIData.pendingMatches +
+                    " proposed donation match" +
+                    (elevateAIData.pendingMatches === 1 ? "" : "es") +
+                    " waiting for your review.",
+
+                action: "Review Matches",
+
+                url: "@Url.Action("MatchDonations", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "good",
+
+                label: "MATCHING ENGINE",
+
+                text:
+                    "There are currently no proposed matches waiting for review.",
+
+                action: null,
+
+                url: null
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           COLLECTION
+           ----------------------------------------------------- */
+
+        if (elevateAIData.awaitingCollection > 0) {
+
+            facts.push({
+
+                type: "info",
+
+                label: "COLLECTION STATUS",
+
+                text:
+                    elevateAIData.awaitingCollection +
+                    " donation" +
+                    (elevateAIData.awaitingCollection === 1 ? "" : "s") +
+                    " are currently awaiting collection.",
+
+                action: "Process Collection",
+
+                url: "@Url.Action("ProcessCollection", "Donation")"
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           WAITLIST
+           ----------------------------------------------------- */
+
+        if (elevateAIData.waitlistedRequests > 0) {
+
+            facts.push({
+
+                type: "attention",
+
+                label: "DEMAND ALERT",
+
+                text:
+                    "There are currently " +
+                    elevateAIData.waitlistedRequests +
+                    " learner request" +
+                    (elevateAIData.waitlistedRequests === 1 ? "" : "s") +
+                    " on the waitlist.",
+
+                action: "View Insights",
+
+                url: "@Url.Action("Insights", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "good",
+
+                label: "REQUEST QUEUE",
+
+                text:
+                    "There are currently no learners waiting on the donation request queue.",
+
+                action: null,
+
+                url: null
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------------
+           RECOMMENDATION
+           ----------------------------------------------------- */
+
+        if (elevateAIData.pendingApprovals > 0) {
+
+            facts.push({
+
+                type: "recommendation",
+
+                label: "MY RECOMMENDATION",
+
+                text:
+                    "I recommend starting with the pending approvals. " +
+                    "Clearing that queue will keep the donation pipeline moving.",
+
+                action: "Open Approval Queue",
+
+                url: "@Url.Action("ApproveDonation", "Donation")"
+
+            });
+
+        }
+        else if (elevateAIData.pendingMatches > 0) {
+
+            facts.push({
+
+                type: "recommendation",
+
+                label: "MY RECOMMENDATION",
+
+                text:
+                    "Your approval queue is clear. " +
+                    "I recommend reviewing the proposed matches next.",
+
+                action: "Review Matches",
+
+                url: "@Url.Action("MatchDonations", "Donation")"
+
+            });
+
+        }
+        else if (elevateAIData.waitlistedRequests > 0) {
+
+            facts.push({
+
+                type: "recommendation",
+
+                label: "MY RECOMMENDATION",
+
+                text:
+                    "The main area needing attention is learner demand. " +
+                    "I recommend checking the donation insights and waitlist.",
+
+                action: "View Insights",
+
+                url: "@Url.Action("Insights", "Donation")"
+
+            });
+
+        }
+        else {
+
+            facts.push({
+
+                type: "recommendation",
+
+                label: "SYSTEM STATUS",
+
+                text:
+                    "The donation operation currently looks stable. " +
+                    "No immediate action is required from the dashboard.",
+
+                action: "View Insights",
+
+                url: "@Url.Action("Insights", "Donation")"
+
+            });
+
+        }
+
+
+        return facts;
+    }
+
+
+    /* =========================================================
+       SHOW MESSAGE
+       ========================================================= */
+
+    function showMessage(index, thinking) {
+
+        if (!aiFacts || aiFacts.length === 0)
+            return;
+
+
+        if (index < 0)
+            index = 0;
+
+        if (index >= aiFacts.length)
+            index = aiFacts.length - 1;
+
+
+        aiCurrentIndex = index;
+
+        var fact = aiFacts[aiCurrentIndex];
+
+
+        /* -----------------------------------------------------
+           THINKING ANIMATION
+           ----------------------------------------------------- */
+
+        if (thinking) {
+
+            aiIsThinking = true;
+
+            aiThinking.style.display = "flex";
+
+            aiThinkingText.innerHTML =
+                "PROCESSING UPDATE";
+
+            aiMessage.classList.add("transitioning");
+
+            aiNext.disabled = true;
+
+            aiPrevious.disabled = true;
+
+
+            setTimeout(function () {
+
+                renderFact(fact);
+
+            }, 650);
+
+        }
+        else {
+
+            renderFact(fact);
+
+        }
+
+    }
+
+
+    /* =========================================================
+       RENDER MESSAGE
+       ========================================================= */
+
+    function renderFact(fact) {
+
+        aiIsThinking = false;
+
+        aiThinking.style.display = "none";
+
+        aiMessage.classList.remove("transitioning");
+
+
+        /* -----------------------------------------------------
+           MESSAGE TYPE
+           ----------------------------------------------------- */
+
+        aiMessage.className =
+            "ai-message " +
+            (
+                fact.type === "attention"
+                    ? "attention"
+                    : fact.type === "good"
+                        ? "good"
+                        : fact.type === "recommendation"
+                            ? "recommendation"
+                            : "info"
+            );
+
+
+        /* -----------------------------------------------------
+           TEXT
+           ----------------------------------------------------- */
+
+        aiMessageLabel.innerHTML =
+            fact.label;
+
+        aiMessageText.classList.remove("appear");
+
+        aiMessageText.innerHTML =
+            fact.text;
+
+        void aiMessageText.offsetWidth;
+
+        aiMessageText.classList.add("appear");
+
+
+        /* -----------------------------------------------------
+           COUNTER
+           ----------------------------------------------------- */
+
+        aiCounter.innerHTML =
+            (aiCurrentIndex + 1) +
+            " / " +
+            aiFacts.length;
+
+
+        /* -----------------------------------------------------
+           PROGRESS
+           ----------------------------------------------------- */
+
+        var progress =
+            ((aiCurrentIndex + 1) / aiFacts.length) * 100;
+
+        aiProgressBar.style.width =
+            progress + "%";
+
+
+        /* -----------------------------------------------------
+           ACTION
+           ----------------------------------------------------- */
+
+        if (fact.action && fact.url) {
+
+            aiAction.style.display = "block";
+
+            aiAction.href =
+                fact.url;
+
+            aiAction.innerHTML =
+                fact.action +
+                ' <i class="fas fa-arrow-right"></i>';
+
+        }
+        else {
+
+            aiAction.style.display = "none";
+
+        }
+
+
+        /* -----------------------------------------------------
+           NAVIGATION
+           ----------------------------------------------------- */
+
+        aiPrevious.disabled =
+            aiCurrentIndex === 0;
+
+        aiNext.disabled =
+            aiCurrentIndex === aiFacts.length - 1;
+
+
+        /* -----------------------------------------------------
+           NEXT BUTTON TEXT
+           ----------------------------------------------------- */
+
+        if (aiCurrentIndex === aiFacts.length - 1) {
+
+            aiNext.innerHTML =
+                'Finish <i class="fas fa-check"></i>';
+
+        }
+        else {
+
+            aiNext.innerHTML =
+                'Next <i class="fas fa-arrow-right"></i>';
+
+        }
+
+
+        /*
+         * Re-enable navigation
+         */
+
+        aiNext.disabled =
+            aiCurrentIndex === aiFacts.length - 1;
+
+        aiPrevious.disabled =
+            aiCurrentIndex === 0;
+
+    }
+
+
+    /* =========================================================
+       START BRIEFING
+       ========================================================= */
+
+    function startBriefing() {
+
+        aiFacts =
+            buildBriefing();
+
+        aiCurrentIndex = 0;
+
+        aiFloatingButton.classList.remove("active");
+
+        aiWindow.classList.remove("hidden");
+
+        aiAction.style.display = "none";
+
+        aiProgressBar.style.width = "0%";
+
+        aiCounter.innerHTML =
+            "1 / " + aiFacts.length;
+
+
+        /*
+         * Initial AI thinking
+         */
+
+        aiThinking.style.display = "flex";
+
+        aiThinkingText.innerHTML =
+            "ANALYSING OPERATIONS";
+
+        aiMessageText.innerHTML =
+            "Scanning the donation operation...";
+
+        aiMessageLabel.innerHTML =
+            "ELEVATE AI";
+
+
+        aiPrevious.disabled = true;
+
+        aiNext.disabled = true;
+
+
+        setTimeout(function () {
+
+            showMessage(0, false);
+
+        }, 1100);
+
+    }
+
+
+    /* =========================================================
+       NEXT
+       ========================================================= */
+
+    function nextMessage() {
+
+        if (aiIsThinking)
+            return;
+
+        if (aiCurrentIndex >= aiFacts.length - 1)
+            return;
+
+        showMessage(
+            aiCurrentIndex + 1,
+            true
+        );
+
+    }
+
+
+    /* =========================================================
+       PREVIOUS
+       ========================================================= */
+
+    function previousMessage() {
+
+        if (aiIsThinking)
+            return;
+
+        if (aiCurrentIndex <= 0)
+            return;
+
+        showMessage(
+            aiCurrentIndex - 1,
+            true
+        );
+
+    }
+
+
+    /* =========================================================
+       CLOSE
+       ========================================================= */
+
+    function closeAssistant() {
+
+        aiWindow.classList.add("hidden");
+
+        aiFloatingButton.classList.add("active");
+
+    }
+
+
+    /* =========================================================
+       OPEN
+       ========================================================= */
+
+    function openAssistant() {
+
+        aiFloatingButton.classList.remove("active");
+
+        aiWindow.classList.remove("hidden");
+
+        /*
+         * If the briefing hasn't been loaded,
+         * start it.
+         */
+
+        if (!aiFacts.length) {
+
+            startBriefing();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       BUTTON EVENTS
+       ========================================================= */
+
+    aiNext.addEventListener("click", function () {
+
+        nextMessage();
+
+    });
+
+
+    aiPrevious.addEventListener("click", function () {
+
+        previousMessage();
+
+    });
+
+
+    aiClose.addEventListener("click", function () {
+
+        closeAssistant();
+
+    });
+
+
+    aiFloatingButton.addEventListener("click", function () {
+
+        openAssistant();
+
+    });
+
+
+    aiReplay.addEventListener("click", function () {
+
+        startBriefing();
+
+    });
+
+
+    /* =========================================================
+       KEYBOARD CONTROLS
+       ========================================================= */
+
+    document.addEventListener("keydown", function (event) {
+
+        /*
+         * Don't interfere with typing into inputs.
+         */
+
+        var tag =
+            document.activeElement
+                ? document.activeElement.tagName
+                : "";
+
+        if (
+            tag === "INPUT" ||
+            tag === "TEXTAREA" ||
+            tag === "SELECT"
+        ) {
+            return;
+        }
+
+
+        if (event.key === "ArrowRight") {
+
+            nextMessage();
+
+        }
+
+
+        if (event.key === "ArrowLeft") {
+
+            previousMessage();
+
+        }
+
+    });
+
+
+    /* =========================================================
+       AUTOMATIC START
+       ========================================================= */
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        setTimeout(function () {
+
+            startBriefing();
+
+        }, 900);
+
+    });
+
+    }
+
+        </script>
+    }
