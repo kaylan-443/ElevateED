@@ -781,7 +781,6 @@
     <Content Include="Views\VirtualLab\TeacherDashboard.cshtml" />
     <Content Include="Views\Donation\_DonationSubNav.cshtml" />
     <Content Include="Views\Donation\Dashboard.cshtml" />
-    <Content Include="Views\Donation\RequestDonation.cshtml" />
     <Content Include="Views\Donation\MyRequests.cshtml" />
     <Content Include="Views\Donation\AddDonation.cshtml" />
     <Content Include="Views\Donation\MyPendingDeliveries.cshtml" />
@@ -795,6 +794,7 @@
     <Content Include="Views\Donation\DonationDetails.cshtml" />
     <Content Include="Views\Donation\PriorityWaitlist.cshtml" />
     <Content Include="Views\Donation\Insights.cshtml" />
+    <Content Include="Views\Donation\RequestDonation.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

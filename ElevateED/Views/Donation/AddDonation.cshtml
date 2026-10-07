@@ -1,400 +1,1531 @@
 @using ElevateED.Models
 @{
-    ViewBag.Title = "Donate an Item";
-    Layout = (User.IsInRole("Teacher")) ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
+    ViewBag.Title = "AI Donation Assistant";
+    Layout = User.IsInRole("Teacher") ? "~/Views/Shared/_TeacherLayout.cshtml" : "~/Views/Shared/_StudentLayout.cshtml";
     ViewBag.ActivePage = "donations";
     ViewBag.ActiveTab = "donate";
-
     var categories = (List<DonationCategory>)ViewBag.Categories;
-    var students = (List<DonationStudentOption>)ViewBag.Students;
 }
-
-<style>
-    .page-header { margin-bottom: 20px; }
-    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
-    .page-header p { color: var(--gray-500, #6b7280); margin-top: 4px; font-size: 14px; }
-
-    .item-card { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px; padding: 24px; margin-bottom: 20px; border-left: 4px solid #10b981; }
-    .item-card-title { font-size: 15px; font-weight: 700; color: var(--gray-900, #111827); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-    .btn-remove-item { background: #fee2e2; color: #991b1b; border: none; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-remove-item:hover { background: #fecaca; }
-
-    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600, #4b5563); margin-bottom: 6px; }
-    .form-group select {
-        width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300, #d1d5db); border-radius: 10px; font-size: 13px; font-family: inherit; background: white;
-        -webkit-appearance: none; -moz-appearance: none; appearance: none;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0 L5 6 L10 0 Z' fill='%236b7280'/></svg>");
-        background-repeat: no-repeat; background-position: right 14px center; padding-right: 32px;
-    }
-    .form-group select:focus { outline: none; border-color: #10b981; }
-    .category-fields { display: none; }
-    .category-fields.visible { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
-
-    .allocation-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-    .alloc-option { border: 1.5px solid var(--gray-200, #e5e7eb); border-radius: 12px; padding: 14px; cursor: pointer; text-align: center; }
-    .alloc-option:hover { border-color: #10b981; }
-    .alloc-option.selected { border-color: #10b981; background: #ecfdf5; }
-    .alloc-option i { font-size: 20px; margin-bottom: 6px; display: block; color: #10b981; }
-    .alloc-option .alloc-title { font-weight: 700; font-size: 13px; color: var(--gray-800, #1f2937); }
-    .alloc-option .alloc-desc { font-size: 11px; color: var(--gray-500, #6b7280); margin-top: 2px; }
-
-    .named-search-wrap { display: none; margin-bottom: 16px; }
-    .named-search-wrap.visible { display: block; }
-
-    .photo-upload { border: 2px dashed var(--gray-300, #d1d5db); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; }
-    .photo-upload:hover { border-color: #10b981; }
-    .photo-preview { max-width: 120px; max-height: 120px; border-radius: 10px; margin-top: 10px; display: none; }
-
-    .btn-add-item { width: 100%; padding: 14px; border: 2px dashed var(--gray-300, #d1d5db); border-radius: 14px; background: var(--gray-50, #f9fafb); color: var(--gray-500, #6b7280); font-weight: 600; font-size: 13px; cursor: pointer; margin-bottom: 24px; }
-    .btn-add-item:hover { border-color: #10b981; color: #10b981; }
-
-    .submit-bar { display: flex; justify-content: flex-end; gap: 12px; }
-    .btn-submit { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 14px 32px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; }
-    .btn-cancel { background: white; border: 1px solid var(--gray-300, #d1d5db); color: var(--gray-600, #4b5563); padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; }
-    .alert-box { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; }
-    .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-</style>
 
 @{ Html.RenderPartial("_DonationSubNav"); }
 
-<div class="page-header">
-    <h1><i class="fas fa-gift" style="color: #10b981;"></i> Donate an Item</h1>
-    <p>Give an item to the general pool, or nominate a specific learner (UC02). Everything is picked from a list, nothing needs to be typed.</p>
+<style>
+    .ai-page {
+        --p: #8b5cf6;
+        --v: #635bff;
+        --c: #22d3ee;
+        --g: #34d399;
+        position: relative;
+        min-height: calc(100vh - 70px);
+        overflow: hidden;
+        padding: 34px 18px 70px;
+        color: #f8f7ff;
+        background: radial-gradient(circle at 50% -10%,rgba(99,91,255,.25),transparent 35%), radial-gradient(circle at 5% 70%,rgba(34,211,238,.08),transparent 25%), #070711
+    }
+
+        .ai-page:before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: .28;
+            background-image: linear-gradient(rgba(139,92,246,.06) 1px,transparent 1px), linear-gradient(90deg,rgba(139,92,246,.06) 1px,transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(to bottom,#000,transparent 90%);
+            pointer-events: none
+        }
+
+    .ai-glow {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        left: 50%;
+        top: -360px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: radial-gradient( circle, rgba(139,92,246,.32), rgba(34,211,238,.08) 45%, transparent 70% );
+        filter: blur(8px)
+    }
+
+    .dot {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: var(--p);
+        box-shadow: 0 0 14px var(--p);
+        animation: float 7s ease-in-out infinite
+    }
+
+    .d1 {
+        left: 12%;
+        top: 22%
+    }
+
+    .d2 {
+        left: 84%;
+        top: 18%;
+        background: var(--c);
+        box-shadow: 0 0 14px var(--c);
+        animation-delay: -2s
+    }
+
+    .d3 {
+        left: 90%;
+        top: 74%;
+        animation-delay: -4s
+    }
+
+    .d4 {
+        left: 7%;
+        top: 78%;
+        background: var(--c);
+        box-shadow: 0 0 14px var(--c);
+        animation-delay: -5s
+    }
+
+    @@keyframes float {
+        50% {
+            transform: translateY(-25px);
+            opacity: .9
+        }
+    }
+
+    .ai-shell {
+        position: relative;
+        z-index: 2;
+        width: min(860px,100%);
+        margin: auto
+    }
+
+    .ai-head {
+        text-align: center
+    }
+
+    .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 15px 8px 9px;
+        border: 1px solid rgba(139,92,246,.35);
+        border-radius: 99px;
+        background: rgba(19,17,45,.72);
+        color: #c4b5fd;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.7px
+    }
+
+    .core {
+        width: 31px;
+        height: 31px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg,var(--p),#4f46e5);
+        box-shadow: 0 0 25px rgba(139,92,246,.7);
+        position: relative
+    }
+
+        .core:after {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border: 1px solid rgba(34,211,238,.4);
+            border-radius: 50%;
+            animation: ring 2s infinite
+        }
+
+    @@keyframes ring {
+        to {
+            transform: scale(1.45);
+            opacity: 0
+        }
+    }
+
+    .ai-head h1 {
+        margin: 19px 0 6px;
+        font-size: clamp(29px,4vw,45px);
+        line-height: 1.05;
+        font-weight: 900;
+        letter-spacing: -1px;
+        background: linear-gradient( 100deg, #fff, #c4b5fd 55%, #67e8f9 );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent
+    }
+
+    .sub {
+        margin: 0;
+        color: #9290ad;
+        font-size: 13px
+    }
+
+    .online {
+        display: inline-flex;
+        gap: 7px;
+        align-items: center;
+        margin-top: 12px;
+        color: #6ee7b7;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase
+    }
+
+        .online i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--g);
+            box-shadow: 0 0 12px var(--g)
+        }
+
+    .progress {
+        display: flex;
+        justify-content: center;
+        gap: 7px;
+        margin: 23px 0
+    }
+
+        .progress i {
+            display: block;
+            width: 42px;
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(139,92,246,.16);
+            transition: .35s
+        }
+
+            .progress i.done {
+                background: var(--g)
+            }
+
+            .progress i.active {
+                background: linear-gradient( 90deg, var(--v), var(--c) );
+                box-shadow: 0 0 14px rgba(99,91,255,.7)
+            }
+
+    .ai-card {
+        position: relative;
+        min-height: 500px;
+        padding: 34px;
+        border: 1px solid rgba(139,92,246,.22);
+        border-radius: 28px;
+        background: linear-gradient( 145deg, rgba(24,22,55,.9), rgba(9,9,24,.9) );
+        box-shadow: 0 35px 90px rgba(0,0,0,.4), 0 0 55px rgba(99,91,255,.07);
+        backdrop-filter: blur(22px);
+        overflow: hidden
+    }
+
+        .ai-card:after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 1px;
+            background: linear-gradient( 90deg, transparent, var(--c), var(--p), transparent )
+        }
+
+    .meta {
+        display: flex;
+        justify-content: space-between;
+        color: #6f6d89;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        margin-bottom: 28px
+    }
+
+    .count {
+        color: #8b7cf6
+    }
+
+    .question {
+        animation: in .42s ease
+    }
+
+    .qrow {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 27px
+    }
+
+    .avatar {
+        flex: 0 0 48px;
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: linear-gradient( 135deg, var(--p), #3b82f6 );
+        box-shadow: 0 0 28px rgba(99,91,255,.3);
+        font-size: 20px
+    }
+
+    .qlabel {
+        color: #817e9d;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin: 2px 0 7px
+    }
+
+    .q {
+        margin: 0;
+        font-size: clamp(22px,3vw,31px);
+        line-height: 1.15;
+        font-weight: 850
+    }
+
+    .hint {
+        margin: 8px 0 0;
+        color: #85839f;
+        font-size: 12px
+    }
+
+    .answers {
+        margin-left: 62px
+    }
+
+    .options {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 12px
+    }
+
+    .option {
+        min-height: 75px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 15px;
+        border: 1px solid rgba(139,92,246,.18);
+        border-radius: 17px;
+        background: rgba(30,28,66,.66);
+        color: #e8e5f4;
+        cursor: pointer;
+        text-align: left;
+        transition: .22s
+    }
+
+        .option:hover {
+            transform: translateY(-2px);
+            border-color: rgba(34,211,238,.55);
+            background: rgba(41,38,83,.9)
+        }
+
+        .option.sel {
+            border-color: #8b7cf6;
+            background: linear-gradient( 145deg, rgba(109,93,252,.23), rgba(34,211,238,.07) );
+            box-shadow: 0 0 25px rgba(109,93,252,.12)
+        }
+
+    .ico {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 40px;
+        border-radius: 12px;
+        background: rgba(139,92,246,.12);
+        font-size: 19px
+    }
+
+    .option b {
+        display: block;
+        font-size: 13px
+    }
+
+    .option small {
+        display: block;
+        color: #77758f;
+        font-size: 9px;
+        margin-top: 3px
+    }
+
+    .check {
+        margin-left: auto;
+        color: #67e8f9;
+        opacity: 0
+    }
+
+    .sel .check {
+        opacity: 1
+    }
+
+    .file {
+        padding: 18px;
+        border: 1px dashed rgba(139,92,246,.32);
+        border-radius: 16px;
+        background: rgba(10,10,27,.55);
+        color: #7f7c98;
+        font-size: 11px
+    }
+
+        .file input {
+            width: 100%;
+            color: #aaa6c0
+        }
+
+    .summary {
+        padding: 18px;
+        border: 1px solid rgba(34,211,238,.18);
+        border-radius: 17px;
+        background: linear-gradient( 135deg, rgba(34,211,238,.06), rgba(139,92,246,.08) )
+    }
+
+    .sum {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(255,255,255,.05);
+        font-size: 12px
+    }
+
+        .sum:last-child {
+            border: 0
+        }
+
+        .sum span:first-child {
+            color: #77758f
+        }
+
+        .sum span:last-child {
+            text-align: right;
+            color: #eeeafc
+        }
+
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 21px;
+        border-top: 1px solid rgba(139,92,246,.1)
+    }
+
+    .btn {
+        min-height: 48px;
+        border-radius: 14px;
+        padding: 0 23px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer
+    }
+
+    .back {
+        border: 1px solid rgba(139,92,246,.17);
+        background: rgba(30,28,62,.55);
+        color: #aaa7c1
+    }
+
+    .next {
+        border: 0;
+        color: #fff;
+        min-width: 150px;
+        background: linear-gradient( 100deg, #635bff, #8b5cf6 );
+        box-shadow: 0 12px 30px rgba(109,93,252,.25)
+    }
+
+        .next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(109,93,252,.4)
+        }
+
+        .next:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none
+        }
+
+    .thinking {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(3,3,12,.78);
+        backdrop-filter: blur(16px)
+    }
+
+        .thinking.show {
+            display: flex
+        }
+
+    .thinkbox {
+        width: min(380px,calc(100% - 40px));
+        padding: 34px;
+        text-align: center;
+        border: 1px solid rgba(139,92,246,.25);
+        border-radius: 26px;
+        background: linear-gradient( 145deg, rgba(24,22,55,.98), rgba(9,9,23,.98) );
+        box-shadow: 0 30px 90px rgba(0,0,0,.55)
+    }
+
+    .thinkorb {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 19px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: radial-gradient( circle at 35% 30%, #67e8f9, #7c3aed 55%, #17132e );
+        box-shadow: 0 0 45px rgba(109,93,252,.5);
+        animation: think 1.4s infinite
+    }
+
+    .thinkbox h3 {
+        margin: 0;
+        font-size: 17px
+    }
+
+    .thinkbox p {
+        color: #77758f;
+        font-size: 11px
+    }
+
+    .dots i {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--p);
+        margin: 0 2px;
+        animation: dot 1s infinite
+    }
+
+        .dots i:nth-child(2) {
+            animation-delay: .15s
+        }
+
+        .dots i:nth-child(3) {
+            animation-delay: .3s
+        }
+
+    @@keyframes in {
+        from {
+            opacity: 0;
+            transform: translateY(15px)
+        }
+
+        to {
+            opacity: 1;
+            transform: none
+        }
+    }
+
+    @@keyframes think {
+        50% {
+            transform: scale(1.06);
+            box-shadow: 0 0 65px rgba(34,211,238,.3)
+        }
+    }
+
+    @@keyframes dot {
+        0%, 70%, 100% {
+            transform: translateY(0);
+            opacity: .3
+        }
+
+        35% {
+            transform: translateY(-6px);
+            opacity: 1
+        }
+    }
+
+    @@media(max-width:680px) {
+        .ai-page {
+            padding: 22px 12px 45px
+        }
+
+        .ai-card {
+            padding: 23px 18px;
+            border-radius: 22px
+        }
+
+        .answers {
+            margin-left: 0
+        }
+
+        .options {
+            grid-template-columns: 1fr
+        }
+
+        .qrow {
+            gap: 10px
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            flex-basis: 40px;
+            border-radius: 13px
+        }
+
+        .progress i {
+            width: 27px
+        }
+
+        .actions {
+            flex-direction: column-reverse
+        }
+
+        .btn {
+            width: 100%
+        }
+    }
+</style>
+
+<div class="ai-page">
+
+    <div class="ai-glow"></div>
+
+    <i class="dot d1"></i>
+    <i class="dot d2"></i>
+    <i class="dot d3"></i>
+    <i class="dot d4"></i>
+
+    <div class="ai-shell">
+
+        <header class="ai-head">
+
+            <div class="brand">
+                <span class="core">✦</span>
+                ELEVATE AI / DONATION ASSISTANT
+            </div>
+
+            <h1>Let's get your donation ready.</h1>
+
+            <p class="sub">
+                I'll ask only what matters and organise the details for you.
+            </p>
+
+            <div class="online">
+                <i></i>
+                Assistant online
+            </div>
+
+        </header>
+
+        <div class="progress" id="progress"></div>
+
+        <form id="donateForm"
+              method="post"
+              action="@Url.Action("AddDonation", "Donation")">
+
+            <input type="hidden"
+                   name="itemsJson"
+                   id="itemsJson" />
+
+            <div class="ai-card">
+
+                <div class="meta">
+                    <span id="label">DONATION PROFILE</span>
+                    <span class="count" id="count"></span>
+                </div>
+
+                <div id="host"></div>
+
+                <div class="actions">
+
+                    <button type="button"
+                            class="btn back"
+                            id="back">
+                        ← Back
+                    </button>
+
+                    <button type="button"
+                            class="btn next"
+                            id="next">
+                        Continue →
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert-box alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
-}
+<div class="thinking" id="thinking">
 
-<form id="donateForm" method="post" action="@Url.Action("AddDonation", "Donation")">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="itemsJson" id="itemsJson" />
-    <div id="itemsContainer"></div>
-    <button type="button" class="btn-add-item" id="btnAddItem"><i class="fas fa-plus-circle"></i> Add Another Item</button>
-    <div class="submit-bar">
-        <a href="@Url.Action("Dashboard", "Donation")" class="btn-cancel">Cancel</a>
-        <button type="submit" class="btn-submit" id="btnSubmit"><i class="fas fa-paper-plane"></i> Submit Donation</button>
+    <div class="thinkbox">
+
+        <div class="thinkorb">
+            ✦
+        </div>
+
+        <h3 id="tt">
+            Analysing your answer
+        </h3>
+
+        <p id="tx">
+            Updating your donation profile
+        </p>
+
+        <div class="dots">
+            <i></i>
+            <i></i>
+            <i></i>
+        </div>
+
     </div>
-</form>
 
-<template id="itemTemplate">
-    <div class="item-card" data-index="__INDEX__">
-        <div class="item-card-title">
-            <span><i class="fas fa-box"></i> Item #<span class="item-number">__NUM__</span></span>
-            <button type="button" class="btn-remove-item btn-remove-item-action"><i class="fas fa-trash"></i> Remove</button>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label>Category</label>
-                <select class="f-category">
-                    @foreach (var c in categories)
-                    {
-                        <option value="@c">@c</option>
-                    }
-                </select>
-            </div>
-            <div class="form-group"><label>Item Name</label><select class="f-itemname"></select></div>
-            <div class="form-group">
-                <label>Quantity</label>
-                <select class="f-quantity">
-                    @for (var q = 1; q <= 20; q++)
-                    {
-                        <option value="@q">@q</option>
-                    }
-                    <option value="25">25</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
-                    <option value="75">75</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="category-fields cf-Textbook">
-            <div class="form-group">
-                <label>Resource Type</label>
-                <select class="f-booktitle">
-                    <option value="Learner's Book">Learner's Book</option>
-                    <option value="Workbook">Workbook</option>
-                    <option value="Study Guide">Study Guide</option>
-                    <option value="Teacher's Guide">Teacher's Guide</option>
-                    <option value="Novel / Reader">Novel / Reader</option>
-                    <option value="Atlas">Atlas</option>
-                    <option value="Dictionary">Dictionary</option>
-                    <option value="Other Textbook/Resource">Other Textbook/Resource</option>
-                </select>
-            </div>
-            <div class="form-group"><label>Subject</label><select class="f-subject"></select></div>
-            <div class="form-group"><label>Grade Level</label><select class="f-gradelevel"></select></div>
-            <div class="form-group"><label>ISBN</label><select class="f-isbn"><option value="">Not specified</option></select></div>
-        </div>
-        <div class="category-fields cf-Clothing">
-            <div class="form-group"><label>Size</label><select class="f-clothingsize"></select></div>
-            <div class="form-group"><label>Type</label><select class="f-clothingtype"></select></div>
-            <div class="form-group"><label>Gender</label>
-                <select class="f-gender"><option value="">Any</option><option value="Male">Male</option><option value="Female">Female</option><option value="Unisex">Unisex</option></select>
-            </div>
-        </div>
-        <div class="category-fields cf-Footwear">
-            <div class="form-group"><label>Shoe Size</label><select class="f-clothingsize"></select></div>
-            <div class="form-group"><label>Gender</label>
-                <select class="f-gender"><option value="">Any</option><option value="Male">Male</option><option value="Female">Female</option><option value="Unisex">Unisex</option></select>
-            </div>
-        </div>
-        <div class="category-fields cf-Stationery">
-            <div class="form-group"><label>Stationery Type</label><select class="f-stationerytype"></select></div>
-            <div class="form-group">
-                <label>Brand Preference</label>
-                <select class="f-brandpreference">
-                    <option value="">No preference</option>
-                    <option value="Well-known brand preferred">Well-known brand preferred</option>
-                    <option value="Store brand or generic is fine">Store brand or generic is fine</option>
-                </select>
-            </div>
-        </div>
-        <div class="category-fields cf-Other">
-            <div class="form-group"><label>Sub-category</label><select class="f-itemsubcategory"></select></div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label>Condition</label>
-                <select class="f-condition">
-                    <option value="New">New</option>
-                    <option value="Good" selected>Good</option>
-                    <option value="Fair">Fair</option>
-                </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-                <label>Condition Notes</label>
-                <select class="f-conditionnotes">
-                    <option value="">No issues noted</option>
-                    <option value="Minor wear">Minor wear</option>
-                    <option value="Some wear and tear">Some wear and tear</option>
-                    <option value="Small stain(s)">Small stain(s)</option>
-                    <option value="Missing minor part or accessory">Missing minor part or accessory</option>
-                    <option value="Needs minor repair">Needs minor repair</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:16px;">
-            <label>Photo of the item's condition (UC02 step 4)</label>
-            <label class="photo-upload">
-                <i class="fas fa-camera" style="font-size:20px;color:var(--gray-400,#9ca3af);"></i>
-                <div style="font-size:12px;color:var(--gray-500,#6b7280);margin-top:6px;">Click to choose a photo</div>
-                <input type="file" accept="image/*" class="f-photo-input" style="display:none;" />
-            </label>
-            <img class="photo-preview" />
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-            <label>Allocation (UC02 step 5)</label>
-            <div class="allocation-choice">
-                <div class="alloc-option selected" data-alloc="OpenDonation">
-                    <i class="fas fa-globe"></i>
-                    <div class="alloc-title">Open Donation</div>
-                    <div class="alloc-desc">Joins the general matching pool</div>
-                </div>
-                <div class="alloc-option" data-alloc="NamedAllocation">
-                    <i class="fas fa-user-check"></i>
-                    <div class="alloc-title">Named Allocation</div>
-                    <div class="alloc-desc">For a specific learner</div>
-                </div>
-            </div>
-            <input type="hidden" class="f-allocationtype" value="OpenDonation" />
-
-            <div class="named-search-wrap">
-                <label>Select Learner</label>
-                <select class="f-target-student">
-                    <option value="">&mdash; Select a learner &mdash;</option>
-                    @foreach (var s in students)
-                    {
-                        <option value="@s.StudentNumber">@s.Name (@s.StudentNumber)</option>
-                    }
-                </select>
-            </div>
-        </div>
-    </div>
-</template>
+</div>
 
 <script>
-    var itemCount = 0;
+(function () {
 
-    var ITEM_NAME_OPTIONS = {
-        Textbook: ["Mathematics Textbook", "Mathematical Literacy Textbook", "English Textbook", "Afrikaans Textbook", "isiZulu Textbook", "Life Sciences Textbook", "Physical Sciences Textbook", "Natural Sciences Textbook", "Social Sciences Textbook", "History Textbook", "Geography Textbook", "Accounting Textbook", "Business Studies Textbook", "Economics Textbook", "Economic & Management Sciences Textbook", "Technology Textbook", "Information Technology Textbook", "Computer Applications Technology Textbook", "Life Orientation Textbook", "Other Textbook"],
-        Clothing: ["Blazer", "School Jersey / Jumper", "Shirt (Long Sleeve)", "Shirt (Short Sleeve)", "Trousers", "Shorts", "Skirt", "Pinafore / Dress", "Tracksuit", "PE Shirt", "PE Shorts", "Tie", "Other Clothing Item"],
-        Footwear: ["School Shoes", "Sports Shoes", "Sandals", "Boots", "Other Footwear"],
-        Stationery: ["Calculator (Scientific)", "Calculator (Basic)", "Geometry Set", "Pens (Pack)", "Pencils (Pack)", "Exercise Books", "Ruler", "Eraser", "Sharpener", "Highlighters", "School Bag / Backpack", "Pencil Case", "Colouring Pencils / Crayons", "Other Stationery"],
-        Other: ["Bag / Backpack", "Lunch Box", "Water Bottle", "Sports Equipment", "Musical Instrument", "Art Supplies", "Electronic Device", "Furniture", "Other Item"]
+    var cats = [
+        @foreach (var c in categories)
+        {
+            <text>
+            { v: "@c", t: "@c" },
+            </text>
+        }
+    ];
+
+    var s = {
+        Category: "",
+        ItemName: "",
+        BookTitle: "",
+        Subject: "",
+        GradeLevel: "",
+        ISBN: "",
+        ClothingSize: "",
+        ClothingType: "",
+        Gender: "",
+        StationeryType: "",
+        BrandPreference: "",
+        ItemSubCategory: "",
+        Quantity: "1",
+        Condition: "",
+        ConditionNotes: "",
+        PhotoEvidence: "",
+        AllocationType: "General",
+        TargetStudentNumber: ""
     };
 
-    var SUBJECT_OPTIONS = ["Mathematics", "Mathematical Literacy", "English Home Language", "English First Additional Language", "Afrikaans Home Language", "Afrikaans First Additional Language", "isiZulu", "Life Orientation", "Life Sciences", "Physical Sciences", "Natural Sciences", "Social Sciences", "History", "Geography", "Accounting", "Business Studies", "Economics", "Economic & Management Sciences", "Technology", "Information Technology", "Computer Applications Technology", "Agricultural Sciences", "Consumer Studies", "Tourism", "Dramatic Arts", "Visual Arts", "Music", "Creative Arts", "Other"];
+    var step = 0;
+    var steps = [];
 
-    var GRADE_OPTIONS = ["Grade R", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
+    var host = document.getElementById("host");
+    var next = document.getElementById("next");
+    var back = document.getElementById("back");
+    var thinking = document.getElementById("thinking");
 
-    var CLOTHING_SIZE_OPTIONS = ["Age 3-4", "Age 5-6", "Age 7-8", "Age 9-10", "Age 11-12", "Age 13-14", "Age 15-16", "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult XXL"];
+    var icon = {
+        Textbook: "📚",
+        Clothing: "👕",
+        Footwear: "👟",
+        Stationery: "✏️",
+        Other: "📦"
+    };
 
-    var CLOTHING_TYPE_OPTIONS = ["Blazer", "School Jersey / Jumper", "Shirt (Long Sleeve)", "Shirt (Short Sleeve)", "Trousers", "Shorts", "Skirt", "Pinafore / Dress", "Tracksuit", "PE Shirt", "PE Shorts", "Tie", "Other"];
+    var names = {
 
-    var SHOE_SIZE_OPTIONS = ["Size 1", "Size 2", "Size 3", "Size 4", "Size 5", "Size 6", "Size 7", "Size 8", "Size 9", "Size 10", "Size 11", "Size 12", "Size 13"];
+        Textbook: [
+            "Mathematics Textbook",
+            "English Textbook",
+            "Physical Sciences Textbook",
+            "Life Sciences Textbook",
+            "History Textbook",
+            "Geography Textbook",
+            "Agricultural Sciences Textbook",
+            "Accounting Textbook",
+            "Business Studies Textbook",
+            "IT Textbook",
+            "CAT Textbook"
+        ],
 
-    var STATIONERY_TYPE_OPTIONS = ["Calculator (Scientific)", "Calculator (Basic)", "Geometry Set", "Pens (Pack)", "Pencils (Pack)", "Exercise Books", "Ruler", "Eraser", "Sharpener", "Highlighters", "School Bag / Backpack", "Pencil Case", "Colouring Pencils / Crayons", "Other"];
+        Clothing: [
+            "School Blazer",
+            "School Jersey",
+            "School Shirt",
+            "School Trousers",
+            "School Shorts",
+            "School Skirt",
+            "Tracksuit",
+            "PE Shirt",
+            "School Tie"
+        ],
 
-    var SUBCATEGORY_OPTIONS = ["Bag / Backpack", "Lunch Box", "Water Bottle", "Sports Equipment", "Musical Instrument", "Art Supplies", "Electronic Device", "Furniture", "Other"];
+        Footwear: [
+            "School Shoes",
+            "Sports Shoes",
+            "Sandals",
+            "Boots"
+        ],
 
-    function fillSelect(select, options) {
-        select.innerHTML = '';
-        options.forEach(function (opt) {
-            var o = document.createElement('option');
-            o.value = opt;
-            o.textContent = opt;
-            select.appendChild(o);
-        });
+        Stationery: [
+            "Scientific Calculator",
+            "Basic Calculator",
+            "Geometry Set",
+            "Pens",
+            "Pencils",
+            "Exercise Books",
+            "Ruler",
+            "Eraser",
+            "Sharpener",
+            "Highlighters",
+            "School Bag",
+            "Pencil Case"
+        ],
+
+        Other: [
+            "School Bag",
+            "Lunch Box",
+            "Water Bottle",
+            "Sports Equipment",
+            "Art Supplies",
+            "Electronic Device",
+            "Furniture",
+            "School Supplies"
+        ]
+    };
+
+    var subjects = [
+        "Mathematics",
+        "Mathematical Literacy",
+        "English FAL",
+        "isiZulu HL",
+        "Life Orientation",
+        "Physical Sciences",
+        "Life Sciences",
+        "History",
+        "Geography",
+        "Agricultural Sciences",
+        "CAT",
+        "IT",
+        "Accounting",
+        "Business Studies"
+    ];
+
+    var grades = [
+        "Grade 8",
+        "Grade 9",
+        "Grade 10",
+        "Grade 11",
+        "Grade 12"
+    ];
+
+    var sizes = [
+        "XS",
+        "Small",
+        "Medium",
+        "Large",
+        "XL",
+        "XXL"
+    ];
+
+    var shoeSizes = [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12"
+    ];
+
+    var quantities = [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+    ];
+
+    function esc(x) {
+
+        return String(x == null ? "" : x)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
     }
 
-    function categoryToItemType(cat) {
-        switch (cat) {
-            case 'Textbook': return 'Book';
-            case 'Clothing': return 'Clothing';
-            case 'Footwear': return 'Clothing';
-            case 'Stationery': return 'Stationery';
-            default: return 'Other';
-        }
+    function opts(key, q, h, arr) {
+
+        return {
+
+            key: key,
+            q: q,
+            h: h,
+            auto: 1,
+
+            render: function () {
+
+                return '<div class="options">' +
+
+                    arr.map(function (o) {
+
+                        return '<button type="button" class="option" data-v="' +
+                            esc(o.v) +
+                            '">' +
+
+                            '<span class="ico">' +
+                            (o.i || "✦") +
+                            '</span>' +
+
+                            '<span>' +
+                            '<b>' +
+                            esc(o.t) +
+                            '</b>' +
+
+                            '<small>Select this option</small>' +
+
+                            '</span>' +
+
+                            '<span class="check">✓</span>' +
+
+                            '</button>';
+
+                    }).join("") +
+
+                    '</div>';
+            },
+
+            bind: function () {
+
+                document
+                    .querySelectorAll(".option")
+                    .forEach(function (b) {
+
+                        if (b.dataset.v === s[key]) {
+                            b.classList.add("sel");
+                        }
+
+                        b.onclick = function () {
+
+                            s[key] = b.dataset.v;
+
+                            document
+                                .querySelectorAll(".option")
+                                .forEach(function (x) {
+                                    x.classList.remove("sel");
+                                });
+
+                            b.classList.add("sel");
+
+                            setTimeout(go, 300);
+                        };
+                    });
+            },
+
+            read: function () {
+                return s[key];
+            }
+        };
     }
 
-    function updateCategoryFields(card) {
-        var cat = card.querySelector('.f-category').value;
-        card.querySelectorAll('.category-fields').forEach(function (p) { p.classList.remove('visible'); });
-        var match = card.querySelector('.cf-' + cat);
-        if (match) match.classList.add('visible');
+    function list(arr, ico) {
 
-        fillSelect(card.querySelector('.f-itemname'), ITEM_NAME_OPTIONS[cat] || ITEM_NAME_OPTIONS.Other);
-    }
+        return arr.map(function (x) {
 
-    function populateStaticSelects(card) {
-        var subjectEl = card.querySelector('.f-subject');
-        if (subjectEl) fillSelect(subjectEl, SUBJECT_OPTIONS);
-
-        var gradeEl = card.querySelector('.f-gradelevel');
-        if (gradeEl) fillSelect(gradeEl, GRADE_OPTIONS);
-
-        var sizeEls = card.querySelectorAll('.cf-Clothing .f-clothingsize');
-        sizeEls.forEach(function (el) { fillSelect(el, CLOTHING_SIZE_OPTIONS); });
-
-        var shoeEls = card.querySelectorAll('.cf-Footwear .f-clothingsize');
-        shoeEls.forEach(function (el) { fillSelect(el, SHOE_SIZE_OPTIONS); });
-
-        var clothingTypeEl = card.querySelector('.f-clothingtype');
-        if (clothingTypeEl) fillSelect(clothingTypeEl, CLOTHING_TYPE_OPTIONS);
-
-        var stationeryTypeEl = card.querySelector('.f-stationerytype');
-        if (stationeryTypeEl) fillSelect(stationeryTypeEl, STATIONERY_TYPE_OPTIONS);
-
-        var subcatEl = card.querySelector('.f-itemsubcategory');
-        if (subcatEl) fillSelect(subcatEl, SUBCATEGORY_OPTIONS);
-    }
-
-    function addItemCard() {
-        itemCount++;
-        var tpl = document.getElementById('itemTemplate').innerHTML;
-        tpl = tpl.replace(/__INDEX__/g, itemCount).replace(/__NUM__/g, itemCount);
-        var wrapper = document.createElement('div');
-        wrapper.innerHTML = tpl;
-        var card = wrapper.firstElementChild;
-        document.getElementById('itemsContainer').appendChild(card);
-
-        populateStaticSelects(card);
-
-        card.querySelector('.f-category').addEventListener('change', function () { updateCategoryFields(card); });
-        updateCategoryFields(card);
-
-        var photoInput = card.querySelector('.f-photo-input');
-        var photoPreview = card.querySelector('.photo-preview');
-        photoInput.addEventListener('change', function () {
-            var file = photoInput.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                photoInput.dataset.base64 = e.target.result;
-                photoPreview.src = e.target.result;
-                photoPreview.style.display = 'block';
+            return {
+                v: x,
+                t: x,
+                i: ico || "✦"
             };
-            reader.readAsDataURL(file);
-        });
 
-        card.querySelectorAll('.alloc-option').forEach(function (opt) {
-            opt.addEventListener('click', function () {
-                card.querySelectorAll('.alloc-option').forEach(function (o) { o.classList.remove('selected'); });
-                opt.classList.add('selected');
-                var alloc = opt.getAttribute('data-alloc');
-                card.querySelector('.f-allocationtype').value = alloc;
-                var wrap = card.querySelector('.named-search-wrap');
-                if (alloc === 'NamedAllocation') wrap.classList.add('visible');
-                else wrap.classList.remove('visible');
-            });
-        });
-
-        card.querySelector('.btn-remove-item-action').addEventListener('click', function () {
-            if (document.querySelectorAll('.item-card').length <= 1) { alert('You need at least one item.'); return; }
-            card.remove();
-            renumberCards();
         });
     }
 
-    function renumberCards() {
-        document.querySelectorAll('.item-card').forEach(function (card, i) { card.querySelector('.item-number').textContent = i + 1; });
-    }
+    function rebuild() {
 
-    document.getElementById('btnAddItem').addEventListener('click', addItemCard);
-    addItemCard();
+        var c = s.Category;
 
-    document.getElementById('donateForm').addEventListener('submit', function (e) {
-        var cards = document.querySelectorAll('.item-card');
-        var items = [];
-        var valid = true;
+        steps = [
 
-        cards.forEach(function (card) {
-            var category = card.querySelector('.f-category').value;
-            var itemName = card.querySelector('.f-itemname').value;
-            if (!itemName) valid = false;
+            opts(
+                "Category",
+                "What would you like to donate?",
+                "Choose the type that best describes your donation.",
+                cats.map(function (x) {
 
-            var get = function (sel) { var el = card.querySelector(sel); return el ? el.value : ''; };
-            var photoInput = card.querySelector('.f-photo-input');
+                    return {
+                        v: x.v,
+                        t: x.t,
+                        i: icon[x.v] || "📦"
+                    };
 
-            items.push({
-                Category: category,
-                ItemType: categoryToItemType(category),
-                ItemName: itemName,
-                BookTitle: get('.f-booktitle'),
-                Subject: get('.f-subject'),
-                GradeLevel: get('.f-gradelevel'),
-                ISBN: get('.f-isbn'),
-                ClothingSize: get('.f-clothingsize'),
-                ClothingType: get('.f-clothingtype'),
-                Gender: get('.f-gender'),
-                StationeryType: get('.f-stationerytype'),
-                BrandPreference: get('.f-brandpreference'),
-                ItemSubCategory: get('.f-itemsubcategory'),
-                Quantity: parseInt(get('.f-quantity') || '1', 10),
-                Condition: get('.f-condition'),
-                ConditionNotes: get('.f-conditionnotes'),
-                PhotoEvidence: photoInput.dataset.base64 || '',
-                AllocationType: get('.f-allocationtype'),
-                TargetStudentNumber: get('.f-target-student')
-            });
-        });
+                })
+            )
 
-        if (!valid || items.length === 0) {
-            e.preventDefault();
-            alert('Please give every item a name before submitting.');
-            return false;
+        ];
+
+        if (c && names[c]) {
+
+            steps.push(
+                opts(
+                    "ItemName",
+                    "What are you donating?",
+                    "Choose the item that matches your donation.",
+                    list(names[c], icon[c] || "📦")
+                )
+            );
         }
 
-        document.getElementById('itemsJson').value = JSON.stringify(items);
-    });
+        if (c === "Textbook") {
+
+            steps.push(
+                opts(
+                    "Subject",
+                    "Which subject is the textbook for?",
+                    "Choose the subject.",
+                    list(subjects, "📘")
+                )
+            );
+
+            steps.push(
+                opts(
+                    "GradeLevel",
+                    "Which grade is it for?",
+                    "Choose the grade level.",
+                    list(grades, "🎓")
+                )
+            );
+
+        }
+        else if (c === "Clothing") {
+
+            steps.push(
+                opts(
+                    "ClothingType",
+                    "What type of clothing is it?",
+                    "Choose the clothing type.",
+                    list(
+                        [
+                            "Blazer",
+                            "Jersey",
+                            "Shirt",
+                            "Trousers",
+                            "Shorts",
+                            "Skirt",
+                            "Tracksuit",
+                            "PE Shirt",
+                            "Tie"
+                        ],
+                        "👕"
+                    )
+                )
+            );
+
+            steps.push(
+                opts(
+                    "ClothingSize",
+                    "What size is it?",
+                    "Choose the closest size.",
+                    list(sizes, "📏")
+                )
+            );
+
+            steps.push(
+                opts(
+                    "Gender",
+                    "Who is it intended for?",
+                    "Choose the closest match.",
+                    [
+                        { v: "Male", t: "Male", i: "♂" },
+                        { v: "Female", t: "Female", i: "♀" },
+                        { v: "Unisex", t: "Unisex", i: "◉" }
+                    ]
+                )
+            );
+
+        }
+        else if (c === "Footwear") {
+
+            steps.push(
+                opts(
+                    "ClothingSize",
+                    "What size are the shoes?",
+                    "Choose the shoe size.",
+                    list(shoeSizes, "👟")
+                )
+            );
+
+        }
+        else if (c === "Stationery") {
+
+            steps.push(
+                opts(
+                    "StationeryType",
+                    "What stationery are you donating?",
+                    "Choose the closest item.",
+                    list(names.Stationery, "✏️")
+                )
+            );
+
+            steps.push(
+                opts(
+                    "BrandPreference",
+                    "What brand preference applies?",
+                    "Choose the closest option.",
+                    [
+                        {
+                            v: "No preference",
+                            t: "No preference",
+                            i: "◉"
+                        },
+                        {
+                            v: "Any suitable brand",
+                            t: "Any suitable brand",
+                            i: "✓"
+                        },
+                        {
+                            v: "Standard school brand",
+                            t: "Standard school brand",
+                            i: "🏫"
+                        }
+                    ]
+                )
+            );
+
+        }
+        else {
+
+            steps.push(
+                opts(
+                    "ItemSubCategory",
+                    "What kind of item is it?",
+                    "Choose the closest description.",
+                    list(names.Other, "📦")
+                )
+            );
+        }
+
+        steps.push(
+            opts(
+                "Quantity",
+                "How many are you donating?",
+                "Choose the quantity.",
+                list(quantities, "#")
+            )
+        );
+
+        steps.push(
+            opts(
+                "Condition",
+                "What condition are the items in?",
+                "Choose the condition that best describes them.",
+                [
+                    {
+                        v: "New",
+                        t: "New",
+                        i: "✨"
+                    },
+                    {
+                        v: "Like New",
+                        t: "Like New",
+                        i: "⭐"
+                    },
+                    {
+                        v: "Good",
+                        t: "Good",
+                        i: "✓"
+                    },
+                    {
+                        v: "Used",
+                        t: "Used",
+                        i: "◌"
+                    }
+                ]
+            )
+        );
+
+        steps.push(
+            opts(
+                "ConditionNotes",
+                "Anything important about the condition?",
+                "Choose the closest description.",
+                [
+                    {
+                        v: "No visible issues",
+                        t: "No visible issues",
+                        i: "✓"
+                    },
+                    {
+                        v: "Minor wear",
+                        t: "Minor wear",
+                        i: "◌"
+                    },
+                    {
+                        v: "Some writing or highlighting",
+                        t: "Writing / highlighting",
+                        i: "✎"
+                    },
+                    {
+                        v: "Missing or damaged parts",
+                        t: "Missing / damaged parts",
+                        i: "⚠"
+                    }
+                ]
+            )
+        );
+
+        steps.push(
+            opts(
+                "AllocationType",
+                "Who should receive this donation?",
+                "For now, donations are allocated school-wide so the system can match them fairly.",
+                [
+                    {
+                        v: "General",
+                        t: "School-wide",
+                        i: "🌐"
+                    }
+                ]
+            )
+        );
+
+        steps.push({
+
+            key: "PhotoEvidence",
+
+            q: "Would you like to add a photo?",
+
+            h: "Optional, but a photo can help the school review the donation faster.",
+
+            render: function () {
+
+                return `
+                    <div class="file">
+
+                        <input
+                            id="photo"
+                            type="file"
+                            accept="image/*" />
+
+                        <div style="margin-top:8px">
+                            Optional • JPG, PNG or GIF
+                        </div>
+
+                    </div>
+                `;
+            },
+
+            read: function () {
+                return s.PhotoEvidence || "ok";
+            }
+        });
+
+        steps.push({
+
+            key: "Review",
+
+            q: "Everything looks ready.",
+
+            h: "Review the donation profile before sending it.",
+
+            render: function () {
+
+                return `
+                    <div class="summary">
+
+                        ${row("Category", s.Category)}
+
+                        ${row("Item", s.ItemName)}
+
+                        ${row("Quantity", s.Quantity)}
+
+                        ${row("Condition", s.Condition)}
+
+                        ${row("Allocation", "School-wide")}
+
+                    </div>
+                `;
+            },
+
+            read: function () {
+                return "confirmed";
+            }
+        });
+    }
+
+    function row(a, b) {
+
+        return `
+            <div class="sum">
+
+                <span>${esc(a)}</span>
+
+                <span>${esc(b || "Not specified")}</span>
+
+            </div>
+        `;
+    }
+
+    function render() {
+
+        rebuild();
+
+        var x = steps[step];
+
+        document.getElementById("count").textContent =
+            String(step + 1).padStart(2, "0") +
+            " / " +
+            String(steps.length).padStart(2, "0");
+
+        var p = document.getElementById("progress");
+
+        p.innerHTML = "";
+
+        for (
+            var i = 0;
+            i < Math.min(steps.length, 10);
+            i++
+        ) {
+
+            var z = document.createElement("i");
+
+            if (i < step) {
+                z.className = "done";
+            }
+
+            if (i === step) {
+                z.className = "active";
+            }
+
+            p.appendChild(z);
+        }
+
+        host.innerHTML = `
+
+            <div class="question">
+
+                <div class="qrow">
+
+                    <div class="avatar">
+                        ✦
+                    </div>
+
+                    <div>
+
+                        <div class="qlabel">
+                            ELEVATE AI
+                        </div>
+
+                        <h2 class="q">
+                            ${x.q}
+                        </h2>
+
+                        <p class="hint">
+                            ${x.h}
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="answers">
+                    ${x.render()}
+                </div>
+
+            </div>
+        `;
+
+        if (x.bind) {
+            x.bind();
+        }
+
+        var photo = document.getElementById("photo");
+
+        if (photo) {
+
+            photo.onchange = function () {
+
+                var f = photo.files[0];
+
+                if (f) {
+
+                    var r = new FileReader();
+
+                    r.onload = function (e) {
+                        s.PhotoEvidence = e.target.result;
+                    };
+
+                    r.readAsDataURL(f);
+                }
+            };
+        }
+
+        back.style.visibility =
+            step ? "visible" : "hidden";
+
+        next.textContent =
+            x.key === "Review"
+                ? "Submit Donation ✦"
+                : "Continue →";
+
+        next.disabled =
+            !!x.auto &&
+            !s[x.key];
+    }
+
+    function think(title, text, cb) {
+
+        document.getElementById("tt").textContent =
+            title;
+
+        document.getElementById("tx").textContent =
+            text;
+
+        thinking.classList.add("show");
+
+        setTimeout(function () {
+
+            thinking.classList.remove("show");
+
+            cb();
+
+        }, 650);
+    }
+
+    function go() {
+
+        var x = steps[step];
+
+        var v = x.read();
+
+        if (x.key !== "Review" && !v) {
+            return;
+        }
+
+        s[x.key] = v;
+
+        if (step < steps.length - 1) {
+
+            think(
+                x.key === "Category"
+                    ? "Classifying your donation"
+                    : "Updating donation profile",
+
+                x.key === "Category"
+                    ? "Preparing the right questions for your item"
+                    : "Saving that information",
+
+                function () {
+
+                    step++;
+
+                    render();
+                }
+            );
+
+        }
+        else {
+
+            submit();
+        }
+    }
+
+    function submit() {
+
+        var payload = [
+
+            {
+                Category: s.Category,
+
+                ItemType:
+                    s.Category === "Textbook"
+                        ? "Book"
+                        : s.Category,
+
+                ItemName: s.ItemName,
+
+                BookTitle: s.ItemName,
+
+                Subject: s.Subject,
+
+                GradeLevel: s.GradeLevel,
+
+                ISBN: "",
+
+                ClothingSize: s.ClothingSize,
+
+                ClothingType: s.ClothingType,
+
+                Gender: s.Gender,
+
+                StationeryType: s.StationeryType,
+
+                BrandPreference: s.BrandPreference,
+
+                ItemSubCategory: s.ItemSubCategory,
+
+                Quantity:
+                    parseInt(
+                        s.Quantity || "1",
+                        10
+                    ),
+
+                Condition: s.Condition,
+
+                ConditionNotes:
+                    s.ConditionNotes,
+
+                PhotoEvidence:
+                    s.PhotoEvidence || "",
+
+                AllocationType:
+                    "General",
+
+                TargetStudentNumber:
+                    ""
+            }
+
+        ];
+
+        document.getElementById("itemsJson").value =
+            JSON.stringify(payload);
+
+        think(
+            "Donation ready",
+            "Sending your donation to ElevateED",
+            function () {
+
+                document
+                    .getElementById("donateForm")
+                    .submit();
+
+            }
+        );
+    }
+
+    next.onclick = go;
+
+    back.onclick = function () {
+
+        if (step) {
+
+            step--;
+
+            render();
+        }
+    };
+
+    render();
+
+})();
 </script>
