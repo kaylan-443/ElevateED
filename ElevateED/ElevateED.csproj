@@ -608,6 +608,7 @@
     <None Include="Properties\PublishProfiles\ElevateED20260415131603 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\ElevateED20260506233525 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\ElevateED20260806184649 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\ElevateED20261006214407 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />

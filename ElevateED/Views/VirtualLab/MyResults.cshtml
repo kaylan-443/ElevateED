@@ -15,26 +15,10 @@
         box-sizing: border-box;
     }
 
-
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         background: var(--gray-50);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     .content-area {
         padding: 32px;
@@ -242,145 +226,133 @@
     }
 </style>
 
-        <div class="content-area">
-            <div class="page-header">
-                <div>
-                    <h1><i class="fas fa-chart-line" style="color: var(--info);"></i> My Lab Results</h1>
-                    <p>View your completed virtual lab experiments and feedback</p>
-                </div>
-                <a href="@Url.Action("Index", "VirtualLab")" class="btn-primary" style="background: var(--gray-500);">
-                    <i class="fas fa-arrow-left"></i> Back to Lab
-                </a>
-            </div>
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-chart-line" style="color: var(--info);"></i> My Lab Results</h1>
+            <p>View your completed virtual lab experiments and feedback</p>
+        </div>
+        <a href="@Url.Action("Index", "VirtualLab")" class="btn-primary" style="background: var(--gray-500);">
+            <i class="fas fa-arrow-left"></i> Back to Lab
+        </a>
+    </div>
 
-            @if (!Model.Any())
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-flask"></i>
+            <h4>No Lab Results Yet</h4>
+            <p>Complete a virtual lab experiment to see your results here.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var result in Model.OrderByDescending(r => r.CompletedAt))
+        {
+            var statusClass = result.Status == "Graded" ? "graded" : "pending";
+
+            decimal? pct = null;
+            if (result.Score.HasValue)
             {
-                <div class="empty-state">
-                    <i class="fas fa-flask"></i>
-                    <h4>No Lab Results Yet</h4>
-                    <p>Complete a virtual lab experiment to see your results here.</p>
-                </div>
+                pct = (result.MaxScore.HasValue && result.MaxScore.Value > 0)
+                    ? Math.Round(result.Score.Value / result.MaxScore.Value * 100, 0)
+                    : result.Score.Value;
             }
-            else
+            var scoreClass = pct >= 70 ? "score-high" : pct >= 50 ? "score-medium" : pct.HasValue ? "score-low" : "score-pending";
+
+            JArray breakdown = null;
+            if (result.AutoGraded && !string.IsNullOrEmpty(result.TaskScoresJson))
             {
-                foreach (var result in Model.OrderByDescending(r => r.CompletedAt))
-                {
-                    var statusClass = result.Status == "Graded" ? "graded" : "pending";
+                try { breakdown = JArray.Parse(result.TaskScoresJson); } catch { breakdown = null; }
+            }
 
-                    decimal? pct = null;
-                    if (result.Score.HasValue)
-                    {
-                        pct = (result.MaxScore.HasValue && result.MaxScore.Value > 0)
-                            ? Math.Round(result.Score.Value / result.MaxScore.Value * 100, 0)
-                            : result.Score.Value;
-                    }
-                    var scoreClass = pct >= 70 ? "score-high" : pct >= 50 ? "score-medium" : pct.HasValue ? "score-low" : "score-pending";
-
-                    JArray breakdown = null;
-                    if (result.AutoGraded && !string.IsNullOrEmpty(result.TaskScoresJson))
-                    {
-                        try { breakdown = JArray.Parse(result.TaskScoresJson); } catch { breakdown = null; }
-                    }
-
-                    <div class="result-card @statusClass">
-                        <div class="result-header">
-                            <div>
-                                <h3>@result.Assignment.Experiment.Title</h3>
-                                <div class="lab-meta">
-                                    <span class="badge-lab badge-@result.Assignment.Experiment.LabType.ToString().ToLower()">@result.Assignment.Experiment.LabType Lab</span>
-                                    <span><i class="fas fa-calendar"></i> Completed: @result.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</span>
-                                    @if (result.Assignment.DueDate != null)
-                                    {
-                                        <span><i class="fas fa-hourglass-half"></i> Due: @result.Assignment.DueDate.ToString("dd MMM yyyy")</span>
-                                    }
-                                </div>
-                                @if (result.AutoGraded)
-                                {
-                                    <span class="autograde-badge"><i class="fas fa-robot"></i> Auto-graded</span>
-                                }
-                            </div>
-                            <div>
-                                <div class="score-circle @scoreClass">
-                                    @if (pct.HasValue)
-                                    {
-                                        @($"{pct.Value}%")
-                                    }
-                                    else
-                                    {
-                                        <text>Pending</text>
-                                    }
-                                </div>
-                                @if (result.Score.HasValue && result.MaxScore.HasValue && result.MaxScore.Value > 0)
-                                {
-                                    <div class="score-fraction">@result.Score.Value.ToString("0.##") / @result.MaxScore.Value.ToString("0.##")</div>
-                                }
-                            </div>
+            <div class="result-card @statusClass">
+                <div class="result-header">
+                    <div>
+                        <h3>@result.Assignment.Experiment.Title</h3>
+                        <div class="lab-meta">
+                            <span class="badge-lab badge-@(result.Assignment.Experiment.LabType.ToString().ToLower())">@result.Assignment.Experiment.LabType Lab</span>
+                            <span><i class="fas fa-calendar"></i> Completed: @(result.CompletedAt?.ToString("dd MMM yyyy, HH:mm"))</span>
+                            @if (result.Assignment.DueDate != null)
+                            {
+                                <span><i class="fas fa-hourglass-half"></i> Due: @result.Assignment.DueDate.ToString("dd MMM yyyy")</span>
+                            }
                         </div>
-
-                        @if (breakdown != null && breakdown.Count > 0)
+                        @if (result.AutoGraded)
                         {
-                            <div class="task-breakdown">
-                                <strong><i class="fas fa-list-check"></i> Task Breakdown:</strong>
-                                @foreach (var task in breakdown)
-                                {
-                                    var done = task["completed"] != null && task["completed"].Value<bool>();
-                                    <div class="task-breakdown-row">
-                                        <span>@task["label"]?.ToString()</span>
-                                        <span class="@(done ? "task-status-done" : "task-status-missed")">
-                                            <i class="fas fa-@(done ? "check-circle" : "times-circle")"></i>
-                                            @(done ? task["maxMarks"] + " / " + task["maxMarks"] : "0 / " + task["maxMarks"])
-                                        </span>
-                                    </div>
-                                }
-                            </div>
+                            <span class="autograde-badge"><i class="fas fa-robot"></i> Auto-graded</span>
                         }
-
-                        @if (!string.IsNullOrEmpty(result.Observations))
+                    </div>
+                    <div>
+                        <div class="score-circle @scoreClass">
+                            @if (pct.HasValue)
+                            {
+                                @($"{pct.Value}%")
+                            }
+                            else
+                            {
+                                <text>Pending</text>
+                            }
+                        </div>
+                        @if (result.Score.HasValue && result.MaxScore.HasValue && result.MaxScore.Value > 0)
                         {
-                            <div style="margin-top: 15px; padding: 12px; background: var(--gray-50); border-radius: 10px;">
-                                <strong><i class="fas fa-eye"></i> Your Observations:</strong>
-                                <p style="margin: 8px 0 0 0;">@result.Observations</p>
-                            </div>
+                            <div class="score-fraction">@result.Score.Value.ToString("0.##") / @result.MaxScore.Value.ToString("0.##")</div>
                         }
+                    </div>
+                </div>
 
-                        @if (!string.IsNullOrEmpty(result.Conclusions))
+                @if (breakdown != null && breakdown.Count > 0)
+                {
+                    <div class="task-breakdown">
+                        <strong><i class="fas fa-list-check"></i> Task Breakdown:</strong>
+                        @foreach (var task in breakdown)
                         {
-                            <div style="margin-top: 15px; padding: 12px; background: var(--gray-50); border-radius: 10px;">
-                                <strong><i class="fas fa-lightbulb"></i> Your Conclusions:</strong>
-                                <p style="margin: 8px 0 0 0;">@result.Conclusions</p>
-                            </div>
-                        }
+                            var done = task["completed"] != null && task["completed"].Value<bool>();
+                            var max = task["maxMarks"] != null ? task["maxMarks"].Value<decimal>() : 0;
+                            var earned = task["earnedMarks"] != null ? task["earnedMarks"].Value<decimal>() : (done ? max : 0);
 
-                        @if (!string.IsNullOrEmpty(result.TeacherFeedback))
-                        {
-                            <div class="feedback-box">
-                                <strong><i class="fas fa-chalkboard-teacher"></i> Teacher Feedback:</strong>
-                                <p style="margin: 8px 0 0 0;">@result.TeacherFeedback</p>
-                            </div>
-                        }
-
-                        @if (result.GradedAt.HasValue)
-                        {
-                            <div style="margin-top: 10px; font-size: 12px; color: var(--gray-500);">
-                                <i class="fas fa-clock"></i> Graded on: @result.GradedAt.Value.ToString("dd MMM yyyy, HH:mm")
+                            <div class="task-breakdown-row">
+                                <span>@(task["label"]?.ToString())</span>
+                                <span class="@(done ? "task-status-done" : "task-status-missed")">
+                                    <i class="fas fa-@(done ? "check-circle" : "times-circle")"></i>
+                                    @(done ? $"{earned:0.##} / {max:0.##}" : $"0 / {max:0.##}")
+                                </span>
                             </div>
                         }
                     </div>
                 }
-            }
-        </div>
 
-<script>
-    function toggleDropdown() {
-        var dropdown = document.getElementById('profileDropdown');
-        if (dropdown) dropdown.classList.toggle('show');
-    }
+                @if (!string.IsNullOrEmpty(result.Observations))
+                {
+                    <div style="margin-top: 15px; padding: 12px; background: var(--gray-50); border-radius: 10px;">
+                        <strong><i class="fas fa-eye"></i> Your Observations:</strong>
+                        <p style="margin: 8px 0 0 0;">@result.Observations</p>
+                    </div>
+                }
 
-    document.addEventListener('click', function (e) {
-        var container = document.querySelector('.profile-container');
-        var dropdown = document.getElementById('profileDropdown');
-        if (container && dropdown && !container.contains(e.target)) {
-            dropdown.classList.remove('show');
+                @if (!string.IsNullOrEmpty(result.Conclusions))
+                {
+                    <div style="margin-top: 15px; padding: 12px; background: var(--gray-50); border-radius: 10px;">
+                        <strong><i class="fas fa-lightbulb"></i> Your Conclusions:</strong>
+                        <p style="margin: 8px 0 0 0;">@result.Conclusions</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(result.TeacherFeedback))
+                {
+                    <div class="feedback-box">
+                        <strong><i class="fas fa-chalkboard-teacher"></i> Teacher Feedback:</strong>
+                        <p style="margin: 8px 0 0 0;">@result.TeacherFeedback</p>
+                    </div>
+                }
+
+                @if (result.GradedAt.HasValue)
+                {
+                    <div style="margin-top: 10px; font-size: 12px; color: var(--gray-500);">
+                        <i class="fas fa-clock"></i> Graded on: @result.GradedAt.Value.ToString("dd MMM yyyy, HH:mm")
+                    </div>
+                }
+            </div>
         }
-    });
-</script>
+    }
+</div>

@@ -454,10 +454,10 @@
             text-align: center;
         }
 
-        .task-modal-row .task-marks-input:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
-        }
+            .task-modal-row .task-marks-input:disabled {
+                background: #f1f5f9;
+                color: #94a3b8;
+            }
 </style>
 
 @Html.AntiForgeryToken()
@@ -505,9 +505,9 @@
                     @sub.Assignment.Experiment.Title
                 </div>
                 <div class="lab-meta">
-                    <span class="badge-lab badge-@sub.Assignment.Experiment.LabType.ToString().ToLower()">@sub.Assignment.Experiment.LabType Lab</span>
-                    <span><i class="fas fa-user"></i> Student: @sub.Student?.FullName</span>
-                    <span><i class="fas fa-calendar-check"></i> Submitted: @sub.CompletedAt?.ToString("dd MMM yyyy, HH:mm")</span>
+                    <span class="badge-lab badge-@(sub.Assignment.Experiment.LabType.ToString().ToLower())">@sub.Assignment.Experiment.LabType Lab</span>
+                    <span><i class="fas fa-user"></i> Student: @(sub.Student?.FullName)</span>
+                    <span><i class="fas fa-calendar-check"></i> Submitted: @(sub.CompletedAt?.ToString("dd MMM yyyy, HH:mm"))</span>
                     @if (needsGrading)
                     {
                         <span class="badge-lab" style="background:#f59e0b;color:white;">Awaiting Grading</span>
@@ -544,7 +544,7 @@
                     <i class="fas fa-flask" style="color: #10b981;"></i> @assignment.Experiment.Title
                 </div>
                 <div class="assignment-meta">
-                    <span><i class="fas fa-users"></i> Class: @assignment.Class?.FullName</span>
+                    <span><i class="fas fa-users"></i> Class: @(assignment.Class?.FullName)</span>
                     <span><i class="far fa-calendar-alt"></i> Assigned: @assignment.AssignedAt.ToString("dd MMM yyyy")</span>
                     <span><i class="fas fa-hourglass-half"></i> Due: @assignment.DueDate.ToString("dd MMM yyyy")</span>
                 </div>
@@ -588,7 +588,7 @@
                     @exp.Title
                 </div>
                 <div class="lab-meta">
-                    <span class="badge-lab badge-@exp.LabType.ToString().ToLower()">@exp.LabType Lab</span>
+                    <span class="badge-lab badge-@(exp.LabType.ToString().ToLower())">@exp.LabType Lab</span>
                     <span class="badge-lab badge-difficulty">@exp.Difficulty</span>
                     <span><i class="fas fa-star"></i> Grade @exp.GradeLevel</span>
                     <span><i class="fas fa-clock"></i> @exp.DurationMinutes mins</span>
@@ -599,7 +599,11 @@
                     <a href="@Url.Action("GradeSubmissions", "VirtualLab", new { experimentId = exp.Id })" class="btn-launch btn-warning-custom">
                         <i class="fas fa-graduation-cap"></i> Grade Submissions
                     </a>
-                    <button type="button" class="btn-launch btn-outline-custom" onclick="openTaskModal(@exp.Id, '@exp.LabType', '@Html.Raw(HttpUtility.JavaScriptStringEncode(exp.Title))')">
+                    <button type="button"
+                            class="btn-launch btn-outline-custom edit-tasks-btn"
+                            data-experiment-id="@exp.Id"
+                            data-lab-type="@exp.LabType"
+                            data-title="@exp.Title">
                         <i class="fas fa-list-check"></i> Edit Graded Tasks
                     </button>
                 </div>
@@ -633,56 +637,90 @@
 
 <script>
     // Simple dropdown toggle function if needed
-    function toggleDropdown() {
-        var dropdown = document.getElementById('profileDropdown');
+    function toggleDropdown(): void {
+        const dropdown = document.getElementById('profileDropdown');
         if (dropdown) dropdown.classList.toggle('show');
     }
 
-    document.addEventListener('click', function (e) {
-        var container = document.querySelector('.profile-container');
-        var dropdown = document.getElementById('profileDropdown');
-        if (container && dropdown && !container.contains(e.target)) {
+    document.addEventListener('click', function (e: MouseEvent): void {
+        const container = document.querySelector('.profile-container');
+        const dropdown = document.getElementById('profileDropdown');
+        if (container && dropdown && e.target instanceof Node && !container.contains(e.target)) {
             dropdown.classList.remove('show');
         }
     });
 
     // ---------- Edit Graded Tasks modal ----------
-    var currentTaskModalExperimentId = null;
+    interface TaskItem {
+        key: string;
+        label: string;
+        selected: boolean;
+        maxMarks: number;
+    }
 
-    function getAntiForgeryHeaders() {
-        var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        var headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' };
+    interface TaskPick {
+        key: string;
+        label: string;
+        maxMarks: number;
+    }
+
+    interface TasksResponse {
+        success: boolean;
+        message?: string;
+        tasks: TaskItem[];
+    }
+
+    interface SaveResponse {
+        success: boolean;
+        message?: string;
+    }
+
+    let currentTaskModalExperimentId: number | null = null;
+
+    function getAntiForgeryHeaders(): Record<string, string> {
+        const tokenInput = document.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]');
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
         if (tokenInput) {
             headers['RequestVerificationToken'] = tokenInput.value;
         }
         return headers;
     }
 
-    function openTaskModal(experimentId, labType, title) {
+    function openTaskModal(experimentId: number, labType: string, title: string): void {
         currentTaskModalExperimentId = experimentId;
-        document.getElementById('taskModalTitle').textContent = 'Edit Graded Tasks - ' + title;
-        document.getElementById('taskModalList').innerHTML = '<p style="color:#94a3b8;">Loading...</p>';
-        document.getElementById('taskModalOverlay').classList.add('show');
+
+        const titleEl = document.getElementById('taskModalTitle');
+        const listEl = document.getElementById('taskModalList');
+        const overlayEl = document.getElementById('taskModalOverlay');
+
+        if (titleEl) titleEl.textContent = 'Edit Graded Tasks - ' + title;
+        if (listEl) listEl.innerHTML = '<p style="color:#94a3b8;">Loading...</p>';
+        if (overlayEl) overlayEl.classList.add('show');
 
         fetch('@Url.Action("GetExperimentTasks", "VirtualLab")?experimentId=' + experimentId, {
             method: 'GET',
             credentials: 'same-origin'
         })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
+            .then(function (r): Promise<TasksResponse> { return r.json(); })
+            .then(function (data: TasksResponse): void {
                 if (!data.success) {
-                    document.getElementById('taskModalList').innerHTML = '<p style="color:#ef4444;">' + (data.message || 'Could not load tasks.') + '</p>';
+                    if (listEl) listEl.innerHTML = '<p style="color:#ef4444;">' + (data.message || 'Could not load tasks.') + '</p>';
                     return;
                 }
                 renderTaskModalList(data.tasks);
             })
-            .catch(function () {
-                document.getElementById('taskModalList').innerHTML = '<p style="color:#ef4444;">Network error loading tasks.</p>';
+            .catch(function (): void {
+                if (listEl) listEl.innerHTML = '<p style="color:#ef4444;">Network error loading tasks.</p>';
             });
     }
 
-    function renderTaskModalList(tasks) {
-        var list = document.getElementById('taskModalList');
+    function renderTaskModalList(tasks: TaskItem[]): void {
+        const list = document.getElementById('taskModalList');
+        if (!list) return;
+
         list.innerHTML = '';
 
         if (!tasks || !tasks.length) {
@@ -690,32 +728,32 @@
             return;
         }
 
-        tasks.forEach(function (task) {
-            var row = document.createElement('div');
+        tasks.forEach(function (task: TaskItem): void {
+            const row = document.createElement('div');
             row.className = 'task-modal-row' + (task.selected ? ' selected' : '');
             row.setAttribute('data-key', task.key);
             row.setAttribute('data-label', task.label);
 
-            var checkboxId = 'modalTaskChk_' + task.key;
+            const checkboxId = 'modalTaskChk_' + task.key;
 
-            var checkbox = document.createElement('input');
+            const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = checkboxId;
             checkbox.checked = !!task.selected;
 
-            var label = document.createElement('label');
+            const label = document.createElement('label');
             label.setAttribute('for', checkboxId);
             label.textContent = task.label;
 
-            var marksInput = document.createElement('input');
+            const marksInput = document.createElement('input');
             marksInput.type = 'number';
             marksInput.className = 'task-marks-input';
             marksInput.min = '1';
             marksInput.max = '100';
-            marksInput.value = task.maxMarks && task.maxMarks > 0 ? task.maxMarks : 10;
+            marksInput.value = String(task.maxMarks && task.maxMarks > 0 ? task.maxMarks : 10);
             marksInput.disabled = !task.selected;
 
-            checkbox.addEventListener('change', function () {
+            checkbox.addEventListener('change', function (): void {
                 marksInput.disabled = !checkbox.checked;
                 row.classList.toggle('selected', checkbox.checked);
             });
@@ -727,31 +765,36 @@
         });
     }
 
-    function closeTaskModal() {
-        document.getElementById('taskModalOverlay').classList.remove('show');
+    function closeTaskModal(): void {
+        const overlayEl = document.getElementById('taskModalOverlay');
+        if (overlayEl) overlayEl.classList.remove('show');
         currentTaskModalExperimentId = null;
     }
 
-    function saveTaskModal() {
-        if (!currentTaskModalExperimentId) return;
+    function saveTaskModal(): void {
+        if (currentTaskModalExperimentId === null) return;
 
-        var picks = [];
-        document.querySelectorAll('#taskModalList .task-modal-row').forEach(function (row) {
-            var checkbox = row.querySelector('input[type="checkbox"]');
-            var marksInput = row.querySelector('.task-marks-input');
-            if (checkbox && checkbox.checked) {
-                var marks = parseFloat(marksInput.value);
+        const picks: TaskPick[] = [];
+        const rows = document.querySelectorAll<HTMLDivElement>('#taskModalList .task-modal-row');
+
+        rows.forEach(function (row: HTMLDivElement): void {
+            const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
+            const marksInput = row.querySelector<HTMLInputElement>('.task-marks-input');
+
+            if (checkbox && checkbox.checked && marksInput) {
+                const marks = parseFloat(marksInput.value);
                 if (!isNaN(marks) && marks > 0) {
                     picks.push({
-                        key: row.getAttribute('data-key'),
-                        label: row.getAttribute('data-label'),
+                        key: row.getAttribute('data-key') || '',
+                        label: row.getAttribute('data-label') || '',
                         maxMarks: marks
                     });
                 }
             }
         });
 
-        var body = 'experimentId=' + encodeURIComponent(currentTaskModalExperimentId) +
+        const body =
+            'experimentId=' + encodeURIComponent(String(currentTaskModalExperimentId)) +
             '&tasksJson=' + encodeURIComponent(JSON.stringify(picks));
 
         fetch('@Url.Action("SaveExperimentTasks", "VirtualLab")', {
@@ -760,16 +803,26 @@
             headers: getAntiForgeryHeaders(),
             body: body
         })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
+            .then(function (r): Promise<SaveResponse> { return r.json(); })
+            .then(function (data: SaveResponse): void {
                 if (data.success) {
                     closeTaskModal();
                 } else {
                     alert(data.message || 'Could not save tasks.');
                 }
             })
-            .catch(function () {
+            .catch(function (): void {
                 alert('Network error saving tasks.');
             });
     }
+
+    // ---------- Wire up Edit Graded Tasks buttons ----------
+    document.querySelectorAll<HTMLButtonElement>('.edit-tasks-btn').forEach(function (btn: HTMLButtonElement): void {
+        btn.addEventListener('click', function (this: HTMLButtonElement): void {
+            const id = parseInt(this.getAttribute('data-experiment-id') || '0', 10);
+            const labType = this.getAttribute('data-lab-type') || '';
+            const title = this.getAttribute('data-title') || '';
+            openTaskModal(id, labType, title);
+        });
+    });
 </script>

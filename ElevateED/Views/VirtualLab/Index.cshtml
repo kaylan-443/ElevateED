@@ -14,26 +14,10 @@
         box-sizing: border-box;
     }
 
-
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         background: var(--gray-50);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     .content-area {
         padding: 32px;
@@ -239,150 +223,135 @@
     }
 </style>
 
-        <div class="content-area">
-            <div class="page-header">
-                <div>
-                    <h1><i class="fas fa-vr-cardboard" style="color: var(--purple);"></i> Virtual Science Lab</h1>
-                    <p style="color: var(--gray-500);">Interactive 3D experiments using WebXR technology</p>
-                </div>
-                <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-primary">
-                    <i class="fas fa-chart-line"></i> My Results
-                </a>
-            </div>
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-vr-cardboard" style="color: var(--purple);"></i> Virtual Science Lab</h1>
+            <p style="color: var(--gray-500);">Interactive 3D experiments using WebXR technology</p>
+        </div>
+        <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-primary">
+            <i class="fas fa-chart-line"></i> My Results
+        </a>
+    </div>
 
-            <div class="info-banner" style="background: linear-gradient(135deg, var(--purple), #7c3aed); color: white; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
-                <h3><i class="fas fa-info-circle"></i> Welcome to the Virtual Lab, @Model.StudentName!</h3>
-                <p>Grade: @Model.Grade | Class: @Model.ClassName</p>
-                <div class="allowed-labs">
-                    <strong>Available Labs:</strong>
-                    @foreach (var lab in Model.AllowedLabTypes)
-                    {
-                        <span class="lab-tag lab-tag-@lab.ToString().ToLower()">
-                            @lab Lab
-                        </span>
-                    }
-                </div>
-            </div>
-
-            <!-- Assigned Experiments -->
-            @if (Model.AssignedExperiments.Any())
+    <div class="info-banner" style="background: linear-gradient(135deg, var(--purple), #7c3aed); color: white; padding: 20px; border-radius: 16px; margin-bottom: 24px;">
+        <h3><i class="fas fa-info-circle"></i> Welcome to the Virtual Lab, @Model.StudentName!</h3>
+        <p>Grade: @Model.Grade | Class: @Model.ClassName</p>
+        <div class="allowed-labs">
+            <strong>Available Labs:</strong>
+            @foreach (var lab in Model.AllowedLabTypes)
             {
-                <h3 class="section-title">
-                    <i class="fas fa-tasks"></i> Assigned Experiments
-                </h3>
-                foreach (var lab in Model.AssignedExperiments)
-                {
-                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
-                        <div class="lab-title">@lab.Title</div>
-                        <div class="lab-meta">
-                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
-                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
-                            <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
-                            <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
-                        </div>
-                        <p>@lab.Description</p>
-                        <button class="btn-launch"><i class="fas fa-play"></i> Launch Experiment</button>
-                    </div>
-                }
-            }
-
-            <!-- In Progress Experiments -->
-            @if (Model.InProgressExperiments.Any())
-            {
-                <h3 class="section-title">
-                    <i class="fas fa-spinner"></i> In Progress
-                </h3>
-                foreach (var lab in Model.InProgressExperiments)
-                {
-                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
-                        <div class="lab-title">@lab.Title <span style="font-size: 12px; color: var(--warning);">(Resume)</span></div>
-                        <div class="lab-meta">
-                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
-                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
-                            <span><i class="fas fa-hourglass-half"></i> In Progress</span>
-                        </div>
-                        <p>@lab.Description</p>
-                        <button class="btn-launch"><i class="fas fa-play-circle"></i> Resume Lab</button>
-                    </div>
-                }
-            }
-
-            <!-- Available Experiments -->
-            @if (Model.AvailableExperiments.Any())
-            {
-                <h3 class="section-title">
-                    <i class="fas fa-flask"></i> Available Experiments
-                </h3>
-                foreach (var lab in Model.AvailableExperiments)
-                {
-                    <div class="lab-card @lab.LabType.ToString().ToLower()" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
-                        <div class="lab-title">@lab.Title</div>
-                        <div class="lab-meta">
-                            <span class="badge-lab badge-@lab.LabType.ToString().ToLower()">@lab.LabType Lab</span>
-                            <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
-                            <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
-                            <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
-                        </div>
-                        <p>@lab.Description</p>
-                        <button class="btn-launch"><i class="fas fa-flask"></i> Start Experiment</button>
-                    </div>
-                }
-            }
-
-            <!-- Completed Experiments -->
-            @if (Model.CompletedExperiments.Any())
-            {
-                <h3 class="section-title">
-                    <i class="fas fa-check-circle"></i> Completed
-                </h3>
-                foreach (var result in Model.CompletedExperiments)
-                {
-                    var scoreClass = result.Score >= 70 ? "score-high" : result.Score >= 50 ? "score-medium" : result.Score.HasValue ? "score-low" : "score-pending";
-                    <div class="lab-card @result.Assignment.Experiment.LabType.ToString().ToLower()" style="opacity: 0.8;">
-                        <div class="lab-title">@result.Assignment.Experiment.Title</div>
-                        <div class="lab-meta">
-                            <span class="badge-lab badge-@result.Assignment.Experiment.LabType.ToString().ToLower()">@result.Assignment.Experiment.LabType Lab</span>
-                            <span class="score-badge @scoreClass">
-                                @if (result.Score.HasValue)
-                                {
-                                    <text>Score: @result.Score.Value%</text>
-                                }
-                                else
-                                {
-                                    <text>Pending Review</text>
-                                }
-                            </span>
-                            <span><i class="fas fa-calendar"></i> @result.CompletedAt?.ToString("dd MMM yyyy")</span>
-                        </div>
-                        <p>@result.Assignment.Experiment.Description</p>
-                        <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-launch" style="background: var(--info); text-decoration: none; display: inline-block;">
-                            <i class="fas fa-chart-line"></i> View Results
-                        </a>
-                    </div>
-                }
-            }
-
-            @if (!Model.AssignedExperiments.Any() && !Model.InProgressExperiments.Any() && !Model.AvailableExperiments.Any() && !Model.CompletedExperiments.Any())
-            {
-                <div class="empty-state">
-                    <i class="fas fa-vr-cardboard"></i>
-                    <h4>No Experiments Available</h4>
-                    <p>Check back later for virtual lab experiments.</p>
-                </div>
+                <span class="lab-tag lab-tag-@(lab.ToString().ToLower())">
+                    @lab Lab
+                </span>
             }
         </div>
+    </div>
 
-<script>
-    function toggleDropdown() {
-        var dropdown = document.getElementById('profileDropdown');
-        if (dropdown) dropdown.classList.toggle('show');
+    <!-- Assigned Experiments -->
+    @if (Model.AssignedExperiments.Any())
+    {
+        <h3 class="section-title">
+            <i class="fas fa-tasks"></i> Assigned Experiments
+        </h3>
+        foreach (var lab in Model.AssignedExperiments)
+        {
+            <div class="lab-card @(lab.LabType.ToString().ToLower())" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                <div class="lab-title">@lab.Title</div>
+                <div class="lab-meta">
+                    <span class="badge-lab badge-@(lab.LabType.ToString().ToLower())">@lab.LabType Lab</span>
+                    <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                    <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
+                    <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
+                </div>
+                <p>@lab.Description</p>
+                <button class="btn-launch"><i class="fas fa-play"></i> Launch Experiment</button>
+            </div>
+        }
     }
 
-    document.addEventListener('click', function (e) {
-        var container = document.querySelector('.profile-container');
-        var dropdown = document.getElementById('profileDropdown');
-        if (container && dropdown && !container.contains(e.target)) {
-            dropdown.classList.remove('show');
+    <!-- In Progress Experiments -->
+    @if (Model.InProgressExperiments.Any())
+    {
+        <h3 class="section-title">
+            <i class="fas fa-spinner"></i> In Progress
+        </h3>
+        foreach (var lab in Model.InProgressExperiments)
+        {
+            <div class="lab-card @(lab.LabType.ToString().ToLower())" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                <div class="lab-title">@lab.Title <span style="font-size: 12px; color: var(--warning);">(Resume)</span></div>
+                <div class="lab-meta">
+                    <span class="badge-lab badge-@(lab.LabType.ToString().ToLower())">@lab.LabType Lab</span>
+                    <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                    <span><i class="fas fa-hourglass-half"></i> In Progress</span>
+                </div>
+                <p>@lab.Description</p>
+                <button class="btn-launch"><i class="fas fa-play-circle"></i> Resume Lab</button>
+            </div>
         }
-    });
-</script>
+    }
+
+    <!-- Available Experiments -->
+    @if (Model.AvailableExperiments.Any())
+    {
+        <h3 class="section-title">
+            <i class="fas fa-flask"></i> Available Experiments
+        </h3>
+        foreach (var lab in Model.AvailableExperiments)
+        {
+            <div class="lab-card @(lab.LabType.ToString().ToLower())" onclick="location.href='@Url.Action("LaunchLab", "VirtualLab", new { experimentId = lab.Id })'">
+                <div class="lab-title">@lab.Title</div>
+                <div class="lab-meta">
+                    <span class="badge-lab badge-@(lab.LabType.ToString().ToLower())">@lab.LabType Lab</span>
+                    <span class="badge-lab badge-difficulty">@lab.Difficulty</span>
+                    <span><i class="fas fa-clock"></i> @lab.DurationMinutes mins</span>
+                    <span><i class="fas fa-star"></i> Grade @lab.GradeLevel</span>
+                </div>
+                <p>@lab.Description</p>
+                <button class="btn-launch"><i class="fas fa-flask"></i> Start Experiment</button>
+            </div>
+        }
+    }
+
+    <!-- Completed Experiments -->
+    @if (Model.CompletedExperiments.Any())
+    {
+        <h3 class="section-title">
+            <i class="fas fa-check-circle"></i> Completed
+        </h3>
+        foreach (var result in Model.CompletedExperiments)
+        {
+            var scoreClass = result.Score >= 70 ? "score-high" : result.Score >= 50 ? "score-medium" : result.Score.HasValue ? "score-low" : "score-pending";
+            <div class="lab-card @(result.Assignment.Experiment.LabType.ToString().ToLower())" style="opacity: 0.8;">
+                <div class="lab-title">@result.Assignment.Experiment.Title</div>
+                <div class="lab-meta">
+                    <span class="badge-lab badge-@(result.Assignment.Experiment.LabType.ToString().ToLower())">@result.Assignment.Experiment.LabType Lab</span>
+                    <span class="score-badge @scoreClass">
+                        @if (result.Score.HasValue)
+                        {
+                            <text>Score: @result.Score.Value%</text>
+                        }
+                        else
+                        {
+                            <text>Pending Review</text>
+                        }
+                    </span>
+                    <span><i class="fas fa-calendar"></i> @(result.CompletedAt?.ToString("dd MMM yyyy"))</span>
+                </div>
+                <p>@result.Assignment.Experiment.Description</p>
+                <a href="@Url.Action("MyResults", "VirtualLab")" class="btn-launch" style="background: var(--info); text-decoration: none; display: inline-block;">
+                    <i class="fas fa-chart-line"></i> View Results
+                </a>
+            </div>
+        }
+    }
+
+    @if (!Model.AssignedExperiments.Any() && !Model.InProgressExperiments.Any() && !Model.AvailableExperiments.Any() && !Model.CompletedExperiments.Any())
+    {
+        <div class="empty-state">
+            <i class="fas fa-vr-cardboard"></i>
+            <h4>No Experiments Available</h4>
+            <p>Check back later for virtual lab experiments.</p>
+        </div>
+    }
+</div>
