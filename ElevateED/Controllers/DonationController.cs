@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 using ElevateED.Models;
 using ElevateED.Services;
@@ -342,6 +344,7 @@ namespace ElevateED.Controllers
             return View();
         }
 
+        // Original JSON-based submit (kept for any older views that still post itemsJson).
         [HttpPost]
         public async Task<ActionResult> AddDonation(string itemsJson)
         {
@@ -409,6 +412,96 @@ namespace ElevateED.Controllers
 
             await _context.SaveChangesAsync();
             TempData["Success"] = $"Thank you! {entries.Count} item(s) submitted for approval. Reference code(s): {string.Join(", ", referenceCodes)}.";
+            return RedirectToAction("MyPendingDeliveries");
+        }
+
+        // NEW — receives the AI Donation Assistant wizard.
+        // The wizard posts a normal multipart form: itemCount, Items[0].*, and
+        // a file input named "photo". The photo is saved to disk and its
+        // relative path is stored in PhotoEvidence.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> AddDonationGuided(int itemCount, List<DonationItemEntry> Items, HttpPostedFileBase photo)
+        {
+            if (Items == null || !Items.Any())
+            {
+                TempData["Error"] = "Please add at least one item to donate.";
+                return RedirectToAction("AddDonation");
+            }
+
+            // Validate photo (required by the wizard)
+            if (photo == null || photo.ContentLength == 0)
+            {
+                TempData["Error"] = "Please upload a photo of the donation.";
+                return RedirectToAction("AddDonation");
+            }
+
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var ext = Path.GetExtension(photo.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(ext) || !allowed.Contains(ext))
+            {
+                TempData["Error"] = "Photo must be a JPG, PNG or GIF.";
+                return RedirectToAction("AddDonation");
+            }
+            if (photo.ContentLength > 5 * 1024 * 1024)
+            {
+                TempData["Error"] = "Photo must be smaller than 5 MB.";
+                return RedirectToAction("AddDonation");
+            }
+
+            // Save photo
+            var folder = Server.MapPath("~/Content/DonationPhotos");
+            Directory.CreateDirectory(folder);
+            var fileName = Guid.NewGuid().ToString("N") + ext;
+            photo.SaveAs(Path.Combine(folder, fileName));
+            var photoPath = "/Content/DonationPhotos/" + fileName;
+
+            var donorId = GetCurrentPersonId();
+            var donorType = GetCurrentPersonType();
+            var donorName = GetCurrentPersonName();
+            var donorEmail = GetCurrentPersonEmail();
+            var referenceCodes = new List<string>();
+
+            foreach (var entry in Items)
+            {
+                var item = new DonationItem
+                {
+                    DonorId = donorId,
+                    DonorType = donorType,
+                    DonorName = donorName,
+                    DonorEmail = donorEmail,
+                    Category = entry.Category,
+                    ItemType = entry.ItemType,
+                    ItemName = entry.ItemName,
+                    BookTitle = entry.BookTitle,
+                    Subject = entry.Subject,
+                    GradeLevel = entry.GradeLevel,
+                    ISBN = entry.ISBN,
+                    ClothingSize = entry.ClothingSize,
+                    ClothingType = entry.ClothingType,
+                    Gender = entry.Gender,
+                    Quantity = entry.Quantity,
+                    QuantityRemaining = entry.Quantity,
+                    AllocationType = AllocationType.OpenDonation,
+                    TargetStudentId = null,
+                    Condition = entry.Condition,
+                    ConditionNotes = entry.ConditionNotes,
+                    PhotoEvidence = photoPath,
+                    Status = DonationStatus.PendingApproval,
+                    IsFoodItem = false
+                };
+                _context.DonationItems.Add(item);
+                await _context.SaveChangesAsync(); // need item.Id for history
+
+                LogHistory(item.Id, "Submitted", $"Donated by {donorName} ({donorType}).");
+                referenceCodes.Add(item.TrackingCode);
+
+                try { _emailService.SendDonationSubmittedEmail(donorEmail, donorName, item.ItemName, item.TrackingCode); }
+                catch { /* don't block submission on a flaky SMTP server */ }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"Thank you! {Items.Count} item(s) submitted for approval. Reference code(s): {string.Join(", ", referenceCodes)}.";
             return RedirectToAction("MyPendingDeliveries");
         }
 
@@ -1014,7 +1107,126 @@ namespace ElevateED.Controllers
 
             return View(model);
         }
+        // ─────────────────────────────────────────────────────────────────────────
+        //  PASTE THIS INSIDE DonationController, in the "UC06 — Confirm Match &
+        //  Schedule Collection" region (e.g. right after ReleaseMatch).
+        //
+        //  No new using statements are needed.
+        // ─────────────────────────────────────────────────────────────────────────
 
+        // Next school day (Mon–Fri) after today. Used when the system confirms a
+        // match automatically, because no admin picks a collection date.
+        private static DateTime NextSchoolDay()
+        {
+            var date = DateTime.Today.AddDays(1);
+            while (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+                date = date.AddDays(1);
+            return date;
+        }
+
+        // Automated Match Decisions — posted by the "Ask ELEVATE to Run" modal on
+        // the Match Review page.
+        //   score >= acceptThreshold  -> confirmed automatically (collection booked)
+        //   score <  declineThreshold -> released back to the pool automatically
+        //   anything in between       -> left in the queue for manual review
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RunAutoMatchDecision(int acceptThreshold, int declineThreshold)
+        {
+            if (acceptThreshold < 0 || acceptThreshold > 100 || declineThreshold < 0 || declineThreshold > 100
+                || declineThreshold >= acceptThreshold)
+            {
+                TempData["Error"] = "Thresholds must be between 0 and 100, and the decline threshold must be lower than the accept threshold.";
+                return RedirectToAction("MatchDonations");
+            }
+
+            var pending = await _context.DonationAllocations
+                .Include(a => a.DonationItem)
+                .Include(a => a.Student)
+                .Include(a => a.Student.User)
+                .Where(a => a.IsActive && a.Status == "PendingReview")
+                .ToListAsync();
+
+            if (!pending.Any())
+            {
+                TempData["Error"] = "There are no proposed matches to process.";
+                return RedirectToAction("MatchDonations");
+            }
+
+            var collectionDate = NextSchoolDay();
+            var adminName = GetCurrentPersonName();
+            int accepted = 0, declined = 0, left = 0;
+
+            // Collected here and sent after the database save succeeds.
+            var emails = new List<Tuple<string, string, string, string>>(); // email, learner name, item name, token/window
+
+            foreach (var allocation in pending)
+            {
+                var score = allocation.MatchScore ?? 0;
+
+                // The request item reserved for this allocation (same category as the donated item).
+                var requestItem = await _context.DonationRequestItems
+                    .FirstOrDefaultAsync(ri => ri.DonationRequestId == allocation.RequestId
+                                               && ri.Status == RequestItemStatus.Reserved
+                                               && ri.Category == allocation.DonationItem.Category);
+
+                if (score >= acceptThreshold)
+                {
+                    // Spread collections across the available time windows.
+                    var window = CollectionTimeWindows[accepted % CollectionTimeWindows.Count];
+
+                    allocation.Status = "AwaitingCollection";
+                    allocation.ScheduledCollectionDate = collectionDate;
+                    allocation.CollectionTimeWindow = window;
+                    allocation.DonationItem.Status = DonationStatus.AwaitingCollection;
+                    if (requestItem != null) requestItem.Status = RequestItemStatus.AwaitingCollection;
+
+                    LogHistory(allocation.DonationItemId, "MatchAutoConfirmed",
+                        $"Automatically confirmed (score {score} >= {acceptThreshold}) by automated decision run started by {adminName}. Collection booked for {collectionDate:dd MMM yyyy} ({window}).");
+
+                    var email = allocation.Student?.User?.Email;
+                    if (!string.IsNullOrEmpty(email))
+                        emails.Add(Tuple.Create(email, allocation.Student.FullName, allocation.DonationItem.ItemName, allocation.CollectionToken + "|" + window));
+
+                    accepted++;
+                }
+                else if (score < declineThreshold)
+                {
+                    // Same effect as ReleaseMatch: item back to Available, request back to the waitlist
+                    // (WaitlistedDate untouched, so the learner keeps their queue position).
+                    allocation.DonationItem.Status = DonationStatus.Available;
+                    allocation.Status = "Released";
+                    allocation.IsActive = false;
+                    if (requestItem != null) requestItem.Status = RequestItemStatus.Waitlisted;
+
+                    LogHistory(allocation.DonationItemId, "MatchAutoReleased",
+                        $"Automatically released (score {score} < {declineThreshold}) by automated decision run started by {adminName}.");
+
+                    declined++;
+                }
+                else
+                {
+                    left++;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Emails after the save, so a flaky SMTP server can never roll back or block decisions.
+            foreach (var e in emails)
+            {
+                try
+                {
+                    var parts = e.Item4.Split('|');
+                    _emailService.SendDonationMatchConfirmedEmail(e.Item1, e.Item2, e.Item3, collectionDate, parts[1], parts[0]);
+                }
+                catch { }
+            }
+
+            TempData["Success"] = $"Automated decisions complete — {accepted} accepted, {declined} declined, {left} left for manual review.";
+            return RedirectToAction("MatchDonations");
+        }
         #endregion
 
         protected override void Dispose(bool disposing)

@@ -1,181 +1,2908 @@
 @model List<ElevateED.Models.MatchReviewItemViewModel>
+
 @{
     ViewBag.Title = "Match Review";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.ActiveTab = "match";
+
     var timeWindows = (List<string>)ViewBag.CollectionTimeWindows;
+
+    var matches = Model ?? new List<ElevateED.Models.MatchReviewItemViewModel>();
+
+    var totalMatches = matches.Count;
+
+    var excellentMatches = matches.Count(m => m.MatchScore >= 90);
+    var strongMatches = matches.Count(m => m.MatchScore >= 75 && m.MatchScore < 90);
+    var reviewMatches = matches.Count(m => m.MatchScore >= 60 && m.MatchScore < 75);
+    var lowMatches = matches.Count(m => m.MatchScore < 60);
+
+    var averageScore = totalMatches > 0
+        ? matches.Average(m => m.MatchScore)
+        : 0;
+
+    var highestScore = totalMatches > 0
+        ? matches.Max(m => m.MatchScore)
+        : 0;
+
+    var lowestScore = totalMatches > 0
+        ? matches.Min(m => m.MatchScore)
+        : 0;
 }
 
 <style>
-    .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900, #111827); display: flex; align-items: center; gap: 10px; }
-    .btn-run-now { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 
-    .match-card { background: white; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
-    .match-photo { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: var(--gray-100, #f3f4f6); flex-shrink: 0; }
-    .match-photo-placeholder { width: 64px; height: 64px; border-radius: 12px; background: var(--gray-100, #f3f4f6); display: flex; align-items: center; justify-content: center; color: var(--gray-400, #9ca3af); font-size: 20px; flex-shrink: 0; }
-    .match-body { flex: 1; min-width: 220px; }
-    .match-title { font-weight: 700; font-size: 15px; color: var(--gray-900, #111827); }
-    .match-arrow { color: var(--gray-400, #9ca3af); margin: 0 6px; }
-    .match-score { display: inline-block; background: #ede9fe; color: #5b21b6; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; margin-top: 6px; }
-    .match-reason { font-size: 12px; color: var(--gray-500, #6b7280); margin-top: 6px; }
-    .match-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    /* =========================================================
+       MATCH INTELLIGENCE
+       ========================================================= */
 
-    .btn-confirm { background: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
-    .btn-reassign { background: #eef2ff; color: #4338ca; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
-    .btn-release { background: #fee2e2; color: #991b1b; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .match-page {
+        color: #1f2937;
+    }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-overlay.show { display: flex; }
-    .modal-box { background: white; border-radius: 18px; padding: 28px; width: 420px; max-width: 90vw; }
-    .modal-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
-    .modal-box label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600, #4b5563); margin-bottom: 6px; }
-    .modal-box input, .modal-box select { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300, #d1d5db); border-radius: 10px; font-size: 13px; margin-bottom: 14px; font-family: inherit; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-    .btn-modal-cancel { background: white; border: 1px solid var(--gray-300, #d1d5db); padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
-    .btn-modal-confirm { border: none; padding: 10px 22px; border-radius: 10px; font-weight: 700; color: white; cursor: pointer; }
+    .page-header {
+        margin-bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
 
-    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--gray-200, #e5e7eb); }
-    .empty-state i { font-size: 48px; color: var(--gray-300, #d1d5db); margin-bottom: 15px; }
+    .page-header-left h1 {
+        font-size: 25px;
+        font-weight: 800;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin: 0;
+    }
+
+    .page-header-left p {
+        margin: 6px 0 0;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .page-header-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
+
+    .btn-run-now {
+        background: linear-gradient(135deg, #7c3aed, #6366f1);
+        color: white;
+        border: none;
+        padding: 11px 18px;
+        border-radius: 11px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 6px 16px rgba(99,102,241,.18);
+        transition: .2s ease;
+    }
+
+        .btn-run-now:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 9px 20px rgba(99,102,241,.25);
+        }
+
+
+    /* =========================================================
+       AI SUMMARY
+       ========================================================= */
+
+    .match-intelligence {
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 18px rgba(15,23,42,.05);
+    }
+
+    .intelligence-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .intelligence-title {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .intelligence-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .intelligence-title h2 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .intelligence-title p {
+        margin: 3px 0 0;
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .ai-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #ecfdf5;
+        color: #047857;
+        padding: 7px 11px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .ai-status-dot {
+        width: 7px;
+        height: 7px;
+        background: #10b981;
+        border-radius: 50%;
+        box-shadow: 0 0 0 4px rgba(16,185,129,.10);
+    }
+
+
+    /* =========================================================
+       SCORE STATISTICS
+       ========================================================= */
+
+    .score-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .score-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 13px;
+        padding: 14px;
+        min-width: 0;
+    }
+
+    .score-card-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #9ca3af;
+        margin-bottom: 7px;
+    }
+
+    .score-card-value {
+        font-size: 23px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .score-card-sub {
+        margin-top: 3px;
+        font-size: 10px;
+        color: #9ca3af;
+    }
+
+    .score-excellent .score-card-value {
+        color: #059669;
+    }
+
+    .score-strong .score-card-value {
+        color: #2563eb;
+    }
+
+    .score-review .score-card-value {
+        color: #d97706;
+    }
+
+    .score-low .score-card-value {
+        color: #dc2626;
+    }
+
+
+    /* =========================================================
+       AI RECOMMENDATION
+       ========================================================= */
+
+    .recommendation-box {
+        margin-top: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 15px 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .recommendation-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .recommendation-content strong {
+        display: block;
+        font-size: 12px;
+        color: #111827;
+        margin-bottom: 3px;
+    }
+
+    .recommendation-content span {
+        font-size: 12px;
+        line-height: 1.6;
+        color: #64748b;
+    }
+
+
+    /* =========================================================
+       AUTOMATION PANEL
+       ========================================================= */
+
+    .automation-panel {
+        background: linear-gradient(135deg, #eef2ff, #faf5ff);
+        border: 1px solid #ddd6fe;
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 22px;
+    }
+
+    .automation-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .automation-heading {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .automation-heading-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: white;
+        color: #7c3aed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(124,58,237,.08);
+    }
+
+    .automation-heading h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 800;
+        color: #312e81;
+    }
+
+    .automation-heading p {
+        margin: 3px 0 0;
+        color: #6366f1;
+        font-size: 11px;
+    }
+
+    .automation-badge {
+        background: white;
+        color: #7c3aed;
+        border: 1px solid #ddd6fe;
+        padding: 7px 11px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .automation-explanation {
+        margin-top: 15px;
+        background: rgba(255,255,255,.72);
+        border: 1px solid rgba(221,214,254,.9);
+        border-radius: 13px;
+        padding: 13px 15px;
+        color: #5b5b72;
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    .automation-thresholds {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 15px;
+    }
+
+    .threshold-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 13px;
+        padding: 14px;
+    }
+
+        .threshold-card label {
+            display: block;
+            font-size: 11px;
+            font-weight: 800;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+    .threshold-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .threshold-input input {
+            width: 90px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            padding: 9px 10px;
+            font-size: 14px;
+            font-weight: 700;
+            outline: none;
+        }
+
+            .threshold-input input:focus {
+                border-color: #8b5cf6;
+                box-shadow: 0 0 0 3px rgba(139,92,246,.10);
+            }
+
+        .threshold-input span {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+    .automation-preview {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .preview-item {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .preview-item-label {
+        font-size: 10px;
+        color: #6b7280;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .preview-item-value {
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .preview-accept .preview-item-value {
+        color: #059669;
+    }
+
+    .preview-review .preview-item-value {
+        color: #d97706;
+    }
+
+    .preview-decline .preview-item-value {
+        color: #dc2626;
+    }
+
+    .automation-actions {
+        margin-top: 16px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .btn-preview {
+        border: 1px solid #c7d2fe;
+        background: white;
+        color: #4338ca;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-auto-run {
+        border: none;
+        background: linear-gradient(135deg, #7c3aed, #6366f1);
+        color: white;
+        padding: 10px 17px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 5px 14px rgba(99,102,241,.18);
+    }
+
+
+    /* =========================================================
+       ALERTS
+       ========================================================= */
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        padding: 13px 16px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+    .alert-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        padding: 13px 16px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+
+    /* =========================================================
+       MATCH CARDS
+       ========================================================= */
+
+    .queue-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 10px;
+    }
+
+        .queue-header h2 {
+            font-size: 16px;
+            margin: 0;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .queue-header span {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+    .match-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 12px;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        transition: .18s ease;
+    }
+
+        .match-card:hover {
+            border-color: #c4b5fd;
+            box-shadow: 0 7px 20px rgba(15,23,42,.06);
+            transform: translateY(-1px);
+        }
+
+    .match-photo {
+        width: 62px;
+        height: 62px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #f3f4f6;
+        flex-shrink: 0;
+    }
+
+    .match-photo-placeholder {
+        width: 62px;
+        height: 62px;
+        border-radius: 12px;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 19px;
+        flex-shrink: 0;
+    }
+
+    .match-body {
+        flex: 1;
+        min-width: 220px;
+    }
+
+    .match-title {
+        font-weight: 800;
+        font-size: 14px;
+        color: #111827;
+    }
+
+    .match-arrow {
+        color: #9ca3af;
+        margin: 0 5px;
+    }
+
+    .match-meta {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+
+    .match-score {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        margin-top: 7px;
+    }
+
+    .score-high {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .score-medium {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .score-low {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .match-reason {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 6px;
+        line-height: 1.5;
+    }
+
+    .match-actions {
+        display: flex;
+        gap: 7px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    .btn-confirm {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 8px 13px;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+    }
+
+    .btn-reassign {
+        background: #eef2ff;
+        color: #4338ca;
+        border: none;
+        padding: 8px 13px;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+    }
+
+    .btn-release {
+        background: #fef2f2;
+        color: #991b1b;
+        border: none;
+        padding: 8px 13px;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+    }
+
+
+    /* =========================================================
+       EMPTY
+       ========================================================= */
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+    }
+
+        .empty-state i {
+            font-size: 45px;
+            color: #d1d5db;
+            margin-bottom: 14px;
+        }
+
+        .empty-state h4 {
+            margin: 0;
+            color: #374151;
+        }
+
+
+    /* =========================================================
+       MODALS
+       ========================================================= */
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+    .modal-box {
+        background: white;
+        border-radius: 18px;
+        padding: 25px;
+        width: 430px;
+        max-width: 95vw;
+        box-shadow: 0 25px 60px rgba(15,23,42,.18);
+    }
+
+        .modal-box h3 {
+            font-size: 17px;
+            font-weight: 800;
+            margin: 0 0 16px;
+            color: #111827;
+        }
+
+        .modal-box label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+
+        .modal-box input,
+        .modal-box select {
+            width: 100%;
+            padding: 10px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 12px;
+            margin-bottom: 13px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+    }
+
+    .btn-modal-cancel {
+        background: white;
+        border: 1px solid #d1d5db;
+        padding: 9px 16px;
+        border-radius: 9px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-modal-confirm {
+        border: none;
+        padding: 9px 18px;
+        border-radius: 9px;
+        font-weight: 800;
+        color: white;
+        cursor: pointer;
+    }
+
+
+    /* =========================================================
+       ELEVATE AI BLOB
+       ========================================================= */
+
+    .elevate-ai-orb {
+        position: fixed;
+        right: 26px;
+        bottom: 26px;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #7c3aed, #6366f1);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1100;
+        box-shadow: 0 12px 30px rgba(99,102,241,.30), 0 0 0 8px rgba(99,102,241,.07);
+        transition: .25s ease;
+    }
+
+        .elevate-ai-orb:hover {
+            transform: translateY(-3px) scale(1.04);
+        }
+
+        .elevate-ai-orb::before {
+            content: "";
+            position: absolute;
+            inset: -6px;
+            border: 1px solid rgba(124,58,237,.18);
+            border-radius: 50%;
+            animation: aiPulse 2.5s infinite;
+        }
+
+        .elevate-ai-orb i {
+            font-size: 24px;
+        }
+
+    @@keyframes aiPulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: .8;
+        }
+
+        50% {
+            transform: scale(1.08);
+            opacity: .25;
+        }
+    }
+
+
+    /* =========================================================
+       AI WINDOW
+       ========================================================= */
+
+    .ai-window {
+        position: fixed;
+        right: 26px;
+        bottom: 102px;
+        width: 370px;
+        max-width: calc(100vw - 40px);
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        box-shadow: 0 22px 60px rgba(15,23,42,.18);
+        z-index: 1099;
+        overflow: hidden;
+        display: none;
+    }
+
+        .ai-window.show {
+            display: block;
+            animation: aiWindowIn .22s ease;
+        }
+
+    @@keyframes aiWindowIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px) scale(.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .ai-window-header {
+        padding: 15px 17px;
+        background: linear-gradient(135deg, #faf5ff, #eef2ff);
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .ai-window-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .ai-window-brand-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #7c3aed, #6366f1);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ai-window-brand strong {
+        display: block;
+        font-size: 13px;
+        color: #111827;
+    }
+
+    .ai-window-brand span {
+        display: block;
+        font-size: 9px;
+        color: #059669;
+        font-weight: 700;
+        margin-top: 2px;
+    }
+
+    .ai-close {
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .ai-window-body {
+        padding: 18px;
+    }
+
+    .ai-thinking {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        color: #6b7280;
+        font-size: 11px;
+        margin-bottom: 12px;
+    }
+
+        .ai-thinking.show {
+            display: flex;
+        }
+
+    .thinking-dots {
+        display: flex;
+        gap: 3px;
+    }
+
+        .thinking-dots span {
+            width: 5px;
+            height: 5px;
+            background: #7c3aed;
+            border-radius: 50%;
+            animation: thinkingDot 1s infinite;
+        }
+
+            .thinking-dots span:nth-child(2) {
+                animation-delay: .15s;
+            }
+
+            .thinking-dots span:nth-child(3) {
+                animation-delay: .3s;
+            }
+
+    @@keyframes thinkingDot {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: .4;
+        }
+
+        30% {
+            transform: translateY(-3px);
+            opacity: 1;
+        }
+    }
+
+    .ai-message-label {
+        font-size: 9px;
+        font-weight: 800;
+        color: #7c3aed;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: 6px;
+    }
+
+    .ai-message {
+        font-size: 13px;
+        line-height: 1.7;
+        color: #374151;
+        min-height: 90px;
+    }
+
+        .ai-message strong {
+            color: #111827;
+        }
+
+    .ai-progress {
+        margin-top: 13px;
+        height: 4px;
+        background: #f1f5f9;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .ai-progress-bar {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #7c3aed, #6366f1);
+        transition: width .3s ease;
+    }
+
+    .ai-footer {
+        padding: 12px 17px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .ai-counter {
+        font-size: 10px;
+        color: #9ca3af;
+        font-weight: 700;
+    }
+
+    .ai-next-action {
+        border: none;
+        background: #eef2ff;
+        color: #4338ca;
+        padding: 7px 11px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @@media (max-width: 900px) {
+        .score-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .score-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .automation-thresholds,
+        .automation-preview {
+            grid-template-columns: 1fr;
+        }
+
+        .match-actions {
+            width: 100%;
+        }
+
+            .match-actions button {
+                flex: 1;
+            }
+
+        .elevate-ai-orb {
+            right: 16px;
+            bottom: 16px;
+        }
+
+        .ai-window {
+            right: 16px;
+            bottom: 92px;
+        }
+    }
 </style>
+
 
 @{ Html.RenderPartial("_DonationSubNav"); }
 
-<div class="page-header">
-    <h1><i class="fas fa-link" style="color: #8b5cf6;"></i> Match Review</h1>
-    <form method="post" action="@Url.Action("RunMatchingNow", "Donation")">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="btn-run-now"><i class="fas fa-sync"></i> Run Matching Now</button>
-    </form>
-</div>
 
-@if (TempData["Success"] != null)
-{
-    <div style="background:#d1fae5;color:#065f46;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div style="background:#fee2e2;color:#991b1b;padding:14px 18px;border-radius:12px;margin-bottom:20px;font-size:13px;"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
-}
+<div class="match-page">
 
-@if (Model == null || !Model.Any())
-{
-    <div class="empty-state">
-        <i class="fas fa-link"></i>
-        <h4>No proposed matches right now</h4>
-        <p style="color:var(--gray-500,#6b7280);">Run matching, or wait for the next scheduled sweep.</p>
+    <!-- =====================================================
+         PAGE HEADER
+         ===================================================== -->
+
+    <div class="page-header">
+
+        <div class="page-header-left">
+
+            <h1>
+                <span class="page-header-icon">
+                    <i class="fas fa-link"></i>
+                </span>
+
+                Match Review
+            </h1>
+
+            <p>
+                Review intelligent donation-to-request matches before allocation.
+            </p>
+
+        </div>
+
+
+        <form method="post"
+              action="@Url.Action("RunMatchingNow", "Donation")">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit" class="btn-run-now">
+
+                <i class="fas fa-sync"></i>
+
+                Run Matching Now
+
+            </button>
+
+        </form>
+
     </div>
-}
-else
-{
-    foreach (var m in Model)
+
+
+    <!-- =====================================================
+         TEMP DATA
+         ===================================================== -->
+
+    @if (TempData["Success"] != null)
     {
-        <div class="match-card">
-            @if (!string.IsNullOrEmpty(m.ItemPhoto))
-            {
-                <img src="@m.ItemPhoto" class="match-photo" />
-            }
-            else
-            {
-                <div class="match-photo-placeholder"><i class="fas fa-box"></i></div>
-            }
-            <div class="match-body">
-                <div class="match-title">@m.ItemName <span class="match-arrow"><i class="fas fa-arrow-right"></i></span> @m.StudentName</div>
-                <div style="font-size:12px;color:var(--gray-500,#6b7280);">@m.Category &middot; Proposed @m.ProposedDate.ToString("dd MMM yyyy")</div>
-                <span class="match-score"><i class="fas fa-star"></i> Match score: @m.MatchScore</span>
-                <div class="match-reason">@m.MatchReason</div>
-            </div>
-            <div class="match-actions">
-                <button class="btn-confirm" onclick="openConfirmModal(@m.AllocationId, '@Html.Raw(m.ItemName.Replace("'", "\\'"))', '@Html.Raw((m.StudentName ?? "").Replace("'", "\\'"))')"><i class="fas fa-check"></i> Confirm</button>
-                <button class="btn-reassign" onclick="openReassignModal(@m.AllocationId)"><i class="fas fa-random"></i> Reassign</button>
-                <button class="btn-release" onclick="releaseMatch(@m.AllocationId)"><i class="fas fa-undo"></i> Release</button>
-            </div>
+        <div class="alert-success">
+
+            <i class="fas fa-check-circle"></i>
+
+            @TempData["Success"]
+
         </div>
     }
-}
 
-<!-- Confirm & Schedule Modal -->
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-error">
+
+            <i class="fas fa-exclamation-circle"></i>
+
+            @TempData["Error"]
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         MATCH INTELLIGENCE SUMMARY
+         ===================================================== -->
+
+    <div class="match-intelligence">
+
+        <div class="intelligence-top">
+
+            <div class="intelligence-title">
+
+                <div class="intelligence-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+
+                <div>
+
+                    <h2>Match Intelligence</h2>
+
+                    <p>
+                        ELEVATE has analysed the current proposed-match queue.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="ai-status">
+
+                <span class="ai-status-dot"></span>
+
+                ANALYSIS READY
+
+            </div>
+
+        </div>
+
+
+        <div class="score-grid">
+
+            <div class="score-card">
+
+                <div class="score-card-label">
+                    Proposed Matches
+                </div>
+
+                <div class="score-card-value">
+                    @totalMatches
+                </div>
+
+                <div class="score-card-sub">
+                    Current queue
+                </div>
+
+            </div>
+
+
+            <div class="score-card score-excellent">
+
+                <div class="score-card-label">
+                    Excellent
+                </div>
+
+                <div class="score-card-value">
+                    @excellentMatches
+                </div>
+
+                <div class="score-card-sub">
+                    90–100 score
+                </div>
+
+            </div>
+
+
+            <div class="score-card score-strong">
+
+                <div class="score-card-label">
+                    Strong
+                </div>
+
+                <div class="score-card-value">
+                    @strongMatches
+                </div>
+
+                <div class="score-card-sub">
+                    75–89 score
+                </div>
+
+            </div>
+
+
+            <div class="score-card score-review">
+
+                <div class="score-card-label">
+                    Review
+                </div>
+
+                <div class="score-card-value">
+                    @reviewMatches
+                </div>
+
+                <div class="score-card-sub">
+                    60–74 score
+                </div>
+
+            </div>
+
+
+            <div class="score-card score-low">
+
+                <div class="score-card-label">
+                    Low Confidence
+                </div>
+
+                <div class="score-card-value">
+                    @lowMatches
+                </div>
+
+                <div class="score-card-sub">
+                    Below 60
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="recommendation-box">
+
+            <div class="recommendation-icon">
+
+                <i class="fas fa-lightbulb"></i>
+
+            </div>
+
+            <div class="recommendation-content">
+
+                <strong>System Recommendation</strong>
+
+                <span id="systemRecommendation">
+                    Analysing the current match distribution...
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         AUTOMATION PANEL
+         ===================================================== -->
+
+    @if (totalMatches > 0)
+    {
+
+        <div class="automation-panel">
+
+            <div class="automation-header">
+
+                <div class="automation-heading">
+
+                    <div class="automation-heading-icon">
+
+                        <i class="fas fa-robot"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h3>Automated Match Decisions</h3>
+
+                        <p>
+                            Let ELEVATE process high-confidence matches automatically.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="automation-badge">
+
+                    Admin Approval Required
+
+                </div>
+
+            </div>
+
+
+            <div class="automation-explanation">
+
+                <strong>How this works:</strong>
+
+                ELEVATE uses the existing match score to classify proposed
+                matches. You decide the confidence thresholds. Matches at or
+                above the acceptance threshold can be automatically accepted,
+                while matches below the decline threshold can be automatically
+                declined. Anything between the two thresholds remains for
+                manual review.
+
+            </div>
+
+
+            <div class="automation-thresholds">
+
+                <div class="threshold-card">
+
+                    <label>
+                        Automatically Accept At Or Above
+                    </label>
+
+                    <div class="threshold-input">
+
+                        <input type="number"
+                               id="acceptThreshold"
+                               value="90"
+                               min="0"
+                               max="100" />
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="threshold-card">
+
+                    <label>
+                        Automatically Decline Below
+                    </label>
+
+                    <div class="threshold-input">
+
+                        <input type="number"
+                               id="declineThreshold"
+                               value="60"
+                               min="0"
+                               max="100" />
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="automation-preview">
+
+                <div class="preview-item preview-accept">
+
+                    <div class="preview-item-label">
+                        Will Accept
+                    </div>
+
+                    <div class="preview-item-value"
+                         id="previewAccept">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="preview-item preview-review">
+
+                    <div class="preview-item-label">
+                        Manual Review
+                    </div>
+
+                    <div class="preview-item-value"
+                         id="previewReview">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="preview-item preview-decline">
+
+                    <div class="preview-item-label">
+                        Will Decline
+                    </div>
+
+                    <div class="preview-item-value"
+                         id="previewDecline">
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="automation-actions">
+
+                <button type="button"
+                        class="btn-preview"
+                        onclick="updateAutomationPreview()">
+
+                    <i class="fas fa-eye"></i>
+
+                    Preview Decisions
+
+                </button>
+
+
+                <button type="button"
+                        class="btn-auto-run"
+                        onclick="openAutomationModal()">
+
+                    <i class="fas fa-robot"></i>
+
+                    Ask ELEVATE to Run
+
+                </button>
+
+            </div>
+
+        </div>
+
+    }
+
+
+    <!-- =====================================================
+         MATCH QUEUE
+         ===================================================== -->
+
+    <div class="queue-header">
+
+        <h2>
+            Proposed Matches
+        </h2>
+
+        <span>
+            @totalMatches match@(totalMatches == 1 ? "" : "es") awaiting review
+        </span>
+
+    </div>
+
+
+    @if (Model == null || !Model.Any())
+    {
+
+        <div class="empty-state">
+
+            <i class="fas fa-link"></i>
+
+            <h4>
+                No proposed matches right now
+            </h4>
+
+            <p style="color:#6b7280;margin-top:7px;font-size:12px;">
+
+                Run matching, or wait for the next scheduled sweep.
+
+            </p>
+
+        </div>
+
+    }
+    else
+    {
+
+        foreach (var m in Model)
+        {
+
+            var scoreClass =
+                m.MatchScore >= 90
+                    ? "score-high"
+                    : m.MatchScore >= 60
+                        ? "score-medium"
+                        : "score-low";
+
+
+            <div class="match-card">
+
+                @if (!string.IsNullOrEmpty(m.ItemPhoto))
+                {
+
+                    <img src="@m.ItemPhoto"
+                         class="match-photo"
+                         alt="Donation item" />
+
+                }
+                else
+                {
+
+                    <div class="match-photo-placeholder">
+
+                        <i class="fas fa-box"></i>
+
+                    </div>
+
+                }
+
+
+                <div class="match-body">
+
+                    <div class="match-title">
+
+                        @m.ItemName
+
+                        <span class="match-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </span>
+
+                        @m.StudentName
+
+                    </div>
+
+
+                    <div class="match-meta">
+
+                        @m.Category
+
+                        &middot;
+
+                        Proposed @m.ProposedDate.ToString("dd MMM yyyy")
+
+                    </div>
+
+
+                    <span class="match-score @scoreClass">
+
+                        <i class="fas fa-star"></i>
+
+                        Match score:
+
+                        @m.MatchScore
+
+                    </span>
+
+
+                    <div class="match-reason">
+
+                        @m.MatchReason
+
+                    </div>
+
+                </div>
+
+
+                <div class="match-actions">
+
+                    <button type="button"
+                            class="btn-confirm"
+                            onclick="openConfirmModal(
+                                @m.AllocationId,
+                                '@Html.Raw((m.ItemName ?? "").Replace("'", "\\'"))',
+                                '@Html.Raw((m.StudentName ?? "").Replace("'", "\\'"))'
+                            )">
+
+                        <i class="fas fa-check"></i>
+
+                        Confirm
+
+                    </button>
+
+
+                    <button type="button"
+                            class="btn-reassign"
+                            onclick="openReassignModal(@m.AllocationId)">
+
+                        <i class="fas fa-random"></i>
+
+                        Reassign
+
+                    </button>
+
+
+                    <button type="button"
+                            class="btn-release"
+                            onclick="releaseMatch(@m.AllocationId)">
+
+                        <i class="fas fa-undo"></i>
+
+                        Release
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        }
+
+    }
+
+</div>
+
+
+<!-- =========================================================
+     CONFIRM & SCHEDULE MODAL
+     ========================================================= -->
+
 <div class="modal-overlay" id="confirmModal">
+
     <div class="modal-box">
-        <h3><i class="fas fa-calendar-check"></i> Confirm Match & Schedule Collection</h3>
-        <form method="post" action="@Url.Action("ConfirmMatch", "Donation")">
+
+        <h3>
+
+            <i class="fas fa-calendar-check"
+               style="color:#10b981;"></i>
+
+            Confirm Match & Schedule Collection
+
+        </h3>
+
+
+        <form method="post"
+              action="@Url.Action("ConfirmMatch", "Donation")">
+
             @Html.AntiForgeryToken()
-            <input type="hidden" name="allocationId" id="confirmAllocId" />
-            <label><span id="confirmSummary"></span></label>
-            <label>Collection Date</label>
-            <input type="date" name="collectionDate" required />
-            <label>Collection Time Window</label>
-            <select name="timeWindow" required>
+
+
+            <input type="hidden"
+                   name="allocationId"
+                   id="confirmAllocId" />
+
+
+            <label>
+
+                <span id="confirmSummary"></span>
+
+            </label>
+
+
+            <label>
+                Collection Date
+            </label>
+
+            <input type="date"
+                   name="collectionDate"
+                   required />
+
+
+            <label>
+                Collection Time Window
+            </label>
+
+            <select name="timeWindow"
+                    required>
+
                 @foreach (var w in timeWindows)
                 {
-                    <option value="@w">@w</option>
+
+                    <option value="@w">
+                        @w
+                    </option>
+
                 }
+
             </select>
+
+
             <div class="modal-actions">
-                <button type="button" class="btn-modal-cancel" onclick="closeModals()">Cancel</button>
-                <button type="submit" class="btn-modal-confirm" style="background:#10b981;">Confirm & Notify Learner</button>
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        onclick="closeModals()">
+
+                    Cancel
+
+                </button>
+
+
+                <button type="submit"
+                        class="btn-modal-confirm"
+                        style="background:#10b981;">
+
+                    Confirm & Notify Learner
+
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
-<!-- Reassign Modal -->
-<div class="modal-overlay" id="reassignModal">
+
+<!-- =========================================================
+     REASSIGN MODAL
+     ========================================================= -->
+
+<div class="modal-overlay"
+     id="reassignModal">
+
     <div class="modal-box">
-        <h3><i class="fas fa-random"></i> Reassign to a Different Request</h3>
-        <form method="post" action="@Url.Action("ReassignMatch", "Donation")">
+
+        <h3>
+
+            <i class="fas fa-random"
+               style="color:#4338ca;"></i>
+
+            Reassign to a Different Request
+
+        </h3>
+
+
+        <form method="post"
+              action="@Url.Action("ReassignMatch", "Donation")">
+
             @Html.AntiForgeryToken()
-            <input type="hidden" name="allocationId" id="reassignAllocId" />
-            <label>Choose a different waitlisted request in the same category</label>
-            <select name="newRequestItemId" id="reassignOptions" required></select>
+
+
+            <input type="hidden"
+                   name="allocationId"
+                   id="reassignAllocId" />
+
+
+            <label>
+
+                Choose a different waitlisted request in the same category
+
+            </label>
+
+
+            <select name="newRequestItemId"
+                    id="reassignOptions"
+                    required>
+            </select>
+
+
             <div class="modal-actions">
-                <button type="button" class="btn-modal-cancel" onclick="closeModals()">Cancel</button>
-                <button type="submit" class="btn-modal-confirm" style="background:#4338ca;">Reassign</button>
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        onclick="closeModals()">
+
+                    Cancel
+
+                </button>
+
+
+                <button type="submit"
+                        class="btn-modal-confirm"
+                        style="background:#4338ca;">
+
+                    Reassign
+
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
+
+
+<!-- =========================================================
+     AUTOMATION CONFIRMATION MODAL
+     ========================================================= -->
+
+<div class="modal-overlay"
+     id="automationModal">
+
+    <div class="modal-box">
+
+        <h3>
+
+            <i class="fas fa-robot"
+               style="color:#7c3aed;"></i>
+
+            Confirm Automated Decisions
+
+        </h3>
+
+
+        <div style="
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:14px;
+            margin-bottom:16px;
+            font-size:12px;
+            line-height:1.65;
+            color:#4b5563;
+        ">
+
+            ELEVATE is ready to process the current proposed matches using
+            the thresholds you selected.
+
+            <br /><br />
+
+            <strong style="color:#059669;">
+                Accept:
+            </strong>
+
+            scores at or above
+
+            <strong id="modalAcceptThreshold">
+                90
+            </strong>
+
+            <br />
+
+            <strong style="color:#dc2626;">
+                Decline:
+            </strong>
+
+            scores below
+
+            <strong id="modalDeclineThreshold">
+                60
+            </strong>
+
+            <br />
+
+            <strong style="color:#d97706;">
+                Manual review:
+            </strong>
+
+            everything in between.
+
+        </div>
+
+
+        <!--
+            IMPORTANT:
+            This action expects a controller action named
+            RunAutoMatchDecision.
+
+            Add that action in DonationController before enabling
+            real automatic decisions.
+        -->
+
+        <form method="post"
+              action="@Url.Action("RunAutoMatchDecision", "Donation")">
+
+            @Html.AntiForgeryToken()
+
+
+            <input type="hidden"
+                   name="acceptThreshold"
+                   id="formAcceptThreshold" />
+
+
+            <input type="hidden"
+                   name="declineThreshold"
+                   id="formDeclineThreshold" />
+
+
+            <div class="modal-actions">
+
+                <button type="button"
+                        class="btn-modal-cancel"
+                        onclick="closeAutomationModal()">
+
+                    Cancel
+
+                </button>
+
+
+                <button type="submit"
+                        class="btn-modal-confirm"
+                        style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
+
+                    <i class="fas fa-robot"></i>
+
+                    Run Automated Decisions
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     ELEVATE AI ORB
+     ========================================================= -->
+
+<div class="elevate-ai-orb"
+     id="elevateAiOrb"
+     title="Ask ELEVATE AI">
+
+    <i class="fas fa-brain"></i>
+
+</div>
+
+
+<!-- =========================================================
+     ELEVATE AI WINDOW
+     ========================================================= -->
+
+<div class="ai-window"
+     id="aiWindow">
+
+    <div class="ai-window-header">
+
+        <div class="ai-window-brand">
+
+            <div class="ai-window-brand-icon">
+
+                <i class="fas fa-brain"></i>
+
+            </div>
+
+            <div>
+
+                <strong>
+                    ELEVATE AI
+                </strong>
+
+                <span>
+                    MATCH INTELLIGENCE ONLINE
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <button type="button"
+                class="ai-close"
+                id="aiClose">
+
+            <i class="fas fa-times"></i>
+
+        </button>
+
+    </div>
+
+
+    <div class="ai-window-body">
+
+        <div class="ai-thinking"
+             id="aiThinking">
+
+            <div class="thinking-dots">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+
+            Analysing proposed matches...
+
+        </div>
+
+
+        <div class="ai-message-label"
+             id="aiMessageLabel">
+
+            MATCH ANALYSIS
+
+        </div>
+
+
+        <div class="ai-message"
+             id="aiMessage">
+
+            I have analysed the current match queue.
+
+        </div>
+
+
+        <div class="ai-progress">
+
+            <div class="ai-progress-bar"
+                 id="aiProgressBar">
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="ai-footer">
+
+        <span class="ai-counter"
+              id="aiCounter">
+
+            1 / 1
+
+        </span>
+
+
+        <button type="button"
+                class="ai-next-action"
+                id="aiNext">
+
+            Next
+
+            <i class="fas fa-arrow-right"></i>
+
+        </button>
+
+    </div>
+
+</div>
+
 
 <script>
-    function closeModals() {
-        document.getElementById('confirmModal').classList.remove('show');
-        document.getElementById('reassignModal').classList.remove('show');
+
+    /* =========================================================
+       DATA
+       ========================================================= */
+
+    var matchScores = [
+
+        @if (matches.Any())
+        {
+            foreach (var match in matches)
+            {
+                @: @match.MatchScore,
+            }
+        }
+
+    ];
+
+
+    /* =========================================================
+       AI RECOMMENDATION
+       ========================================================= */
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        var recommendation =
+            document.getElementById("systemRecommendation");
+
+        if (!recommendation) {
+            return;
+        }
+
+
+        var total = matchScores.length;
+
+
+        if (total === 0) {
+
+            recommendation.textContent =
+                "There are currently no proposed matches requiring analysis.";
+
+            return;
+
+        }
+
+
+        var excellent =
+            matchScores.filter(function (score) {
+                return score >= 90;
+            }).length;
+
+
+        var low =
+            matchScores.filter(function (score) {
+                return score < 60;
+            }).length;
+
+
+        var average =
+            matchScores.reduce(function (a, b) {
+                return a + b;
+            }, 0) / total;
+
+
+        average = Math.round(average);
+
+
+        if (excellent > 0 && low > 0) {
+
+            recommendation.innerHTML =
+                "The queue contains <strong>" +
+                excellent +
+                " high-confidence match" +
+                (excellent === 1 ? "" : "es") +
+                "</strong> and <strong>" +
+                low +
+                " low-confidence match" +
+                (low === 1 ? "" : "es") +
+                "</strong>. An automated threshold could reduce manual review while keeping medium-confidence matches for an administrator.";
+
+        }
+        else if (excellent > 0) {
+
+            recommendation.innerHTML =
+                "The current queue contains <strong>" +
+                excellent +
+                " high-confidence match" +
+                (excellent === 1 ? "" : "es") +
+                "</strong>. These may be suitable for automated approval if the administrator enables the decision workflow.";
+
+        }
+        else if (low > 0) {
+
+            recommendation.innerHTML =
+                "The queue contains <strong>" +
+                low +
+                " low-confidence match" +
+                (low === 1 ? "" : "es") +
+                "</strong>. These should be reviewed carefully before allocation.";
+
+        }
+        else {
+
+            recommendation.innerHTML =
+                "The current average match score is <strong>" +
+                average +
+                "/100</strong>. Most proposed matches sit in the middle-confidence range, so manual review is recommended.";
+
+        }
+
+    });
+
+
+    /* =========================================================
+       AUTOMATION PREVIEW
+       ========================================================= */
+
+    function updateAutomationPreview() {
+
+        var acceptInput =
+            document.getElementById("acceptThreshold");
+
+        var declineInput =
+            document.getElementById("declineThreshold");
+
+
+        var accept =
+            parseInt(acceptInput.value, 10);
+
+        var decline =
+            parseInt(declineInput.value, 10);
+
+
+        if (isNaN(accept)) {
+            accept = 90;
+            acceptInput.value = 90;
+        }
+
+        if (isNaN(decline)) {
+            decline = 60;
+            declineInput.value = 60;
+        }
+
+
+        if (accept < 0) {
+            accept = 0;
+            acceptInput.value = 0;
+        }
+
+        if (accept > 100) {
+            accept = 100;
+            acceptInput.value = 100;
+        }
+
+
+        if (decline < 0) {
+            decline = 0;
+            declineInput.value = 0;
+        }
+
+        if (decline > 100) {
+            decline = 100;
+            declineInput.value = 100;
+        }
+
+
+        var acceptCount = 0;
+        var declineCount = 0;
+        var reviewCount = 0;
+
+
+        matchScores.forEach(function (score) {
+
+            if (score >= accept) {
+
+                acceptCount++;
+
+            }
+            else if (score < decline) {
+
+                declineCount++;
+
+            }
+            else {
+
+                reviewCount++;
+
+            }
+
+        });
+
+
+        document.getElementById("previewAccept").textContent =
+            acceptCount;
+
+
+        document.getElementById("previewReview").textContent =
+            reviewCount;
+
+
+        document.getElementById("previewDecline").textContent =
+            declineCount;
+
     }
 
-    function openConfirmModal(allocationId, itemName, studentName) {
-        document.getElementById('confirmAllocId').value = allocationId;
-        document.getElementById('confirmSummary').textContent = itemName + ' \u2192 ' + studentName;
-        document.getElementById('confirmModal').classList.add('show');
+
+    /* =========================================================
+       AUTOMATION MODAL
+       ========================================================= */
+
+    function openAutomationModal() {
+
+        var accept =
+            document.getElementById("acceptThreshold").value;
+
+        var decline =
+            document.getElementById("declineThreshold").value;
+
+
+        if (parseInt(decline, 10) >= parseInt(accept, 10)) {
+
+            alert(
+                "The decline threshold must be lower than the acceptance threshold."
+            );
+
+            return;
+
+        }
+
+
+        document.getElementById(
+            "modalAcceptThreshold"
+        ).textContent = accept;
+
+
+        document.getElementById(
+            "modalDeclineThreshold"
+        ).textContent = decline;
+
+
+        document.getElementById(
+            "formAcceptThreshold"
+        ).value = accept;
+
+
+        document.getElementById(
+            "formDeclineThreshold"
+        ).value = decline;
+
+
+        document
+            .getElementById("automationModal")
+            .classList.add("show");
+
     }
+
+
+    function closeAutomationModal() {
+
+        document
+            .getElementById("automationModal")
+            .classList.remove("show");
+
+    }
+
+
+    /* =========================================================
+       ELEVATE AI
+       ========================================================= */
+
+    var aiMessages = [];
+
+
+    function buildAiMessages() {
+
+        var total =
+            matchScores.length;
+
+
+        if (total === 0) {
+
+            return [
+
+                {
+                    label: "QUEUE STATUS",
+                    text:
+                        "There are currently no proposed matches. Run the matching engine when new donation and request data becomes available."
+                }
+
+            ];
+
+        }
+
+
+        var excellent =
+            matchScores.filter(function (score) {
+                return score >= 90;
+            }).length;
+
+
+        var strong =
+            matchScores.filter(function (score) {
+                return score >= 75 && score < 90;
+            }).length;
+
+
+        var review =
+            matchScores.filter(function (score) {
+                return score >= 60 && score < 75;
+            }).length;
+
+
+        var low =
+            matchScores.filter(function (score) {
+                return score < 60;
+            }).length;
+
+
+        var average =
+            Math.round(
+                matchScores.reduce(function (a, b) {
+                    return a + b;
+                }, 0) / total
+            );
+
+
+        var messages = [];
+
+
+        /* -----------------------------------------------
+           MESSAGE 1
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "MATCH QUEUE",
+
+            text:
+                "I found <strong>" +
+                total +
+                " proposed matches</strong> waiting for administrator review. The current average match score is <strong>" +
+                average +
+                "/100</strong>."
+
+        });
+
+
+        /* -----------------------------------------------
+           MESSAGE 2
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "HIGH CONFIDENCE",
+
+            text:
+                "There are <strong>" +
+                excellent +
+                " matches scoring 90 or higher</strong>. These are the strongest candidates for automated acceptance, provided the administrator approves the threshold."
+
+        });
+
+
+        /* -----------------------------------------------
+           MESSAGE 3
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "MEDIUM CONFIDENCE",
+
+            text:
+                "There are <strong>" +
+                (strong + review) +
+                " matches between 60 and 89</strong>. I recommend keeping these in the manual-review queue rather than automatically deciding them."
+
+        });
+
+
+        /* -----------------------------------------------
+           MESSAGE 4
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "LOW CONFIDENCE",
+
+            text:
+                "I identified <strong>" +
+                low +
+                " matches below 60</strong>. These have lower confidence and may be candidates for automatic decline, depending on the administrator's policy."
+
+        });
+
+
+        /* -----------------------------------------------
+           MESSAGE 5
+           ----------------------------------------------- */
+
+        if (excellent > 0 && low > 0) {
+
+            messages.push({
+
+                label: "AUTOMATION OPPORTUNITY",
+
+                text:
+                    "The queue contains both strong and weak matches. This is a good candidate for the <strong>Automated Match Decision</strong> workflow: accept high-confidence matches, decline low-confidence matches, and leave the middle group for human review."
+
+            });
+
+        }
+        else if (excellent > 0) {
+
+            messages.push({
+
+                label: "AUTOMATION OPPORTUNITY",
+
+                text:
+                    "The current queue has several high-confidence matches. Automating only the strongest scores could significantly reduce repetitive administrator work while keeping uncertain matches under human control."
+
+            });
+
+        }
+        else {
+
+            messages.push({
+
+                label: "AUTOMATION STATUS",
+
+                text:
+                    "The current queue does not contain enough high-confidence matches to recommend aggressive automation. Manual review is currently the safer approach."
+
+            });
+
+        }
+
+
+        /* -----------------------------------------------
+           MESSAGE 6
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "RECOMMENDED POLICY",
+
+            text:
+                "A starting policy would be <strong>accept ≥90</strong>, <strong>manual review 60–89</strong>, and <strong>decline &lt;60</strong>. You can change these thresholds before running the automation."
+
+        });
+
+
+        /* -----------------------------------------------
+           MESSAGE 7
+           ----------------------------------------------- */
+
+        messages.push({
+
+            label: "ADMIN DECISION",
+
+            text:
+                "Would you like me to prepare the queue using those thresholds? <strong>You remain in control</strong> — ELEVATE will not automatically change any match until you approve the automation."
+
+        });
+
+
+        return messages;
+
+    }
+
+
+    function openAiWindow() {
+
+        var windowElement =
+            document.getElementById("aiWindow");
+
+        windowElement.classList.add("show");
+
+
+        renderAiMessage(0);
+
+    }
+
+
+    function closeAiWindow() {
+
+        document
+            .getElementById("aiWindow")
+            .classList.remove("show");
+
+    }
+
+
+    function renderAiMessage(index) {
+
+        aiMessages = buildAiMessages();
+
+
+        if (!aiMessages.length) {
+            return;
+        }
+
+
+        if (index < 0) {
+            index = 0;
+        }
+
+
+        if (index >= aiMessages.length) {
+            index = aiMessages.length - 1;
+        }
+
+
+        window.currentAiIndex = index;
+
+
+        var message =
+            aiMessages[index];
+
+
+        var thinking =
+            document.getElementById("aiThinking");
+
+
+        var label =
+            document.getElementById("aiMessageLabel");
+
+
+        var messageElement =
+            document.getElementById("aiMessage");
+
+
+        var counter =
+            document.getElementById("aiCounter");
+
+
+        var progress =
+            document.getElementById("aiProgressBar");
+
+
+        thinking.classList.add("show");
+
+
+        messageElement.style.opacity = "0";
+
+
+        setTimeout(function () {
+
+            thinking.classList.remove("show");
+
+
+            label.textContent =
+                message.label;
+
+
+            messageElement.innerHTML =
+                message.text;
+
+
+            messageElement.style.opacity = "1";
+
+
+            counter.textContent =
+                (index + 1) +
+                " / " +
+                aiMessages.length;
+
+
+            progress.style.width =
+                ((index + 1) / aiMessages.length * 100) +
+                "%";
+
+
+        }, 550);
+
+    }
+
+
+    /* =========================================================
+       AI EVENTS
+       ========================================================= */
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        var orb =
+            document.getElementById("elevateAiOrb");
+
+
+        var close =
+            document.getElementById("aiClose");
+
+
+        var next =
+            document.getElementById("aiNext");
+
+
+        if (orb) {
+
+            orb.addEventListener("click", function () {
+
+                openAiWindow();
+
+            });
+
+        }
+
+
+        if (close) {
+
+            close.addEventListener("click", function () {
+
+                closeAiWindow();
+
+            });
+
+        }
+
+
+        if (next) {
+
+            next.addEventListener("click", function () {
+
+                var nextIndex =
+                    (window.currentAiIndex || 0) + 1;
+
+
+                if (nextIndex >= aiMessages.length) {
+
+                    nextIndex = 0;
+
+                }
+
+
+                renderAiMessage(nextIndex);
+
+            });
+
+        }
+
+
+        updateAutomationPreview();
+
+
+        var acceptInput =
+            document.getElementById("acceptThreshold");
+
+
+        var declineInput =
+            document.getElementById("declineThreshold");
+
+
+        if (acceptInput) {
+
+            acceptInput.addEventListener(
+                "input",
+                updateAutomationPreview
+            );
+
+        }
+
+
+        if (declineInput) {
+
+            declineInput.addEventListener(
+                "input",
+                updateAutomationPreview
+            );
+
+        }
+
+
+        /* Close modal when clicking outside */
+
+        document.querySelectorAll(
+            ".modal-overlay"
+        ).forEach(function (modal) {
+
+            modal.addEventListener(
+                "click",
+                function (event) {
+
+                    if (event.target === modal) {
+
+                        modal.classList.remove("show");
+
+                    }
+
+                }
+            );
+
+        });
+
+    });
+
+
+    /* =========================================================
+       EXISTING CONFIRM MODAL
+       ========================================================= */
+
+    function closeModals() {
+
+        document
+            .getElementById("confirmModal")
+            .classList.remove("show");
+
+
+        document
+            .getElementById("reassignModal")
+            .classList.remove("show");
+
+    }
+
+
+    function openConfirmModal(
+        allocationId,
+        itemName,
+        studentName
+    ) {
+
+        document.getElementById(
+            "confirmAllocId"
+        ).value = allocationId;
+
+
+        document.getElementById(
+            "confirmSummary"
+        ).textContent =
+            itemName +
+            " → " +
+            studentName;
+
+
+        document
+            .getElementById("confirmModal")
+            .classList.add("show");
+
+    }
+
+
+    /* =========================================================
+       REASSIGN
+       ========================================================= */
 
     function openReassignModal(allocationId) {
-        document.getElementById('reassignAllocId').value = allocationId;
-        var select = document.getElementById('reassignOptions');
-        select.innerHTML = '<option>Loading...</option>';
-        fetch('@Url.Action("GetAlternativeRequests", "Donation")?allocationId=' + allocationId)
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data.length) { select.innerHTML = '<option value="">No other waitlisted requests in this category</option>'; return; }
-                select.innerHTML = '';
-                data.forEach(function (d) {
-                    var opt = document.createElement('option');
-                    opt.value = d.Id;
-                    opt.textContent = d.StudentName + ' (Priority Score: ' + d.PriorityScore + ')';
-                    select.appendChild(opt);
-                });
+
+        document.getElementById(
+            "reassignAllocId"
+        ).value = allocationId;
+
+
+        var select =
+            document.getElementById("reassignOptions");
+
+
+        select.innerHTML =
+            '<option value="">Loading...</option>';
+
+
+        fetch(
+            '@Url.Action("GetAlternativeRequests", "Donation")?allocationId='
+            + allocationId
+        )
+
+        .then(function (response) {
+
+            return response.json();
+
+        })
+
+        .then(function (data) {
+
+            if (!data.length) {
+
+                select.innerHTML =
+                    '<option value="">No other waitlisted requests in this category</option>';
+
+                return;
+
+            }
+
+
+            select.innerHTML = "";
+
+
+            data.forEach(function (d) {
+
+                var option =
+                    document.createElement("option");
+
+
+                option.value =
+                    d.Id;
+
+
+                option.textContent =
+                    d.StudentName +
+                    " (Priority Score: " +
+                    d.PriorityScore +
+                    ")";
+
+
+                select.appendChild(option);
+
             });
-        document.getElementById('reassignModal').classList.add('show');
+
+        })
+
+        .catch(function () {
+
+            select.innerHTML =
+                '<option value="">Unable to load alternatives</option>';
+
+        });
+
+
+        document
+            .getElementById("reassignModal")
+            .classList.add("show");
+
     }
 
+
+    /* =========================================================
+       RELEASE
+       ========================================================= */
+
     function releaseMatch(allocationId) {
-        if (!confirm('Release this match back to the Available pool?')) return;
-        var form = document.createElement('form');
-        form.method = 'post';
-        form.action = '@Url.Action("ReleaseMatch", "Donation")';
-        var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        form.innerHTML = '<input type="hidden" name="allocationId" value="' + allocationId + '" />' +
-                          '<input type="hidden" name="__RequestVerificationToken" value="' + token + '" />';
+
+        if (!confirm(
+            "Release this match back to the Available pool?"
+        )) {
+
+            return;
+
+        }
+
+
+        var form =
+            document.createElement("form");
+
+
+        form.method = "post";
+
+
+        form.action =
+            '@Url.Action("ReleaseMatch", "Donation")';
+
+
+        var token =
+            document.querySelector(
+                'input[name="__RequestVerificationToken"]'
+            );
+
+
+        if (!token) {
+
+            alert(
+                "Security token could not be found."
+            );
+
+            return;
+
+        }
+
+
+        form.innerHTML =
+            '<input type="hidden" name="allocationId" value="' +
+            allocationId +
+            '" />' +
+
+            '<input type="hidden" name="__RequestVerificationToken" value="' +
+            token.value +
+            '" />';
+
+
         document.body.appendChild(form);
+
+
         form.submit();
+
     }
+
 </script>
